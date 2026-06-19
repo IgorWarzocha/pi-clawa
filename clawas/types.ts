@@ -2,8 +2,6 @@ export type WorkerThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' 
 
 export type WorkerReportMode = 'auto' | 'explicit' | 'off'
 
-export type WorkerPromptProfile = 'auto' | 'gpt' | 'glm' | 'discord'
-
 export interface WorkerDefinition {
   id: string
   title: string
@@ -17,7 +15,6 @@ export interface WorkerDefinition {
   model?: string
   thinking?: WorkerThinkingLevel
   reportMode?: WorkerReportMode
-  promptProfile?: WorkerPromptProfile
 }
 
 export interface ClawasConfig {

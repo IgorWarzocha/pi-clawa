@@ -189,7 +189,6 @@ async function ensureDiscordWorker(projectRoot: string): Promise<void> {
     autostart: current.autostart !== false,
     discordEnabled: true,
     reportMode: typeof current.reportMode === 'string' ? current.reportMode : 'explicit',
-    promptProfile: 'discord',
     extensions: [...extensions],
     startupPrompt:
       typeof current.startupPrompt === 'string'

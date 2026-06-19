@@ -14,7 +14,6 @@ import {
   selectRelativeMonitorWorker,
 } from './monitor-state.js'
 import { ClawasUiBridge } from './runtime-ui.js'
-import { syncClawasSystemPromptLinks } from './system-prompt-links.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition, WorkerState } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
 
@@ -246,8 +245,6 @@ export class ClawasRuntime {
     if (replaceExisting) {
       await this.disposeDaemon(true)
     }
-
-    await syncClawasSystemPromptLinks(context.cwd, config)
 
     if (this.daemonStarted && this.daemon) {
       return

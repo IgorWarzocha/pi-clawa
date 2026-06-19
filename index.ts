@@ -33,6 +33,7 @@ import { registerContinuityCompaction } from './continuity-compaction'
 import { type CreateClawRequest, runClawGui } from './gui'
 import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate'
 import { isClawBootstrapped, markClawBootstrapped } from './state'
+import { registerClawaSystemPrompt } from './system-prompt'
 import { copyTemplateFiles } from './template-files'
 
 const extensionDir = dirname(fileURLToPath(import.meta.url))
@@ -314,6 +315,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
 
   registerClawasTools(pi, clawasRuntime)
   registerContinuityCompaction(pi)
+  registerClawaSystemPrompt(pi)
   if (!IS_CLAWAS_WORKER) {
     registerSteerCommand(pi, clawasRuntime)
     registerJumpCommand(pi, clawasRuntime)

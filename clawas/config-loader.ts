@@ -5,7 +5,6 @@ import { parseJsonc } from './jsonc.js'
 import type {
   ClawasConfig,
   WorkerDefinition,
-  WorkerPromptProfile,
   WorkerReportMode,
   WorkerThinkingLevel,
 } from './types.js'
@@ -54,13 +53,6 @@ function asReportMode(value: unknown): WorkerReportMode | undefined {
   return undefined
 }
 
-function asPromptProfile(value: unknown): WorkerPromptProfile | undefined {
-  if (value === 'auto' || value === 'gpt' || value === 'glm' || value === 'discord') {
-    return value
-  }
-  return undefined
-}
-
 function normalizeWorker(value: unknown, index: number): WorkerDefinition {
   if (!isRecord(value)) {
     throw new Error(`Clawas worker at index ${index} must be an object`)
@@ -89,7 +81,6 @@ function normalizeWorker(value: unknown, index: number): WorkerDefinition {
     model: asString(value.model),
     thinking: asThinkingLevel(value.thinking),
     reportMode: asReportMode(value.reportMode),
-    promptProfile: asPromptProfile(value.promptProfile) ?? 'auto',
   }
 }
 
