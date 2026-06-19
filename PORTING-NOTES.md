@@ -13,5 +13,5 @@ Current state:
 
 Before publishing:
 - finish the adapter seam between core and optional packages
-- add real `init` / `doctor`
+- keep first-run setup automatic; fix boot friction in place instead of adding `init` / `doctor`
 - make `typecheck:full` clean; current `typecheck` is syntax-only during extraction

@@ -26,7 +26,7 @@ Status: half-baked.
 - [x] install helper script creates project `.pi/settings.json`
 - [x] workspace package exists for Discord adapter
 - [x] decide final core config filename for this pass: `.pi/claw.jsonc`
-- [ ] add real `init` / `doctor` command or equivalent setup checks
+- [ ] keep setup automatic; refine first-run behavior from real clean-room failures
 - [ ] verify package exports are intentional, not accidental internals
 
 Depends on: nothing.
@@ -110,6 +110,8 @@ Blocks: publishing.
 Status: not started on purpose.
 
 Run only after A-E are ready enough.
+
+No separate `init` / `doctor` layer for now. The package should just work on first run; if the clean-room pass finds friction, fix the boot path directly.
 
 Test once, in this order:
 
