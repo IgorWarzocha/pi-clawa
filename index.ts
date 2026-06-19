@@ -1,14 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { rm, symlink } from 'node:fs/promises'
-import { dirname, join, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import type {
-  ExtensionAPI,
-  ExtensionCommandContext,
-  ExtensionContext,
-} from '@earendil-works/pi-coding-agent'
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { Text } from '@earendil-works/pi-tui'
-import { bootstrapClawWorkspace, runBootstrap } from './bootstrap'
 import { CLAWAS_MAIL_MESSAGE_TYPE, CLAWAS_OUTBOUND_MESSAGE_TYPE } from './clawas/comms/outbound.js'
 import { createClawasCommsRenderer } from './clawas/comms/renderers.js'
 import { reportFinalAssistantMessageToMain } from './clawas/comms/report-back.js'
@@ -22,315 +13,43 @@ import {
 import { registerClawasTools } from './clawas/tool-surface.js'
 import { getWorkerSessionName } from './clawas/worker-identity.js'
 import {
-  type ClawaConfig,
   DEFAULT_CLAWA_DEFAULTS,
-  ensureClawEnvironmentConfig,
   findRepoRoot,
-  loadClawEnvironmentConfig,
   markClawEnvironmentBootstrapped,
   resolveClawaDefaults,
-  upsertClawConfig,
-} from './config'
-import { registerContinuityCompaction } from './continuity-compaction'
-import { type CreateClawRequest, runClawGui } from './gui'
-import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate'
-import { registerNestedAgentsAutoload } from './nested-agents'
-import { registerClawaSystemPrompt } from './system-prompt'
+} from './config.js'
+import { registerContinuityCompaction } from './continuity-compaction.js'
+import { createNewClaw, executeBootstrap } from './extension/bootstrap-actions.js'
+import { resolveBootstrapRequest, resolveCreateRequest } from './extension/command-args.js'
 import {
-  copyTemplateFiles,
-  findExistingCoreMarkdownFiles,
-  type TemplateCopyResult,
-} from './template-files'
+  extensionPath,
+  INITIAL_BOOTSTRAP_PROMPT,
+  IS_CLAWAS_WORKER,
+  mainTemplatesDir,
+} from './extension/constants.js'
+import { registerHydrationContext } from './extension/hydration-context.js'
+import { ClawaRuntimeState } from './extension/runtime-state.js'
+import {
+  formatMessageContent,
+  notifyInitialBootstrap,
+  reportBootstrapBlocked,
+} from './extension/ui-notes.js'
+import { runClawGui } from './gui.js'
+import { registerNestedAgentsAutoload } from './nested-agents.js'
+import { registerClawaSystemPrompt } from './system-prompt.js'
+import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-files.js'
 
-const extensionDir = dirname(fileURLToPath(import.meta.url))
-process.env.PI_CLAW_EXTENSION_PATH = fileURLToPath(import.meta.url)
-const templatesDir = join(extensionDir, 'templates')
-const mainTemplatesDir = join(templatesDir, 'main')
-const privacyCalibrationText = readFileSync(
-  join(templatesDir, 'bootstrap', 'PRIVACY.md'),
-  'utf8',
-).trim()
-const HYDRATION_MESSAGE_TYPE = 'claw-hydration'
-const CLAWAS_ROLE = process.env.PI_CLAWAS_ROLE
-const IS_CLAWAS_WORKER = CLAWAS_ROLE === 'worker'
-const SPACE_SPLIT_REGEX = /\s+/
-
-const INITIAL_BOOTSTRAP_PROMPT = [
-  'This is the first Clawa bootstrap turn for this workspace.',
-  'The extension has just created the main continuity files in the project root.',
-  '',
-  'Start by establishing your shape with the human:',
-  '- your name',
-  '- your nature and working style',
-  '- your vibe and emoji',
-  '- core user basics and preferences',
-  '- boundaries for local work and external actions',
-  '',
-  'Persist the useful parts immediately into the appropriate files:',
-  '- CLAW.md for name, voice, temperament, and taste',
-  '- HUMAN.md for human preferences and context',
-  '- CLAWAS.md for sibling Clawas, lanes, and routing notes',
-  '- CURIOUS.md for sparks and open threads',
-  '- TOOLS.md for local tooling notes',
-  '',
-  'Final bootstrap step: run the privacy/security calibration below with the human.',
-  'Ask naturally in chat, up to three questions at a time, include "Needs follow-up", and keep going until the baseline is clear.',
-  'Fold the answers into AGENTS.md, HUMAN.md, CLAW.md, or TOOLS.md as appropriate.',
-  '',
-  privacyCalibrationText,
-].join('\n')
-
-type RuntimeState = {
-  cwd?: string
-  extensionBootstrapped: boolean
-  bootstrappedKnown: boolean
-  bootstrapped: boolean
-  needsHydrate: boolean
-}
-
-const runtime: RuntimeState = {
-  extensionBootstrapped: true,
-  bootstrappedKnown: false,
-  bootstrapped: false,
-  needsHydrate: false,
-}
+process.env.PI_CLAW_EXTENSION_PATH = extensionPath
 
 // TEMP DEBUG PROBE.
 // Leave false by default. Turn on only when tracing hydration, then turn it back off.
 const DEBUG_HYDRATION_PROBE = false
 
-function formatMessageContent(content: string | Array<{ type: string; text?: string }>): string {
-  if (typeof content === 'string') return content
-  return content
-    .map((part) => (part.type === 'text' ? (part.text ?? '') : '[non-text content]'))
-    .join('\n')
-    .trim()
-}
-
-function resolveBootstrapRequest(args: string): boolean {
-  const normalized = args.trim().toLowerCase()
-  if (!normalized) return false
-  return normalized === 'bootstrap' || normalized === 'bootstrap-standard'
-}
-
-function resolveCreateRequest(args: string): {
-  run: boolean
-  name?: string
-} {
-  const trimmed = args.trim()
-  if (!trimmed) return { run: false }
-
-  const parts = trimmed.split(SPACE_SPLIT_REGEX).filter(Boolean)
-  const first = parts[0]?.toLowerCase()
-  if (first !== 'create' && first !== 'new') {
-    return { run: false }
-  }
-
-  const name = parts.find((part, index) => index > 0 && part.toLowerCase() !== 'standard')
-  return { run: true, name }
-}
-
-async function ensureBootstrapped(cwd: string): Promise<boolean> {
-  if (runtime.cwd !== cwd) {
-    runtime.cwd = cwd
-    runtime.bootstrappedKnown = false
-    runtime.bootstrapped = false
-    runtime.needsHydrate = false
-  }
-  if (!runtime.bootstrappedKnown) {
-    runtime.bootstrapped = loadClawEnvironmentConfig(findRepoRoot(cwd)).config.bootstrapped === true
-    runtime.bootstrappedKnown = true
-  }
-  return runtime.bootstrapped
-}
-
-function ensureExtensionConfig(cwd: string): {
-  bootstrapped: boolean
-  created: boolean
-  path: string
-} {
-  if (IS_CLAWAS_WORKER) {
-    runtime.extensionBootstrapped = true
-    return { bootstrapped: true, created: false, path: '' }
-  }
-
-  const repoRoot = findRepoRoot(cwd)
-  const loaded = ensureClawEnvironmentConfig(repoRoot)
-  runtime.extensionBootstrapped = loaded.config.bootstrapped === true
-  return {
-    bootstrapped: runtime.extensionBootstrapped,
-    created: loaded.created,
-    path: loaded.path,
-  }
-}
-
-function setBootstrappedRuntime(cwd: string): void {
-  runtime.cwd = cwd
-  runtime.bootstrappedKnown = true
-  runtime.bootstrapped = true
-  runtime.needsHydrate = true
-}
-
-async function armHydration(cwd: string): Promise<boolean> {
-  await ensureBootstrapped(cwd)
-  runtime.needsHydrate = true
-  return runtime.bootstrapped
-}
-
-function sendDimNote(pi: ExtensionAPI, text: string): void {
-  pi.sendMessage({ customType: 'claw-dim', content: text, display: true })
-}
-
-function notifyInitialBootstrap(
-  ctx: ExtensionContext,
-  extensionConfig: { created: boolean; path: string },
-  copied: TemplateCopyResult,
-  markedPath: string,
-): void {
-  if (!ctx.hasUI) return
-  ctx.ui.setStatus('clawa', 'clawa: bootstrapping')
-  if (extensionConfig.created) {
-    ctx.ui.notify(`Clawa config created at ${extensionConfig.path}`, 'info')
-  }
-  ctx.ui.notify(
-    `Clawa initialized ${copied.copied.length} main files and marked ${markedPath} bootstrapped`,
-    'info',
-  )
-}
-
-function buildBootstrapBlockedMessage(files: string[]): string {
-  const listed = files.map((file) => `- ${file}`).join('\n')
-  return [
-    'Clawa cannot initialize in this folder because it already contains Clawa core markdown files:',
-    listed,
-    '',
-    'This extension is supposed to be initialized without those files present.',
-    'Please move them out of the folder, start Clawa again, then ask your claw to manually edit the generated files to suit.',
-    'Clawa core markdown files are slightly different from what you might be used to.',
-  ].join('\n')
-}
-
-function reportBootstrapBlocked(pi: ExtensionAPI, ctx: ExtensionContext, files: string[]): void {
-  const message = buildBootstrapBlockedMessage(files)
-  sendDimNote(pi, message)
-  if (ctx.hasUI) {
-    ctx.ui.setStatus('clawa', 'clawa: bootstrap blocked')
-    ctx.ui.notify(`Clawa bootstrap blocked by existing files: ${files.join(', ')}`, 'warning')
-  }
-}
-
-function buildHydrationProbeNote(text: string): string {
-  const markers = [
-    ['continuity', '## Claw Continuity Refresh (auto-loaded)'],
-    ['CLAW', '--- BEGIN CLAW.md ---'],
-    ['HUMAN', '--- BEGIN HUMAN.md ---'],
-    ['CLAWAS', '--- BEGIN CLAWAS.md ---'],
-    ['CURIOUS', '--- BEGIN CURIOUS.md ---'],
-    ['TOOLS', '--- BEGIN TOOLS.md ---'],
-    ['sad heading', '## The `sad` State'],
-  ] as const
-
-  const found = markers.filter(([, needle]) => text.includes(needle)).map(([label]) => label)
-  const missing = markers.filter(([, needle]) => !text.includes(needle)).map(([label]) => label)
-  const beginBlocks = (text.match(/--- BEGIN .*? ---/g) || []).length
-
-  return [
-    'claw hydration probe:',
-    `- payload chars: ${text.length}`,
-    `- BEGIN blocks: ${beginBlocks}`,
-    `- found: ${found.length > 0 ? found.join(', ') : 'none'}`,
-    `- missing: ${missing.length > 0 ? missing.join(', ') : 'none'}`,
-  ].join('\n')
-}
-
-async function buildHydrationText(
-  cwd: string,
-): Promise<{ kind: 'continuity'; text: string } | null> {
-  const bootstrapped = await ensureBootstrapped(cwd)
-  if (!bootstrapped) return null
-
-  const files = await loadHydrationFiles(cwd)
-  if (files.length === 0) return null
-  const contextBlock = buildHydrationSystemPrompt(files)
-  return contextBlock.trim() ? { kind: 'continuity', text: contextBlock } : null
-}
-
-async function executeBootstrap(pi: ExtensionAPI, ctx: ExtensionCommandContext) {
-  const conflicts = findExistingCoreMarkdownFiles(ctx.cwd)
-  if (conflicts.length > 0) {
-    reportBootstrapBlocked(pi, ctx, conflicts)
-    return null
-  }
-
-  const result = await runBootstrap(ctx.cwd, mainTemplatesDir)
-  setBootstrappedRuntime(ctx.cwd)
-  const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
-
-  sendDimNote(
-    pi,
-    [
-      'claw bootstrap complete',
-      'claw loaded workspace files:',
-      ...result.loadedFiles.map((file) => `- ${file.name} (${file.chars} chars)`),
-      `config: ${marked.path}`,
-    ].join('\n'),
-  )
-
-  if (ctx.hasUI) {
-    ctx.ui.notify(
-      `Bootstrap complete: ${result.created} created, ${result.overwritten} overwritten`,
-      'info',
-    )
-  }
-
-  return result
-}
-
-async function createNewClaw(
-  pi: ExtensionAPI,
-  ctx: ExtensionCommandContext,
-  request: CreateClawRequest,
-) {
-  const repoRoot = findRepoRoot(ctx.cwd)
-  const loaded = loadClawEnvironmentConfig(repoRoot)
-  const safeName = request.name.trim()
-  const relativePath = join(loaded.config.clawas.baseDir, safeName)
-  const absolutePath = resolve(repoRoot, relativePath)
-  await bootstrapClawWorkspace(absolutePath, mainTemplatesDir)
-  await symlinkSharedClawasFile(repoRoot, absolutePath)
-
-  const claw: ClawaConfig = {
-    name: safeName,
-    path: relativePath,
-    autostart: false,
-  }
-  const saved = upsertClawConfig(repoRoot, claw)
-
-  sendDimNote(
-    pi,
-    [`new claw created: ${safeName}`, `path: ${relativePath}`, `config: ${saved.path}`].join('\n'),
-  )
-
-  if (ctx.hasUI) {
-    ctx.ui.notify(`Created ${safeName} at ${relativePath}`, 'info')
-  }
-
-  return { name: safeName, path: relativePath }
-}
-
-async function symlinkSharedClawasFile(repoRoot: string, targetDir: string): Promise<void> {
-  const linkPath = join(targetDir, 'CLAWAS.md')
-  const targetPath = join(repoRoot, 'CLAWAS.md')
-  const relativeTarget = relative(targetDir, targetPath) || 'CLAWAS.md'
-  await rm(linkPath, { force: true })
-  await symlink(relativeTarget, linkPath)
-}
-
 function syncClawaEnvironment(cwd: string): void {
   const repoRoot = findRepoRoot(cwd)
   const clawaDefaults = resolveClawaDefaults(cwd)
   process.env.PI_CLAW_PROJECT_ROOT = repoRoot
-  process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT = join(repoRoot, '.pi')
+  process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT = `${repoRoot}/.pi`
   process.env.PI_CLAWAS_CONTROL_SOCKET_DIR = clawaDefaults.controlSocketDir
 }
 
@@ -375,8 +94,27 @@ function maybeSetWorkerSessionName(pi: ExtensionAPI, ctx: ExtensionContext): voi
   )
 }
 
+function registerClawaRenderers(
+  pi: ExtensionAPI,
+  getCurrentDefaults: () => ReturnType<typeof resolveClawaDefaults>,
+): void {
+  pi.registerMessageRenderer('claw-dim', (message, _options, theme) => {
+    const text = formatMessageContent(
+      message.content as string | Array<{ type: string; text?: string }>,
+    )
+    return new Text(theme.fg('dim', text), 0, 0)
+  })
+
+  const clawasCommsRenderer = createClawasCommsRenderer(getCurrentDefaults)
+  pi.registerMessageRenderer(CLAWAS_OUTBOUND_MESSAGE_TYPE, clawasCommsRenderer)
+  pi.registerMessageRenderer(CLAWAS_MAIL_MESSAGE_TYPE, clawasCommsRenderer)
+  pi.registerMessageRenderer('clawas-session', clawasCommsRenderer)
+  pi.registerMessageRenderer('clawas-report', clawasCommsRenderer)
+}
+
 export default function howabouaClaw(pi: ExtensionAPI): void {
   const clawasRuntime = new ClawasRuntime()
+  const runtime = new ClawaRuntimeState()
   const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias())
   let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
 
@@ -384,26 +122,17 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerContinuityCompaction(pi)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)
+  registerHydrationContext(pi, runtime, { debugProbe: DEBUG_HYDRATION_PROBE })
+  registerClawaRenderers(pi, () => currentClawaDefaults)
+
   if (!IS_CLAWAS_WORKER) {
     registerSteerCommand(pi, clawasRuntime)
     registerJumpCommand(pi, clawasRuntime)
     registerClawasMonitorShortcuts(pi, clawasRuntime)
   }
 
-  pi.registerMessageRenderer('claw-dim', (message, _options, theme) => {
-    const text = formatMessageContent(
-      message.content as string | Array<{ type: string; text?: string }>,
-    )
-    return new Text(theme.fg('dim', text), 0, 0)
-  })
-  const clawasCommsRenderer = createClawasCommsRenderer(() => currentClawaDefaults)
-  pi.registerMessageRenderer(CLAWAS_OUTBOUND_MESSAGE_TYPE, clawasCommsRenderer)
-  pi.registerMessageRenderer(CLAWAS_MAIL_MESSAGE_TYPE, clawasCommsRenderer)
-  pi.registerMessageRenderer('clawas-session', clawasCommsRenderer)
-  pi.registerMessageRenderer('clawas-report', clawasCommsRenderer)
-
   const handleSessionStart = async (ctx: ExtensionContext): Promise<void> => {
-    const extensionConfig = ensureExtensionConfig(ctx.cwd)
+    const extensionConfig = runtime.ensureExtensionConfig(ctx.cwd)
     currentClawaDefaults = resolveClawaDefaults(ctx.cwd)
     syncClawaEnvironment(ctx.cwd)
     maybeSetWorkerSessionName(pi, ctx)
@@ -418,8 +147,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
 
       const copied = await copyTemplateFiles(mainTemplatesDir, ctx.cwd)
       const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
-      runtime.extensionBootstrapped = true
-      setBootstrappedRuntime(ctx.cwd)
+      runtime.markBootstrapped(ctx.cwd)
       notifyInitialBootstrap(ctx, extensionConfig, copied, marked.path)
     }
 
@@ -427,7 +155,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
       ctx.ui.setStatus('clawa', undefined)
     }
     await commsServer.start(ctx)
-    await armHydration(ctx.cwd)
+    await runtime.armHydration(ctx.cwd)
     if (!IS_CLAWAS_WORKER) {
       clawasRuntime.attach(ctx)
     }
@@ -445,9 +173,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   })
 
   pi.on('agent_end', async (event, ctx) => {
-    if (!IS_CLAWAS_WORKER) {
-      return
-    }
+    if (!IS_CLAWAS_WORKER) return
 
     await reportFinalAssistantMessageToMain(pi, ctx, {
       workerId: process.env.PI_CLAWAS_WORKER_ID,
@@ -464,76 +190,32 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     }
   })
 
-  pi.on('session_compact', async (_event, ctx) => {
-    await armHydration(ctx.cwd)
-    if (DEBUG_HYDRATION_PROBE && ctx.hasUI) {
-      ctx.ui.notify('claw: workspace context will reload on the next turn.', 'info')
-    }
-  })
-
-  pi.on('context', async (event, ctx) => {
-    if (!runtime.extensionBootstrapped) return undefined
-    await ensureBootstrapped(ctx.cwd)
-    if (!runtime.needsHydrate) return undefined
-
-    const baseMessages = Array.isArray(event.messages) ? event.messages : []
-    const hydrated = await buildHydrationText(ctx.cwd)
-    runtime.needsHydrate = false
-    if (!hydrated) return undefined
-
-    const messages = baseMessages.filter((message) => {
-      return !(
-        message &&
-        typeof message === 'object' &&
-        'role' in message &&
-        message.role === 'custom' &&
-        'customType' in message &&
-        message.customType === HYDRATION_MESSAGE_TYPE
-      )
-    })
-
-    const injected = {
-      role: 'custom' as const,
-      customType: HYDRATION_MESSAGE_TYPE,
-      content: hydrated.text,
-      display: false,
-      details: { kind: hydrated.kind },
-      timestamp: Date.now(),
-    }
-
-    if (DEBUG_HYDRATION_PROBE && ctx.hasUI) {
-      ctx.ui.notify(buildHydrationProbeNote(hydrated.text), 'info')
-    }
-
-    return { messages: [...messages, injected] }
-  })
-
   pi.registerCommand('claw', {
     description: 'Open Clawa GUI or create/bootstrap claws',
     handler: async (args, ctx) => {
-      ensureExtensionConfig(ctx.cwd)
+      runtime.ensureExtensionConfig(ctx.cwd)
       currentClawaDefaults = resolveClawaDefaults(ctx.cwd)
       syncClawaEnvironment(ctx.cwd)
+
       const create = resolveCreateRequest(args ?? '')
       if (create.run && create.name) {
         await createNewClaw(pi, ctx, { name: create.name })
         return
       }
 
-      const shouldBootstrap = resolveBootstrapRequest(args ?? '')
-      if (shouldBootstrap) {
-        await executeBootstrap(pi, ctx)
+      if (resolveBootstrapRequest(args ?? '')) {
+        await executeBootstrap(pi, ctx, runtime)
         return
       }
 
       if (!ctx.hasUI) {
-        await executeBootstrap(pi, ctx)
+        await executeBootstrap(pi, ctx, runtime)
         return
       }
 
       await runClawGui(
         ctx,
-        async () => await executeBootstrap(pi, ctx),
+        async () => await executeBootstrap(pi, ctx, runtime),
         async (createRequest) => await createNewClaw(pi, ctx, createRequest),
         clawasRuntime,
       )

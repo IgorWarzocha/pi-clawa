@@ -39,6 +39,7 @@
     "gui-primitives.ts",
     "gui.ts",
     "hydrate.ts",
+    "extension/**/*.ts",
     "nested-agents.ts",
     "system-prompt.ts",
     "template-files.ts",
