@@ -1,0 +1,46 @@
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import { getWorkerSessionName } from '../clawas/worker-identity.js'
+import { findRepoRoot, resolveClawaDefaults } from '../config.js'
+import { INITIAL_BOOTSTRAP_PROMPT, IS_CLAWAS_WORKER } from './constants.js'
+
+export function syncClawaEnvironment(cwd: string): void {
+  const repoRoot = findRepoRoot(cwd)
+  const clawaDefaults = resolveClawaDefaults(cwd)
+  process.env.PI_CLAW_PROJECT_ROOT = repoRoot
+  process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT = `${repoRoot}/.pi`
+  process.env.PI_CLAWAS_CONTROL_SOCKET_DIR = clawaDefaults.controlSocketDir
+}
+
+export function getWorkerAlias(): string | undefined {
+  if (!IS_CLAWAS_WORKER) return 'main-claw'
+  return process.env.PI_CLAWAS_SOCKET_ALIAS?.trim() || undefined
+}
+
+export function sendInitialBootstrapPrompt(pi: ExtensionAPI, ctx: ExtensionContext): void {
+  if (ctx.isIdle()) {
+    pi.sendUserMessage(INITIAL_BOOTSTRAP_PROMPT)
+    return
+  }
+  pi.sendUserMessage(INITIAL_BOOTSTRAP_PROMPT, { deliverAs: 'followUp' })
+}
+
+export function maybeSetWorkerSessionName(pi: ExtensionAPI, ctx: ExtensionContext): void {
+  if (!IS_CLAWAS_WORKER) return
+
+  const workerId = process.env.PI_CLAWAS_WORKER_ID?.trim()
+  const workerTitle = process.env.PI_CLAWAS_WORKER_TITLE?.trim() || workerId
+  if (!(workerId && workerTitle)) return
+
+  pi.setSessionName(
+    getWorkerSessionName(
+      {
+        id: workerId,
+        title: workerTitle,
+        cwd: ctx.cwd,
+        enabled: true,
+        autostart: false,
+      },
+      resolveClawaDefaults(ctx.cwd),
+    ),
+  )
+}
