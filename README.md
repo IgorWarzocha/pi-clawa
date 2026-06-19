@@ -53,6 +53,12 @@ Run `/claw`, choose **create clawa**, and describe the purpose. Clawa seeds a vi
 
 Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessions`.
 
+## Memory
+
+Clawa has a shared `remember` tool for short house memories. It writes to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclaws.
+
+Use living docs for shaped truth. Use `remember` for small raw memories that should be easy to update or delete later.
+
 ## Nested context
 
 Clawa watches navigation tools. When a claw reads or searches inside a folder with local `AGENTS.md` files, those local instructions are appended to the relevant tool result.

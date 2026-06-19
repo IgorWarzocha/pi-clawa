@@ -11,7 +11,7 @@ Do not start clean-room/end-to-end testing until the feature set below is ready 
 - Own the taste/home layer: living docs, nested context, companion memory, Clawas lanes, and optional surfaces.
 - Keep the low-bloat test as few concepts, not just few files.
 - Clawas are created for real specialized lanes; no default generic worker.
-- Memory should first preserve human texture and curiosity sparks, with shaped truth in docs and raw/simple capture in JSONL.
+- Memory should first preserve human texture and curiosity sparks, with shaped truth in docs and raw/simple capture in SQLite.
 - Discord is a core surface, not a toy; DMs and free safe/on-brand posting matter.
 - Heartbeat is gone; any future ambient life should be gentle, explicit, and low-noise.
 
@@ -77,7 +77,7 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [x] remove or retire parked `/clawas` command code if unused
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
-- [x] decide whether `.pi/clawa-memory.jsonl` stays for first release
+- [x] use shared house SQLite memory at `.pi/clawa-memory.sqlite`
 - [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
 - [ ] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
 - [ ] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
@@ -217,20 +217,16 @@ Requirements:
 Depends on: C runtime surfaces.
 Do not block first clean-room test unless we decide work tracking is part of first release.
 
-## Replace JSONL memory storage with SQLite
+## Memory tools
 
-Status: later.
+Status: first write lane exists; recall is intentionally not designed here yet.
 
-Compaction now writes extracted durable memories to `.pi/clawa-memory.jsonl`.
-That is intentionally simple for the first package pass.
+Shared house memory lives at `.pi/clawa-memory.sqlite` for all Clawas.
 
-Later, replace it with SQLite when the access pattern is clearer:
+- [x] `remember` tool creates a short memory and returns its id
+- [x] `remember` with `id` overwrites that memory
+- [x] `remember` with `id` and empty text deletes that memory
+- [ ] design recall separately
+- [ ] decide how memories are promoted into `HUMAN.md`, `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, or `AGENTS.md`
 
-- stable ids
-- timestamps and tags
-- simple search/list/remove commands
-- possible promotion into a future editable memory surface
-- no external service dependency
-
-Depends on: C compaction behavior proving useful.
-Do not block first clean-room test.
+Keep the schema small until recall proves what access patterns matter.

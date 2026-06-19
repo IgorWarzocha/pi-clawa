@@ -1,30 +1,13 @@
-import { appendFileSync, mkdirSync } from 'node:fs'
-import { dirname, join } from 'node:path'
 import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai'
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import { convertToLlm } from '@earendil-works/pi-coding-agent'
-import { findRepoRoot } from './config.js'
+import { rememberMemory, resolveMemoryDbPath } from './memory.js'
 
-const MEMORY_JSONL_PATH = join('.pi', 'clawa-memory.jsonl')
 const MAX_MEMORY_LINES = 3
 const COMPACTION_KIND = 'clawa-continuity-v1'
 const LINE_SPLIT_REGEX = /\r?\n/
 const LIST_PREFIX_REGEX = /^[-*]\s*/
 const TAGGED_MEMORY_REGEX = /^\[(.+?)\]\s*(.+)$/
-
-type MemoryRecord = {
-  type: 'memory'
-  source: 'compaction'
-  createdAt: string
-  timestamp: number
-  cwd: string
-  tags: string[]
-  content: string
-  compaction: {
-    firstKeptEntryId: string
-    tokensBefore: number
-  }
-}
 
 type MemoryLine = {
   tags: string[]
@@ -175,35 +158,6 @@ ${input.conversationText}
 </conversation>`
 }
 
-function appendMemories(
-  repoRoot: string,
-  cwd: string,
-  memories: MemoryLine[],
-  compaction: MemoryRecord['compaction'],
-) {
-  if (memories.length === 0) return { path: join(repoRoot, MEMORY_JSONL_PATH), count: 0 }
-
-  const memoryPath = join(repoRoot, MEMORY_JSONL_PATH)
-  mkdirSync(dirname(memoryPath), { recursive: true })
-  const timestamp = Date.now()
-  const createdAt = new Date(timestamp).toISOString()
-  const lines = memories.map((memory) => {
-    const record: MemoryRecord = {
-      type: 'memory',
-      source: 'compaction',
-      createdAt,
-      timestamp,
-      cwd,
-      tags: memory.tags,
-      content: memory.content,
-      compaction,
-    }
-    return JSON.stringify(record)
-  })
-  appendFileSync(memoryPath, `${lines.join('\n')}\n`, 'utf8')
-  return { path: memoryPath, count: memories.length }
-}
-
 export function registerContinuityCompaction(pi: ExtensionAPI): void {
   // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Linear fallback pipeline for the compaction hook.
   pi.on('session_before_compact', async (event, ctx) => {
@@ -300,13 +254,12 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
       }
 
       const memories = parseMemoryLines(extractBlock(text, 'memories'))
-      const repoRoot = findRepoRoot(ctx.cwd)
-      let memoryWrite = { path: join(repoRoot, MEMORY_JSONL_PATH), count: 0 }
+      let memoryWrite = { path: resolveMemoryDbPath(ctx.cwd), count: 0 }
       try {
-        memoryWrite = appendMemories(repoRoot, ctx.cwd, memories, {
-          firstKeptEntryId,
-          tokensBefore,
-        })
+        for (const memory of memories) {
+          const result = rememberMemory(ctx.cwd, { text: memory.content, tags: memory.tags })
+          memoryWrite = { path: result.path, count: memoryWrite.count + 1 }
+        }
       } catch (error) {
         if (!signal.aborted && ctx.hasUI) {
           const message = error instanceof Error ? error.message : String(error)
