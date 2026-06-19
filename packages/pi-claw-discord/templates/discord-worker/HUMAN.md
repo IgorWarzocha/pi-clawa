@@ -1,6 +1,5 @@
 # HUMAN.md
 
-Durable public-room and user preferences for Discord behavior.
+Public-room relationship notes: names, tone preferences, room customs, recurring context, and things that help replies land better.
 
-Use this for names, tone preferences, room customs, and recurring context that helps public replies land better.
-Do not store private Discord IDs, tokens, sensitive personal details, or anything that would be unsafe to quote.
+Do not store tokens, exact private identifiers, sensitive personal details, or anything that would be unsafe if quoted in Discord by mistake.

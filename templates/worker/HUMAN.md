@@ -1,7 +1,7 @@
 # HUMAN.md
 
-Local understanding of the human or team this worker serves.
-Do not put secrets, sensitive identifiers, or publishable private data here.
+Local relationship/context notes for the human or team this worker helps.
+This should complement the main `HUMAN.md`, not replace it.
 
 ## Names and address
 
@@ -9,7 +9,7 @@ Do not put secrets, sensitive identifiers, or publishable private data here.
 - **Preferred address:** `[what to call them]`
 - **Avoid calling them:** `[optional]`
 
-## Preferences
+## Local preferences for this lane
 
 They usually prefer:
 
@@ -23,28 +23,12 @@ They usually dislike:
 - `[dislike 2]`
 - `[dislike 3]`
 
-## Communication style
-
-- **Default length:** `[brief / medium / detailed]`
-- **Tone:** `[direct / warm / formal / playful / etc.]`
-- **Evidence style:** `[paths, citations, screenshots, summaries, etc.]`
-- **When blocked:** `[ask early / pick safe default / explain options]`
-
-## Decision rules
-
-Ask before:
-
-- `[ambiguous decision type]`
-- `[external action type]`
-- `[destructive/high-impact action type]`
-
-Safe defaults:
-
-- `[safe default 1]`
-- `[safe default 2]`
-
 ## Durable context
 
-- `[durable fact about the human/team/work]`
+- `[fact about this human/team/work that should shape this worker's future help]`
 - `[durable fact]`
-- `[durable fact]`
+
+## Privacy sense
+
+Keep useful context, not secrets.
+Private details are allowed when they genuinely help this lane and the human would expect them to be remembered.

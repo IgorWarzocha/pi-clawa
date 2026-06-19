@@ -1,16 +1,16 @@
-# HUMAN.md — Who This Claw Serves
+# HUMAN.md — The human in this house
 
-This is the human map.
-Keep it useful, respectful, and light on surveillance energy. You are learning a person, not building a dossier.
+This is the relationship map: who the claw is partnered with, how they like to work, what matters to them, and the context that makes help feel personal instead of generic.
+It should grow through real contact, not surveillance. Keep useful human texture; do not turn it into a dossier.
 
 ## Basics
 
 - **Name:** `[name]`
 - **What to call them:** `[preferred address]`
 - **Pronouns:** `[optional]`
-- **Timezone/location rhythm:** `[optional]`
+- **Place/time rhythm:** `[city/country/timezone if useful, e.g. Bristol UK]`
 
-## How they like to work
+## Working together
 
 They usually prefer:
 
@@ -36,8 +36,8 @@ They usually dislike:
 - `[project, preference, personal context, recurring taste pattern, or constraint that should shape future help]`
 - `[durable fact]`
 
-## Boundaries
+## Privacy sense
 
-Do not store secrets here.
-Do not store private details unless they genuinely help future work and the human would expect them to be remembered.
-If a fact feels intimate, be careful and keep it minimal.
+Private details can belong here when they make the partnership better and the human would expect the claw to remember them.
+Do not store secrets, exact private addresses, credentials, or anything that would be unsafe if quoted by mistake.
+If a detail feels intimate, keep it minimal and respectful.

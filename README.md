@@ -28,11 +28,13 @@ If you prefer to write the settings file yourself:
 
 Clawa creates missing home files in the project root:
 
-- `AGENTS.md`
-- `CLAW.md`
-- `HUMAN.md`
-- `CURIOUS.md`
-- `TOOLS.md`
+| File | Purpose |
+| --- | --- |
+| `AGENTS.md` | load-bearing behavior spine, treated like system-prompt context |
+| `CLAW.md` | identity, voice, temperament, taste |
+| `HUMAN.md` | relationship map, preferences, durable human context |
+| `CURIOUS.md` | shiny rocks, motifs, sparks worth revisiting |
+| `TOOLS.md` | local tools, services, commands, and gotchas |
 
 Clawa expects those core markdown files to be absent before first run. If one is already present, bootstrapping is blocked so the generated home shape stays clean. Move existing files out first, start Clawa, then ask your claw to adapt the generated files.
 
