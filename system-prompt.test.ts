@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { CLAWA_PERSONAL_ASSISTANT_INTRO, replacePiDefaultAssistantIntro } from './system-prompt.js'
+import {
+  buildPiDefaultSystemPromptBase,
+  CLAWA_PERSONAL_ASSISTANT_INTRO,
+  replacePiDefaultAssistantIntro,
+  resolveClawaSystemPrompt,
+} from './system-prompt.js'
+
+const options = {
+  cwd: '/repo',
+  selectedTools: ['read'],
+  toolSnippets: { read: 'read files' },
+  promptGuidelines: ['Use read for text files'],
+}
 
 const piDefault = [
   'You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.',
@@ -17,7 +29,31 @@ test('replacePiDefaultAssistantIntro preserves Pi tool section', () => {
   assert.equal(replaced.includes('expert coding assistant operating inside pi'), false)
 })
 
-test('replacePiDefaultAssistantIntro leaves custom system prompts alone', () => {
-  const custom = '# Custom prompt\n\nAvailable tools:\n- read'
-  assert.equal(replacePiDefaultAssistantIntro(custom), custom)
+test('resolveClawaSystemPrompt ignores custom prompts and rebuilds Pi defaults', () => {
+  const customPrompt = '# Custom prompt\n\nBe weird.'
+  const suffix = '\n\n<project_context>keep me</project_context>\nCurrent date: 2026-06-19'
+  const result = resolveClawaSystemPrompt(`${customPrompt}${suffix}`, {
+    ...options,
+    customPrompt,
+  })
+
+  assert.equal(result.ignoredCustomPrompt, true)
+  assert.ok(result.systemPrompt.startsWith(CLAWA_PERSONAL_ASSISTANT_INTRO))
+  assert.ok(result.systemPrompt.includes('\nAvailable tools:\n- read: read files'))
+  assert.ok(result.systemPrompt.includes('- Use read for text files'))
+  assert.ok(result.systemPrompt.endsWith(suffix))
+  assert.equal(result.systemPrompt.includes('Be weird.'), false)
+})
+
+test('buildPiDefaultSystemPromptBase matches Pi default structure', () => {
+  const prompt = buildPiDefaultSystemPromptBase(options, {
+    readmePath: '/pi/README.md',
+    docsPath: '/pi/docs',
+    examplesPath: '/pi/examples',
+  })
+
+  assert.ok(prompt.startsWith('You are an expert coding assistant operating inside pi'))
+  assert.ok(prompt.includes('\nAvailable tools:\n- read: read files'))
+  assert.ok(prompt.includes('\nGuidelines:\n- Use read for text files'))
+  assert.ok(prompt.includes('- Main documentation: /pi/README.md'))
 })

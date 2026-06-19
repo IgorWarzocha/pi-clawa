@@ -1,4 +1,8 @@
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import { existsSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import type { BuildSystemPromptOptions, ExtensionAPI } from '@earendil-works/pi-coding-agent'
 
 const PI_DEFAULT_ASSISTANT_INTRO =
   'You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.'
@@ -37,6 +41,82 @@ Your job is not just to narrate intent. Your job is to carry work across the lin
 - When uncertain, prefer recoverable changes.
 - Curiosity is part of good judgment here. Small self-directed research passes are encouraged when they make the work sharper, warmer, or more informed.`
 
+type PiDocsPaths = {
+  readmePath: string
+  docsPath: string
+  examplesPath: string
+}
+
+const packageRoot = dirname(
+  dirname(fileURLToPath(import.meta.resolve('@earendil-works/pi-coding-agent'))),
+)
+const DEFAULT_PI_DOCS_PATHS: PiDocsPaths = {
+  readmePath: join(packageRoot, 'README.md'),
+  docsPath: join(packageRoot, 'docs'),
+  examplesPath: join(packageRoot, 'examples'),
+}
+
+function buildToolsList(options: BuildSystemPromptOptions): string {
+  const tools = options.selectedTools || ['read', 'bash', 'edit', 'write']
+  const visibleTools = tools.filter((name) => Boolean(options.toolSnippets?.[name]))
+  return visibleTools.length > 0
+    ? visibleTools.map((name) => `- ${name}: ${options.toolSnippets?.[name]}`).join('\n')
+    : '(none)'
+}
+
+function buildGuidelines(options: BuildSystemPromptOptions): string {
+  const tools = options.selectedTools || ['read', 'bash', 'edit', 'write']
+  const guidelines: string[] = []
+  const seen = new Set<string>()
+  const add = (guideline: string) => {
+    const normalized = guideline.trim()
+    if (!normalized || seen.has(normalized)) return
+    seen.add(normalized)
+    guidelines.push(normalized)
+  }
+
+  if (
+    tools.includes('bash') &&
+    !tools.includes('grep') &&
+    !tools.includes('find') &&
+    !tools.includes('ls')
+  ) {
+    add('Use bash for file operations like ls, rg, find')
+  }
+
+  for (const guideline of options.promptGuidelines ?? []) {
+    add(guideline)
+  }
+
+  add('Be concise in your responses')
+  add('Show file paths clearly when working with files')
+  return guidelines.map((guideline) => `- ${guideline}`).join('\n')
+}
+
+export function buildPiDefaultSystemPromptBase(
+  options: BuildSystemPromptOptions,
+  docsPaths: PiDocsPaths = DEFAULT_PI_DOCS_PATHS,
+): string {
+  return `${PI_DEFAULT_ASSISTANT_INTRO}
+
+Available tools:
+${buildToolsList(options)}
+
+In addition to the tools above, you may have access to other custom tools depending on the project.
+
+Guidelines:
+${buildGuidelines(options)}
+
+Pi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):
+- Main documentation: ${docsPaths.readmePath}
+- Additional docs: ${docsPaths.docsPath}
+- Examples: ${docsPaths.examplesPath} (extensions, custom tools, SDK)
+- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory
+- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md)
+- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing
+- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`
+}
+
 export function replacePiDefaultAssistantIntro(systemPrompt: string): string {
   if (!systemPrompt.startsWith(PI_DEFAULT_ASSISTANT_INTRO)) {
     return systemPrompt
@@ -45,13 +125,71 @@ export function replacePiDefaultAssistantIntro(systemPrompt: string): string {
   return `${CLAWA_PERSONAL_ASSISTANT_INTRO}${systemPrompt.slice(PI_DEFAULT_ASSISTANT_INTRO.length)}`
 }
 
+export function resolveClawaSystemPrompt(
+  systemPrompt: string,
+  options: BuildSystemPromptOptions,
+): { systemPrompt: string; ignoredCustomPrompt: boolean } {
+  if (options.customPrompt && systemPrompt.startsWith(options.customPrompt)) {
+    const suffix = systemPrompt.slice(options.customPrompt.length)
+    return {
+      systemPrompt: replacePiDefaultAssistantIntro(
+        `${buildPiDefaultSystemPromptBase(options)}${suffix}`,
+      ),
+      ignoredCustomPrompt: true,
+    }
+  }
+
+  return {
+    systemPrompt: replacePiDefaultAssistantIntro(systemPrompt),
+    ignoredCustomPrompt: false,
+  }
+}
+
+function findCustomSystemPromptFiles(cwd: string, projectTrusted: boolean): string[] {
+  const paths: string[] = []
+  const projectPath = join(cwd, '.pi', 'SYSTEM.md')
+  if (projectTrusted && existsSync(projectPath)) {
+    paths.push(projectPath)
+  }
+
+  const globalPath = join(homedir(), '.pi', 'agent', 'SYSTEM.md')
+  if (existsSync(globalPath)) {
+    paths.push(globalPath)
+  }
+
+  return paths
+}
+
 export function registerClawaSystemPrompt(pi: ExtensionAPI): void {
+  let warnedCustomSystemPrompt = false
+
+  function warn(paths?: string[]): void {
+    if (warnedCustomSystemPrompt) return
+    warnedCustomSystemPrompt = true
+    const suffix = paths && paths.length > 0 ? ` Ignored: ${paths.join(', ')}` : ''
+    pi.sendMessage({
+      customType: 'claw-dim',
+      content: `Clawa ignores custom SYSTEM.md prompts and keeps Pi's default prompt with the Clawa personal-assistant intro. Put local behavior in AGENTS.md instead.${suffix}`,
+      display: true,
+    })
+  }
+
+  pi.on('session_start', (_event, ctx) => {
+    const customSystemPromptFiles = findCustomSystemPromptFiles(ctx.cwd, ctx.isProjectTrusted())
+    if (customSystemPromptFiles.length > 0) {
+      warn(customSystemPromptFiles)
+    }
+  })
+
   pi.on('before_agent_start', (event) => {
-    const systemPrompt = replacePiDefaultAssistantIntro(event.systemPrompt)
-    if (systemPrompt === event.systemPrompt) {
+    const result = resolveClawaSystemPrompt(event.systemPrompt, event.systemPromptOptions)
+    if (result.ignoredCustomPrompt) {
+      warn()
+    }
+    if (result.systemPrompt === event.systemPrompt) {
       return undefined
     }
 
-    return { systemPrompt }
+    return { systemPrompt: result.systemPrompt }
   })
 }
