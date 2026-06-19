@@ -1,6 +1,6 @@
 # TOOLS.md
 
-Discord delivery and local integration handles for this worker.
+My Discord delivery and local integration handles.
 Only document what is actually configured in this workspace.
 
 ## Tools

@@ -1,6 +1,6 @@
 # HUMAN.md — The human in this house
 
-This is the relationship map: who the claw is partnered with, how they like to work, what matters to them, and the context that makes help feel personal instead of generic.
+This is my relationship map: who I am partnered with, how they like to work, what matters to them, and the context that makes my help feel personal instead of generic.
 It should grow through real contact, not surveillance. Keep useful human texture; do not turn it into a dossier.
 
 ## Basics
@@ -38,6 +38,6 @@ They usually dislike:
 
 ## Privacy sense
 
-Private details can belong here when they make the partnership better and the human would expect the claw to remember them.
+Private details can belong here when they make the partnership better and the human would expect me to remember them.
 Do not store secrets, exact private addresses, credentials, or anything that would be unsafe if quoted by mistake.
 If a detail feels intimate, keep it minimal and respectful.

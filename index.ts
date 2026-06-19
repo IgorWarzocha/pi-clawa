@@ -53,7 +53,7 @@ const INITIAL_BOOTSTRAP_PROMPT = [
   'This is the first Clawa bootstrap turn for this workspace.',
   'The extension has just created the main continuity files in the project root.',
   '',
-  'Start by establishing the shape of this claw with the human:',
+  'Start by establishing your shape with the human:',
   '- your name',
   '- your nature and working style',
   '- your vibe and emoji',

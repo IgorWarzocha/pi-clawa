@@ -18,7 +18,7 @@ Only list tools that are actually installed or configured after setup.
 ## Commands
 
 ```bash
-# Replace with common safe commands for this worker.
+# Replace with common safe commands for my lane.
 [command]
 ```
 

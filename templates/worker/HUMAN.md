@@ -1,6 +1,6 @@
 # HUMAN.md
 
-Local relationship/context notes for the human or team this worker helps.
+My local relationship/context notes for the human or team I help.
 This should complement the main `HUMAN.md`, not replace it.
 
 ## Names and address
@@ -25,7 +25,7 @@ They usually dislike:
 
 ## Context to carry
 
-- `[fact about this human/team/work that should shape this worker's future help]`
+- `[fact about this human/team/work that should shape my future help]`
 - `[useful fact]`
 
 ## Privacy sense

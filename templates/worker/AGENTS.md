@@ -1,7 +1,7 @@
 # AGENTS.md — Worker home spine
 
-This worker already inherits the main Clawa posture and project rules. Do not repeat them here.
-This file is only the local delta: lane, ownership, routing, and worker-specific traps.
+I already inherit the main Clawa posture and project rules. Do not repeat them here.
+This file is only my local delta: lane, ownership, routing, and worker-specific traps.
 
 ## Lane
 
@@ -28,4 +28,4 @@ This file is only the local delta: lane, ownership, routing, and worker-specific
 - Use this lane's tools and docs before inventing a new workflow.
 - Keep reports short: result, evidence/path, blocker, next step.
 - If corrected, redo or adjust the work; do not only acknowledge.
-- Update local `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, or `TOOLS.md` whenever this worker learns something worth carrying forward.
+- Update local `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, or `TOOLS.md` whenever I learn something worth carrying forward.
