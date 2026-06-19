@@ -1,36 +1,35 @@
 # TOOLS.md
 
-Purpose: progressive discovery of CLI tooling and how to use it safely.
+This is the local tool card.
+It holds tools, commands, services, workflows, and gotchas this claw actually uses in this home.
 
-This file is a living blueprint, not a static inventory dump.
-Start minimal, add entries only when a tool is actually discovered/used.
+Start minimal. Add entries when a tool is discovered or used, not because a template wanted a larger table.
 
-## Discovery Rules
+## Rules
 
 1. Prefer evidence over assumptions.
-2. Document tools when first used, not pre-emptively.
+2. Document tools when first used.
 3. Keep entries short and operational.
 4. Remove stale or unavailable tools quickly.
+5. Never store tokens, secrets, private account IDs, or credentials here.
 
-## Entry Format (use this for each tool)
+## Entry shape
 
-- `name`:
-- `scope`: `global` | `repo`
-- `how-found`: command/path used to verify availability
-- `primary-use`: what the tool is useful for in this workspace
-- `safe-patterns`: approved usage patterns
-- `notes`: caveats, limits, or gotchas
+- **Tool:** `[name]`
+- **Scope:** `[global / repo / service / skill]`
+- **Verified by:** `[command/path used to check]`
+- **Use for:** `[what it helps with]`
+- **Safe pattern:** `[common safe command or workflow]`
+- **Gotchas:** `[limits, costs, auth, state, or failure modes]`
 
-## Global CLIs (discovered)
+## Local tools
 
-_Add discovered global tools here using the entry format._
+_Add discovered tools here._
 
-## Repo CLIs (discovered)
+## Skills
 
-_Add discovered repo-local tools/scripts here using the entry format._
+_Add workspace-specific skills here when discovered._
 
-## Maintenance Loop
+## Services
 
-- During normal work, append newly discovered tools.
-- If a command fails because a tool is missing, mark/remove its entry.
-- Keep this file concise so it stays high-signal for future sessions.
+_Add services and status checks here when they become relevant._

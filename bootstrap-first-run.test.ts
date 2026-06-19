@@ -8,7 +8,7 @@ import {
   findRepoRoot,
   markClawEnvironmentBootstrapped,
 } from './config.js'
-import { copyTemplateFiles, findExistingTemplateFiles } from './template-files.js'
+import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-files.js'
 
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
 const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
@@ -19,7 +19,7 @@ test('first-run bootstrap sequence creates core files and marks config', async (
     await mkdir(join(root, '.git'))
 
     const extensionConfig = ensureClawEnvironmentConfig(root)
-    const conflicts = await findExistingTemplateFiles(MAIN_TEMPLATES_DIR, root)
+    const conflicts = findExistingCoreMarkdownFiles(root)
     assert.deepEqual(conflicts, [])
 
     const copied = await copyTemplateFiles(MAIN_TEMPLATES_DIR, root)
@@ -29,7 +29,7 @@ test('first-run bootstrap sequence creates core files and marks config', async (
     assert.equal(extensionConfig.config.bootstrapped, false)
     assert.equal(marked.config.bootstrapped, true)
     assert.ok(copied.copied.includes('AGENTS.md'))
-    assert.ok(copied.copied.includes('IDENTITY.md'))
+    assert.ok(copied.copied.includes('CLAW.md'))
     assert.match(await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8'), BOOTSTRAPPED_TRUE_PATTERN)
   } finally {
     await rm(root, { recursive: true, force: true })
@@ -41,9 +41,9 @@ test('first-run bootstrap detects pre-existing core markdown files', async () =>
   try {
     await mkdir(join(root, '.git'))
     await writeFile(join(root, 'AGENTS.md'), 'existing project rules', 'utf8')
-    await writeFile(join(root, 'SOUL.md'), 'existing soul', 'utf8')
+    await writeFile(join(root, 'SOUL.md'), 'legacy soul', 'utf8')
 
-    const conflicts = await findExistingTemplateFiles(MAIN_TEMPLATES_DIR, root)
+    const conflicts = findExistingCoreMarkdownFiles(root)
 
     assert.deepEqual(conflicts.sort(), ['AGENTS.md', 'SOUL.md'].sort())
   } finally {

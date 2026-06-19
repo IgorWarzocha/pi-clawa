@@ -36,7 +36,7 @@ import { registerNestedAgentsAutoload } from './nested-agents'
 import { registerClawaSystemPrompt } from './system-prompt'
 import {
   copyTemplateFiles,
-  findExistingTemplateFiles,
+  findExistingCoreMarkdownFiles,
   type TemplateCopyResult,
 } from './template-files'
 
@@ -61,9 +61,8 @@ const INITIAL_BOOTSTRAP_PROMPT = [
   '- boundaries for local work and external actions',
   '',
   'Persist the useful parts immediately into the appropriate files:',
-  '- IDENTITY.md for stable self-description',
-  '- USER.md for durable user preferences',
-  '- SOUL.md for temperament and principles',
+  '- CLAW.md for name, voice, temperament, and taste',
+  '- HUMAN.md for durable human preferences and context',
   '- CURIOUS.md for sparks and open threads',
   '- TOOLS.md for local tooling notes',
 ].join('\n')
@@ -210,9 +209,8 @@ function reportBootstrapBlocked(pi: ExtensionAPI, ctx: ExtensionContext, files: 
 function buildHydrationProbeNote(text: string): string {
   const markers = [
     ['continuity', '## Claw Continuity Refresh (auto-loaded)'],
-    ['IDENTITY', '--- BEGIN IDENTITY.md ---'],
-    ['SOUL', '--- BEGIN SOUL.md ---'],
-    ['USER', '--- BEGIN USER.md ---'],
+    ['CLAW', '--- BEGIN CLAW.md ---'],
+    ['HUMAN', '--- BEGIN HUMAN.md ---'],
     ['CURIOUS', '--- BEGIN CURIOUS.md ---'],
     ['TOOLS', '--- BEGIN TOOLS.md ---'],
     ['sad heading', '## The `sad` State'],
@@ -244,7 +242,7 @@ async function buildHydrationText(
 }
 
 async function executeBootstrap(pi: ExtensionAPI, ctx: ExtensionCommandContext) {
-  const conflicts = await findExistingTemplateFiles(mainTemplatesDir, ctx.cwd)
+  const conflicts = findExistingCoreMarkdownFiles(ctx.cwd)
   if (conflicts.length > 0) {
     reportBootstrapBlocked(pi, ctx, conflicts)
     return null
@@ -389,7 +387,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
 
     const needsInitialBootstrap = !extensionConfig.bootstrapped
     if (needsInitialBootstrap) {
-      const conflicts = await findExistingTemplateFiles(mainTemplatesDir, ctx.cwd)
+      const conflicts = findExistingCoreMarkdownFiles(ctx.cwd)
       if (conflicts.length > 0) {
         reportBootstrapBlocked(pi, ctx, conflicts)
         return

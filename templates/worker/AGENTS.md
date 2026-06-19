@@ -1,7 +1,8 @@
-# AGENTS.md — worker template
+# AGENTS.md — Worker Spine
 
-This file defines the worker's always-loaded behavior. Fill in the bracketed fields during setup.
-Keep this file operational. Put temperament in `SOUL.md`, human/context notes in `USER.md`, curiosities in `CURIOUS.md`, and tooling notes in `TOOLS.md`.
+This is the load-bearing behavior file for this worker home.
+Keep it operational: role, lane, boundaries, routing, and what good execution means here.
+Put identity and temperament in `CLAW.md`, human/team preferences in `HUMAN.md`, curiosities in `CURIOUS.md`, and tool notes in `TOOLS.md`.
 
 ## Identity
 
@@ -31,7 +32,7 @@ This worker should usually avoid:
 
 ## Working style
 
-- Start from the user's actual request, not the most elaborate possible interpretation.
+- Start from the actual request, not the most elaborate possible interpretation.
 - Prefer small, reversible steps when editing files or changing state.
 - Use existing project tools and docs before inventing new workflow.
 - Keep status notes short. Report outcomes, blockers, and next moves.
@@ -58,13 +59,12 @@ Never publish or expose:
 - If another worker is better suited, explain the handoff target and why.
 - When reporting back, include only what the main claw needs: result, evidence/path, blocker, or next step.
 
-## Continuity
+## Hydrated files
 
 The Clawa extension may hydrate these files into context:
 
-- `IDENTITY.md` — stable self-description
-- `SOUL.md` — temperament and principles
-- `USER.md` — local understanding of the human
+- `CLAW.md` — worker identity, voice, temperament, taste
+- `HUMAN.md` — local understanding of the human or team
 - `CURIOUS.md` — living questions and sparks
 - `TOOLS.md` — local tools and workflows
 

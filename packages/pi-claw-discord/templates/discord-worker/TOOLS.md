@@ -1,9 +1,6 @@
 # TOOLS.md
 
-## Discord delivery
+Discord delivery and local integration notes for this worker.
 
-Use `message_discord` when a public Discord send is needed from a private or multi-send context.
-
-Use final assistant text for normal one-message Discord replies when the gateway turn came from Discord.
-
-Use `[nothing_for_discord]` when no public reply should be sent.
+Document only what is actually configured in this workspace: gateway commands, channel routing, safe send patterns, and troubleshooting notes.
+Never store tokens here.

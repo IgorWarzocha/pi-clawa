@@ -27,7 +27,7 @@ Only list tools that are actually installed or configured after setup.
 - `[service name]`: `[how to check status / where config lives / safety notes]`
 
 Do not include tokens, private IDs, account secrets, or machine-specific paths in published templates.
-Use local absolute paths only after init, inside the user's private copy.
+Use local absolute paths only after setup, inside the user's private copy.
 
 ## Troubleshooting
 

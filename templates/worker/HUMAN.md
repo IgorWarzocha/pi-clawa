@@ -1,4 +1,4 @@
-# USER.md
+# HUMAN.md
 
 Local understanding of the human or team this worker serves.
 Do not put secrets, sensitive identifiers, or publishable private data here.

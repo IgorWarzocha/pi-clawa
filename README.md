@@ -29,9 +29,8 @@ If you prefer to write the settings file yourself:
 Clawa creates missing home files in the project root:
 
 - `AGENTS.md`
-- `IDENTITY.md`
-- `SOUL.md`
-- `USER.md`
+- `CLAW.md`
+- `HUMAN.md`
 - `CURIOUS.md`
 - `TOOLS.md`
 

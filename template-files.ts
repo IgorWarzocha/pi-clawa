@@ -7,13 +7,13 @@ export interface TemplateCopyResult {
   loadedFiles: Array<{ name: string; chars: number }>
 }
 
-const CORE_MARKDOWN_FILES = [
-  'AGENTS.md',
+const CORE_MARKDOWN_FILES = ['AGENTS.md', 'CLAW.md', 'HUMAN.md', 'TOOLS.md', 'CURIOUS.md'] as const
+const LEGACY_CORE_MARKDOWN_FILES = [
   'IDENTITY.md',
   'SOUL.md',
-  'TOOLS.md',
   'USER.md',
-  'CURIOUS.md',
+  'MEMORY.md',
+  'TECHNICAL.md',
 ] as const
 
 async function templateFileNames(templateDir: string): Promise<string[]> {
@@ -39,6 +39,12 @@ export async function hasAllTemplateFiles(
 
 export function hasAllCoreMarkdownFiles(targetDir: string): boolean {
   return CORE_MARKDOWN_FILES.every((file) => existsSync(join(targetDir, file)))
+}
+
+export function findExistingCoreMarkdownFiles(targetDir: string): string[] {
+  return [...CORE_MARKDOWN_FILES, ...LEGACY_CORE_MARKDOWN_FILES].filter((file) =>
+    existsSync(join(targetDir, file)),
+  )
 }
 
 export async function copyTemplateFiles(
