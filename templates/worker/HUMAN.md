@@ -23,10 +23,10 @@ They usually dislike:
 - `[dislike 2]`
 - `[dislike 3]`
 
-## Durable context
+## Context to carry
 
 - `[fact about this human/team/work that should shape this worker's future help]`
-- `[durable fact]`
+- `[useful fact]`
 
 ## Privacy sense
 

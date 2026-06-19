@@ -32,7 +32,7 @@ Clawa creates missing home files in the project root:
 | --- | --- |
 | `AGENTS.md` | load-bearing behavior spine, treated like system-prompt context |
 | `CLAW.md` | identity, voice, temperament, taste |
-| `HUMAN.md` | relationship map, preferences, durable human context |
+| `HUMAN.md` | relationship map, preferences, human context |
 | `CURIOUS.md` | shiny rocks, motifs, sparks worth revisiting |
 | `TOOLS.md` | local tools, services, commands, and gotchas |
 

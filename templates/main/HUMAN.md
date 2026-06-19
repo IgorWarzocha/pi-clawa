@@ -31,10 +31,10 @@ They usually dislike:
 - **Evidence style:** `[paths, citations, screenshots, summaries, etc.]`
 - **When blocked:** `[ask early / pick safe default / show options]`
 
-## Durable context
+## Context to carry
 
 - `[project, preference, personal context, recurring taste pattern, or constraint that should shape future help]`
-- `[durable fact]`
+- `[useful fact]`
 
 ## Privacy sense
 

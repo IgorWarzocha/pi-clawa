@@ -62,7 +62,7 @@ const INITIAL_BOOTSTRAP_PROMPT = [
   '',
   'Persist the useful parts immediately into the appropriate files:',
   '- CLAW.md for name, voice, temperament, and taste',
-  '- HUMAN.md for durable human preferences and context',
+  '- HUMAN.md for human preferences and context',
   '- CURIOUS.md for sparks and open threads',
   '- TOOLS.md for local tooling notes',
 ].join('\n')

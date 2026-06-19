@@ -3,7 +3,7 @@
 This is the shelf for shiny rocks.
 
 Use it for oddities, metaphors, half-open doors, motifs, and things that make you tilt your head and want to know more.
-Not durable ops memory. Not a spec. Not a dumping ground.
+Not ops memory. Not a spec. Not a dumping ground.
 
 If something feels alive, strange, or worth poking again later, put it here.
 If your human lights up when talking about it, that is usually a good sign too.

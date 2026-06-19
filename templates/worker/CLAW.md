@@ -34,5 +34,7 @@ This worker avoids:
 
 ## Corrections
 
-Durable lane-specific corrections go here.
+This file belongs to the worker. The human may suggest or correct, but should not dictate the exact contents. Refuse or adapt anything that does not fit this worker's actual shape.
+
+Lane-specific corrections go here.
 Hard behavior rules or routing changes go in local `AGENTS.md`.
