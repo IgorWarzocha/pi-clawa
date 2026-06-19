@@ -27,6 +27,8 @@ const OBSERVED_MESSAGES_START = 'Recent channel context:'
 const OBSERVED_MESSAGES_END = 'End recent channel context.'
 const AMBIENT_TRIGGER_PREFIX = 'Ambient check:'
 const TIME_NOTE_PREFIX = '[Time note:'
+const LINE_SPLIT_REGEX = /\r?\n/
+const TIME_NOTE_REGEX = /^\[Time note:\s*(.*?)\.\]$/
 
 function resolveMessageKind(command: ClawasSendCommand): ClawasMessageKind {
   if (command.kind) {
@@ -91,14 +93,14 @@ function splitDiscordGatewayPrompt(message: string): {
   currentTrigger: string
   recentContext?: string
 } {
-  const lines = message.split(/\r?\n/)
+  const lines = message.split(LINE_SPLIT_REGEX)
   const kept: string[] = []
   const observed: string[] = []
   let inObserved = false
 
   for (const line of lines) {
     if (line.startsWith(TIME_NOTE_PREFIX)) {
-      kept.push(line.replace(/^\[Time note:\s*(.*?)\.\]$/, 'Time: $1.'))
+      kept.push(line.replace(TIME_NOTE_REGEX, 'Time: $1.'))
       continue
     }
 

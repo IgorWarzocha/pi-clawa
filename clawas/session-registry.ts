@@ -53,61 +53,59 @@ async function readSessionIdentity(sessionFile: string): Promise<{
   try {
     const content = await fs.readFile(sessionFile, 'utf8')
     const lines = content.split('\n').filter(Boolean)
-    let model: string | undefined
-    let thinking: ThinkingLevel | undefined
+    const identity: { model?: string; thinking?: ThinkingLevel } = {}
 
     for (const line of lines) {
-      let entry: unknown
-      try {
-        entry = JSON.parse(line)
-      } catch {
-        continue
-      }
-
-      if (!entry || typeof entry !== 'object') {
-        continue
-      }
-
-      if (
-        'type' in entry &&
-        entry.type === 'model_change' &&
-        'provider' in entry &&
-        typeof entry.provider === 'string' &&
-        'modelId' in entry &&
-        typeof entry.modelId === 'string'
-      ) {
-        model = `${entry.provider}/${entry.modelId}`
-        continue
-      }
-
-      if (
-        'type' in entry &&
-        entry.type === 'thinking_level_change' &&
-        'thinkingLevel' in entry &&
-        typeof entry.thinkingLevel === 'string'
-      ) {
-        thinking = entry.thinkingLevel
-        continue
-      }
-
-      const message = 'message' in entry ? entry.message : undefined
-      if (
-        'type' in entry &&
-        entry.type === 'message' &&
-        message &&
-        typeof message === 'object' &&
-        message?.role === 'assistant' &&
-        typeof message.provider === 'string' &&
-        typeof message.model === 'string'
-      ) {
-        model = `${message.provider}/${message.model}`
-      }
+      Object.assign(identity, readSessionIdentityLine(line))
     }
 
-    return { model, thinking }
+    return identity
   } catch {
     return {}
   }
+}
+
+function readSessionIdentityLine(line: string): { model?: string; thinking?: ThinkingLevel } {
+  const entry = parseSessionEntry(line)
+  if (!entry) return {}
+  if (entry.type === 'model_change') return modelChangeIdentity(entry)
+  if (entry.type === 'thinking_level_change') return thinkingChangeIdentity(entry)
+  if (entry.type === 'message') return assistantMessageIdentity(entry)
+  return {}
+}
+
+function parseSessionEntry(line: string): Record<string, unknown> | null {
+  try {
+    const entry = JSON.parse(line)
+    return entry && typeof entry === 'object' ? (entry as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+function modelChangeIdentity(entry: Record<string, unknown>): { model?: string } {
+  if (typeof entry.provider === 'string' && typeof entry.modelId === 'string') {
+    return { model: `${entry.provider}/${entry.modelId}` }
+  }
+  return {}
+}
+
+function thinkingChangeIdentity(entry: Record<string, unknown>): { thinking?: ThinkingLevel } {
+  return typeof entry.thinkingLevel === 'string' ? { thinking: entry.thinkingLevel } : {}
+}
+
+function assistantMessageIdentity(entry: Record<string, unknown>): { model?: string } {
+  const message = entry.message
+  if (!message || typeof message !== 'object') return {}
+  const record = message as Record<string, unknown>
+  if (
+    record.role === 'assistant' &&
+    typeof record.provider === 'string' &&
+    typeof record.model === 'string'
+  ) {
+    return { model: `${record.provider}/${record.model}` }
+  }
+  return {}
 }
 
 async function sessionMatchesDefinition(

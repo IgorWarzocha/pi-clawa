@@ -5,6 +5,16 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate.js'
 
+const BEGIN_CLAW_REGEX = /--- BEGIN CLAW\.md ---/
+const BEGIN_HUMAN_REGEX = /--- BEGIN HUMAN\.md ---/
+const BEGIN_CLAWAS_REGEX = /--- BEGIN CLAWAS\.md ---/
+const BEGIN_CURIOUS_REGEX = /--- BEGIN CURIOUS\.md ---/
+const BEGIN_TOOLS_REGEX = /--- BEGIN TOOLS\.md ---/
+const HEARTBEAT_REGEX = /HEARTBEAT\.md/
+const STALE_PULSE_REGEX = /stale pulse should not load/
+const MCP_TOOLS_OPEN_REGEX = /<mcp_tools>/
+const MCP_TOOLS_CLOSE_REGEX = /<\/mcp_tools>/
+
 test('hydration loads active continuity files and excludes deprecated HEARTBEAT', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'howaboua-hydrate-'))
   try {
@@ -24,13 +34,13 @@ test('hydration loads active continuity files and excludes deprecated HEARTBEAT'
     )
 
     const prompt = buildHydrationSystemPrompt(files)
-    assert.match(prompt, /--- BEGIN CLAW\.md ---/)
-    assert.match(prompt, /--- BEGIN HUMAN\.md ---/)
-    assert.match(prompt, /--- BEGIN CLAWAS\.md ---/)
-    assert.match(prompt, /--- BEGIN CURIOUS\.md ---/)
-    assert.match(prompt, /--- BEGIN TOOLS\.md ---/)
-    assert.doesNotMatch(prompt, /HEARTBEAT\.md/)
-    assert.doesNotMatch(prompt, /stale pulse should not load/)
+    assert.match(prompt, BEGIN_CLAW_REGEX)
+    assert.match(prompt, BEGIN_HUMAN_REGEX)
+    assert.match(prompt, BEGIN_CLAWAS_REGEX)
+    assert.match(prompt, BEGIN_CURIOUS_REGEX)
+    assert.match(prompt, BEGIN_TOOLS_REGEX)
+    assert.doesNotMatch(prompt, HEARTBEAT_REGEX)
+    assert.doesNotMatch(prompt, STALE_PULSE_REGEX)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
@@ -49,8 +59,8 @@ test('TOOLS.md is not truncated at normal template size', async () => {
     const tools = files.find((file) => file.name === 'TOOLS.md')
     assert.ok(tools, 'TOOLS.md should load')
     assert.equal(tools.truncated, false)
-    assert.match(tools.content, /<mcp_tools>/)
-    assert.match(tools.content, /<\/mcp_tools>/)
+    assert.match(tools.content, MCP_TOOLS_OPEN_REGEX)
+    assert.match(tools.content, MCP_TOOLS_CLOSE_REGEX)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

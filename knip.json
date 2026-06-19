@@ -1,7 +1,11 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["index.ts", "**/*.test.ts"],
-  "project": ["**/*.ts"],
+  "workspaces": {
+    ".": {
+      "entry": ["**/*.test.ts"],
+      "project": ["**/*.ts"]
+    }
+  },
   "ignoreIssues": {
     "config.ts": ["exports"],
     "gui-primitives.ts": ["types"],

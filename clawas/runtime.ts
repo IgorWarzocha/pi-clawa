@@ -17,6 +17,10 @@ import { ClawasUiBridge } from './runtime-ui.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition, WorkerState } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
 
+function shouldProbeManualSession(worker: WorkerState): boolean {
+  return worker.manualSession && Date.now() - worker.updatedAt >= 5_000
+}
+
 /**
  * Thin UI/runtime shell around the daemon.
  * It keeps widget lifecycle and repaint timing out of the worker orchestration code.
@@ -221,24 +225,10 @@ export class ClawasRuntime {
   ): Promise<void> {
     this.clawaDefaults = resolveClawaDefaults(context.cwd)
     const configPath = getClawasConfigPath(context.cwd)
-    let config: ClawasConfig | null
-    try {
-      config = await loadClawasConfig(context.cwd)
-    } catch (error) {
-      if (context.hasUI) {
-        context.ui.notify(
-          `Failed to load ${this.clawaDefaults.clawasName} config from ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
-          'error',
-        )
-      }
-      throw error
-    }
+    const config = await this.loadConfigOrNotify(context, configPath)
 
     if (!config) {
-      await this.disposeDaemon(replaceExisting)
-      if (this.context?.hasUI) {
-        this.ui.clear(this.context)
-      }
+      await this.clearMissingConfig(replaceExisting)
       return
     }
 
@@ -250,6 +240,40 @@ export class ClawasRuntime {
       return
     }
 
+    this.createDaemon(context, config)
+
+    try {
+      await this.daemon.start()
+      this.notifyDaemonStarted(configPath)
+    } catch (error) {
+      this.notifyDaemonFailed(error)
+      throw error
+    }
+  }
+
+  private async loadConfigOrNotify(
+    context: ExtensionContext,
+    configPath: string,
+  ): Promise<ClawasConfig | null> {
+    try {
+      return await loadClawasConfig(context.cwd)
+    } catch (error) {
+      if (context.hasUI) {
+        context.ui.notify(
+          `Failed to load ${this.clawaDefaults.clawasName} config from ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
+          'error',
+        )
+      }
+      throw error
+    }
+  }
+
+  private async clearMissingConfig(replaceExisting: boolean): Promise<void> {
+    await this.disposeDaemon(replaceExisting)
+    if (this.context?.hasUI) this.ui.clear(this.context)
+  }
+
+  private createDaemon(context: ExtensionContext, config: ClawasConfig): void {
     this.daemon = new ClawasDaemon(context.cwd, config, () => this.render(), this.clawaDefaults)
     this.daemonStarted = true
     this.ensureStarted()
@@ -259,26 +283,24 @@ export class ClawasRuntime {
       () => this.monitorState,
       this.clawaDefaults,
     )
+  }
 
-    try {
-      await this.daemon.start()
-      if (this.context?.hasUI) {
-        const workerCount = this.daemon.getState().workers.length
-        this.context.ui.notify(
-          `${this.clawaDefaults.clawasName} loaded ${workerCount} worker${workerCount === 1 ? '' : 's'} from ${configPath}.`,
-          'info',
-        )
-      }
-    } catch (error) {
-      this.daemonStarted = false
-      if (this.context?.hasUI) {
-        this.context.ui.notify(
-          `${this.clawaDefaults.clawasName} daemon failed: ${error instanceof Error ? error.message : String(error)}`,
-          'error',
-        )
-      }
-      throw error
-    }
+  private notifyDaemonStarted(configPath: string): void {
+    if (!(this.context?.hasUI && this.daemon)) return
+    const workerCount = this.daemon.getState().workers.length
+    this.context.ui.notify(
+      `${this.clawaDefaults.clawasName} loaded ${workerCount} worker${workerCount === 1 ? '' : 's'} from ${configPath}.`,
+      'info',
+    )
+  }
+
+  private notifyDaemonFailed(error: unknown): void {
+    this.daemonStarted = false
+    if (!this.context?.hasUI) return
+    this.context.ui.notify(
+      `${this.clawaDefaults.clawasName} daemon failed: ${error instanceof Error ? error.message : String(error)}`,
+      'error',
+    )
   }
 
   private ensureStarted(): void {
@@ -337,32 +359,31 @@ export class ClawasRuntime {
     this.manualWatchInFlight = true
     try {
       for (const worker of this.daemon.getState().workers) {
-        if (!worker.manualSession) {
-          continue
-        }
-        if (Date.now() - worker.updatedAt < 5_000) {
-          continue
-        }
-
-        try {
-          // We wait a little before checking so a freshly opened manual session
-          // has time to publish its alias/socket before we declare it gone.
-          const socketPath = await resolveSocketPath(getWorkerSocketAlias(worker.definition))
-          if (!socketPath) {
-            this.daemon.clearManualSession(worker.definition.id)
-          }
-        } catch (error) {
-          if (this.context?.hasUI) {
-            this.context.ui.notify(
-              `${this.clawaDefaults.clawasName} manual-session watcher hit an error for ${worker.definition.title}: ${error instanceof Error ? error.message : String(error)}`,
-              'warning',
-            )
-          }
-        }
+        if (shouldProbeManualSession(worker)) await this.refreshManualSession(worker)
       }
     } finally {
       this.manualWatchInFlight = false
     }
+  }
+
+  private async refreshManualSession(worker: WorkerState): Promise<void> {
+    if (!this.daemon) return
+    try {
+      // We wait a little before checking so a freshly opened manual session
+      // has time to publish its alias/socket before we declare it gone.
+      const socketPath = await resolveSocketPath(getWorkerSocketAlias(worker.definition))
+      if (!socketPath) this.daemon.clearManualSession(worker.definition.id)
+    } catch (error) {
+      this.notifyManualWatcherError(worker, error)
+    }
+  }
+
+  private notifyManualWatcherError(worker: WorkerState, error: unknown): void {
+    if (!this.context?.hasUI) return
+    this.context.ui.notify(
+      `${this.clawaDefaults.clawasName} manual-session watcher hit an error for ${worker.definition.title}: ${error instanceof Error ? error.message : String(error)}`,
+      'warning',
+    )
   }
 
   private requireDaemon(): ClawasDaemon {

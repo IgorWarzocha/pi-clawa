@@ -10,6 +10,8 @@ import {
   markClawEnvironmentBootstrapped,
 } from './config.js'
 
+const BOOTSTRAPPED_FALSE_REGEX = /"bootstrapped": false/
+
 test('ensureClawEnvironmentConfig creates project config with bootstrapped false', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'clawa-config-'))
   try {
@@ -20,7 +22,7 @@ test('ensureClawEnvironmentConfig creates project config with bootstrapped false
     assert.equal(isClawEnvironmentBootstrapped(dir), false)
 
     const raw = await readFile(created.path, 'utf8')
-    assert.match(raw, /"bootstrapped": false/)
+    assert.match(raw, BOOTSTRAPPED_FALSE_REGEX)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

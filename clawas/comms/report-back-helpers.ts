@@ -1,4 +1,6 @@
 export const NOTHING_FOR_DISCORD_SENTINEL = '[nothing_for_discord]'
+const STANDALONE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s*(?:\n+([\s\S]*))?$/i
+const INLINE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s+([\s\S]+)$/i
 
 export interface DiscordRelayCandidate {
   content: string
@@ -17,12 +19,12 @@ export function extractClawaReportText(content: string): string | null {
     return null
   }
 
-  const withStandaloneDirective = trimmed.match(/^\[CLAWAS\]\s*(?:\n+([\s\S]*))?$/i)
+  const withStandaloneDirective = trimmed.match(STANDALONE_CLAWAS_DIRECTIVE_REGEX)
   if (withStandaloneDirective) {
     return (withStandaloneDirective[1] ?? '').trim()
   }
 
-  const withInlineDirective = trimmed.match(/^\[CLAWAS\]\s+([\s\S]+)$/i)
+  const withInlineDirective = trimmed.match(INLINE_CLAWAS_DIRECTIVE_REGEX)
   if (withInlineDirective) {
     return withInlineDirective[1].trim()
   }

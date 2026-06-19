@@ -7,6 +7,12 @@ import {
   shouldDeliverClawasMailAsUserMessage,
 } from './server.ts'
 
+const DISCORD_ROOM_UPDATE_REGEX = /^\[Discord room update\]/
+const RECENT_CONTEXT_REGEX = /Recent channel context:\nIgor: hey/
+const CURRENT_TRIGGER_REGEX = /Current trigger:\nJosXa: ping/
+const CLAWAS_WORKER_UPDATE_REGEX = /^\[Clawas worker update\]/
+const DISCORD_ROOM_UPDATE_OPEN_REGEX = /^\[Discord room update/
+
 test('only discord-gateway mail uses the worker-facing Discord user-message envelope', () => {
   const details = buildMessageDetails(
     { workerId: 'discord-gateway', workerTitle: 'Discord gateway' },
@@ -22,9 +28,9 @@ test('only discord-gateway mail uses the worker-facing Discord user-message enve
     details,
   )
 
-  assert.match(message, /^\[Discord room update\]/)
-  assert.match(message, /Recent channel context:\nIgor: hey/)
-  assert.match(message, /Current trigger:\nJosXa: ping/)
+  assert.match(message, DISCORD_ROOM_UPDATE_REGEX)
+  assert.match(message, RECENT_CONTEXT_REGEX)
+  assert.match(message, CURRENT_TRIGGER_REGEX)
 })
 
 test('worker reports are not routed through the chunky user-message envelope', () => {
@@ -39,8 +45,8 @@ test('worker reports are not routed through the chunky user-message envelope', (
   assert.equal(shouldDeliverClawasMailAsUserMessage(details), false)
   const message = buildWorkerUserMessage('Got the update.', details)
 
-  assert.match(message, /^\[Clawas worker update\]/)
-  assert.doesNotMatch(message, /^\[Discord room update/)
+  assert.match(message, CLAWAS_WORKER_UPDATE_REGEX)
+  assert.doesNotMatch(message, DISCORD_ROOM_UPDATE_OPEN_REGEX)
 })
 
 function makeServerHarness() {
@@ -102,5 +108,5 @@ test('discord gateway mail still wakes the worker through the Discord user-messa
     calls.map((call) => call.name),
     ['appendEntry', 'sendUserMessage'],
   )
-  assert.match(calls[1].args[0] as string, /^\[Discord room update\]/)
+  assert.match(calls[1].args[0] as string, DISCORD_ROOM_UPDATE_REGEX)
 })

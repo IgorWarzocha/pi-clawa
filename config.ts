@@ -57,20 +57,25 @@ function clampClaws(input: unknown): ClawaConfig[] {
   if (!Array.isArray(input)) return []
   const out: ClawaConfig[] = []
   for (const item of input) {
-    if (!item || typeof item !== 'object') continue
-    const rec = item as Record<string, unknown>
-    const name = typeof rec.name === 'string' ? rec.name.trim() : ''
-    const path = typeof rec.path === 'string' ? rec.path.trim() : ''
-    if (!(name && path)) continue
-    out.push({
-      name,
-      emoji: typeof rec.emoji === 'string' ? rec.emoji : undefined,
-      path,
-      autostart: rec.autostart === true,
-      notes: typeof rec.notes === 'string' ? rec.notes : undefined,
-    })
+    const claw = clampClaw(item)
+    if (claw) out.push(claw)
   }
   return out
+}
+
+function clampClaw(item: unknown): ClawaConfig | null {
+  if (!item || typeof item !== 'object') return null
+  const rec = item as Record<string, unknown>
+  const name = typeof rec.name === 'string' ? rec.name.trim() : ''
+  const path = typeof rec.path === 'string' ? rec.path.trim() : ''
+  if (!(name && path)) return null
+  return {
+    name,
+    emoji: typeof rec.emoji === 'string' ? rec.emoji : undefined,
+    path,
+    autostart: rec.autostart === true,
+    notes: typeof rec.notes === 'string' ? rec.notes : undefined,
+  }
 }
 
 function clampClawaDefaults(input: unknown): ClawaDefaults {

@@ -4,6 +4,8 @@ import { join } from 'node:path'
 const HYDRATION_FILES = ['CLAW.md', 'HUMAN.md', 'CLAWAS.md', 'CURIOUS.md', 'TOOLS.md'] as const
 const MAX_FILE_CHARS = 8_000
 const MAX_TOTAL_CHARS = 24_000
+const LINE_SPLIT_REGEX = /\r?\n/
+const MARKDOWN_HEADING_REGEX = /^##+\s+/
 
 export interface HydratedMarkdownFile {
   name: string
@@ -25,10 +27,10 @@ function trimToChars(content: string, maxChars: number): { text: string; truncat
 
 function extractMarkdownHeadings(content: string, maxHeadings = 12): string[] {
   const headings = content
-    .split(/\r?\n/)
+    .split(LINE_SPLIT_REGEX)
     .map((line) => line.trim())
-    .filter((line) => /^##+\s+/.test(line))
-    .map((line) => line.replace(/^##+\s+/, '').trim())
+    .filter((line) => MARKDOWN_HEADING_REGEX.test(line))
+    .map((line) => line.replace(MARKDOWN_HEADING_REGEX, '').trim())
     .filter(Boolean)
 
   if (headings.length <= maxHeadings) return headings

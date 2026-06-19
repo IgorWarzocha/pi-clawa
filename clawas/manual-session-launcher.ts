@@ -5,6 +5,7 @@ import type { WorkerDefinition } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
 
 const execFileAsync = promisify(execFile)
+const WHITESPACE_SPLIT_REGEX = /\s+/
 
 interface LaunchOptions {
   definition: WorkerDefinition
@@ -130,20 +131,25 @@ function parseHerdrLayoutPanes(stdout: string): HerdrLayoutPane[] {
   const result = asRecord(parsed.result)
   const layout = asRecord(result?.layout)
   const panes = Array.isArray(layout?.panes) ? layout.panes : []
-  return panes.flatMap((entry) => {
-    const pane = asRecord(entry)
-    const rect = asRecord(pane?.rect)
-    const paneId = typeof pane?.pane_id === 'string' ? pane.pane_id : undefined
-    if (!(paneId && rect)) return []
-    const x = typeof rect.x === 'number' ? rect.x : undefined
-    const y = typeof rect.y === 'number' ? rect.y : undefined
-    const width = typeof rect.width === 'number' ? rect.width : undefined
-    const height = typeof rect.height === 'number' ? rect.height : undefined
-    if (x === undefined || y === undefined || width === undefined || height === undefined) {
-      return []
-    }
-    return [{ pane_id: paneId, rect: { x, y, width, height } }]
-  })
+  return panes.flatMap((entry) => parseHerdrLayoutPane(entry) ?? [])
+}
+
+function parseHerdrLayoutPane(entry: unknown): HerdrLayoutPane | null {
+  const pane = asRecord(entry)
+  const rect = asRecord(pane?.rect)
+  const paneId = typeof pane?.pane_id === 'string' ? pane.pane_id : undefined
+  if (!(paneId && rect)) return null
+  const herdrRect = parseHerdrRect(rect)
+  return herdrRect ? { pane_id: paneId, rect: herdrRect } : null
+}
+
+function parseHerdrRect(rect: Record<string, unknown>): HerdrRect | null {
+  const x = typeof rect.x === 'number' ? rect.x : undefined
+  const y = typeof rect.y === 'number' ? rect.y : undefined
+  const width = typeof rect.width === 'number' ? rect.width : undefined
+  const height = typeof rect.height === 'number' ? rect.height : undefined
+  if (x === undefined || y === undefined || width === undefined || height === undefined) return null
+  return { x, y, width, height }
 }
 
 /**
@@ -377,7 +383,7 @@ export class ClawasManualSessionLauncher {
       .map((line) => line.trim())
       .filter(Boolean)
       .map((line) => {
-        const [paneId, left, top] = line.split(/\s+/)
+        const [paneId, left, top] = line.split(WHITESPACE_SPLIT_REGEX)
         return {
           paneId,
           left: Number(left),

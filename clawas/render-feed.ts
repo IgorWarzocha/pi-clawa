@@ -17,6 +17,8 @@ function getStatusIcon(worker: WorkerState, now: number, theme: Theme): string {
       return theme.fg('dim', '○')
     case 'error':
       return theme.fg('error', '●')
+    default:
+      return theme.fg('dim', '○')
   }
 }
 

@@ -10,6 +10,8 @@ const MAIL_ENVELOPE_END = '[[/CLAWAS_MAIL]]'
 const LEGACY_ENVELOPE_START = '[[CLAWAS_SENDER]]'
 const LEGACY_ENVELOPE_END = '[[/CLAWAS_SENDER]]'
 const SENDER_BANNER_PREFIX = 'FROM CLAWAS:'
+const LEADING_SPACE_REGEX = /^\s+/
+const SENDER_BANNER_REGEX = /^FROM CLAWAS:[^\n]*\n+/
 
 interface ClawasMailEnvelopeOptions {
   sender?: ClawasSenderInfo
@@ -77,8 +79,10 @@ export function stripClawasMessageEnvelope(message: string): string {
       return message
     }
 
-    const stripped = message.slice(endIndex + MAIL_ENVELOPE_END.length).replace(/^\s+/, '')
-    return stripped.replace(/^FROM CLAWAS:[^\n]*\n+/, '')
+    const stripped = message
+      .slice(endIndex + MAIL_ENVELOPE_END.length)
+      .replace(LEADING_SPACE_REGEX, '')
+    return stripped.replace(SENDER_BANNER_REGEX, '')
   }
 
   if (!message.startsWith(LEGACY_ENVELOPE_START)) {
@@ -90,6 +94,8 @@ export function stripClawasMessageEnvelope(message: string): string {
     return message
   }
 
-  const stripped = message.slice(endIndex + LEGACY_ENVELOPE_END.length).replace(/^\s+/, '')
-  return stripped.replace(/^FROM CLAWAS:[^\n]*\n+/, '')
+  const stripped = message
+    .slice(endIndex + LEGACY_ENVELOPE_END.length)
+    .replace(LEADING_SPACE_REGEX, '')
+  return stripped.replace(SENDER_BANNER_REGEX, '')
 }
