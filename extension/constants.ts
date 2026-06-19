@@ -17,7 +17,7 @@ const privacyCalibrationText = readFileSync(
 
 export const INITIAL_BOOTSTRAP_PROMPT = [
   'This is your first Clawa bootstrap turn in this home.',
-  'The extension has created your starter living docs in the project root. Shape them with me now, then keep refining them over time.',
+  'Your starter living docs are in the project root. Shape them with me now, then keep refining them over time.',
   '',
   'Start small. Do not turn this into a giant intake form.',
   'First establish only the basics:',
