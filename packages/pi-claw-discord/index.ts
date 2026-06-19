@@ -4,17 +4,17 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { findRepoRoot, resolveBurrowDefaults } from '@howaboua/pi-claw/config'
-import { getLastDiscordSourceMessageId } from '@howaboua/pi-claw/howabanda/comms/message-extract'
-import { publishHowabandaDeliveryMessage } from '@howaboua/pi-claw/howabanda/comms/outbound'
-import { normalizeDiscordReplyText } from '@howaboua/pi-claw/howabanda/comms/report-back-helpers'
-import { getHowabandaConfigPath } from '@howaboua/pi-claw/howabanda/config-loader'
+import { getLastDiscordSourceMessageId } from '@howaboua/pi-claw/clawas/comms/message-extract'
+import { publishClawasDeliveryMessage } from '@howaboua/pi-claw/clawas/comms/outbound'
+import { normalizeDiscordReplyText } from '@howaboua/pi-claw/clawas/comms/report-back-helpers'
+import { getClawasConfigPath } from '@howaboua/pi-claw/clawas/config-loader'
+import { findRepoRoot, resolveClawaDefaults } from '@howaboua/pi-claw/config'
 import { Type } from 'typebox'
 
 const extensionDir = dirname(fileURLToPath(import.meta.url))
 const DISCORD_WORKER_ID = 'discord-clawa'
 const DISCORD_WORKER_TITLE = 'Discord Clawa'
-const DISCORD_WORKER_CWD = 'banda/discord-clawa'
+const DISCORD_WORKER_CWD = 'clawas/discord-clawa'
 const DISCORD_CONFIG_RELATIVE = join('.pi', 'claw-discord', 'config.env')
 const DISCORD_DATA_RELATIVE = join('.pi', 'claw-discord')
 const GATEWAY_ENTRY = join(extensionDir, 'src', 'gateway', 'cli', 'index.ts')
@@ -95,10 +95,10 @@ function writeEnvValue(filePath: string, key: string, value: string): void {
 }
 
 function writeDefaultDiscordConfig(projectRoot: string, configPath: string): void {
-  const burrow = resolveBurrowDefaults(projectRoot)
+  const clawa = resolveClawaDefaults(projectRoot)
   const content = [
     '# Clawa Discord gateway config.',
-    '# Fill DISCORD_BOT_TOKEN and HOWABANDA_CHANNEL_WORKERS, then restart Pi.',
+    '# Fill DISCORD_BOT_TOKEN and CLAWAS_CHANNEL_WORKERS, then restart Pi.',
     `DISCORD_BOT_TOKEN=${process.env.DISCORD_BOT_TOKEN ?? ''}`,
     'CHANNEL_POLICY=allowlist',
     'TRIGGER_NAME=clawa',
@@ -106,10 +106,10 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
     'PI_CWD=.',
     `DB_PATH=${join(DISCORD_DATA_RELATIVE, 'gateway.db')}`,
     `SESSIONS_DIR=${join(DISCORD_DATA_RELATIVE, 'sessions')}`,
-    'PI_HOWABANDA_CONTROL_SOCKET_ROOT=.pi',
-    `PI_HOWABANDA_CONTROL_SOCKET_DIR=${burrow.controlSocketDir}`,
-    '# Example: HOWABANDA_CHANNEL_WORKERS=123456789012345678=discord-clawa',
-    `HOWABANDA_CHANNEL_WORKERS=${process.env.HOWABANDA_CHANNEL_WORKERS ?? ''}`,
+    'PI_CLAWAS_CONTROL_SOCKET_ROOT=.pi',
+    `PI_CLAWAS_CONTROL_SOCKET_DIR=${clawa.controlSocketDir}`,
+    '# Example: CLAWAS_CHANNEL_WORKERS=123456789012345678=discord-clawa',
+    `CLAWAS_CHANNEL_WORKERS=${process.env.CLAWAS_CHANNEL_WORKERS ?? ''}`,
     'MAX_CONCURRENCY=3',
     'ENABLE_SCHEDULER=false',
     '',
@@ -153,7 +153,7 @@ function stripJsonc(text: string): string {
     .replace(/,\s*([}\]])/g, '$1')
 }
 
-async function loadHowabandaConfig(configPath: string): Promise<Record<string, unknown>> {
+async function loadClawasConfig(configPath: string): Promise<Record<string, unknown>> {
   try {
     return JSON.parse(stripJsonc(await readFile(configPath, 'utf8'))) as Record<string, unknown>
   } catch {
@@ -162,8 +162,8 @@ async function loadHowabandaConfig(configPath: string): Promise<Record<string, u
 }
 
 async function ensureDiscordWorker(projectRoot: string): Promise<void> {
-  const configPath = getHowabandaConfigPath(projectRoot)
-  const config = await loadHowabandaConfig(configPath)
+  const configPath = getClawasConfigPath(projectRoot)
+  const config = await loadClawasConfig(configPath)
   const workers = Array.isArray(config.workers) ? [...config.workers] : []
   const adapterExtension = projectRelativePath(projectRoot, fileURLToPath(import.meta.url))
   const existingIndex = workers.findIndex((entry) => {
@@ -225,7 +225,7 @@ function startGateway(projectRoot: string, ctx: ExtensionContext): void {
 
   if (gatewayProcess && !gatewayProcess.killed) return
 
-  const burrow = resolveBurrowDefaults(projectRoot)
+  const clawa = resolveClawaDefaults(projectRoot)
   gatewayProcess = spawn(process.execPath, ['--import', 'tsx', GATEWAY_ENTRY, 'start'], {
     cwd: projectRoot,
     env: {
@@ -233,8 +233,8 @@ function startGateway(projectRoot: string, ctx: ExtensionContext): void {
       PIDG_CONFIG: DISCORD_CONFIG_RELATIVE,
       PI_CWD: '.',
       PI_CLAW_PROJECT_ROOT: projectRoot,
-      PI_HOWABANDA_CONTROL_SOCKET_ROOT: '.pi',
-      PI_HOWABANDA_CONTROL_SOCKET_DIR: burrow.controlSocketDir,
+      PI_CLAWAS_CONTROL_SOCKET_ROOT: '.pi',
+      PI_CLAWAS_CONTROL_SOCKET_DIR: clawa.controlSocketDir,
     },
     stdio: ['ignore', 'ignore', 'pipe'],
   })
@@ -273,7 +273,7 @@ function buildDiscordSnapshot(projectRoot: string): DiscordGuiSnapshot {
     configPath,
     tokenSet: Boolean(token?.trim()),
     maskedToken: maskSecret(token),
-    channelMap: config.HOWABANDA_CHANNEL_WORKERS?.trim() || 'missing',
+    channelMap: config.CLAWAS_CHANNEL_WORKERS?.trim() || 'missing',
     gatewayRunning: isGatewayRunning(),
   }
 }
@@ -414,7 +414,7 @@ async function runDiscordGui(
         const channelId = sanitizeChannelId(value)
         writeEnvValue(
           snapshot.configPath,
-          'HOWABANDA_CHANNEL_WORKERS',
+          'CLAWAS_CHANNEL_WORKERS',
           `${channelId}=${DISCORD_WORKER_ID}`,
         )
         message = 'channel mapped to discord-clawa'
@@ -512,7 +512,7 @@ async function runDiscordGui(
 
 function resolveWorkerChannelJid(workerId: string): string | null {
   if (!gatewayConfigPath) return null
-  const map = readEnvFile(gatewayConfigPath).HOWABANDA_CHANNEL_WORKERS ?? ''
+  const map = readEnvFile(gatewayConfigPath).CLAWAS_CHANNEL_WORKERS ?? ''
   for (const entry of map
     .split(',')
     .map((part) => part.trim())
@@ -527,7 +527,7 @@ function resolveWorkerChannelJid(workerId: string): string | null {
 }
 
 function registerDiscordTool(pi: ExtensionAPI): void {
-  if (process.env.PI_HOWABANDA_DISCORD_ENABLED !== '1') return
+  if (process.env.PI_CLAWAS_DISCORD_ENABLED !== '1') return
 
   const projectRoot = process.env.PI_CLAW_PROJECT_ROOT ?? findRepoRoot(process.cwd())
   const configuredGatewayPath = process.env.PIDG_CONFIG?.trim()
@@ -552,15 +552,15 @@ function registerDiscordTool(pi: ExtensionAPI): void {
       ),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      const workerId = process.env.PI_HOWABANDA_WORKER_ID?.trim()
-      const workerTitle = process.env.PI_HOWABANDA_WORKER_TITLE?.trim() || workerId || 'worker'
+      const workerId = process.env.PI_CLAWAS_WORKER_ID?.trim()
+      const workerTitle = process.env.PI_CLAWAS_WORKER_TITLE?.trim() || workerId || 'worker'
       const message = normalizeDiscordReplyText(params.message)
-      if (!workerId) throw new Error('PI_HOWABANDA_WORKER_ID is missing')
+      if (!workerId) throw new Error('PI_CLAWAS_WORKER_ID is missing')
       if (!message) return { content: [{ type: 'text', text: 'No public Discord beat sent.' }] }
 
       const channelJid = resolveWorkerChannelJid(workerId)
       if (!channelJid)
-        throw new Error(`No Discord channel mapping found for HOWABANDA worker ${workerId}`)
+        throw new Error(`No Discord channel mapping found for Clawas worker ${workerId}`)
 
       const replyToMessageId =
         typeof params.replyToMessageId === 'string' && params.replyToMessageId.trim()
@@ -568,7 +568,7 @@ function registerDiscordTool(pi: ExtensionAPI): void {
           : getLastDiscordSourceMessageId(ctx)
       const { sendFilesToDiscord } = await import('./src/gateway/discord/send.js')
       await sendFilesToDiscord({ channelJid, text: message, replyToMessageId, files: [] })
-      publishHowabandaDeliveryMessage(pi, message, { route: 'discord', workerId, workerTitle })
+      publishClawasDeliveryMessage(pi, message, { route: 'discord', workerId, workerTitle })
       return {
         content: [{ type: 'text', text: 'Sent public Discord beat.' }],
         details: { workerId },
@@ -580,7 +580,7 @@ function registerDiscordTool(pi: ExtensionAPI): void {
 export default function clawDiscord(pi: ExtensionAPI): void {
   registerDiscordTool(pi)
 
-  if (process.env.PI_HOWABANDA_ROLE === 'worker') return
+  if (process.env.PI_CLAWAS_ROLE === 'worker') return
 
   pi.registerCommand('discord', {
     description: 'Open Clawa Discord setup',

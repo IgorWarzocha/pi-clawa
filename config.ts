@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-export interface BandaClawConfig {
+export interface ClawaConfig {
   name: string
   emoji?: string
   path: string
@@ -9,40 +9,40 @@ export interface BandaClawConfig {
   notes?: string
 }
 
-export interface BurrowDefaults {
+export interface ClawaDefaults {
   mainClawName: string
-  bandaName: string
+  clawasName: string
   workerSessionPrefix: string
   controlPlaneDir: string
   controlSocketDir: string
 }
 
-export interface HowabouaClawConfig {
+export interface ClawEnvironmentConfig {
   bootstrapped: boolean
-  banda: {
+  clawas: {
     baseDir: string
     tmuxSession: string
-    claws: BandaClawConfig[]
+    claws: ClawaConfig[]
   }
-  burrow: BurrowDefaults
+  clawa: ClawaDefaults
 }
 
-export const DEFAULT_BURROW_DEFAULTS: BurrowDefaults = {
-  mainClawName: 'Howaclawa',
-  bandaName: 'HOWABANDA',
-  workerSessionPrefix: 'HOWABANDA',
-  controlPlaneDir: 'howabanda',
-  controlSocketDir: 'howabanda-control',
+export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
+  mainClawName: 'Clawa',
+  clawasName: 'Clawas',
+  workerSessionPrefix: 'Clawas',
+  controlPlaneDir: 'clawas',
+  controlSocketDir: 'clawas-control',
 }
 
-const DEFAULT_CONFIG: HowabouaClawConfig = {
+const DEFAULT_CONFIG: ClawEnvironmentConfig = {
   bootstrapped: false,
-  banda: {
-    baseDir: 'banda',
-    tmuxSession: 'howabanda',
+  clawas: {
+    baseDir: 'clawas',
+    tmuxSession: 'clawas',
     claws: [],
   },
-  burrow: DEFAULT_BURROW_DEFAULTS,
+  clawa: DEFAULT_CLAWA_DEFAULTS,
 }
 
 function parseJsonc(text: string): unknown {
@@ -53,9 +53,9 @@ function parseJsonc(text: string): unknown {
   return JSON.parse(stripped)
 }
 
-function clampClaws(input: unknown): BandaClawConfig[] {
+function clampClaws(input: unknown): ClawaConfig[] {
   if (!Array.isArray(input)) return []
-  const out: BandaClawConfig[] = []
+  const out: ClawaConfig[] = []
   for (const item of input) {
     if (!item || typeof item !== 'object') continue
     const rec = item as Record<string, unknown>
@@ -73,34 +73,34 @@ function clampClaws(input: unknown): BandaClawConfig[] {
   return out
 }
 
-function clampBurrowDefaults(input: unknown): BurrowDefaults {
+function clampClawaDefaults(input: unknown): ClawaDefaults {
   if (!input || typeof input !== 'object') {
-    return DEFAULT_BURROW_DEFAULTS
+    return DEFAULT_CLAWA_DEFAULTS
   }
 
   const rec = input as Record<string, unknown>
-  const bandaName =
-    typeof rec.bandaName === 'string' && rec.bandaName.trim()
-      ? rec.bandaName.trim()
-      : DEFAULT_BURROW_DEFAULTS.bandaName
+  const clawasName =
+    typeof rec.clawasName === 'string' && rec.clawasName.trim()
+      ? rec.clawasName.trim()
+      : DEFAULT_CLAWA_DEFAULTS.clawasName
   return {
     mainClawName:
       typeof rec.mainClawName === 'string' && rec.mainClawName.trim()
         ? rec.mainClawName.trim()
-        : DEFAULT_BURROW_DEFAULTS.mainClawName,
-    bandaName,
+        : DEFAULT_CLAWA_DEFAULTS.mainClawName,
+    clawasName,
     workerSessionPrefix:
       typeof rec.workerSessionPrefix === 'string' && rec.workerSessionPrefix.trim()
         ? rec.workerSessionPrefix.trim()
-        : bandaName,
+        : clawasName,
     controlPlaneDir:
       typeof rec.controlPlaneDir === 'string' && rec.controlPlaneDir.trim()
         ? rec.controlPlaneDir.trim()
-        : DEFAULT_BURROW_DEFAULTS.controlPlaneDir,
+        : DEFAULT_CLAWA_DEFAULTS.controlPlaneDir,
     controlSocketDir:
       typeof rec.controlSocketDir === 'string' && rec.controlSocketDir.trim()
         ? rec.controlSocketDir.trim()
-        : DEFAULT_BURROW_DEFAULTS.controlSocketDir,
+        : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
   }
 }
 
@@ -120,39 +120,39 @@ export function findRepoRoot(startCwd: string): string {
   }
 }
 
-export function getHowabouaClawConfigPath(repoRoot: string): string {
+export function getClawEnvironmentConfigPath(repoRoot: string): string {
   return join(repoRoot, '.pi', 'claw.jsonc')
 }
 
-export function loadHowabouaClawConfig(repoRoot: string): {
+export function loadClawEnvironmentConfig(repoRoot: string): {
   path: string
-  config: HowabouaClawConfig
+  config: ClawEnvironmentConfig
 } {
-  const path = getHowabouaClawConfigPath(repoRoot)
+  const path = getClawEnvironmentConfigPath(repoRoot)
   if (!existsSync(path)) {
     return { path, config: DEFAULT_CONFIG }
   }
 
   try {
     const raw = parseJsonc(readFileSync(path, 'utf8')) as Record<string, unknown>
-    const banda =
-      raw.banda && typeof raw.banda === 'object' ? (raw.banda as Record<string, unknown>) : {}
+    const clawas =
+      raw.clawas && typeof raw.clawas === 'object' ? (raw.clawas as Record<string, unknown>) : {}
     return {
       path,
       config: {
         bootstrapped: raw.bootstrapped === true,
-        banda: {
+        clawas: {
           baseDir:
-            typeof banda.baseDir === 'string' && banda.baseDir.trim()
-              ? banda.baseDir
-              : DEFAULT_CONFIG.banda.baseDir,
+            typeof clawas.baseDir === 'string' && clawas.baseDir.trim()
+              ? clawas.baseDir
+              : DEFAULT_CONFIG.clawas.baseDir,
           tmuxSession:
-            typeof banda.tmuxSession === 'string' && banda.tmuxSession.trim()
-              ? banda.tmuxSession
-              : DEFAULT_CONFIG.banda.tmuxSession,
-          claws: clampClaws(banda.claws),
+            typeof clawas.tmuxSession === 'string' && clawas.tmuxSession.trim()
+              ? clawas.tmuxSession
+              : DEFAULT_CONFIG.clawas.tmuxSession,
+          claws: clampClaws(clawas.claws),
         },
-        burrow: clampBurrowDefaults(raw.burrow),
+        clawa: clampClawaDefaults(raw.clawa),
       },
     }
   } catch {
@@ -160,18 +160,18 @@ export function loadHowabouaClawConfig(repoRoot: string): {
   }
 }
 
-export function resolveBurrowDefaults(startCwd: string): BurrowDefaults {
-  return loadHowabouaClawConfig(findRepoRoot(startCwd)).config.burrow
+export function resolveClawaDefaults(startCwd: string): ClawaDefaults {
+  return loadClawEnvironmentConfig(findRepoRoot(startCwd)).config.clawa
 }
 
-export function ensureHowabouaClawConfig(repoRoot: string): {
+export function ensureClawEnvironmentConfig(repoRoot: string): {
   path: string
-  config: HowabouaClawConfig
+  config: ClawEnvironmentConfig
   created: boolean
 } {
-  const path = getHowabouaClawConfigPath(repoRoot)
+  const path = getClawEnvironmentConfigPath(repoRoot)
   if (existsSync(path)) {
-    const loaded = loadHowabouaClawConfig(repoRoot)
+    const loaded = loadClawEnvironmentConfig(repoRoot)
     return { ...loaded, created: false }
   }
   mkdirSync(dirname(path), { recursive: true })
@@ -179,22 +179,22 @@ export function ensureHowabouaClawConfig(repoRoot: string): {
   return { path, config: DEFAULT_CONFIG, created: true }
 }
 
-export function isHowabouaClawEnvironmentBootstrapped(repoRoot: string): boolean {
-  return ensureHowabouaClawConfig(repoRoot).config.bootstrapped === true
+export function isClawEnvironmentBootstrapped(repoRoot: string): boolean {
+  return ensureClawEnvironmentConfig(repoRoot).config.bootstrapped === true
 }
 
-export function markHowabouaClawEnvironmentBootstrapped(repoRoot: string): {
+export function markClawEnvironmentBootstrapped(repoRoot: string): {
   path: string
-  config: HowabouaClawConfig
+  config: ClawEnvironmentConfig
 } {
-  const loaded = ensureHowabouaClawConfig(repoRoot)
+  const loaded = ensureClawEnvironmentConfig(repoRoot)
   const next = { ...loaded.config, bootstrapped: true }
-  const path = saveHowabouaClawConfig(repoRoot, next)
+  const path = saveClawEnvironmentConfig(repoRoot, next)
   return { path, config: next }
 }
 
-export function saveHowabouaClawConfig(repoRoot: string, config: HowabouaClawConfig): string {
-  const path = getHowabouaClawConfigPath(repoRoot)
+export function saveClawEnvironmentConfig(repoRoot: string, config: ClawEnvironmentConfig): string {
+  const path = getClawEnvironmentConfigPath(repoRoot)
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
   return path
@@ -202,21 +202,21 @@ export function saveHowabouaClawConfig(repoRoot: string, config: HowabouaClawCon
 
 export function upsertClawConfig(
   repoRoot: string,
-  claw: BandaClawConfig,
-): { path: string; config: HowabouaClawConfig } {
-  const loaded = loadHowabouaClawConfig(repoRoot)
-  const claws = [...loaded.config.banda.claws]
+  claw: ClawaConfig,
+): { path: string; config: ClawEnvironmentConfig } {
+  const loaded = loadClawEnvironmentConfig(repoRoot)
+  const claws = [...loaded.config.clawas.claws]
   const idx = claws.findIndex((item) => item.name === claw.name)
   if (idx >= 0) claws[idx] = claw
   else claws.push(claw)
 
-  const next: HowabouaClawConfig = {
+  const next: ClawEnvironmentConfig = {
     ...loaded.config,
-    banda: {
-      ...loaded.config.banda,
+    clawas: {
+      ...loaded.config.clawas,
       claws,
     },
   }
-  const path = saveHowabouaClawConfig(repoRoot, next)
+  const path = saveClawEnvironmentConfig(repoRoot, next)
   return { path, config: next }
 }

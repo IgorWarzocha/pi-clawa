@@ -15,7 +15,7 @@ Fill this after setup. Keep it factual.
 
 ## Config locations
 
-- HOWABANDA config: `[path to config.jsonc]`
+- Clawas config: `[path to config.jsonc]`
 - Worker room: `[relative worker path]`
 - Session registry: `[local runtime path, do not publish actual session contents]`
 - Socket/control dir: `[local runtime path]`

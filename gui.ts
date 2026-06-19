@@ -2,11 +2,15 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 import type { BootstrapResult } from './bootstrap'
+import { resolveSocketPath } from './clawas/comms/paths.js'
+import { getClawasConfigPath, loadClawasConfig } from './clawas/config-loader.js'
+import type { ClawasRuntime } from './clawas/runtime.js'
+import type { WorkerDefinition, WorkerState, WorkerThinkingLevel } from './clawas/types.js'
 import {
-  type BandaClawConfig,
+  type ClawaConfig,
   findRepoRoot,
-  loadHowabouaClawConfig,
-  resolveBurrowDefaults,
+  loadClawEnvironmentConfig,
+  resolveClawaDefaults,
 } from './config'
 import {
   about,
@@ -34,10 +38,6 @@ import {
   text,
   up,
 } from './gui-primitives.js'
-import { resolveSocketPath } from './howabanda/comms/paths.js'
-import { getHowabandaConfigPath, loadHowabandaConfig } from './howabanda/config-loader.js'
-import type { HowabandaRuntime } from './howabanda/runtime.js'
-import type { WorkerDefinition, WorkerState, WorkerThinkingLevel } from './howabanda/types.js'
 import { isClawBootstrapped, readClawState } from './state'
 
 interface ActionItem {
@@ -67,7 +67,7 @@ interface ClawItem {
   summary: string
   detailKey: string
   status: ClawStatus
-  config: BandaClawConfig
+  config: ClawaConfig
   workers: ManagedWorker[]
 }
 
@@ -87,7 +87,7 @@ interface ClawStatus {
   socketPath: string | null
 }
 
-async function getClawStatus(repoRoot: string, claw: BandaClawConfig): Promise<ClawStatus> {
+async function getClawStatus(repoRoot: string, claw: ClawaConfig): Promise<ClawStatus> {
   const absPath = resolve(repoRoot, claw.path)
   const exists = existsSync(absPath)
   const state = exists ? await readClawState(absPath) : { bootstrapped: false }
@@ -114,7 +114,7 @@ function summarizeWorker(worker: ManagedWorker): string {
 }
 
 function summarizeClaw(
-  claw: BandaClawConfig,
+  claw: ClawaConfig,
   status: ClawStatus,
   worker: ManagedWorker | undefined,
   extraWorkers: number,
@@ -176,7 +176,7 @@ async function runWorkerActionPicker(
 
 async function runWorkerAction(
   ctx: ExtensionCommandContext,
-  runtime: HowabandaRuntime,
+  runtime: ClawasRuntime,
   worker: ManagedWorker,
   setStatus: (message: string) => void,
 ): Promise<void> {
@@ -368,27 +368,27 @@ export async function runClawGui(
   ctx: ExtensionCommandContext,
   performBootstrap: () => Promise<BootstrapResult>,
   performCreate: (request: CreateClawRequest) => Promise<{ name: string; path: string }>,
-  runtime: HowabandaRuntime,
+  runtime: ClawasRuntime,
 ): Promise<void> {
   const repoRoot = findRepoRoot(ctx.cwd)
-  const burrow = resolveBurrowDefaults(repoRoot)
-  const loaded = loadHowabouaClawConfig(repoRoot)
-  const howabandaConfig = await loadHowabandaConfig(repoRoot)
-  const configPath = getHowabandaConfigPath(repoRoot)
-  const claws = loaded.config.banda.claws
+  const clawa = resolveClawaDefaults(repoRoot)
+  const loaded = loadClawEnvironmentConfig(repoRoot)
+  const clawasConfig = await loadClawasConfig(repoRoot)
+  const configPath = getClawasConfigPath(repoRoot)
+  const claws = loaded.config.clawas.claws
   const clawStatuses = await Promise.all(claws.map((claw) => getClawStatus(repoRoot, claw)))
   const currentWorkspaceBootstrapped = await isClawBootstrapped(ctx.cwd)
   const liveWorkers = new Map(
     (runtime.getState()?.workers ?? []).map((worker) => [worker.definition.id, worker]),
   )
   const workersByCwd = new Map<string, ManagedWorker[]>()
-  for (const definition of howabandaConfig?.workers ?? []) {
+  for (const definition of clawasConfig?.workers ?? []) {
     const binding = bindWorker(repoRoot, definition, liveWorkers.get(definition.id))
     const existing = workersByCwd.get(binding.absCwd) ?? []
     existing.push(binding.worker)
     workersByCwd.set(binding.absCwd, existing)
   }
-  let lastStatus = `${burrow.bandaName} ready.`
+  let lastStatus = `${clawa.clawasName} ready.`
 
   const clawItems: ClawItem[] = claws.map((claw, index) => {
     const status = clawStatuses[index]
@@ -413,9 +413,9 @@ export async function runClawGui(
       kind: 'create',
     },
     {
-      label: 'restart banda',
-      summary: `Restart the ${burrow.bandaName} daemon`,
-      detailKey: 'restart-banda',
+      label: 'restart clawas',
+      summary: `Restart the ${clawa.clawasName} daemon`,
+      detailKey: 'restart-clawas',
       kind: 'restart',
     },
   ]
@@ -493,7 +493,7 @@ export async function runClawGui(
 
           if (item.kind === 'restart') {
             await runtime.restart()
-            lastStatus = `${burrow.bandaName} daemon restarted.`
+            lastStatus = `${clawa.clawasName} daemon restarted.`
             ctx.ui.notify(lastStatus, 'info')
             return
           }
@@ -541,7 +541,7 @@ export async function runClawGui(
     'create-claw': createDetail({
       title: 'create-claw',
       meta: [
-        `creates a new claw workspace under ${loaded.config.banda.baseDir}`,
+        `creates a new claw workspace under ${loaded.config.clawas.baseDir}`,
         'bootstraps it with the bundled main claw templates',
         'registers it in claw config for monitoring',
       ],
@@ -550,9 +550,9 @@ export async function runClawGui(
         'The claw folder path is tied automatically from config baseDir + name.',
       ],
     }),
-    'restart-banda': createDetail({
-      title: 'restart-banda',
-      meta: [`restarts the ${burrow.bandaName} daemon and managed workers`],
+    'restart-clawas': createDetail({
+      title: 'restart-clawas',
+      meta: [`restarts the ${clawa.clawasName} daemon and managed workers`],
       body: ['Useful after config edits, UI changes, or when a worker gets wedged.'],
     }),
   })
@@ -597,8 +597,8 @@ export async function runClawGui(
     content: [
       row('Unified claw console', 'accent'),
       row(''),
-      row(`Main claw: ${burrow.mainClawName}`),
-      row(`Banda: ${burrow.bandaName}`),
+      row(`Main claw: ${clawa.mainClawName}`),
+      row(`Clawas: ${clawa.clawasName}`),
       row(`Claw config: ${loaded.path}`),
       row(`Worker config: ${configPath}`),
       row('The main list is claw-first: one row per claw, with runtime folded in.'),

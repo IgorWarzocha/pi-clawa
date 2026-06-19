@@ -35,7 +35,7 @@ export async function settleDiscordDelivery({
 		markMessageDone(rowid);
 		logger.info(
 			{ jid, worker: mappedWorker },
-			"HOWABANDA worker handled routing internally",
+			"CLAWAS worker handled routing internally",
 		);
 		return;
 	}
@@ -44,7 +44,7 @@ export async function settleDiscordDelivery({
 		markMessageDone(rowid);
 		logger.info(
 			{ jid, worker: mappedWorker, text: result.text.slice(0, 200) },
-			"HOWABANDA worker produced no delivery route; skipped Discord send",
+			"CLAWAS worker produced no delivery route; skipped Discord send",
 		);
 		return;
 	}
@@ -85,7 +85,7 @@ export async function settleDiscordDelivery({
 		channelJid: jid,
 		role: "assistant",
 		senderId: "assistant",
-		senderName: "Howaclawa",
+		senderName: "Clawa",
 		content: parsed.text,
 		timestamp: new Date().toISOString(),
 	});

@@ -3,11 +3,11 @@
   "entry": ["index.ts", "**/*.test.ts"],
   "project": ["**/*.ts"],
   "ignoreIssues": {
-    "howabanda/commands.ts": ["files"],
-    "howabanda/index.ts": ["files"],
+    "clawas/commands.ts": ["files"],
+    "clawas/index.ts": ["files"],
     "config.ts": ["exports"],
     "gui-primitives.ts": ["types"],
-    "howabanda/**/*.ts": ["exports", "types"],
+    "clawas/**/*.ts": ["exports", "types"],
     "state.ts": ["exports"],
     "packages/pi-claw-discord/index.ts": ["exports"]
   },

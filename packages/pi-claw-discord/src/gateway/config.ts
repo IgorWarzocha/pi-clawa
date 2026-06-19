@@ -170,11 +170,11 @@ export const config = {
   /** Graceful shutdown timeout before aborting in-flight tasks (ms) */
   shutdownTimeoutMs: envInt('SHUTDOWN_TIMEOUT_MS', 15_000, { min: 0 }),
 
-  /** How long to wait for a HOWABANDA worker to produce a reply/delivery (ms) */
-  howabandaReplyTimeoutMs: envInt('HOWABANDA_REPLY_TIMEOUT_MS', 300_000, { min: 1_000 }),
+  /** How long to wait for a CLAWAS worker to produce a reply/delivery (ms) */
+  clawasReplyTimeoutMs: envInt('CLAWAS_REPLY_TIMEOUT_MS', 300_000, { min: 1_000 }),
 
-  /** How often to log that we are still waiting on a HOWABANDA worker (ms) */
-  howabandaWaitLogIntervalMs: envInt('HOWABANDA_WAIT_LOG_INTERVAL_MS', 15_000, { min: 1_000 }),
+  /** How often to log that we are still waiting on a CLAWAS worker (ms) */
+  clawasWaitLogIntervalMs: envInt('CLAWAS_WAIT_LOG_INTERVAL_MS', 15_000, { min: 1_000 }),
 
   /** How often to refresh Discord typing indicators while work is in flight (ms) */
   discordTypingRefreshMs: envInt('DISCORD_TYPING_REFRESH_MS', 4_000, { min: 1_000 }),
@@ -188,14 +188,14 @@ export const config = {
   /** Extra pi flags (space-separated) */
   piExtraFlags: env('PI_EXTRA_FLAGS'),
 
-  /** HOWABANDA control socket root */
-  howabandaControlSocketRoot: env('PI_HOWABANDA_CONTROL_SOCKET_ROOT', resolve(env('PI_CWD', DEFAULT_PROJECT_ROOT), '.pi')),
+  /** CLAWAS control socket root */
+  clawasControlSocketRoot: env('PI_CLAWAS_CONTROL_SOCKET_ROOT', resolve(env('PI_CWD', DEFAULT_PROJECT_ROOT), '.pi')),
 
-  /** HOWABANDA control socket dir under the socket root */
-  howabandaControlSocketDir: env('PI_HOWABANDA_CONTROL_SOCKET_DIR', 'howabanda-control'),
+  /** CLAWAS control socket dir under the socket root */
+  clawasControlSocketDir: env('PI_CLAWAS_CONTROL_SOCKET_DIR', 'clawas-control'),
 
-  /** Optional Discord channel -> HOWABANDA worker mapping */
-  howabandaChannelWorkers: parseWorkerMap(env('HOWABANDA_CHANNEL_WORKERS')),
+  /** Optional Discord channel -> CLAWAS worker mapping */
+  clawasChannelWorkers: parseWorkerMap(env('CLAWAS_CHANNEL_WORKERS')),
 
   /** Auto-register DM channels */
   autoRegisterDMs: envBool('AUTO_REGISTER_DMS', true),

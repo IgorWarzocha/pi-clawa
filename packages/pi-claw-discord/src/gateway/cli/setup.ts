@@ -236,7 +236,7 @@ export function buildConfigFile(options: {
     '# Storage',
     `SESSIONS_DIR=${options.sessionsDir}`,
     `DB_PATH=${options.dbPath}`,
-    'PI_HOWABANDA_CONTROL_SOCKET_ROOT=.pi',
+    'PI_CLAWAS_CONTROL_SOCKET_ROOT=.pi',
     '',
     '# Logging',
     'LOG_LEVEL=info',

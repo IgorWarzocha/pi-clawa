@@ -20,10 +20,10 @@ import {
 } from "../db.js";
 import { invokeAgent } from "./invoke.js";
 import {
-	getHowabandaWorkerStatus,
-	invokeHowabandaWorker,
-	steerHowabandaWorker,
-} from "./invoke-howabanda.js";
+	getClawasWorkerStatus,
+	invokeClawasWorker,
+	steerClawasWorker,
+} from "./invoke-clawas.js";
 import { sendResponse } from "../discord/client.js";
 import { computeEffectiveChannelSettings } from "./channel-settings.js";
 import { AMBIENT_SENDER } from "./ambient.js";
@@ -40,7 +40,7 @@ import {
 
 /** Channels currently being processed (per-channel serial lock) */
 const activeChannels = new Set<string>();
-const activeHowabandaWorkers = new Map<string, string>();
+const activeClawasWorkers = new Map<string, string>();
 const activeReplyAnchors = new Map<string, string>();
 const activeTaskPromises = new Set<Promise<void>>();
 const activeTaskControllers = new Map<number, AbortController>();
@@ -128,14 +128,14 @@ function dispatch(): void {
 
 	for (const jid of channelsWithPending()) {
 		if (activeChannels.has(jid)) {
-			const mappedWorker = activeHowabandaWorkers.get(jid);
+			const mappedWorker = activeClawasWorkers.get(jid);
 			if (!mappedWorker || activeTaskPromises.size >= config.maxConcurrency)
 				continue;
 
 			const msg = claimNextMessage(jid);
 			if (!msg) continue;
 
-			const taskPromise = processSteeredHowabandaMessage(
+			const taskPromise = processSteeredClawasMessage(
 				mappedWorker,
 				jid,
 				msg.rowid,
@@ -281,7 +281,7 @@ async function processMessage(
 	setActiveReplyAnchor(jid, sender, sourceMessageId);
 
 	try {
-		const mappedWorker = config.howabandaChannelWorkers.get(jid);
+		const mappedWorker = config.clawasChannelWorkers.get(jid);
 		const { prompt, observedThroughRowId } = buildGatewayPrompt({
 			jid,
 			sender,
@@ -293,11 +293,11 @@ async function processMessage(
 
 		const effective = computeEffectiveChannelSettings(channel);
 		if (mappedWorker) {
-			activeHowabandaWorkers.set(jid, mappedWorker);
+			activeClawasWorkers.set(jid, mappedWorker);
 		}
 
 		const result = mappedWorker
-			? await invokeHowabandaWorker(mappedWorker, prompt, {
+			? await invokeClawasWorker(mappedWorker, prompt, {
 					signal,
 					attachments,
 					sourceMessageId: getReplyAnchorSourceMessageId(
@@ -354,13 +354,13 @@ async function processMessage(
 			// Nothing else to do here.
 		}
 	} finally {
-		activeHowabandaWorkers.delete(jid);
+		activeClawasWorkers.delete(jid);
 		activeReplyAnchors.delete(jid);
 		await typingLoop.stop();
 	}
 }
 
-async function processSteeredHowabandaMessage(
+async function processSteeredClawasMessage(
 	workerId: string,
 	jid: string,
 	rowid: number,
@@ -383,7 +383,7 @@ async function processSteeredHowabandaMessage(
 			logRowId,
 		});
 
-		await steerHowabandaWorker(workerId, prompt, {
+		await steerClawasWorker(workerId, prompt, {
 			attachments,
 			sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),
 		});
@@ -391,7 +391,7 @@ async function processSteeredHowabandaMessage(
 		if (sender !== AMBIENT_SENDER) {
 			ensureWorkerTypingMonitor(jid, workerId, {
 				isRunning: () => running,
-				getStatus: getHowabandaWorkerStatus,
+				getStatus: getClawasWorkerStatus,
 			});
 		}
 
@@ -399,13 +399,13 @@ async function processSteeredHowabandaMessage(
 		markMessageDone(rowid);
 		logger.info(
 			{ jid, worker: workerId, rowid },
-			"Steered queued Discord message into active HOWABANDA worker",
+			"Steered queued Discord message into active CLAWAS worker",
 		);
 	} catch (err: any) {
 		markMessageFailed(rowid);
 		logger.warn(
 			{ jid, worker: workerId, rowid, err: err.message },
-			"Failed to steer queued Discord message into HOWABANDA worker",
+			"Failed to steer queued Discord message into CLAWAS worker",
 		);
 	}
 }

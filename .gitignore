@@ -1,9 +1,9 @@
 node_modules/
 .DS_Store
 *.log
-.pi/howabanda/sessions/
-.pi/howabanda/session-registry.json
-.pi/howabanda-control/
+.pi/clawas/sessions/
+.pi/clawas/session-registry.json
+.pi/clawas-control/
 dist/
 .pi/clawa-memory.jsonl
 .pi/claw.json

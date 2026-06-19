@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-BASE_URL="${CLAWA_INSTALL_BASE:-https://raw.githubusercontent.com/IgorWarzocha/howaclawa/main}"
+BASE_URL="${CLAWA_INSTALL_BASE:-https://raw.githubusercontent.com/howaboua/pi-claw/main}"
 TARGET_DIR=".pi"
 TARGET_FILE="$TARGET_DIR/settings.json"
 SOURCE_URL="$BASE_URL/install/pi-settings.json"

@@ -1,2 +1,0 @@
-export const HOWABANDA_EVENT_LIMIT = 5
-export const HOWABANDA_SPINNER_TICK_MS = 160

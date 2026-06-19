@@ -7,33 +7,30 @@ import type {
 } from '@earendil-works/pi-coding-agent'
 import { Text } from '@earendil-works/pi-tui'
 import { bootstrapClawWorkspace, runBootstrap } from './bootstrap'
+import { CLAWAS_MAIL_MESSAGE_TYPE, CLAWAS_OUTBOUND_MESSAGE_TYPE } from './clawas/comms/outbound.js'
+import { createClawasCommsRenderer } from './clawas/comms/renderers.js'
+import { reportFinalAssistantMessageToMain } from './clawas/comms/report-back.js'
+import { ClawasCommsServer } from './clawas/comms/server.js'
+import { ClawasRuntime } from './clawas/runtime.js'
 import {
-  type BandaClawConfig,
-  DEFAULT_BURROW_DEFAULTS,
-  ensureHowabouaClawConfig,
+  registerClawasMonitorShortcuts,
+  registerJumpCommand,
+  registerSteerCommand,
+} from './clawas/steer-command.js'
+import { registerClawasTools } from './clawas/tool-surface.js'
+import { getWorkerSessionName } from './clawas/worker-identity.js'
+import {
+  type ClawaConfig,
+  DEFAULT_CLAWA_DEFAULTS,
+  ensureClawEnvironmentConfig,
   findRepoRoot,
-  loadHowabouaClawConfig,
-  markHowabouaClawEnvironmentBootstrapped,
-  resolveBurrowDefaults,
+  loadClawEnvironmentConfig,
+  markClawEnvironmentBootstrapped,
+  resolveClawaDefaults,
   upsertClawConfig,
 } from './config'
 import { registerContinuityCompaction } from './continuity-compaction'
 import { type CreateClawRequest, runClawGui } from './gui'
-import {
-  HOWABANDA_MAIL_MESSAGE_TYPE,
-  HOWABANDA_OUTBOUND_MESSAGE_TYPE,
-} from './howabanda/comms/outbound.js'
-import { createHowabandaCommsRenderer } from './howabanda/comms/renderers.js'
-import { reportFinalAssistantMessageToMain } from './howabanda/comms/report-back.js'
-import { HowabandaCommsServer } from './howabanda/comms/server.js'
-import { HowabandaRuntime } from './howabanda/runtime.js'
-import {
-  registerHowabandaMonitorShortcuts,
-  registerJumpCommand,
-  registerSteerCommand,
-} from './howabanda/steer-command.js'
-import { registerHowabandaTools } from './howabanda/tool-surface.js'
-import { getWorkerSessionName } from './howabanda/worker-identity.js'
 import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate'
 import { isClawBootstrapped, markClawBootstrapped } from './state'
 import { copyTemplateFiles } from './template-files'
@@ -43,8 +40,8 @@ process.env.PI_CLAW_EXTENSION_PATH = fileURLToPath(import.meta.url)
 const templatesDir = join(extensionDir, 'templates')
 const mainTemplatesDir = join(templatesDir, 'main')
 const HYDRATION_MESSAGE_TYPE = 'claw-hydration'
-const HOWABANDA_ROLE = process.env.PI_HOWABANDA_ROLE
-const IS_HOWABANDA_WORKER = HOWABANDA_ROLE === 'worker'
+const CLAWAS_ROLE = process.env.PI_CLAWAS_ROLE
+const IS_CLAWAS_WORKER = CLAWAS_ROLE === 'worker'
 const SPACE_SPLIT_REGEX = /\s+/
 
 const INITIAL_BOOTSTRAP_PROMPT = [
@@ -136,13 +133,13 @@ function ensureExtensionConfig(cwd: string): {
   created: boolean
   path: string
 } {
-  if (IS_HOWABANDA_WORKER) {
+  if (IS_CLAWAS_WORKER) {
     runtime.extensionBootstrapped = true
     return { bootstrapped: true, created: false, path: '' }
   }
 
   const repoRoot = findRepoRoot(cwd)
-  const loaded = ensureHowabouaClawConfig(repoRoot)
+  const loaded = ensureClawEnvironmentConfig(repoRoot)
   runtime.extensionBootstrapped = loaded.config.bootstrapped === true
   return {
     bootstrapped: runtime.extensionBootstrapped,
@@ -208,7 +205,7 @@ async function buildHydrationText(
 async function executeBootstrap(pi: ExtensionAPI, ctx: ExtensionCommandContext) {
   const result = await runBootstrap(ctx.cwd, mainTemplatesDir)
   setBootstrappedRuntime(ctx.cwd)
-  markHowabouaClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
+  markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
 
   sendDimNote(
     pi,
@@ -236,13 +233,13 @@ async function createNewClaw(
   request: CreateClawRequest,
 ) {
   const repoRoot = findRepoRoot(ctx.cwd)
-  const loaded = loadHowabouaClawConfig(repoRoot)
+  const loaded = loadClawEnvironmentConfig(repoRoot)
   const safeName = request.name.trim()
-  const relativePath = join(loaded.config.banda.baseDir, safeName)
+  const relativePath = join(loaded.config.clawas.baseDir, safeName)
   const absolutePath = resolve(repoRoot, relativePath)
   await bootstrapClawWorkspace(absolutePath, mainTemplatesDir)
 
-  const claw: BandaClawConfig = {
+  const claw: ClawaConfig = {
     name: safeName,
     path: relativePath,
     autostart: false,
@@ -261,19 +258,19 @@ async function createNewClaw(
   return { name: safeName, path: relativePath }
 }
 
-function syncBurrowEnvironment(cwd: string): void {
+function syncClawaEnvironment(cwd: string): void {
   const repoRoot = findRepoRoot(cwd)
-  const burrowDefaults = resolveBurrowDefaults(cwd)
+  const clawaDefaults = resolveClawaDefaults(cwd)
   process.env.PI_CLAW_PROJECT_ROOT = repoRoot
-  process.env.PI_HOWABANDA_CONTROL_SOCKET_ROOT = join(repoRoot, '.pi')
-  process.env.PI_HOWABANDA_CONTROL_SOCKET_DIR = burrowDefaults.controlSocketDir
+  process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT = join(repoRoot, '.pi')
+  process.env.PI_CLAWAS_CONTROL_SOCKET_DIR = clawaDefaults.controlSocketDir
 }
 
 function getWorkerAlias(): string | undefined {
-  if (!IS_HOWABANDA_WORKER) {
+  if (!IS_CLAWAS_WORKER) {
     return 'main-claw'
   }
-  return process.env.PI_HOWABANDA_SOCKET_ALIAS?.trim() || undefined
+  return process.env.PI_CLAWAS_SOCKET_ALIAS?.trim() || undefined
 }
 
 function sendInitialBootstrapPrompt(pi: ExtensionAPI, ctx: ExtensionContext): void {
@@ -286,12 +283,12 @@ function sendInitialBootstrapPrompt(pi: ExtensionAPI, ctx: ExtensionContext): vo
 }
 
 function maybeSetWorkerSessionName(pi: ExtensionAPI, ctx: ExtensionContext): void {
-  if (!IS_HOWABANDA_WORKER) {
+  if (!IS_CLAWAS_WORKER) {
     return
   }
 
-  const workerId = process.env.PI_HOWABANDA_WORKER_ID?.trim()
-  const workerTitle = process.env.PI_HOWABANDA_WORKER_TITLE?.trim() || workerId
+  const workerId = process.env.PI_CLAWAS_WORKER_ID?.trim()
+  const workerTitle = process.env.PI_CLAWAS_WORKER_TITLE?.trim() || workerId
   if (!(workerId && workerTitle)) {
     return
   }
@@ -305,22 +302,22 @@ function maybeSetWorkerSessionName(pi: ExtensionAPI, ctx: ExtensionContext): voi
         enabled: true,
         autostart: false,
       },
-      resolveBurrowDefaults(ctx.cwd),
+      resolveClawaDefaults(ctx.cwd),
     ),
   )
 }
 
 export default function howabouaClaw(pi: ExtensionAPI): void {
-  const howabandaRuntime = new HowabandaRuntime()
-  const commsServer = new HowabandaCommsServer(pi, () => getWorkerAlias())
-  let currentBurrowDefaults = DEFAULT_BURROW_DEFAULTS
+  const clawasRuntime = new ClawasRuntime()
+  const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias())
+  let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
 
-  registerHowabandaTools(pi, howabandaRuntime)
+  registerClawasTools(pi, clawasRuntime)
   registerContinuityCompaction(pi)
-  if (!IS_HOWABANDA_WORKER) {
-    registerSteerCommand(pi, howabandaRuntime)
-    registerJumpCommand(pi, howabandaRuntime)
-    registerHowabandaMonitorShortcuts(pi, howabandaRuntime)
+  if (!IS_CLAWAS_WORKER) {
+    registerSteerCommand(pi, clawasRuntime)
+    registerJumpCommand(pi, clawasRuntime)
+    registerClawasMonitorShortcuts(pi, clawasRuntime)
   }
 
   pi.registerMessageRenderer('claw-dim', (message, _options, theme) => {
@@ -329,23 +326,23 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     )
     return new Text(theme.fg('dim', text), 0, 0)
   })
-  const howabandaCommsRenderer = createHowabandaCommsRenderer(() => currentBurrowDefaults)
-  pi.registerMessageRenderer(HOWABANDA_OUTBOUND_MESSAGE_TYPE, howabandaCommsRenderer)
-  pi.registerMessageRenderer(HOWABANDA_MAIL_MESSAGE_TYPE, howabandaCommsRenderer)
-  pi.registerMessageRenderer('howabanda-session', howabandaCommsRenderer)
-  pi.registerMessageRenderer('howabanda-report', howabandaCommsRenderer)
+  const clawasCommsRenderer = createClawasCommsRenderer(() => currentClawaDefaults)
+  pi.registerMessageRenderer(CLAWAS_OUTBOUND_MESSAGE_TYPE, clawasCommsRenderer)
+  pi.registerMessageRenderer(CLAWAS_MAIL_MESSAGE_TYPE, clawasCommsRenderer)
+  pi.registerMessageRenderer('clawas-session', clawasCommsRenderer)
+  pi.registerMessageRenderer('clawas-report', clawasCommsRenderer)
 
   const handleSessionStart = async (ctx: ExtensionContext): Promise<void> => {
     const extensionConfig = ensureExtensionConfig(ctx.cwd)
-    currentBurrowDefaults = resolveBurrowDefaults(ctx.cwd)
-    syncBurrowEnvironment(ctx.cwd)
+    currentClawaDefaults = resolveClawaDefaults(ctx.cwd)
+    syncClawaEnvironment(ctx.cwd)
     maybeSetWorkerSessionName(pi, ctx)
 
     const needsInitialBootstrap = !extensionConfig.bootstrapped
     if (needsInitialBootstrap) {
       const copied = await copyTemplateFiles(mainTemplatesDir, ctx.cwd)
       await markClawBootstrapped(ctx.cwd)
-      const marked = markHowabouaClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
+      const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
       runtime.extensionBootstrapped = true
       setBootstrappedRuntime(ctx.cwd)
       if (ctx.hasUI) {
@@ -365,8 +362,8 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     }
     await commsServer.start(ctx)
     await armHydration(ctx.cwd)
-    if (!IS_HOWABANDA_WORKER) {
-      howabandaRuntime.attach(ctx)
+    if (!IS_CLAWAS_WORKER) {
+      clawasRuntime.attach(ctx)
     }
     if (needsInitialBootstrap) {
       sendInitialBootstrapPrompt(pi, ctx)
@@ -376,28 +373,28 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   pi.on('session_start', async (event, ctx) => {
     // Pi 0.65.0 removed session_switch/session_fork. session_start now fires for
     // startup, reload, new, resume, and fork with event.reason carrying the lane.
-    // Our burrow wants the same reattach/hydration/comms path for all of them.
+    // Our clawa wants the same reattach/hydration/comms path for all of them.
     void event
     await handleSessionStart(ctx)
   })
 
   pi.on('agent_end', async (event, ctx) => {
-    if (!IS_HOWABANDA_WORKER) {
+    if (!IS_CLAWAS_WORKER) {
       return
     }
 
     await reportFinalAssistantMessageToMain(pi, ctx, {
-      workerId: process.env.PI_HOWABANDA_WORKER_ID,
-      workerTitle: process.env.PI_HOWABANDA_WORKER_TITLE,
-      targetSessionId: process.env.PI_HOWABANDA_REPORT_SESSION_ID,
+      workerId: process.env.PI_CLAWAS_WORKER_ID,
+      workerTitle: process.env.PI_CLAWAS_WORKER_TITLE,
+      targetSessionId: process.env.PI_CLAWAS_REPORT_SESSION_ID,
       agentMessages: event.messages,
     })
   })
 
   pi.on('session_shutdown', async () => {
     await commsServer.stop()
-    if (!IS_HOWABANDA_WORKER) {
-      await howabandaRuntime.dispose()
+    if (!IS_CLAWAS_WORKER) {
+      await clawasRuntime.dispose()
     }
   })
 
@@ -449,8 +446,8 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     description: 'Open Clawa GUI or create/bootstrap claws',
     handler: async (args, ctx) => {
       ensureExtensionConfig(ctx.cwd)
-      currentBurrowDefaults = resolveBurrowDefaults(ctx.cwd)
-      syncBurrowEnvironment(ctx.cwd)
+      currentClawaDefaults = resolveClawaDefaults(ctx.cwd)
+      syncClawaEnvironment(ctx.cwd)
       const create = resolveCreateRequest(args ?? '')
       if (create.run && create.name) {
         await createNewClaw(pi, ctx, { name: create.name })
@@ -472,7 +469,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
         ctx,
         async () => await executeBootstrap(pi, ctx),
         async (createRequest) => await createNewClaw(pi, ctx, createRequest),
-        howabandaRuntime,
+        clawasRuntime,
       )
     },
   })

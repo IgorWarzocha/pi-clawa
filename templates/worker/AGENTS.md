@@ -9,7 +9,7 @@ Keep private memory in `MEMORY.md`, not here.
 - **Title:** `[short human-readable title]`
 - **Lane:** `[one sentence describing the worker's job]`
 - **Home:** `[relative/path/to/worker-room]`
-- **Reports to:** main claw through HOWABANDA report-back
+- **Reports to:** main claw through Clawas report-back
 
 ## Mission
 

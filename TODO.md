@@ -53,7 +53,7 @@ Blocks: clean-room install test.
 
 Status: usable extracted runtime, still not fully package-shaped.
 
-- [x] HOWABANDA runtime copied into core package
+- [x] Clawas runtime copied into core package
 - [x] monitor widget replaces footer status
 - [x] `/steer` targets active/numbered/named claw
 - [x] `/jump` opens active/numbered/named claw
@@ -61,7 +61,7 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [x] custom compaction extracts continuity + durable memories
 - [x] hydration loads main continuity markdowns
 - [ ] simplify `/claw` remaining screens/actions
-- [ ] remove or retire parked `/howabanda` command code if unused
+- [ ] remove or retire parked `/clawas` command code if unused
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for worker launch/report/steer/jump/restart
 - [ ] decide whether `.pi/clawa-memory.jsonl` stays for first release

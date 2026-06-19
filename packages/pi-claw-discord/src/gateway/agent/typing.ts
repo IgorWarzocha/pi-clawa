@@ -1,7 +1,7 @@
 import { config } from "../config.js";
 import { setTyping } from "../discord/client.js";
 import { logger } from "../logger.js";
-import type { HowabandaWorkerStatus } from "./invoke-howabanda.js";
+import type { ClawasWorkerStatus } from "./invoke-clawas.js";
 
 export interface TypingLoop {
 	stop: () => Promise<void>;
@@ -43,7 +43,7 @@ export function ensureWorkerTypingMonitor(
 	workerId: string,
 	options: {
 		isRunning: () => boolean;
-		getStatus: (workerId: string) => Promise<HowabandaWorkerStatus>;
+		getStatus: (workerId: string) => Promise<ClawasWorkerStatus>;
 	},
 ): void {
 	if (activeWorkerTypingMonitors.has(jid)) {
@@ -54,12 +54,12 @@ export function ensureWorkerTypingMonitor(
 		const startedAt = Date.now();
 		logger.info(
 			{ jid, worker: workerId },
-			"Started Discord typing keepalive for active HOWABANDA worker",
+			"Started Discord typing keepalive for active CLAWAS worker",
 		);
 
 		while (
 			options.isRunning() &&
-			Date.now() - startedAt < config.howabandaReplyTimeoutMs
+			Date.now() - startedAt < config.clawasReplyTimeoutMs
 		) {
 			await setTyping(jid);
 
@@ -68,14 +68,14 @@ export function ensureWorkerTypingMonitor(
 				if (status.isIdle && !status.hasPendingMessages) {
 					logger.info(
 						{ jid, worker: workerId },
-						"Stopped Discord typing keepalive: HOWABANDA worker is idle",
+						"Stopped Discord typing keepalive: CLAWAS worker is idle",
 					);
 					return;
 				}
 			} catch (err: any) {
 				logger.warn(
 					{ jid, worker: workerId, err: err.message },
-					"Discord typing keepalive could not read HOWABANDA worker status",
+					"Discord typing keepalive could not read CLAWAS worker status",
 				);
 			}
 
@@ -83,7 +83,7 @@ export function ensureWorkerTypingMonitor(
 		}
 
 		logger.info(
-			{ jid, worker: workerId, timeoutMs: config.howabandaReplyTimeoutMs },
+			{ jid, worker: workerId, timeoutMs: config.clawasReplyTimeoutMs },
 			"Stopped Discord typing keepalive after timeout",
 		);
 	})().finally(() => {
