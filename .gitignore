@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+*.log
+.pi/howabanda/sessions/
+.pi/howabanda/session-registry.json
+.pi/howabanda-control/
+dist/
+.pi/clawa-memory.jsonl
+.pi/claw.json
+.pi/howaboua-claw.jsonc
+
+.pi/claw-discord/

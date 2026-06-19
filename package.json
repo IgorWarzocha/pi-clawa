@@ -1,0 +1,65 @@
+{
+  "name": "@howaboua/pi-claw",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Redistributable Pi extension package for the Clawa/HOWABANDA runtime.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "howabanda",
+    "clawa"
+  ],
+  "scripts": {
+    "typecheck": "tsgo --noEmit --noCheck",
+    "typecheck:strict": "tsgo --noEmit",
+    "test": "node --import tsx --test config.test.ts template-files.test.ts hydrate.test.ts howabanda/monitor-state.test.ts howabanda/comms/*.test.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "lint:strict": "biome check --error-on-warnings .",
+    "knip": "knip",
+    "deadcode": "knip",
+    "ai:check": "biome check . && tsgo --noEmit --noCheck && knip && node --import tsx --test config.test.ts template-files.test.ts hydrate.test.ts howabanda/monitor-state.test.ts howabanda/comms/*.test.ts",
+    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && knip && node --import tsx --test config.test.ts template-files.test.ts hydrate.test.ts howabanda/monitor-state.test.ts howabanda/comms/*.test.ts",
+    "check": "bun run ai:check"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*",
+    "@earendil-works/pi-ai": "*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@earendil-works/pi-agent-core": "0.79.6",
+    "@earendil-works/pi-coding-agent": "0.79.6",
+    "@earendil-works/pi-tui": "0.79.6",
+    "@types/node": "25.9.2",
+    "tsx": "^4.20.0",
+    "typebox": "1.2.8",
+    "typescript": "^6.0.3",
+    "@typescript/native-preview": "7.0.0-dev.20260610.1",
+    "knip": "6.12.1",
+    "@earendil-works/pi-ai": "0.79.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "bun@1.3.14",
+  "engines": {
+    "node": ">=24.15.0 <27"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "exports": {
+    ".": "./index.ts",
+    "./config": "./config.ts",
+    "./howabanda/*": "./howabanda/*.ts"
+  }
+}

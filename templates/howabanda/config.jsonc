@@ -1,0 +1,15 @@
+{
+  // Generic HOWABANDA config template. Copy to ~/.pi/howabanda/config.jsonc or .pi/howabanda/config.jsonc and edit.
+  "workers": [
+    {
+      "id": "worker-clawa",
+      "title": "worker-clawa",
+      "emoji": "🛠️",
+      "cwd": "banda/worker-clawa",
+      "model": "openai-codex/gpt-5.5",
+      "thinking": "medium",
+      "autostart": false,
+      "startupPrompt": "You are a HOWABANDA worker. Orient in your worker room, follow your local AGENTS.md, do the assigned task, and report useful outcomes back to the main claw."
+    }
+  ]
+}

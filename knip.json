@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["index.ts", "**/*.test.ts"],
+  "project": ["**/*.ts"],
+  "ignoreIssues": {
+    "howabanda/commands.ts": ["files"],
+    "howabanda/index.ts": ["files"],
+    "config.ts": ["exports"],
+    "gui-primitives.ts": ["types"],
+    "howabanda/**/*.ts": ["exports", "types"],
+    "state.ts": ["exports"],
+    "packages/pi-claw-discord/index.ts": ["exports"]
+  },
+  "ignore": ["packages/pi-claw-discord/src/gateway/**"],
+  "ignoreDependencies": [
+    "@clack/prompts",
+    "better-sqlite3",
+    "croner",
+    "pino",
+    "pino-pretty",
+    "tsx",
+    "@types/better-sqlite3",
+    "@howaboua/pi-claw"
+  ]
+}
