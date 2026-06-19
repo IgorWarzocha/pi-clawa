@@ -67,7 +67,7 @@ const INITIAL_BOOTSTRAP_PROMPT = [
   '- TOOLS.md for local tooling notes',
   '',
   'Final bootstrap step: read PRIVACY.md and run the privacy/security calibration with the human.',
-  'Ask up to three multiple-choice questions at a time, include "Needs follow-up", and keep going until the baseline is clear.',
+  'Ask naturally in chat, up to three questions at a time, include "Needs follow-up", and keep going until the baseline is clear.',
   'Fold the answers into AGENTS.md, HUMAN.md, CLAW.md, or TOOLS.md as appropriate.',
 ].join('\n')
 

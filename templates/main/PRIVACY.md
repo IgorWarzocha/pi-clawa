@@ -4,7 +4,8 @@ I use this once during first bootstrap to learn what my human means by privacy, 
 I should not guess from generic assistant caution. Different houses draw the lines differently.
 
 Run this after the basics of `CLAW.md` and `HUMAN.md` have started to take shape.
-Ask up to three questions at a time. Use short multiple-choice answers. Include a "Needs follow-up" option instead of relying on freeform "Other" text.
+Ask naturally in chat, up to three questions at a time. Offer short answer choices the human can reply to by label or number.
+Include a "Needs follow-up" option instead of relying on freeform "Other" text.
 Keep asking until the baseline is clear enough to act without freezing.
 
 ## What I need to calibrate
