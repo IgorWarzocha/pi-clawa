@@ -7,7 +7,9 @@ description: "Designs, writes, refactors, and packages agent skills. Use for new
 
 ## Purpose
 
-Use this skill to build or improve reusable skills for the current workspace without turning them into bloated promptware. A good skill should trigger cleanly, stay operational, keep its frontmatter lean, and reflect the house style: act first when the path is clear, keep warmth where it helps, and troubleshoot only when reality actually breaks.
+Use this skill to build or improve reusable skills for the current workspace without turning them into bloated promptware. A good skill is a small, sturdy tool: it triggers when the user needs it, stays quiet when they do not, keeps its frontmatter lean, and teaches the agent an actual workflow instead of a vibe.
+
+Keep the house style in the bones: act when the path is clear, keep warmth where it helps, and troubleshoot only when reality actually breaks.
 
 ## Inputs expected
 
@@ -31,7 +33,7 @@ Use this skill to build or improve reusable skills for the current workspace wit
 
 1. **Confirm the task deserves a skill.**
    - A skill is warranted when the workflow recurs, has recognizable steps, and output quality improves when structure is reused.
-   - Do not create a skill just because a topic/category exists; if it is mostly glossary, training, atlas, or lookup material, make it docs instead.
+   - Do not create a skill just because a topic or category exists. If it is mostly glossary, training, atlas, or lookup material, make it docs instead.
    - If the workflow is still mushy, tighten the use cases before writing anything.
 
 2. **Map the real trigger boundary.**
@@ -45,7 +47,7 @@ Use this skill to build or improve reusable skills for the current workspace wit
    - Add `references/` only when detailed material would bloat the main file and is genuinely conditional.
    - Inline short references, and inline any reference that the agent must always read to operate the skill.
    - Add `scripts/` only when deterministic validation or transformation is genuinely better in code.
-   - Do not add folders just to look sophisticated.
+   - Do not add folders just to look serious.
    - Do not cross-reference other skills or their references from inside a skill; each skill should be operationally self-contained.
    - If two skills are normally used together, merge them. If one skill is just a subsection of another, make it a section or local reference.
 
@@ -69,7 +71,7 @@ Use this skill to build or improve reusable skills for the current workspace wit
 6. **Ground the content before pruning or preserving.**
    - Before deleting or merging a skill, read its `SKILL.md` and every referenced file.
    - Verify important claims against the real files, docs, commands, or tooling the skill talks about.
-   - Keep the useful verified bits, discard AI-slop doctrine, and move non-operational knowledge to docs.
+   - Keep the useful verified bits, discard vague doctrine, and move non-operational knowledge to docs.
    - Do not send discovery into unrelated global/project skill directories; scope the audit to the user-requested skill set.
 
 7. **Bake in house style deliberately.**
@@ -95,7 +97,7 @@ Use this skill to build or improve reusable skills for the current workspace wit
    - Short or always-needed references have been inlined.
    - Nearby skills are not fake separations of the same workflow.
    - It does not turn every task into diagnostics-first ritual.
-   - It does not become doctrine when a bounded tool would do.
+   - It does not become a little church when a bounded tool would do.
 
 10. **Run the required efficiency pass after every create/update.**
    - Run `python scripts/skill-efficiency-check.py <skill-dir-or-SKILL.md>` from this skill directory for every skill touched.
@@ -123,7 +125,7 @@ Before shipping, check:
 - Short or always-needed references are inlined; remaining references are local, exact, and conditional.
 - The skill does not cross-reference other skills or their reference files.
 - Nearby skills are not fake separations of the same workflow.
-- The workflow does the normal thing first and troubleshoots only on pain.
+- The workflow does the normal thing first and troubleshoots only when something actually hurts.
 - Examples are concrete enough to teach the shape.
 - The efficiency pass has run; structural hard issues are fixed, while body-length warnings are judged against usefulness and reference-chasing.
 
