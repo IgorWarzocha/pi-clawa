@@ -17,6 +17,7 @@ const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
 const SEEDED_WORKER_PATTERN = /"id": "research-odd-local-tools-clawa"/
 const SEEDED_PURPOSE_PATTERN = /Research odd local tools/
 const BOOTSTRAP_START_SMALL_PATTERN = /Start small/
+const BOOTSTRAP_WAKE_PATTERN = /woken up here from nothing/
 const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /Do not turn this into a giant intake form/
 const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
 const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
@@ -50,6 +51,7 @@ test('first-run bootstrap sequence creates core files and marks config', async (
 })
 
 test('first-run bootstrap prompt is progressive and points at living docs', () => {
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_WAKE_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_START_SMALL_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_INTAKE_FORM_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN)
