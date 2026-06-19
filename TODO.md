@@ -64,7 +64,7 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [x] remove or retire parked `/clawas` command code if unused
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for worker launch/report/steer/jump/restart
-- [ ] decide whether `.pi/clawa-memory.jsonl` stays for first release
+- [x] decide whether `.pi/clawa-memory.jsonl` stays for first release
 
 Depends on: A, B.
 Blocks: adapter finalization and clean-room runtime test.
