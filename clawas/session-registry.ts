@@ -129,6 +129,14 @@ function getRegistryPath(rootDir: string): string {
   return path.join(rootDir, 'session-registry.json')
 }
 
+export function getClawaSessionRoot(cwd: string): string {
+  return path.join(cwd, '.pi')
+}
+
+export function getClawaSessionsDir(cwd: string): string {
+  return path.join(getClawaSessionRoot(cwd), 'sessions')
+}
+
 async function readRegistry(rootDir: string): Promise<SessionRegistry> {
   try {
     const content = await fs.readFile(getRegistryPath(rootDir), 'utf8')
@@ -136,24 +144,6 @@ async function readRegistry(rootDir: string): Promise<SessionRegistry> {
     return { workers: parsed.workers ?? {} }
   } catch {
     return { workers: {} }
-  }
-}
-
-export async function getRegisteredWorkerSessionFile(
-  rootDir: string,
-  workerId: string,
-): Promise<string | undefined> {
-  const registry = await readRegistry(rootDir)
-  const record = normalizeWorkerRecord(registry.workers[workerId])
-  if (!record) {
-    return undefined
-  }
-
-  try {
-    await fs.access(record.path)
-    return record.path
-  } catch {
-    return undefined
   }
 }
 
@@ -183,7 +173,7 @@ export async function resolveWorkerSessionFile(
     }
   }
 
-  const sessionsDir = path.join(rootDir, 'sessions')
+  const sessionsDir = getClawaSessionsDir(cwd)
   await fs.mkdir(sessionsDir, { recursive: true })
   const sessionManager = SessionManager.create(cwd, sessionsDir)
   const sessionFile = sessionManager.getSessionFile()

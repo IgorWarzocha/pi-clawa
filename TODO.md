@@ -35,6 +35,7 @@ Status: half-baked.
 - [x] root package is `@howaboua/pi-claw`
 - [x] local project install config exists at `install/pi-settings.json`
 - [x] install helper script creates project `.pi/settings.json`
+- [x] main Clawa sessions are project-local via `.pi/settings.json` `sessionDir: .pi/sessions`
 - [x] workspace package exists for Discord adapter
 - [x] decide final core config filename for this pass: `.pi/claw.jsonc`
 - [ ] keep setup automatic; refine first-run behavior from real clean-room failures
@@ -77,6 +78,7 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
 - [x] decide whether `.pi/clawa-memory.jsonl` stays for first release
+- [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
 - [ ] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
 - [ ] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
 - [ ] consider Clawa rename/folder/config alignment after a seed grows into a better name

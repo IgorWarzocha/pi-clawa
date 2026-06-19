@@ -15,12 +15,14 @@ curl -fsSL https://raw.githubusercontent.com/howaboua/pi-claw/main/scripts/insta
 Then start Pi from that folder.
 
 The installer only writes `.pi/settings.json`. On first Pi start, Clawa bootstraps the home automatically. There is no `init` step.
+Main Clawa sessions are stored project-locally in `.pi/sessions`.
 
 If you prefer to write the settings file yourself:
 
 ```json
 {
-  "packages": ["npm:@howaboua/pi-claw"]
+  "packages": ["npm:@howaboua/pi-claw"],
+  "sessionDir": ".pi/sessions"
 }
 ```
 
@@ -48,6 +50,8 @@ The boot state lives in `.pi/claw.jsonc`.
 Subclaws are specialized helpers, not default generic workers. The main Clawa creates one when a real lane appears: research, Discord, tech support, finance, jobs, or another focused surface.
 
 Run `/claw`, choose **create clawa**, and describe the purpose. Clawa seeds a visible worker home under `clawas/`, links shared `HUMAN.md` and `CLAWAS.md`, registers the worker, and asks the main Clawa/new Clawa to shape the lane from there.
+
+Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessions`.
 
 ## Nested context
 

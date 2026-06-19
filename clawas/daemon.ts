@@ -3,7 +3,7 @@ import type { ClawaDefaults } from '../config'
 import { sendClawasSessionMessage } from './comms/client.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
 import { ClawasRpcWorker } from './rpc-worker.js'
-import { getRegisteredWorkerSessionFile, resolveWorkerSessionFile } from './session-registry.js'
+import { resolveWorkerSessionFile } from './session-registry.js'
 import { createInitialState, getWorkerState, patchWorkerState, pushEvent } from './state.js'
 import { summarizeAssistantText, summarizeError, summarizePrompt } from './summaries.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
@@ -90,7 +90,11 @@ export class ClawasDaemon {
       return workerState.sessionFile
     }
 
-    return await getRegisteredWorkerSessionFile(this.controlPlaneRoot, workerId)
+    return await resolveWorkerSessionFile(
+      this.controlPlaneRoot,
+      workerState.definition,
+      workerState.cwd,
+    )
   }
 
   isWorkerManual(workerId: string): boolean {

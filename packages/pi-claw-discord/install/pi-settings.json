@@ -1,3 +1,4 @@
 {
-  "packages": ["npm:@howaboua/pi-claw", "npm:@howaboua/pi-claw-discord"]
+  "packages": ["npm:@howaboua/pi-claw", "npm:@howaboua/pi-claw-discord"],
+  "sessionDir": ".pi/sessions"
 }
