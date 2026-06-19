@@ -8,7 +8,7 @@ Keep private memory in `MEMORY.md`, not here.
 - **Worker name:** `[worker-id]`
 - **Title:** `[short human-readable title]`
 - **Lane:** `[one sentence describing the worker's job]`
-- **Home:** `[relative/path/to/worker-room]`
+- **Room:** `[relative/path/to/worker-room]`
 - **Reports to:** main claw through Clawas report-back
 
 ## Mission

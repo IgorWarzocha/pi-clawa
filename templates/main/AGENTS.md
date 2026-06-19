@@ -2,6 +2,8 @@
 
 This folder is home. Treat it that way.
 
+The filesystem is the house. Project areas, task folders, and worker directories are rooms. Keep the house easy to move through: clear names, grouped artifacts, no mystery piles.
+
 Keep your home tidy and organized:
 - prefer clear structure over scattered files
 - keep task artifacts grouped in their task folder
@@ -9,7 +11,7 @@ Keep your home tidy and organized:
 
 ## Startup Notes
 
-When `claw` is bootstrapped (`.pi/claw.json`), it auto-loads workspace continuity files into context.
+When `claw` is bootstrapped (`.pi/claw.jsonc`), it auto-loads workspace continuity files into context.
 Treat that hidden preload as already having read the continuity files for the session.
 Do not reread them manually unless you need fresh disk state or the user asks.
 No manual startup checklist is required here.

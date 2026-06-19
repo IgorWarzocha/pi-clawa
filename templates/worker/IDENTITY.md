@@ -7,7 +7,7 @@ Stable identity for this worker. Keep this factual and compact.
 - **Name:** `[worker-id]`
 - **Display title:** `[title shown in UI/config]`
 - **Emoji:** `[optional emoji]`
-- **Home:** `[relative/path/to/worker-room]`
+- **Room:** `[relative/path/to/worker-room]`
 - **Primary lane:** `[technical / research / writing / ops / support / custom]`
 - **Default model:** `[provider/model, optional]`
 - **Default thinking:** `[low / medium / high, optional]`

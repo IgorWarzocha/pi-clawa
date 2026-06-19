@@ -11,7 +11,6 @@ Fill this after setup. Keep it factual.
 - **Model:** `[provider/model]`
 - **Thinking:** `[low / medium / high]`
 - **Autostart:** `[true/false]`
-- **Prompt profile:** `[auto/gpt/glm/custom]`
 
 ## Config locations
 
