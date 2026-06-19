@@ -35,7 +35,7 @@ import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate'
 import { registerNestedAgentsAutoload } from './nested-agents'
 import { isClawBootstrapped, markClawBootstrapped } from './state'
 import { registerClawaSystemPrompt } from './system-prompt'
-import { copyTemplateFiles } from './template-files'
+import { copyTemplateFiles, type TemplateCopyResult } from './template-files'
 
 const extensionDir = dirname(fileURLToPath(import.meta.url))
 process.env.PI_CLAW_EXTENSION_PATH = fileURLToPath(import.meta.url)
@@ -165,6 +165,24 @@ async function armHydration(cwd: string): Promise<boolean> {
 
 function sendDimNote(pi: ExtensionAPI, text: string): void {
   pi.sendMessage({ customType: 'claw-dim', content: text, display: true })
+}
+
+function notifyInitialBootstrap(
+  ctx: ExtensionContext,
+  extensionConfig: { created: boolean; path: string },
+  copied: TemplateCopyResult,
+  markedPath: string,
+): void {
+  if (!ctx.hasUI) return
+  ctx.ui.setStatus('clawa', 'clawa: bootstrapping')
+  if (extensionConfig.created) {
+    ctx.ui.notify(`Clawa config created at ${extensionConfig.path}`, 'info')
+  }
+  const skipped = copied.skipped.length > 0 ? `, skipped ${copied.skipped.length}` : ''
+  ctx.ui.notify(
+    `Clawa initialized ${copied.copied.length} main files${skipped} and marked ${markedPath} bootstrapped`,
+    'info',
+  )
 }
 
 function buildHydrationProbeNote(text: string): string {
@@ -349,16 +367,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
       const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
       runtime.extensionBootstrapped = true
       setBootstrappedRuntime(ctx.cwd)
-      if (ctx.hasUI) {
-        ctx.ui.setStatus('clawa', 'clawa: bootstrapping')
-        if (extensionConfig.created) {
-          ctx.ui.notify(`Clawa config created at ${extensionConfig.path}`, 'info')
-        }
-        ctx.ui.notify(
-          `Clawa initialized ${copied.copied.length} main files and marked ${marked.path} bootstrapped`,
-          'info',
-        )
-      }
+      notifyInitialBootstrap(ctx, extensionConfig, copied, marked.path)
     }
 
     if (ctx.hasUI) {

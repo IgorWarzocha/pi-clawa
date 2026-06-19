@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import { copyTemplateFiles } from './template-files.js'
 
-test('copyTemplateFiles copies files and overwrites existing files', async () => {
+test('copyTemplateFiles copies missing files and preserves existing files', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'clawa-templates-'))
   const source = join(dir, 'source')
   const target = join(dir, 'target')
@@ -18,9 +18,17 @@ test('copyTemplateFiles copies files and overwrites existing files', async () =>
 
     const result = await copyTemplateFiles(source, target)
 
-    assert.deepEqual(result.copied.sort(), ['AGENTS.md', 'MEMORY.md'].sort())
+    assert.deepEqual(result.copied, ['AGENTS.md'])
+    assert.deepEqual(result.skipped, ['MEMORY.md'])
     assert.equal(await readFile(join(target, 'AGENTS.md'), 'utf8'), 'template agents')
-    assert.equal(await readFile(join(target, 'MEMORY.md'), 'utf8'), 'template memory')
+    assert.equal(await readFile(join(target, 'MEMORY.md'), 'utf8'), 'existing memory')
+
+    await writeFile(join(source, 'SOUL.md'), 'template soul', 'utf8')
+    const second = await copyTemplateFiles(source, target)
+
+    assert.deepEqual(second.copied, ['SOUL.md'])
+    assert.deepEqual(second.skipped.sort(), ['AGENTS.md', 'MEMORY.md'].sort())
+    assert.equal(await readFile(join(target, 'SOUL.md'), 'utf8'), 'template soul')
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

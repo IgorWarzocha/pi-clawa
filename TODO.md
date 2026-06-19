@@ -43,7 +43,7 @@ Status: mechanically working, product flow not final.
 - [ ] finalize first bootstrap prompt
 - [ ] finalize main markdown templates
 - [ ] finalize generic worker templates
-- [ ] make bootstrap idempotence policy explicit
+- [x] make bootstrap idempotence policy explicit
 - [ ] add a focused bootstrap test/smoke script
 
 Depends on: A config names should be settled first.
