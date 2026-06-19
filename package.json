@@ -37,6 +37,7 @@
     "config.ts",
     "continuity-compaction.ts",
     "gui-primitives.ts",
+    "gui-primitives/**/*.ts",
     "gui.ts",
     "hydrate.ts",
     "extension/**/*.ts",
