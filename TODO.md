@@ -95,15 +95,31 @@ Blocks: full clean-room test if Discord is included in first release.
 Status: intentionally minimal so far.
 
 - [x] `bun run ai:check` passes
-- [ ] strict cleanup plan, not necessarily full strict pass yet
+- [x] strict cleanup plan, not necessarily full strict pass yet
 - [x] README pass after product shape settles
 - [x] install instructions for core package
 - [x] install instructions for adapter package
 - [x] security notes for local secrets and external adapters
-- [ ] package publish checklist
+- [x] package publish checklist
 
 Depends on: A-D feature shape.
 Blocks: publishing.
+
+Strict cleanup plan:
+
+1. Keep `ai:check` green as the release gate for now.
+2. Burn down Biome warnings first: top-level regex/no-non-null/assertion/simple complexity.
+3. Then tackle `typecheck:strict` by area: config/jsonc, comms, daemon/runtime, GUI, Discord adapter.
+4. Do not mix strict cleanup with feature work unless the touched file is already in hand.
+
+Publish checklist:
+
+1. `bun run ai:check`
+2. `npm pack --dry-run --json`
+3. `npm pack --dry-run --json --workspace @howaboua/pi-claw-discord`
+4. clean-room install pass from an empty project
+5. publish root package, then Discord adapter
+6. install published packages in a fresh project and run the smoke path once
 
 ## F. Clean-room test pass
 
