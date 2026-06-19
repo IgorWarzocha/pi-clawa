@@ -6,6 +6,7 @@ node_modules/
 .pi/clawas-control/
 dist/
 .pi/clawa-memory.jsonl
+.pi/claw-state.json
 .pi/claw.json
 .pi/claw.jsonc
 .pi/semantic-grep.sqlite

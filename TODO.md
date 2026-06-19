@@ -44,7 +44,7 @@ Status: mechanically working, product flow not final.
 - [ ] finalize main markdown templates
 - [ ] finalize generic worker templates
 - [x] make bootstrap idempotence policy explicit
-- [ ] add a focused bootstrap test/smoke script
+- [x] add a focused bootstrap test/smoke script
 
 Depends on: A config names should be settled first.
 Blocks: clean-room install test.

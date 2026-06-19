@@ -2,7 +2,7 @@ import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 const CLAW_STATE_VERSION = 1
-const CLAW_STATE_FILENAME = join('.pi', 'claw.json')
+const CLAW_STATE_FILENAME = join('.pi', 'claw-state.json')
 const BOOTSTRAPPED_SENTINEL_FILES = [
   'IDENTITY.md',
   'SOUL.md',
