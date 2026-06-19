@@ -27,7 +27,7 @@ Status: half-baked.
 - [x] workspace package exists for Discord adapter
 - [x] decide final core config filename for this pass: `.pi/claw.jsonc`
 - [ ] keep setup automatic; refine first-run behavior from real clean-room failures
-- [ ] verify package exports are intentional, not accidental internals
+- [x] verify package exports are intentional, not accidental internals
 
 Depends on: nothing.
 Blocks: all clean-room testing.
