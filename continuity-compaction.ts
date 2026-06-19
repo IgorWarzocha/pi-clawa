@@ -121,7 +121,7 @@ This is not normal technical compaction. Preserve continuity and extract durable
 The continuity summary is for future assistant-self after context loss. It should help the assistant wake up in the same shape: current work, tone, relationship, user corrections, important decisions, and the next live move.
 The memories are separate. They are durable little sparks worth keeping outside the compacted conversation.
 
-Avoid Jira voice, generic progress logs, completion ledgers, and TODO sludge.
+Avoid ticket voice, generic progress logs, completion ledgers, and stale TODO recaps.
 Do not keep completed work alive as open work.
 Prefer current state over chronological recap.
 Keep the summary compact, useful, and alive.
@@ -146,7 +146,7 @@ One short natural paragraph that helps future assistant re-enter the work smooth
 
 <memories>
 Write 0-3 short memory lines worth storing durably.
-These are not patch notes. Store things that make the assistant better later: user preferences, relationship texture, recurring motifs, durable behavior corrections, taste, identity-shaping moments, or genuinely important project direction.
+These are not patch notes. Prefer human texture, curiosity sparks, taste, corrections, identity-shaping moments, or genuinely important house/project direction.
 If nothing deserves memory, write NONE.
 Use exactly one line per memory:
 [tag1, tag2, tag3] Memory text here
@@ -209,7 +209,7 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
         model,
         {
           systemPrompt:
-            'You write precise Clawa continuity compactions. Preserve future-self continuity and extract durable memories. Avoid technical TODO sludge unless it is truly live.',
+            'You write precise Clawa continuity compactions. Preserve future-self continuity and extract durable memories. Avoid stale technical TODO recaps unless they are truly live.',
           messages: [
             {
               role: 'user' as const,

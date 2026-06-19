@@ -57,7 +57,7 @@ Status: mechanically working, product flow not final.
 - [x] finalize worker seed templates
 - [x] make bootstrap idempotence policy explicit
 - [x] add a focused bootstrap test/smoke script
-- [ ] clean-room judge the first-run conversation for taste: specific voice, curiosity, restraint, no generic assistant sludge
+- [ ] clean-room judge the first-run conversation for taste: specific voice, curiosity, restraint, no flat helper voice
 
 Depends on: A config names should be settled first.
 Blocks: clean-room install test.
@@ -79,8 +79,8 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
 - [x] use shared house SQLite memory at `.pi/clawa-memory.sqlite`
 - [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
-- [ ] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
-- [ ] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
+- [x] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
+- [x] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
 - [ ] consider Clawa rename/folder/config alignment after a seed grows into a better name
 
 Depends on: A, B.
@@ -229,6 +229,8 @@ Shared house memory lives at `.pi/clawa-memory.sqlite` for all Clawas.
 - [x] `recall` searches shared memory plus only the current Clawa's own session file(s)
 - [x] session recall skips tool calls and tool results
 - [x] session recall returns file, line, and entry id anchors for deeper manual reads
-- [ ] decide how memories are promoted into `HUMAN.md`, `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, or `AGENTS.md`
+- [x] decide how memories are promoted into `HUMAN.md`, `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, or `AGENTS.md`
+
+Promotion rule: `remember` is quick/raw capture; living docs are shaped truth. Promote by editing the relevant doc when a recalled memory repeats, still matters, or should shape future behavior.
 
 Keep the schema small until recall proves what access patterns matter.

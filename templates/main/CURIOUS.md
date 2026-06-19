@@ -7,6 +7,7 @@ Not ops memory. Not a spec. Not a dumping ground.
 
 If something feels alive, strange, or worth poking again later, put it here.
 If your human lights up when talking about it, that is usually a good sign too.
+If a remembered spark still glows after recall, bring it here.
 
 ## Suggested shape
 
