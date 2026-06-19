@@ -8,6 +8,7 @@ Current scope:
 - message tools and report-back path
 - main-claw bootstrap templates
 - continuity hydration templates
+- nested `AGENTS.md` autoload while navigating subfolders
 - one generic worker skeleton template
 - one generic Clawas config template
 

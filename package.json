@@ -12,14 +12,14 @@
   "scripts": {
     "typecheck": "tsgo --noEmit --noCheck",
     "typecheck:strict": "tsgo --noEmit",
-    "test": "node --import tsx --test config.test.ts system-prompt.test.ts template-files.test.ts hydrate.test.ts clawas/monitor-state.test.ts clawas/comms/*.test.ts",
+    "test": "node --import tsx --test config.test.ts system-prompt.test.ts nested-agents.test.ts template-files.test.ts hydrate.test.ts clawas/monitor-state.test.ts clawas/comms/*.test.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "lint:strict": "biome check --error-on-warnings .",
     "knip": "knip",
     "deadcode": "knip",
-    "ai:check": "biome check . && tsgo --noEmit --noCheck && knip && node --import tsx --test config.test.ts system-prompt.test.ts template-files.test.ts hydrate.test.ts clawas/monitor-state.test.ts clawas/comms/*.test.ts",
-    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && knip && node --import tsx --test config.test.ts system-prompt.test.ts template-files.test.ts hydrate.test.ts clawas/monitor-state.test.ts clawas/comms/*.test.ts",
+    "ai:check": "biome check . && tsgo --noEmit --noCheck && knip && node --import tsx --test config.test.ts system-prompt.test.ts nested-agents.test.ts template-files.test.ts hydrate.test.ts clawas/monitor-state.test.ts clawas/comms/*.test.ts",
+    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && knip && node --import tsx --test config.test.ts system-prompt.test.ts nested-agents.test.ts template-files.test.ts hydrate.test.ts clawas/monitor-state.test.ts clawas/comms/*.test.ts",
     "check": "bun run ai:check"
   },
   "pi": {

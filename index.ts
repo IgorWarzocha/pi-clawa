@@ -32,6 +32,7 @@ import {
 import { registerContinuityCompaction } from './continuity-compaction'
 import { type CreateClawRequest, runClawGui } from './gui'
 import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate'
+import { registerNestedAgentsAutoload } from './nested-agents'
 import { isClawBootstrapped, markClawBootstrapped } from './state'
 import { registerClawaSystemPrompt } from './system-prompt'
 import { copyTemplateFiles } from './template-files'
@@ -316,6 +317,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerClawasTools(pi, clawasRuntime)
   registerContinuityCompaction(pi)
   registerClawaSystemPrompt(pi)
+  registerNestedAgentsAutoload(pi)
   if (!IS_CLAWAS_WORKER) {
     registerSteerCommand(pi, clawasRuntime)
     registerJumpCommand(pi, clawasRuntime)

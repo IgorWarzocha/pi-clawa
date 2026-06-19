@@ -8,5 +8,6 @@ dist/
 .pi/clawa-memory.jsonl
 .pi/claw.json
 .pi/claw.jsonc
+.pi/semantic-grep.sqlite
 
 .pi/claw-discord/
