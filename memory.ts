@@ -116,26 +116,29 @@ export function registerRememberTool(pi: ExtensionAPI): void {
   pi.registerTool({
     name: 'remember',
     label: 'Remember',
-    description:
-      'Create, overwrite, or delete a short shared Clawa memory in the house SQLite memory. Use for raw/simple recall seeds; edit CLAW.md, HUMAN.md, CURIOUS.md, TOOLS.md, or AGENTS.md when the memory is shaped truth.',
+    description: 'Create, update, or delete a short shared memory; recall returns ids for edits.',
+    promptSnippet: 'Save, edit, or delete shared memory.',
+    promptGuidelines: [
+      'remember: Use for small raw notes worth carrying, especially human texture and curiosity sparks.',
+      'remember: Edit living docs when a raw memory becomes shaped truth.',
+    ],
     parameters: Type.Object({
       id: Type.Optional(
-        Type.Number({
-          description:
-            'Existing memory id to overwrite. If id is set and text is empty, that memory is deleted.',
+        Type.Integer({
+          minimum: 1,
+          description: 'Memory id. With empty text, delete.',
         }),
       ),
       text: Type.String({
-        description:
-          'Memory text. Non-empty creates or overwrites. Empty text with an id deletes that memory.',
+        description: 'Memory text. Empty with id deletes.',
       }),
       tags: Type.Optional(
         Type.Array(
           Type.String({
             maxLength: MAX_TAG_LENGTH,
-            description: 'Small lowercase-ish tags like human, taste, curious, tool, correction.',
+            description: 'Short tag.',
           }),
-          { description: 'Optional short tags for later recall.' },
+          { maxItems: MAX_TAGS, description: 'Short tags for recall.' },
         ),
       ),
     }),

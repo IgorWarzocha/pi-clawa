@@ -311,22 +311,30 @@ export function registerRecallTool(pi: ExtensionAPI): void {
     name: 'recall',
     label: 'Recall',
     description:
-      'Search shared Clawa memories plus this Clawa session transcript. Session recall only reads user messages, assistant text, custom messages, compactions, and branch summaries; it skips tool calls and tool results.',
+      'Search shared memory and this Clawa session, returning memory ids and file/line anchors.',
+    promptSnippet: 'Search shared memory and this session.',
+    promptGuidelines: [
+      'recall: Use before assuming I have no past context.',
+      'recall: Search when a past human preference, spark, or decision may matter.',
+      'recall: Session search skips tool calls and tool results.',
+    ],
     parameters: Type.Object({
       query: Type.Optional(
         Type.String({
-          description: 'Words to search for in shared memory and this Clawa session.',
+          description: 'Search words. Omit for recent entries.',
         }),
       ),
       tags: Type.Optional(
         Type.Array(Type.String(), {
-          description:
-            'Memory tags to filter shared SQLite memories by. Session entries do not have tags.',
+          maxItems: 12,
+          description: 'Filter memories by tags; sessions ignore tags.',
         }),
       ),
       limit: Type.Optional(
-        Type.Number({
-          description: `Maximum results, default ${DEFAULT_RECALL_LIMIT}, cap ${MAX_RECALL_LIMIT}.`,
+        Type.Integer({
+          minimum: 1,
+          maximum: MAX_RECALL_LIMIT,
+          description: `Default ${DEFAULT_RECALL_LIMIT}; max ${MAX_RECALL_LIMIT}.`,
         }),
       ),
     }),
