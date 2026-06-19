@@ -8,14 +8,7 @@ import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate.js'
 test('hydration loads active continuity files and excludes deprecated HEARTBEAT', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'howaboua-hydrate-'))
   try {
-    for (const name of [
-      'IDENTITY.md',
-      'SOUL.md',
-      'USER.md',
-      'MEMORY.md',
-      'CURIOUS.md',
-      'TOOLS.md',
-    ]) {
+    for (const name of ['IDENTITY.md', 'SOUL.md', 'USER.md', 'CURIOUS.md', 'TOOLS.md']) {
       await writeFile(join(dir, name), `# ${name}\n\nloaded ${name}\n`, 'utf8')
     }
     await writeFile(
@@ -27,14 +20,13 @@ test('hydration loads active continuity files and excludes deprecated HEARTBEAT'
     const files = await loadHydrationFiles(dir)
     assert.deepEqual(
       files.map((file) => file.name),
-      ['IDENTITY.md', 'SOUL.md', 'USER.md', 'MEMORY.md', 'CURIOUS.md', 'TOOLS.md'],
+      ['IDENTITY.md', 'SOUL.md', 'USER.md', 'CURIOUS.md', 'TOOLS.md'],
     )
 
     const prompt = buildHydrationSystemPrompt(files)
     assert.match(prompt, /--- BEGIN IDENTITY\.md ---/)
     assert.match(prompt, /--- BEGIN SOUL\.md ---/)
     assert.match(prompt, /--- BEGIN USER\.md ---/)
-    assert.match(prompt, /--- BEGIN MEMORY\.md ---/)
     assert.match(prompt, /--- BEGIN CURIOUS\.md ---/)
     assert.match(prompt, /--- BEGIN TOOLS\.md ---/)
     assert.doesNotMatch(prompt, /HEARTBEAT\.md/)

@@ -1,7 +1,7 @@
 # AGENTS.md — worker template
 
 This file defines the worker's always-loaded behavior. Fill in the bracketed fields during setup.
-Keep private memory in `MEMORY.md`, not here.
+Keep this file operational. Put temperament in `SOUL.md`, human/context notes in `USER.md`, curiosities in `CURIOUS.md`, and tooling notes in `TOOLS.md`.
 
 ## Identity
 
@@ -49,7 +49,7 @@ Ask before:
 Never publish or expose:
 
 - API keys, tokens, secrets, browser/session state
-- private memory, job/customer/user records, personal identifiers
+- private notes, job/customer/user records, personal identifiers
 - local machine paths that reveal private setup unless the human explicitly wants them shared
 
 ## Coordination
@@ -65,7 +65,6 @@ The Clawa extension may hydrate these files into context:
 - `IDENTITY.md` — stable self-description
 - `SOUL.md` — temperament and principles
 - `USER.md` — local understanding of the human
-- `MEMORY.md` — curated durable memory
 - `CURIOUS.md` — living questions and sparks
 - `TOOLS.md` — local tools and workflows
 

@@ -64,7 +64,6 @@ const INITIAL_BOOTSTRAP_PROMPT = [
   '- IDENTITY.md for stable self-description',
   '- USER.md for durable user preferences',
   '- SOUL.md for temperament and principles',
-  '- MEMORY.md for concise durable memory',
   '- CURIOUS.md for sparks and open threads',
   '- TOOLS.md for local tooling notes',
 ].join('\n')
@@ -214,7 +213,6 @@ function buildHydrationProbeNote(text: string): string {
     ['IDENTITY', '--- BEGIN IDENTITY.md ---'],
     ['SOUL', '--- BEGIN SOUL.md ---'],
     ['USER', '--- BEGIN USER.md ---'],
-    ['MEMORY', '--- BEGIN MEMORY.md ---'],
     ['CURIOUS', '--- BEGIN CURIOUS.md ---'],
     ['TOOLS', '--- BEGIN TOOLS.md ---'],
     ['sad heading', '## The `sad` State'],

@@ -187,7 +187,7 @@ Later, replace it with SQLite when the access pattern is clearer:
 - stable ids
 - timestamps and tags
 - simple search/list/remove commands
-- possible promotion into `MEMORY.md`
+- possible promotion into a future editable memory surface
 - no external service dependency
 
 Depends on: C compaction behavior proving useful.

@@ -41,11 +41,11 @@ test('first-run bootstrap detects pre-existing core markdown files', async () =>
   try {
     await mkdir(join(root, '.git'))
     await writeFile(join(root, 'AGENTS.md'), 'existing project rules', 'utf8')
-    await writeFile(join(root, 'MEMORY.md'), 'existing memory', 'utf8')
+    await writeFile(join(root, 'SOUL.md'), 'existing soul', 'utf8')
 
     const conflicts = await findExistingTemplateFiles(MAIN_TEMPLATES_DIR, root)
 
-    assert.deepEqual(conflicts.sort(), ['AGENTS.md', 'MEMORY.md'].sort())
+    assert.deepEqual(conflicts.sort(), ['AGENTS.md', 'SOUL.md'].sort())
   } finally {
     await rm(root, { recursive: true, force: true })
   }

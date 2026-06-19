@@ -535,7 +535,7 @@ export async function runClawGui(
         'writes the main claw continuity files before startup',
       ],
       body: [
-        'Files: AGENTS.md, IDENTITY.md, SOUL.md, TOOLS.md, USER.md, MEMORY.md, CURIOUS.md',
+        'Files: AGENTS.md, IDENTITY.md, SOUL.md, TOOLS.md, USER.md, CURIOUS.md',
         'AGENTS.md is not injected by claw hydration (Pi already handles AGENTS).',
       ],
     }),

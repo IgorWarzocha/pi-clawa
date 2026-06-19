@@ -32,7 +32,6 @@ Clawa creates missing home files in the project root:
 - `IDENTITY.md`
 - `SOUL.md`
 - `USER.md`
-- `MEMORY.md`
 - `CURIOUS.md`
 - `TOOLS.md`
 

@@ -133,15 +133,7 @@ function projectRelativePath(projectRoot: string, targetPath: string): string {
 async function copyDiscordWorkerTemplates(targetDir: string): Promise<void> {
   const templateDir = join(extensionDir, 'templates', 'discord-worker')
   await mkdir(targetDir, { recursive: true })
-  for (const file of [
-    'AGENTS.md',
-    'IDENTITY.md',
-    'SOUL.md',
-    'TOOLS.md',
-    'USER.md',
-    'MEMORY.md',
-    'CURIOUS.md',
-  ]) {
+  for (const file of ['AGENTS.md', 'IDENTITY.md', 'SOUL.md', 'TOOLS.md', 'USER.md', 'CURIOUS.md']) {
     await copyFile(join(templateDir, file), join(targetDir, file))
   }
 }

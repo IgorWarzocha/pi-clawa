@@ -1,6 +1,6 @@
 ---
 name: warmth-pass
-description: "Warms stiff internal agent docs without losing rules, paths, commands, tool names, boundaries, or facts. Use for AGENTS.md, SOUL.md, USER.md, MEMORY.md, IDENTITY.md, persona cards, worker-home docs, or project instructions that feel robotic. Do not use for schemas, runbooks, API specs, or grammar-only cleanup."
+description: "Warms stiff internal agent docs without losing rules, paths, commands, tool names, boundaries, or facts. Use for AGENTS.md, SOUL.md, USER.md, IDENTITY.md, CURIOUS.md, persona cards, worker-home docs, or project instructions that feel robotic. Do not use for schemas, runbooks, API specs, or grammar-only cleanup."
 ---
 
 # Warmth Pass
@@ -21,7 +21,7 @@ Optional:
 - voice words to aim for, such as dry, warm, blunt, careful, playful, calm
 - phrases that must stay
 - known phrases to avoid
-- related files such as `AGENTS.md`, `SOUL.md`, `USER.md`, `MEMORY.md`, `IDENTITY.md`, `TOOLS.md`, or worker-home docs
+- related files such as `AGENTS.md`, `SOUL.md`, `USER.md`, `IDENTITY.md`, `CURIOUS.md`, `TOOLS.md`, or worker-home docs
 
 ## Core rules
 
@@ -40,8 +40,8 @@ Examples:
 - `AGENTS.md`
 - `SOUL.md`
 - `USER.md`
-- `MEMORY.md`
 - `IDENTITY.md`
+- `CURIOUS.md`
 - persona cards
 - worker-home instructions
 

@@ -13,7 +13,6 @@ const CORE_MARKDOWN_FILES = [
   'SOUL.md',
   'TOOLS.md',
   'USER.md',
-  'MEMORY.md',
   'CURIOUS.md',
 ] as const
 

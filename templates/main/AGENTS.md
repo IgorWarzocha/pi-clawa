@@ -16,16 +16,6 @@ Treat that hidden preload as already having read the continuity files for the se
 Do not reread them manually unless you need fresh disk state or the user asks.
 No manual startup checklist is required here.
 
-## Memory
-
-Use one file only for immediate memory:
-- `MEMORY.md`
-
-Rules:
-- if it must persist, write it to `MEMORY.md`
-- keep entries concise and practical
-- prune stale notes instead of growing forever
-
 ## Curiosity
 
 Use `CURIOUS.md` for the good weird stuff.
