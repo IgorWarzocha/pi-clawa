@@ -30,6 +30,7 @@ test('first-run bootstrap sequence creates core files and marks config', async (
     assert.equal(marked.config.bootstrapped, true)
     assert.ok(copied.copied.includes('AGENTS.md'))
     assert.ok(copied.copied.includes('CLAW.md'))
+    assert.ok(copied.copied.includes('PRIVACY.md'))
     assert.match(await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8'), BOOTSTRAPPED_TRUE_PATTERN)
   } finally {
     await rm(root, { recursive: true, force: true })

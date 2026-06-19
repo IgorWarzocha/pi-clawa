@@ -35,6 +35,7 @@ Clawa creates missing home files in the project root:
 | `HUMAN.md` | relationship map, preferences, human context |
 | `CURIOUS.md` | shiny rocks, motifs, sparks worth revisiting |
 | `TOOLS.md` | local tools, services, commands, and gotchas |
+| `PRIVACY.md` | one-time privacy/security calibration worksheet |
 
 Clawa expects those core markdown files to be absent before first run. If one is already present, bootstrapping is blocked so the generated home shape stays clean. Move existing files out first, start Clawa, then ask your claw to adapt the generated files.
 
