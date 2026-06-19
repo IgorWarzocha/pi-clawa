@@ -1,0 +1,247 @@
+import { mkdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import { dirname, join, relative, resolve } from 'node:path'
+import type { ExtensionAPI, ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
+import { bootstrapClawWorkspace } from '../bootstrap.js'
+import { getClawasConfigPath } from '../clawas/config-loader.js'
+import { parseJsonc } from '../clawas/jsonc.js'
+import type { ClawasRuntime } from '../clawas/runtime.js'
+import type { WorkerDefinition } from '../clawas/types.js'
+import {
+  type ClawaConfig,
+  findRepoRoot,
+  loadClawEnvironmentConfig,
+  upsertClawConfig,
+} from '../config.js'
+import type { CreateClawRequest } from '../gui.js'
+import { workerTemplatesDir } from './constants.js'
+import { sendDimNote } from './ui-notes.js'
+
+const NON_SLUG_CHARS_REGEX = /[^a-z0-9]+/g
+const EDGE_DASH_REGEX = /^-+|-+$/g
+const MULTI_DASH_REGEX = /-+/g
+const CLAWAS_PLACEHOLDER_LINE_REGEX = /^- \*\*`\[clawa-name\]`\*\* .*$/m
+const MAX_SEED_SLUG_CHARS = 40
+
+type WorkersConfigFile = {
+  workers: unknown[]
+  [key: string]: unknown
+}
+
+export async function createNewClaw(
+  pi: ExtensionAPI,
+  ctx: ExtensionCommandContext,
+  request: CreateClawRequest,
+  runtime?: ClawasRuntime,
+) {
+  const repoRoot = findRepoRoot(ctx.cwd)
+  const loaded = loadClawEnvironmentConfig(repoRoot)
+  const purpose = request.purpose.trim()
+  const seedId = await nextAvailableSeedId(repoRoot, loaded.config.clawas.baseDir, purpose)
+  const relativePath = join(loaded.config.clawas.baseDir, seedId)
+  const absolutePath = resolve(repoRoot, relativePath)
+
+  await bootstrapClawWorkspace(absolutePath, workerTemplatesDir)
+  await symlinkSharedFile(repoRoot, absolutePath, 'HUMAN.md')
+  await symlinkSharedFile(repoRoot, absolutePath, 'CLAWAS.md')
+
+  const worker = buildSeedWorker(seedId, relativePath, purpose)
+  const savedWorkersPath = await upsertWorkerConfig(repoRoot, worker)
+  const savedClaw = upsertClawConfig(repoRoot, buildClawConfig(seedId, relativePath, purpose))
+  await updateClawasMap(repoRoot, seedId, purpose)
+
+  sendDimNote(
+    pi,
+    buildSeedCreatedNote(seedId, purpose, relativePath, savedWorkersPath, savedClaw.path),
+  )
+  pi.sendUserMessage(buildMainClawaCreatePrompt(seedId, relativePath, purpose), {
+    deliverAs: 'followUp',
+  })
+  await notifySeedWorker(runtime, worker.id, buildWorkerSeedPrompt(seedId, relativePath, purpose))
+
+  if (ctx.hasUI) ctx.ui.notify(`Seeded ${seedId} at ${relativePath}`, 'info')
+  return { name: seedId, path: relativePath, workerId: worker.id }
+}
+
+function buildClawConfig(name: string, path: string, purpose: string): ClawaConfig {
+  return { name, path, autostart: true, notes: purpose }
+}
+
+function purposeToSlug(purpose: string): string {
+  const base = purpose
+    .toLowerCase()
+    .replace(NON_SLUG_CHARS_REGEX, '-')
+    .replace(MULTI_DASH_REGEX, '-')
+    .replace(EDGE_DASH_REGEX, '')
+    .slice(0, MAX_SEED_SLUG_CHARS)
+    .replace(EDGE_DASH_REGEX, '')
+
+  const slug = base || 'new-clawa'
+  return slug.endsWith('-clawa') ? slug : `${slug}-clawa`
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function nextAvailableSeedId(
+  repoRoot: string,
+  baseDir: string,
+  purpose: string,
+): Promise<string> {
+  const slug = purposeToSlug(purpose)
+  const config = await readWorkersConfig(getClawasConfigPath(repoRoot))
+  const existingIds = new Set(
+    config.workers
+      .map((worker) => (isWorkerRecord(worker) ? worker.id : undefined))
+      .filter((id): id is string => typeof id === 'string'),
+  )
+
+  for (let index = 0; index < 100; index += 1) {
+    const candidate = index === 0 ? slug : `${slug}-${index + 1}`
+    const candidatePath = resolve(repoRoot, baseDir, candidate)
+    if (!(existingIds.has(candidate) || (await pathExists(candidatePath)))) return candidate
+  }
+
+  throw new Error(`Could not find an unused Clawa seed name for ${slug}`)
+}
+
+function buildSeedWorker(id: string, cwd: string, purpose: string): WorkerDefinition {
+  return {
+    id,
+    title: id,
+    emoji: '🛠️',
+    cwd,
+    enabled: true,
+    autostart: true,
+    startupPrompt: buildWorkerSeedPrompt(id, cwd, purpose),
+    thinking: 'medium',
+  }
+}
+
+function isWorkerRecord(value: unknown): value is Record<string, unknown> & { id?: string } {
+  return Boolean(value && typeof value === 'object')
+}
+
+async function readWorkersConfig(configPath: string): Promise<WorkersConfigFile> {
+  try {
+    const parsed = parseJsonc(await readFile(configPath, 'utf8'))
+    if (!parsed || typeof parsed !== 'object') return { workers: [] }
+    const record = parsed as Record<string, unknown>
+    return { ...record, workers: Array.isArray(record.workers) ? record.workers : [] }
+  } catch {
+    return { workers: [] }
+  }
+}
+
+async function upsertWorkerConfig(repoRoot: string, worker: WorkerDefinition): Promise<string> {
+  const configPath = getClawasConfigPath(repoRoot)
+  const config = await readWorkersConfig(configPath)
+  const workers = [...config.workers]
+  const existingIndex = workers.findIndex(
+    (entry) => isWorkerRecord(entry) && entry.id === worker.id,
+  )
+  if (existingIndex >= 0) workers[existingIndex] = worker
+  else workers.push(worker)
+
+  await mkdir(dirname(configPath), { recursive: true })
+  await writeFile(configPath, `${JSON.stringify({ ...config, workers }, null, 2)}\n`, 'utf8')
+  return configPath
+}
+
+async function symlinkSharedFile(
+  repoRoot: string,
+  targetDir: string,
+  filename: 'HUMAN.md' | 'CLAWAS.md',
+): Promise<void> {
+  const linkPath = join(targetDir, filename)
+  const targetPath = join(repoRoot, filename)
+  const relativeTarget = relative(targetDir, targetPath) || filename
+  await rm(linkPath, { force: true })
+  await symlink(relativeTarget, linkPath)
+}
+
+async function updateClawasMap(repoRoot: string, name: string, purpose: string): Promise<void> {
+  const path = join(repoRoot, 'CLAWAS.md')
+  let content = ''
+  try {
+    content = await readFile(path, 'utf8')
+  } catch {
+    content = '# CLAWAS.md\n\n## House crew\n'
+  }
+
+  if (content.includes(`**\`${name}\`**`)) return
+  const entry = `- **\`${name}\`** — ${purpose}`
+  if (CLAWAS_PLACEHOLDER_LINE_REGEX.test(content)) {
+    await writeFile(path, content.replace(CLAWAS_PLACEHOLDER_LINE_REGEX, entry), 'utf8')
+    return
+  }
+  if (content.includes('## House crew')) {
+    await writeFile(path, `${content.trimEnd()}\n${entry}\n`, 'utf8')
+    return
+  }
+  await writeFile(path, `${content.trimEnd()}\n\n## House crew\n\n${entry}\n`, 'utf8')
+}
+
+function buildSeedCreatedNote(
+  name: string,
+  purpose: string,
+  home: string,
+  workerConfig: string,
+  clawConfig: string,
+): string {
+  return [
+    `new Clawa seed created: ${name}`,
+    `purpose: ${purpose}`,
+    `home: ${home}`,
+    `worker config: ${workerConfig}`,
+    `claw config: ${clawConfig}`,
+  ].join('\n')
+}
+
+function buildMainClawaCreatePrompt(name: string, path: string, purpose: string): string {
+  return [
+    'A new specialized Clawa seed has been created.',
+    '',
+    `Seed name: ${name}`,
+    `Home: ${path}`,
+    '',
+    'Purpose from the human:',
+    purpose,
+    '',
+    'Shape this Clawa now. Chat with the human if the lane needs clarification, then edit its home docs and the root CLAWAS.md routing map as needed. The seed already exists in .pi/clawas/config.jsonc.',
+    'Do not turn this into a big wizard. Make a reasonable first draft and let the Clawa evolve.',
+  ].join('\n')
+}
+
+function buildWorkerSeedPrompt(name: string, path: string, purpose: string): string {
+  return [
+    'You have just been created as a specialized Clawa.',
+    '',
+    `Seed name: ${name}`,
+    `Home: ${path}`,
+    '',
+    'Purpose from the human:',
+    purpose,
+    '',
+    'Orient in your home. Read your local AGENTS.md and CLAW.md, notice that HUMAN.md and CLAWAS.md are shared house links, then shape your own CLAW.md, AGENTS.md, TOOLS.md, and CURIOUS.md for this lane. Stay specialized, but do not wake up blank.',
+  ].join('\n')
+}
+
+async function notifySeedWorker(
+  runtime: ClawasRuntime | undefined,
+  workerId: string,
+  prompt: string,
+): Promise<void> {
+  if (!runtime) return
+  try {
+    await runtime.restart()
+    await runtime.sendPrompt(workerId, prompt, 'prompt')
+  } catch {
+    // The main Clawa prompt still tells the household how to finish shaping this seed.
+  }
+}

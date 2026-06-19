@@ -16,10 +16,14 @@ function projectRelativePath(projectRoot: string, targetPath: string): string {
   return relative(projectRoot, targetPath) || targetPath
 }
 
-async function symlinkSharedClawasFile(projectRoot: string, targetDir: string): Promise<void> {
-  const linkPath = join(targetDir, 'CLAWAS.md')
-  const targetPath = join(projectRoot, 'CLAWAS.md')
-  const relativeTarget = relative(targetDir, targetPath) || 'CLAWAS.md'
+async function symlinkSharedFile(
+  projectRoot: string,
+  targetDir: string,
+  filename: 'HUMAN.md' | 'CLAWAS.md',
+): Promise<void> {
+  const linkPath = join(targetDir, filename)
+  const targetPath = join(projectRoot, filename)
+  const relativeTarget = relative(targetDir, targetPath) || filename
   await rm(linkPath, { force: true })
   await symlink(relativeTarget, linkPath)
 }
@@ -27,10 +31,11 @@ async function symlinkSharedClawasFile(projectRoot: string, targetDir: string): 
 async function copyDiscordWorkerTemplates(projectRoot: string, targetDir: string): Promise<void> {
   const templateDir = join(extensionDir, 'templates', 'discord-worker')
   await mkdir(targetDir, { recursive: true })
-  for (const file of ['AGENTS.md', 'CLAW.md', 'HUMAN.md', 'TOOLS.md', 'CURIOUS.md']) {
+  for (const file of ['AGENTS.md', 'CLAW.md', 'TOOLS.md', 'CURIOUS.md']) {
     await copyFile(join(templateDir, file), join(targetDir, file))
   }
-  await symlinkSharedClawasFile(projectRoot, targetDir)
+  await symlinkSharedFile(projectRoot, targetDir, 'HUMAN.md')
+  await symlinkSharedFile(projectRoot, targetDir, 'CLAWAS.md')
 }
 
 function stripJsonc(text: string): string {

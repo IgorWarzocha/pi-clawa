@@ -2,7 +2,8 @@ import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import { type ClawaDefaults, resolveClawaDefaults } from '../config.js'
 import { runClawGui } from '../gui.js'
-import { createNewClaw, executeBootstrap } from './bootstrap-actions.js'
+import { executeBootstrap } from './bootstrap-actions.js'
+import { createNewClaw } from './clawa-seed.js'
 import { resolveBootstrapRequest, resolveCreateRequest } from './command-args.js'
 import { syncClawaEnvironment } from './environment.js'
 import type { ClawaRuntimeState } from './runtime-state.js'
@@ -23,8 +24,8 @@ export function registerClawCommand(
       syncClawaEnvironment(ctx.cwd)
 
       const create = resolveCreateRequest(args ?? '')
-      if (create.run && create.name) {
-        await createNewClaw(pi, ctx, { name: create.name })
+      if (create.run && create.purpose) {
+        await createNewClaw(pi, ctx, { purpose: create.purpose }, options.clawasRuntime)
         return
       }
 
@@ -36,7 +37,7 @@ export function registerClawCommand(
       await runClawGui(
         ctx,
         async () => await executeBootstrap(pi, ctx, options.runtime),
-        async (createRequest) => await createNewClaw(pi, ctx, createRequest),
+        async (createRequest) => await createNewClaw(pi, ctx, createRequest, options.clawasRuntime),
         options.clawasRuntime,
       )
     },

@@ -17,15 +17,15 @@ export function buildDetails(model: ClawGuiModel): Record<string, Primitive> {
       ],
     }),
     'create-claw': createDetail({
-      title: 'create-claw',
+      title: 'create-clawa',
       meta: [
-        `creates a new claw workspace under ${model.loaded.config.clawas.baseDir}`,
-        'bootstraps it with the bundled main claw templates',
-        'registers it in claw config for monitoring',
+        `creates a visible Clawa home under ${model.loaded.config.clawas.baseDir}`,
+        'bootstraps it with starter worker files and shared HUMAN/CLAWAS links',
+        'registers it as a Clawas worker seed',
       ],
       body: [
-        'You will be asked for the claw name.',
-        'The claw folder path is tied automatically from config baseDir + name.',
+        'You will be asked for the purpose, not a final name.',
+        'The main Clawa and new Clawa should shape the lane, docs, name, and toolkit afterwards.',
       ],
     }),
     'restart-clawas': createDetail({

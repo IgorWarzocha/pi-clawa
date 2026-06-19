@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai'
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import { convertToLlm } from '@earendil-works/pi-coding-agent'
+import { findRepoRoot } from './config.js'
 
 const MEMORY_JSONL_PATH = join('.pi', 'clawa-memory.jsonl')
 const MAX_MEMORY_LINES = 3
@@ -175,13 +176,14 @@ ${input.conversationText}
 }
 
 function appendMemories(
+  repoRoot: string,
   cwd: string,
   memories: MemoryLine[],
   compaction: MemoryRecord['compaction'],
 ) {
-  if (memories.length === 0) return { path: join(cwd, MEMORY_JSONL_PATH), count: 0 }
+  if (memories.length === 0) return { path: join(repoRoot, MEMORY_JSONL_PATH), count: 0 }
 
-  const memoryPath = join(cwd, MEMORY_JSONL_PATH)
+  const memoryPath = join(repoRoot, MEMORY_JSONL_PATH)
   mkdirSync(dirname(memoryPath), { recursive: true })
   const timestamp = Date.now()
   const createdAt = new Date(timestamp).toISOString()
@@ -298,9 +300,13 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
       }
 
       const memories = parseMemoryLines(extractBlock(text, 'memories'))
-      let memoryWrite = { path: join(ctx.cwd, MEMORY_JSONL_PATH), count: 0 }
+      const repoRoot = findRepoRoot(ctx.cwd)
+      let memoryWrite = { path: join(repoRoot, MEMORY_JSONL_PATH), count: 0 }
       try {
-        memoryWrite = appendMemories(ctx.cwd, memories, { firstKeptEntryId, tokensBefore })
+        memoryWrite = appendMemories(repoRoot, ctx.cwd, memories, {
+          firstKeptEntryId,
+          tokensBefore,
+        })
       } catch (error) {
         if (!signal.aborted && ctx.hasUI) {
           const message = error instanceof Error ? error.message : String(error)

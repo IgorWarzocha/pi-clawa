@@ -42,7 +42,7 @@ Status: mechanically working, product flow not final.
 - [x] first run then proceeds into normal runtime path
 - [ ] finalize first bootstrap prompt
 - [ ] finalize main markdown templates
-- [ ] finalize generic worker templates
+- [x] finalize worker seed templates
 - [x] make bootstrap idempotence policy explicit
 - [x] add a focused bootstrap test/smoke script
 
@@ -138,7 +138,7 @@ Test once, in this order:
 5. verify bootstrap prompt is sent
 6. verify config flips to bootstrapped
 7. restart Pi and confirm no rebootstrap
-8. create/start worker
+8. create a specialized Clawa seed from `/claw`
 9. verify monitor widget
 10. verify `/steer`
 11. verify `/jump`

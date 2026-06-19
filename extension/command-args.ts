@@ -8,7 +8,7 @@ export function resolveBootstrapRequest(args: string): boolean {
 
 export function resolveCreateRequest(args: string): {
   run: boolean
-  name?: string
+  purpose?: string
 } {
   const trimmed = args.trim()
   if (!trimmed) return { run: false }
@@ -19,6 +19,6 @@ export function resolveCreateRequest(args: string): {
     return { run: false }
   }
 
-  const name = parts.find((part, index) => index > 0 && part.toLowerCase() !== 'standard')
-  return { run: true, name }
+  const purpose = parts.slice(1).join(' ').trim()
+  return { run: true, purpose: purpose || undefined }
 }

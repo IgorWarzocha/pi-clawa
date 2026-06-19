@@ -8,8 +8,8 @@ import type { ActionItem, CreateClawAction, ManagedWorker, WorkerAction } from '
 export function buildControlActions(model: ClawGuiModel): ActionItem[] {
   const actions: ActionItem[] = [
     {
-      label: 'new claw',
-      summary: 'Create and register another claw',
+      label: 'create clawa',
+      summary: 'Seed a specialized Clawa from a purpose prompt',
       detailKey: 'create-claw',
       kind: 'create',
     },
@@ -111,15 +111,15 @@ async function runCreateAction(
   setStatus: (message: string) => void,
 ): Promise<void> {
   const name = await runComposer(ctx, {
-    title: 'Create claw',
-    placeholder: 'Enter the new claw name...',
-    maxLines: 1,
-    maxLength: 120,
+    title: 'Create Clawa',
+    placeholder: 'What should this specialized Clawa exist to do?',
+    maxLines: 8,
+    maxLength: 2000,
   })
   if (!name?.trim()) return
 
-  const created = await performCreate({ name: name.trim() })
-  const status = `Created ${created.name} at ${created.path}. Reopen /claw to refresh the list.`
+  const created = await performCreate({ purpose: name.trim() })
+  const status = `Seeded ${created.name} at ${created.path}. Reopen /claw to refresh the list.`
   setStatus(status)
   ctx.ui.notify(status, 'info')
 }

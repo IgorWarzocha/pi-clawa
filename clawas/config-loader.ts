@@ -97,9 +97,6 @@ function normalizeConfig(value: unknown): ClawasConfig {
   const workers = rawWorkers
     .map((worker, index) => normalizeWorker(worker, index))
     .filter((worker) => worker.enabled)
-  if (workers.length === 0) {
-    throw new Error('Clawas config must contain at least one enabled worker')
-  }
 
   return { workers }
 }

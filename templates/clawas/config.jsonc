@@ -1,15 +1,5 @@
 {
-  // Generic Clawas config template. The Clawa init/bootstrap flow renders this into the project .pi directory.
-  "workers": [
-    {
-      "id": "worker-clawa",
-      "title": "worker-clawa",
-      "emoji": "🛠️",
-      "cwd": "clawas/worker-clawa",
-      "model": "openai-codex/gpt-5.5",
-      "thinking": "medium",
-      "autostart": false,
-      "startupPrompt": "You are a Clawas worker. Orient in your worker home, follow your local AGENTS.md, do the assigned task, and report useful outcomes back to the main claw."
-    }
-  ]
+  // Specialized Clawas are added here when the main Clawa or /claw creates them.
+  // Keep templates quiet until a real worker lane exists.
+  "workers": []
 }

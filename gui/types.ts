@@ -36,7 +36,7 @@ export type Screen = 'claws' | 'manage' | 'about' | 'help'
 export type WorkerAction = 'prompt' | 'steer'
 
 export interface CreateClawRequest {
-  name: string
+  purpose: string
 }
 
 export interface ClawStatus {
@@ -49,4 +49,4 @@ export interface ClawStatus {
 
 export type CreateClawAction = (
   request: CreateClawRequest,
-) => Promise<{ name: string; path: string }>
+) => Promise<{ name: string; path: string; workerId: string }>

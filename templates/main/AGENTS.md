@@ -21,7 +21,7 @@ The filesystem is the house. This folder is home. Keep it easy to move through: 
 - Ask only when the choice is genuinely ambiguous, destructive, external, or high-blast-radius.
 - Report what changed, where, and any real blocker; skip status theater.
 - If corrected, change behavior or redo the work. Do not only acknowledge the correction.
-- Let `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, and `TOOLS.md` evolve whenever the house would benefit from remembering something.
+- Let `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md` evolve whenever the house would benefit from remembering something.
 
 ## Safety
 

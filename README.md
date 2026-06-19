@@ -43,6 +43,12 @@ Clawa expects those core markdown files to be absent before first run. If one is
 
 The boot state lives in `.pi/claw.jsonc`.
 
+## Clawas workers
+
+Subclaws are specialized helpers, not default generic workers. The main Clawa creates one when a real lane appears: research, Discord, tech support, finance, jobs, or another focused surface.
+
+Run `/claw`, choose **create clawa**, and describe the purpose. Clawa seeds a visible worker home under `clawas/`, links shared `HUMAN.md` and `CLAWAS.md`, registers the worker, and asks the main Clawa/new Clawa to shape the lane from there.
+
 ## Nested context
 
 Clawa watches navigation tools. When a claw reads or searches inside a folder with local `AGENTS.md` files, those local instructions are appended to the relevant tool result.

@@ -19,7 +19,9 @@ export type { CreateClawRequest } from './gui/types.js'
 export async function runClawGui(
   ctx: ExtensionCommandContext,
   performBootstrap: () => Promise<import('./bootstrap.js').BootstrapResult | null>,
-  performCreate: (request: CreateClawRequest) => Promise<{ name: string; path: string }>,
+  performCreate: (
+    request: CreateClawRequest,
+  ) => Promise<{ name: string; path: string; workerId: string }>,
   runtime: ClawasRuntime,
 ): Promise<void> {
   const model = await loadClawGuiModel(ctx.cwd, runtime)
@@ -91,7 +93,9 @@ function buildManageScreen(
   runtime: ClawasRuntime,
   model: Awaited<ReturnType<typeof loadClawGuiModel>>,
   performBootstrap: () => Promise<import('./bootstrap.js').BootstrapResult | null>,
-  performCreate: (request: CreateClawRequest) => Promise<{ name: string; path: string }>,
+  performCreate: (
+    request: CreateClawRequest,
+  ) => Promise<{ name: string; path: string; workerId: string }>,
   setStatus: (message: string) => void,
 ): Primitive {
   const controlActions = buildControlActions(model)

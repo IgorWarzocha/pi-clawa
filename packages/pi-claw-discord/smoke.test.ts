@@ -9,6 +9,7 @@ const TOKEN_ENV_PATTERN = /DISCORD_BOT_TOKEN=/
 const DISCORD_WORKER_PATTERN = /"id": "discord-clawa"/
 const DISCORD_AGENTS_PATTERN = /Discord/
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
+const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
 
 type Handler = (event: unknown, ctx: any) => unknown
 
@@ -71,11 +72,13 @@ test('Discord adapter first session creates tokenless config and worker without 
       const env = await readFile(join(root, '.pi', 'claw-discord', 'config.env'), 'utf8')
       const workers = await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8')
       const agents = await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8')
+      const humanLink = await readlink(join(root, 'clawas', 'discord-clawa', 'HUMAN.md'))
       const clawasLink = await readlink(join(root, 'clawas', 'discord-clawa', 'CLAWAS.md'))
 
       assert.match(env, TOKEN_ENV_PATTERN)
       assert.match(workers, DISCORD_WORKER_PATTERN)
       assert.match(agents, DISCORD_AGENTS_PATTERN)
+      assert.equal(humanLink, SHARED_HUMAN_LINK_TARGET)
       assert.equal(clawasLink, SHARED_CLAWAS_LINK_TARGET)
       assert.ok(notifications.some((message) => message.includes('add DISCORD_BOT_TOKEN')))
     } finally {
