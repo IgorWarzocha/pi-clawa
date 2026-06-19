@@ -1,6 +1,6 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
@@ -130,12 +130,21 @@ function projectRelativePath(projectRoot: string, targetPath: string): string {
   return relative(projectRoot, targetPath) || targetPath
 }
 
-async function copyDiscordWorkerTemplates(targetDir: string): Promise<void> {
+async function symlinkSharedClawasFile(projectRoot: string, targetDir: string): Promise<void> {
+  const linkPath = join(targetDir, 'CLAWAS.md')
+  const targetPath = join(projectRoot, 'CLAWAS.md')
+  const relativeTarget = relative(targetDir, targetPath) || 'CLAWAS.md'
+  await rm(linkPath, { force: true })
+  await symlink(relativeTarget, linkPath)
+}
+
+async function copyDiscordWorkerTemplates(projectRoot: string, targetDir: string): Promise<void> {
   const templateDir = join(extensionDir, 'templates', 'discord-worker')
   await mkdir(targetDir, { recursive: true })
-  for (const file of ['AGENTS.md', 'CLAW.md', 'HUMAN.md', 'CLAWAS.md', 'TOOLS.md', 'CURIOUS.md']) {
+  for (const file of ['AGENTS.md', 'CLAW.md', 'HUMAN.md', 'TOOLS.md', 'CURIOUS.md']) {
     await copyFile(join(templateDir, file), join(targetDir, file))
   }
+  await symlinkSharedClawasFile(projectRoot, targetDir)
 }
 
 function stripJsonc(text: string): string {
@@ -194,7 +203,7 @@ async function ensureDiscordWorker(projectRoot: string): Promise<void> {
   config.workers = workers
   await mkdir(dirname(configPath), { recursive: true })
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
-  await copyDiscordWorkerTemplates(resolve(projectRoot, worker.cwd))
+  await copyDiscordWorkerTemplates(projectRoot, resolve(projectRoot, worker.cwd))
 }
 
 function hasGatewayToken(configPath: string): boolean {

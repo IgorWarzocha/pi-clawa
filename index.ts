@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { rm, symlink } from 'node:fs/promises'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
   ExtensionAPI,
@@ -296,6 +297,7 @@ async function createNewClaw(
   const relativePath = join(loaded.config.clawas.baseDir, safeName)
   const absolutePath = resolve(repoRoot, relativePath)
   await bootstrapClawWorkspace(absolutePath, mainTemplatesDir)
+  await symlinkSharedClawasFile(repoRoot, absolutePath)
 
   const claw: ClawaConfig = {
     name: safeName,
@@ -314,6 +316,14 @@ async function createNewClaw(
   }
 
   return { name: safeName, path: relativePath }
+}
+
+async function symlinkSharedClawasFile(repoRoot: string, targetDir: string): Promise<void> {
+  const linkPath = join(targetDir, 'CLAWAS.md')
+  const targetPath = join(repoRoot, 'CLAWAS.md')
+  const relativeTarget = relative(targetDir, targetPath) || 'CLAWAS.md'
+  await rm(linkPath, { force: true })
+  await symlink(relativeTarget, linkPath)
 }
 
 function syncClawaEnvironment(cwd: string): void {

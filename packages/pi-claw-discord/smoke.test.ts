@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readlink, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -8,6 +8,7 @@ import clawDiscord from './index.js'
 const TOKEN_ENV_PATTERN = /DISCORD_BOT_TOKEN=/
 const DISCORD_WORKER_PATTERN = /"id": "discord-clawa"/
 const DISCORD_AGENTS_PATTERN = /Discord/
+const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
 
 type Handler = (event: unknown, ctx: any) => unknown
 
@@ -70,10 +71,12 @@ test('Discord adapter first session creates tokenless config and worker without 
       const env = await readFile(join(root, '.pi', 'claw-discord', 'config.env'), 'utf8')
       const workers = await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8')
       const agents = await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8')
+      const clawasLink = await readlink(join(root, 'clawas', 'discord-clawa', 'CLAWAS.md'))
 
       assert.match(env, TOKEN_ENV_PATTERN)
       assert.match(workers, DISCORD_WORKER_PATTERN)
       assert.match(agents, DISCORD_AGENTS_PATTERN)
+      assert.equal(clawasLink, SHARED_CLAWAS_LINK_TARGET)
       assert.ok(notifications.some((message) => message.includes('add DISCORD_BOT_TOKEN')))
     } finally {
       await rm(root, { recursive: true, force: true })
