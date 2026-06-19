@@ -85,7 +85,7 @@ Status: Discord exists, adapter seam still rough.
 - [ ] validate gateway process lifecycle under Pi shutdown/restart
 - [ ] decide multi-channel support now vs later
 - [ ] decide whether to generate invite URL or keep manual instructions
-- [ ] add adapter smoke test that does not require a real Discord token
+- [x] add adapter smoke test that does not require a real Discord token
 
 Depends on: C adapter seam.
 Blocks: full clean-room test if Discord is included in first release.
