@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
@@ -44,6 +45,10 @@ const extensionDir = dirname(fileURLToPath(import.meta.url))
 process.env.PI_CLAW_EXTENSION_PATH = fileURLToPath(import.meta.url)
 const templatesDir = join(extensionDir, 'templates')
 const mainTemplatesDir = join(templatesDir, 'main')
+const privacyCalibrationText = readFileSync(
+  join(templatesDir, 'bootstrap', 'PRIVACY.md'),
+  'utf8',
+).trim()
 const HYDRATION_MESSAGE_TYPE = 'claw-hydration'
 const CLAWAS_ROLE = process.env.PI_CLAWAS_ROLE
 const IS_CLAWAS_WORKER = CLAWAS_ROLE === 'worker'
@@ -66,9 +71,11 @@ const INITIAL_BOOTSTRAP_PROMPT = [
   '- CURIOUS.md for sparks and open threads',
   '- TOOLS.md for local tooling notes',
   '',
-  'Final bootstrap step: read PRIVACY.md and run the privacy/security calibration with the human.',
+  'Final bootstrap step: run the privacy/security calibration below with the human.',
   'Ask naturally in chat, up to three questions at a time, include "Needs follow-up", and keep going until the baseline is clear.',
   'Fold the answers into AGENTS.md, HUMAN.md, CLAW.md, or TOOLS.md as appropriate.',
+  '',
+  privacyCalibrationText,
 ].join('\n')
 
 type RuntimeState = {

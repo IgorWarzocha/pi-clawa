@@ -7,14 +7,7 @@ export interface TemplateCopyResult {
   loadedFiles: Array<{ name: string; chars: number }>
 }
 
-const CORE_MARKDOWN_FILES = [
-  'AGENTS.md',
-  'CLAW.md',
-  'HUMAN.md',
-  'TOOLS.md',
-  'CURIOUS.md',
-  'PRIVACY.md',
-] as const
+const CORE_MARKDOWN_FILES = ['AGENTS.md', 'CLAW.md', 'HUMAN.md', 'TOOLS.md', 'CURIOUS.md'] as const
 const LEGACY_CORE_MARKDOWN_FILES = [
   'IDENTITY.md',
   'SOUL.md',
