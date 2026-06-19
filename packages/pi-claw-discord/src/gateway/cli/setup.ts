@@ -7,8 +7,8 @@ import { listAvailableModels } from '../agent/model-catalog.js';
 import { config, DEFAULT_CHANNEL_POLICY, DEFAULT_PI_BIN, resolveConfigPath } from '../config.js';
 
 const DEFAULT_TRIGGER_NAME = 'pi';
-const DEFAULT_WORKING_DIR = homedir();
-const DEFAULT_DATA_DIR = resolve(homedir(), '.local/share/piscord-gateway');
+const DEFAULT_WORKING_DIR = process.cwd();
+const DEFAULT_DATA_DIR = resolve(DEFAULT_WORKING_DIR, '.pi/claw-discord');
 const DEFAULT_SESSIONS_DIR = resolve(DEFAULT_DATA_DIR, 'sessions');
 const DEFAULT_DB_PATH = resolve(DEFAULT_DATA_DIR, 'gateway.db');
 const AUTH_PATH = resolve(homedir(), '.pi/agent/auth.json');
@@ -236,6 +236,7 @@ export function buildConfigFile(options: {
     '# Storage',
     `SESSIONS_DIR=${options.sessionsDir}`,
     `DB_PATH=${options.dbPath}`,
+    'PI_HOWABANDA_CONTROL_SOCKET_ROOT=.pi',
     '',
     '# Logging',
     'LOG_LEVEL=info',

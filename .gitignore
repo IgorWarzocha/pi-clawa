@@ -7,6 +7,6 @@ node_modules/
 dist/
 .pi/clawa-memory.jsonl
 .pi/claw.json
-.pi/howaboua-claw.jsonc
+.pi/claw.jsonc
 
 .pi/claw-discord/

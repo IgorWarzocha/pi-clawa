@@ -74,6 +74,13 @@ function buildInteractiveCommand(options: LaunchOptions, replaceShell = false): 
   if (options.reportSessionId) {
     envVars.PI_HOWABANDA_REPORT_SESSION_ID = options.reportSessionId
   }
+  if (process.env.PI_HOWABANDA_CONTROL_SOCKET_ROOT) {
+    envVars.PI_HOWABANDA_CONTROL_SOCKET_ROOT = process.env.PI_HOWABANDA_CONTROL_SOCKET_ROOT
+  }
+  if (process.env.PI_CLAW_PROJECT_ROOT) {
+    envVars.PI_CLAW_PROJECT_ROOT = process.env.PI_CLAW_PROJECT_ROOT
+    envVars.PI_CWD = process.env.PI_CLAW_PROJECT_ROOT
+  }
 
   const envPrefix = Object.entries(envVars)
     .map(([key, value]) => `${key}=${shellEscape(value)}`)

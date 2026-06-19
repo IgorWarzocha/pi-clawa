@@ -6,8 +6,9 @@ import { isAbsolute, resolve } from 'node:path';
 export const DEFAULT_PI_BIN = 'pi';
 export const DEFAULT_CHANNEL_POLICY = 'allowlist' as const;
 
-const DEFAULT_CONFIG_PATH = resolve(homedir(), '.config/claw-discord/config.env');
-const DEFAULT_DATA_DIR = resolve(homedir(), '.local/share/claw-discord');
+const DEFAULT_PROJECT_ROOT = process.env.PI_CWD?.trim() || process.cwd();
+const DEFAULT_CONFIG_PATH = resolve(DEFAULT_PROJECT_ROOT, '.pi/claw-discord/config.env');
+const DEFAULT_DATA_DIR = resolve(DEFAULT_PROJECT_ROOT, '.pi/claw-discord');
 const LEGACY_ENV_PATH = resolve(process.cwd(), '.env');
 const CONFIG_SOURCE = buildConfigSource();
 
@@ -22,7 +23,7 @@ export function resolveConfigPath(): string {
 
 function resolveUserPath(inputPath: string): string {
   const expanded = expandHome(inputPath.trim());
-  return isAbsolute(expanded) ? expanded : resolve(expanded);
+  return isAbsolute(expanded) ? expanded : resolve(DEFAULT_PROJECT_ROOT, expanded);
 }
 
 function expandHome(inputPath: string): string {
@@ -182,12 +183,15 @@ export const config = {
   logLevel: env('LOG_LEVEL', 'info'),
 
   /** Working directory for pi agent */
-  piCwd: env('PI_CWD', homedir()),
+  piCwd: env('PI_CWD', DEFAULT_PROJECT_ROOT),
 
   /** Extra pi flags (space-separated) */
   piExtraFlags: env('PI_EXTRA_FLAGS'),
 
-  /** HOWABANDA control socket dir under ~/.pi */
+  /** HOWABANDA control socket root */
+  howabandaControlSocketRoot: env('PI_HOWABANDA_CONTROL_SOCKET_ROOT', resolve(env('PI_CWD', DEFAULT_PROJECT_ROOT), '.pi')),
+
+  /** HOWABANDA control socket dir under the socket root */
   howabandaControlSocketDir: env('PI_HOWABANDA_CONTROL_SOCKET_DIR', 'howabanda-control'),
 
   /** Optional Discord channel -> HOWABANDA worker mapping */

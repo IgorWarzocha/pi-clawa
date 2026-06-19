@@ -2,16 +2,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { WorkerDefinition } from './types.js'
 
-function firstExistingPath(paths: string[]): string | null {
-  for (const filePath of paths) {
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-      return filePath
-    }
-  }
-  return null
-}
-
-export function discoverProjectExtensionPaths(projectRoot: string): string[] {
+export function discoverProjectExtensionPaths(_projectRoot: string): string[] {
   const envExtensionPath = process.env.PI_CLAW_EXTENSION_PATH?.trim()
   if (
     envExtensionPath &&
@@ -19,15 +10,6 @@ export function discoverProjectExtensionPaths(projectRoot: string): string[] {
     fs.statSync(envExtensionPath).isFile()
   ) {
     return [envExtensionPath]
-  }
-
-  const howabouaClawExtension = firstExistingPath([
-    path.join(projectRoot, '.pi', 'extensions', 'howaboua-claw', 'index.ts'),
-    path.join(projectRoot, '.pi', 'extensions', 'howaboua-claw', 'index.js'),
-  ])
-
-  if (howabouaClawExtension) {
-    return [howabouaClawExtension]
   }
 
   return []

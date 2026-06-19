@@ -107,7 +107,13 @@ function clampBurrowDefaults(input: unknown): BurrowDefaults {
 export function findRepoRoot(startCwd: string): string {
   let current = startCwd
   while (true) {
-    if (existsSync(join(current, '.git'))) return current
+    if (
+      existsSync(join(current, '.git')) ||
+      existsSync(join(current, '.pi', 'claw.jsonc')) ||
+      existsSync(join(current, '.pi', 'settings.json'))
+    ) {
+      return current
+    }
     const parent = dirname(current)
     if (parent === current) return startCwd
     current = parent
@@ -115,7 +121,7 @@ export function findRepoRoot(startCwd: string): string {
 }
 
 export function getHowabouaClawConfigPath(repoRoot: string): string {
-  return join(repoRoot, '.pi', 'howaboua-claw.jsonc')
+  return join(repoRoot, '.pi', 'claw.jsonc')
 }
 
 export function loadHowabouaClawConfig(repoRoot: string): {

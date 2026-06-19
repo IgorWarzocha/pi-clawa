@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { findRepoRoot, resolveBurrowDefaults } from '@howaboua/pi-claw/config'
@@ -95,7 +95,6 @@ function writeEnvValue(filePath: string, key: string, value: string): void {
 }
 
 function writeDefaultDiscordConfig(projectRoot: string, configPath: string): void {
-  const dataDir = resolve(projectRoot, DISCORD_DATA_RELATIVE)
   const burrow = resolveBurrowDefaults(projectRoot)
   const content = [
     '# Clawa Discord gateway config.',
@@ -104,9 +103,10 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
     'CHANNEL_POLICY=allowlist',
     'TRIGGER_NAME=clawa',
     'TRIGGER_ALIASES=claw,clawa',
-    `PI_CWD=${projectRoot}`,
-    `DB_PATH=${join(dataDir, 'gateway.db')}`,
-    `SESSIONS_DIR=${join(dataDir, 'sessions')}`,
+    'PI_CWD=.',
+    `DB_PATH=${join(DISCORD_DATA_RELATIVE, 'gateway.db')}`,
+    `SESSIONS_DIR=${join(DISCORD_DATA_RELATIVE, 'sessions')}`,
+    'PI_HOWABANDA_CONTROL_SOCKET_ROOT=.pi',
     `PI_HOWABANDA_CONTROL_SOCKET_DIR=${burrow.controlSocketDir}`,
     '# Example: HOWABANDA_CHANNEL_WORKERS=123456789012345678=discord-clawa',
     `HOWABANDA_CHANNEL_WORKERS=${process.env.HOWABANDA_CHANNEL_WORKERS ?? ''}`,
@@ -122,9 +122,12 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
 function ensureDiscordConfig(projectRoot: string): string {
   const configPath = resolve(projectRoot, DISCORD_CONFIG_RELATIVE)
   if (!existsSync(configPath)) writeDefaultDiscordConfig(projectRoot, configPath)
-  process.env.PIDG_CONFIG ??= configPath
   gatewayConfigPath = configPath
   return configPath
+}
+
+function projectRelativePath(projectRoot: string, targetPath: string): string {
+  return relative(projectRoot, targetPath) || targetPath
 }
 
 async function copyDiscordWorkerTemplates(targetDir: string): Promise<void> {
@@ -162,7 +165,7 @@ async function ensureDiscordWorker(projectRoot: string): Promise<void> {
   const configPath = getHowabandaConfigPath(projectRoot)
   const config = await loadHowabandaConfig(configPath)
   const workers = Array.isArray(config.workers) ? [...config.workers] : []
-  const adapterExtension = fileURLToPath(import.meta.url)
+  const adapterExtension = projectRelativePath(projectRoot, fileURLToPath(import.meta.url))
   const existingIndex = workers.findIndex((entry) => {
     return Boolean(
       entry && typeof entry === 'object' && (entry as { id?: unknown }).id === DISCORD_WORKER_ID,
@@ -224,11 +227,13 @@ function startGateway(projectRoot: string, ctx: ExtensionContext): void {
 
   const burrow = resolveBurrowDefaults(projectRoot)
   gatewayProcess = spawn(process.execPath, ['--import', 'tsx', GATEWAY_ENTRY, 'start'], {
-    cwd: extensionDir,
+    cwd: projectRoot,
     env: {
       ...process.env,
-      PIDG_CONFIG: configPath,
-      PI_CWD: projectRoot,
+      PIDG_CONFIG: DISCORD_CONFIG_RELATIVE,
+      PI_CWD: '.',
+      PI_CLAW_PROJECT_ROOT: projectRoot,
+      PI_HOWABANDA_CONTROL_SOCKET_ROOT: '.pi',
       PI_HOWABANDA_CONTROL_SOCKET_DIR: burrow.controlSocketDir,
     },
     stdio: ['ignore', 'ignore', 'pipe'],
@@ -524,9 +529,16 @@ function resolveWorkerChannelJid(workerId: string): string | null {
 function registerDiscordTool(pi: ExtensionAPI): void {
   if (process.env.PI_HOWABANDA_DISCORD_ENABLED !== '1') return
 
-  gatewayConfigPath =
-    process.env.PIDG_CONFIG ?? resolve(findRepoRoot(process.cwd()), DISCORD_CONFIG_RELATIVE)
-  process.env.PIDG_CONFIG ??= gatewayConfigPath
+  const projectRoot = process.env.PI_CLAW_PROJECT_ROOT ?? findRepoRoot(process.cwd())
+  const configuredGatewayPath = process.env.PIDG_CONFIG?.trim()
+  gatewayConfigPath = configuredGatewayPath
+    ? isAbsolute(configuredGatewayPath)
+      ? configuredGatewayPath
+      : resolve(projectRoot, configuredGatewayPath)
+    : resolve(projectRoot, DISCORD_CONFIG_RELATIVE)
+  process.env.PIDG_CONFIG ??= DISCORD_CONFIG_RELATIVE
+  process.env.PI_CLAW_PROJECT_ROOT ??= projectRoot
+  process.env.PI_CWD ??= projectRoot
 
   pi.registerTool({
     name: 'message_discord',

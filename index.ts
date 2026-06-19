@@ -262,7 +262,10 @@ async function createNewClaw(
 }
 
 function syncBurrowEnvironment(cwd: string): void {
+  const repoRoot = findRepoRoot(cwd)
   const burrowDefaults = resolveBurrowDefaults(cwd)
+  process.env.PI_CLAW_PROJECT_ROOT = repoRoot
+  process.env.PI_HOWABANDA_CONTROL_SOCKET_ROOT = join(repoRoot, '.pi')
   process.env.PI_HOWABANDA_CONTROL_SOCKET_DIR = burrowDefaults.controlSocketDir
 }
 
@@ -443,7 +446,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   })
 
   pi.registerCommand('claw', {
-    description: 'Open howaboua-claw GUI or create/bootstrap claws',
+    description: 'Open Clawa GUI or create/bootstrap claws',
     handler: async (args, ctx) => {
       ensureExtensionConfig(ctx.cwd)
       currentBurrowDefaults = resolveBurrowDefaults(ctx.cwd)

@@ -1,5 +1,4 @@
 import { createConnection } from 'node:net';
-import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { readlink } from 'node:fs/promises';
 import type { AgentResult } from '../types.js';
@@ -336,7 +335,7 @@ async function waitForHowabandaSocketPath(target: string, timeoutMs = 3_000): Pr
 }
 
 async function resolveHowabandaSocketPath(target: string): Promise<string | null> {
-  const controlDir = resolve(homedir(), '.pi', config.howabandaControlSocketDir);
+  const controlDir = resolve(config.howabandaControlSocketRoot, config.howabandaControlSocketDir);
   const aliasPath = resolve(controlDir, `${target}.alias`);
 
   try {

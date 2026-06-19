@@ -25,8 +25,7 @@ Status: half-baked.
 - [x] local project install config exists at `install/pi-settings.json`
 - [x] install helper script creates project `.pi/settings.json`
 - [x] workspace package exists for Discord adapter
-- [ ] decide final config filename names before release
-  - current core config still uses `.pi/howaboua-claw.jsonc`
+- [x] decide final core config filename for this pass: `.pi/claw.jsonc`
 - [ ] add real `init` / `doctor` command or equivalent setup checks
 - [ ] verify package exports are intentional, not accidental internals
 

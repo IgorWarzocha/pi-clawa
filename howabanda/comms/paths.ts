@@ -1,6 +1,5 @@
 import { promises as fs } from 'node:fs'
 import * as net from 'node:net'
-import * as os from 'node:os'
 import * as path from 'node:path'
 
 const SOCKET_SUFFIX = '.sock'
@@ -13,7 +12,10 @@ function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
 
 export function getHowabandaControlDir(): string {
   const dirName = process.env.PI_HOWABANDA_CONTROL_SOCKET_DIR?.trim() || DEFAULT_CONTROL_SOCKET_DIR
-  return path.join(os.homedir(), '.pi', dirName)
+  const rootDir =
+    process.env.PI_HOWABANDA_CONTROL_SOCKET_ROOT?.trim() ||
+    path.join(process.env.PI_CLAW_PROJECT_ROOT?.trim() || process.cwd(), '.pi')
+  return path.join(rootDir, dirName)
 }
 
 export function getSocketPath(sessionId: string): string {

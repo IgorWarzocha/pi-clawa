@@ -543,7 +543,7 @@ export async function runClawGui(
       meta: [
         `creates a new claw workspace under ${loaded.config.banda.baseDir}`,
         'bootstraps it with the bundled main claw templates',
-        'registers it in howaboua-claw config for monitoring',
+        'registers it in claw config for monitoring',
       ],
       body: [
         'You will be asked for the claw name.',
