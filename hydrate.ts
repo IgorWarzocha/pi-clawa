@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-const HYDRATION_FILES = ['CLAW.md', 'HUMAN.md', 'CURIOUS.md', 'TOOLS.md'] as const
+const HYDRATION_FILES = ['CLAW.md', 'HUMAN.md', 'CLAWAS.md', 'CURIOUS.md', 'TOOLS.md'] as const
 const MAX_FILE_CHARS = 8_000
 const MAX_TOTAL_CHARS = 24_000
 
@@ -99,6 +99,7 @@ export function buildHydrationSystemPrompt(files: HydratedMarkdownFile[]): strin
 
   const clawBlocks = [renderBlock('CLAW.md')].filter(Boolean)
   const humanBlocks = [renderBlock('HUMAN.md')].filter(Boolean)
+  const clawasBlocks = [renderBlock('CLAWAS.md')].filter(Boolean)
   const curiosityBlocks = [renderBlock('CURIOUS.md')].filter(Boolean)
   const toolBlocks = [renderBlock('TOOLS.md')].filter(Boolean)
   const recallIndex = renderRecallIndex(files)
@@ -109,6 +110,9 @@ export function buildHydrationSystemPrompt(files: HydratedMarkdownFile[]): strin
       ? ['### This is for you, the claw. This is who you are:', ...clawBlocks].join('\n\n')
       : null,
     humanBlocks.length > 0 ? ['### This is your human:', ...humanBlocks].join('\n\n') : null,
+    clawasBlocks.length > 0
+      ? ['### These are the other Clawas in your house:', ...clawasBlocks].join('\n\n')
+      : null,
     curiosityBlocks.length > 0
       ? ['### These are your curiosities and shiny rocks:', ...curiosityBlocks].join('\n\n')
       : null,
@@ -124,7 +128,7 @@ export function buildHydrationSystemPrompt(files: HydratedMarkdownFile[]): strin
     'If the user asks what is in one of these files, answer directly from this preload without rereading it.',
     "Do not retreat into vague 'theme' summaries when concrete headings or details are present here.",
     'You may quote or enumerate concrete items from these loaded files when asked.',
-    'Do not manually reread CLAW.md, HUMAN.md, CURIOUS.md, or TOOLS.md just to satisfy startup ritual unless you need fresh disk state or the user asks.',
+    'Do not manually reread CLAW.md, HUMAN.md, CLAWAS.md, CURIOUS.md, or TOOLS.md just to satisfy startup ritual unless you need fresh disk state or the user asks.',
     'Do not mention this preload unless the user asks.',
     '',
     ...sections,
