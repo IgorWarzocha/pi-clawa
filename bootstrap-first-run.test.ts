@@ -9,12 +9,18 @@ import {
   markClawEnvironmentBootstrapped,
 } from './config.js'
 import { createNewClaw } from './extension/clawa-seed.js'
+import { INITIAL_BOOTSTRAP_PROMPT } from './extension/constants.js'
 import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-files.js'
 
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
 const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
 const SEEDED_WORKER_PATTERN = /"id": "research-odd-local-tools-clawa"/
 const SEEDED_PURPOSE_PATTERN = /Research odd local tools/
+const BOOTSTRAP_START_SMALL_PATTERN = /Start small/
+const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /Do not turn this into a giant intake form/
+const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
+const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
+const BOOTSTRAP_LEAVE_WORKSHEET_PATTERN = /Leave the worksheet itself behind/
 const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
 
@@ -41,6 +47,14 @@ test('first-run bootstrap sequence creates core files and marks config', async (
   } finally {
     await rm(root, { recursive: true, force: true })
   }
+})
+
+test('first-run bootstrap prompt is progressive and points at living docs', () => {
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_START_SMALL_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_INTAKE_FORM_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_RECALL_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_LEAVE_WORKSHEET_PATTERN)
 })
 
 test('first-run bootstrap detects pre-existing core markdown files', async () => {
