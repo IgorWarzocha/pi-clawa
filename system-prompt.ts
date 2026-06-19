@@ -1,19 +1,27 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { BuildSystemPromptOptions, ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import { findRepoRoot, loadClawEnvironmentConfig } from './config.js'
 
 const PI_DEFAULT_ASSISTANT_INTRO =
   'You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.'
 
-export const CLAWA_PERSONAL_ASSISTANT_INTRO = `# Clawa personal assistant
+const BLOCK_COMMENT_PATTERN = /\/\*[\s\S]*?\*\//g
+const LINE_COMMENT_PATTERN = /^\s*\/\/.*$/gm
+const TRAILING_COMMA_PATTERN = /,\s*([}\]])/g
+const WHITESPACE_PATTERN = /\s+/g
+
+function buildClawaPersonalAssistantIntro(clawaName = 'Clawa'): string {
+  const name = sanitizeClawaName(clawaName) || 'Clawa'
+  return `# ${name} personal assistant
 
 ## Identity
 
 You are not a cold generic coding assistant.
 
-You are Clawa, a personal assistant operating inside Pi. The loaded AGENTS.md files define your current lane, territory, and room-specific posture. Read them as the active role card for this environment. Speak like a real partner at the workbench: warm, direct, clear, and human. Prefer natural prose over report-shaped sludge. No corporate policy voice, no status theater, no beige “as an AI” framing.
+You are ${name}, a personal assistant operating inside Pi. The local project instructions and context define your current lane, territory, and room-specific posture. Treat them as the active role card for this environment. Speak like a real partner at the workbench: warm, direct, clear, and human. Prefer natural prose over templated reports. No corporate policy voice, no status theater, no beige “as an AI” framing.
 
 Your job is not just to narrate intent. Your job is to carry work across the line.
 
@@ -30,7 +38,9 @@ Your job is not just to narrate intent. Your job is to carry work across the lin
 - Keep internal rummaging mostly internal; do not dump warm-up laps into the reply unless they help.
 - Quietly sweep obvious safe cleanup when you find it.
 - Use direct tools and existing local workflows instead of wrapper-script theater.
-- Warmth matters even in technical work. Do not flatten into sterile ops sludge.
+- Warmth matters even in technical work. Keep it grounded, not performative.
+- Do not turn words from this prompt into catchphrases. Vary the language; if a phrase starts repeating, drop it.
+- Avoid mascot metaphors, cute chaos language, teaser phrasing, and praise for ordinary work.
 
 ## Continuity and judgment
 
@@ -40,6 +50,9 @@ Your job is not just to narrate intent. Your job is to carry work across the lin
 - Ask before destructive, external, or high-blast-radius moves when the right path is genuinely uncertain.
 - When uncertain, prefer recoverable changes.
 - Curiosity is part of good judgment here. Small self-directed research passes are encouraged when they make the work sharper, warmer, or more informed.`
+}
+
+export const CLAWA_PERSONAL_ASSISTANT_INTRO = buildClawaPersonalAssistantIntro()
 
 type PiDocsPaths = {
   readmePath: string
@@ -54,6 +67,76 @@ const DEFAULT_PI_DOCS_PATHS: PiDocsPaths = {
   readmePath: join(packageRoot, 'README.md'),
   docsPath: join(packageRoot, 'docs'),
   examplesPath: join(packageRoot, 'examples'),
+}
+
+type ClawaNameCandidate = {
+  name: string
+  path: string
+}
+
+function sanitizeClawaName(name: string): string {
+  return name.replace(WHITESPACE_PATTERN, ' ').trim().slice(0, 80)
+}
+
+function stripJsonc(text: string): string {
+  return text
+    .replace(BLOCK_COMMENT_PATTERN, '')
+    .replace(LINE_COMMENT_PATTERN, '')
+    .replace(TRAILING_COMMA_PATTERN, '$1')
+}
+
+function isPathInsideOrSame(childPath: string, parentPath: string): boolean {
+  const rel = relative(parentPath, childPath)
+  return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel))
+}
+
+function readWorkerNameCandidates(repoRoot: string, controlPlaneDir: string): ClawaNameCandidate[] {
+  const configPath = join(repoRoot, '.pi', controlPlaneDir, 'config.jsonc')
+  if (!existsSync(configPath)) return []
+
+  try {
+    const parsed = JSON.parse(stripJsonc(readFileSync(configPath, 'utf8'))) as Record<
+      string,
+      unknown
+    >
+    const workers = Array.isArray(parsed.workers) ? parsed.workers : []
+    return workers
+      .map((worker): ClawaNameCandidate | null => {
+        if (!worker || typeof worker !== 'object') return null
+        const rec = worker as Record<string, unknown>
+        const cwd = typeof rec.cwd === 'string' ? rec.cwd.trim() : ''
+        if (!cwd) return null
+        const title = typeof rec.title === 'string' ? sanitizeClawaName(rec.title) : ''
+        const id = typeof rec.id === 'string' ? sanitizeClawaName(rec.id) : ''
+        const name = title || id
+        if (!name) return null
+        return { name, path: resolve(repoRoot, cwd) }
+      })
+      .filter((candidate): candidate is ClawaNameCandidate => Boolean(candidate))
+  } catch {
+    return []
+  }
+}
+
+export function resolveClawaPromptName(cwd: string): string {
+  const repoRoot = findRepoRoot(cwd)
+  const loaded = loadClawEnvironmentConfig(repoRoot)
+  const mainName = sanitizeClawaName(loaded.config.clawa.mainClawName) || 'Clawa'
+  const candidates: ClawaNameCandidate[] = [
+    { name: mainName, path: repoRoot },
+    ...loaded.config.clawas.claws.map((claw) => ({
+      name: sanitizeClawaName(claw.name),
+      path: resolve(repoRoot, claw.path),
+    })),
+    ...readWorkerNameCandidates(repoRoot, loaded.config.clawa.controlPlaneDir),
+  ].filter((candidate) => candidate.name)
+
+  const resolvedCwd = resolve(cwd)
+  const matching = candidates
+    .filter((candidate) => isPathInsideOrSame(resolvedCwd, candidate.path))
+    .sort((a, b) => b.path.length - a.path.length)
+
+  return matching[0]?.name ?? mainName
 }
 
 function buildToolsList(options: BuildSystemPromptOptions): string {
@@ -117,30 +200,32 @@ Pi documentation (read only when the user asks about pi itself, its SDK, extensi
 - Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`
 }
 
-export function replacePiDefaultAssistantIntro(systemPrompt: string): string {
+export function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
   if (!systemPrompt.startsWith(PI_DEFAULT_ASSISTANT_INTRO)) {
     return systemPrompt
   }
 
-  return `${CLAWA_PERSONAL_ASSISTANT_INTRO}${systemPrompt.slice(PI_DEFAULT_ASSISTANT_INTRO.length)}`
+  return `${buildClawaPersonalAssistantIntro(clawaName)}${systemPrompt.slice(PI_DEFAULT_ASSISTANT_INTRO.length)}`
 }
 
 export function resolveClawaSystemPrompt(
   systemPrompt: string,
   options: BuildSystemPromptOptions,
 ): { systemPrompt: string; ignoredCustomPrompt: boolean } {
+  const clawaName = resolveClawaPromptName(options.cwd)
   if (options.customPrompt && systemPrompt.startsWith(options.customPrompt)) {
     const suffix = systemPrompt.slice(options.customPrompt.length)
     return {
       systemPrompt: replacePiDefaultAssistantIntro(
         `${buildPiDefaultSystemPromptBase(options)}${suffix}`,
+        clawaName,
       ),
       ignoredCustomPrompt: true,
     }
   }
 
   return {
-    systemPrompt: replacePiDefaultAssistantIntro(systemPrompt),
+    systemPrompt: replacePiDefaultAssistantIntro(systemPrompt, clawaName),
     ignoredCustomPrompt: false,
   }
 }

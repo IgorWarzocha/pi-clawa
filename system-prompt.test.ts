@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import test from 'node:test'
 import {
   buildPiDefaultSystemPromptBase,
   CLAWA_PERSONAL_ASSISTANT_INTRO,
   replacePiDefaultAssistantIntro,
+  resolveClawaPromptName,
   resolveClawaSystemPrompt,
 } from './system-prompt.js'
 
@@ -56,4 +60,37 @@ test('buildPiDefaultSystemPromptBase matches Pi default structure', () => {
   assert.ok(prompt.includes('\nAvailable tools:\n- read: read files'))
   assert.ok(prompt.includes('\nGuidelines:\n- Use read for text files'))
   assert.ok(prompt.includes('- Main documentation: /pi/README.md'))
+})
+
+test('resolveClawaPromptName uses project and worker JSON names', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-prompt-name-'))
+  try {
+    await mkdir(join(root, '.pi', 'clawas'), { recursive: true })
+    await mkdir(join(root, 'clawas', 'gremlin-clawa'), { recursive: true })
+    await writeFile(
+      join(root, '.pi', 'claw.jsonc'),
+      JSON.stringify({
+        bootstrapped: true,
+        clawas: {
+          baseDir: 'clawas',
+          tmuxSession: 'clawas',
+          claws: [{ name: 'Howaclawa', path: 'clawas/howaclawa' }],
+        },
+        clawa: { mainClawName: 'Howaclawa' },
+      }),
+      'utf8',
+    )
+    await writeFile(
+      join(root, '.pi', 'clawas', 'config.jsonc'),
+      JSON.stringify({
+        workers: [{ id: 'gremlin-clawa', title: 'Gremlin Clawa', cwd: 'clawas/gremlin-clawa' }],
+      }),
+      'utf8',
+    )
+
+    assert.equal(resolveClawaPromptName(root), 'Howaclawa')
+    assert.equal(resolveClawaPromptName(join(root, 'clawas', 'gremlin-clawa')), 'Gremlin Clawa')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
 })
