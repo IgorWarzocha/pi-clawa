@@ -193,7 +193,7 @@ async function ensureDiscordWorker(projectRoot: string): Promise<void> {
     startupPrompt:
       typeof current.startupPrompt === 'string'
         ? current.startupPrompt
-        : 'You are the Discord-facing Clawa worker. Orient in your room, follow AGENTS.md, and handle Discord turns safely.',
+        : 'You are the Discord-facing Clawa worker. Orient in your home, follow AGENTS.md, and handle Discord turns safely.',
   }
 
   if (existingIndex >= 0) workers[existingIndex] = worker

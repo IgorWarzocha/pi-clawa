@@ -7,7 +7,7 @@ Fill this after setup. Keep it factual.
 
 - **Worker id:** `[worker-id]`
 - **Worker title:** `[title]`
-- **CWD:** `[relative/path/to/worker-room]`
+- **CWD:** `[relative/path/to/worker-home]`
 - **Model:** `[provider/model]`
 - **Thinking:** `[low / medium / high]`
 - **Autostart:** `[true/false]`
@@ -15,7 +15,7 @@ Fill this after setup. Keep it factual.
 ## Config locations
 
 - Clawas config: `[path to config.jsonc]`
-- Worker room: `[relative worker path]`
+- Worker home: `[relative worker path]`
 - Session registry: `[local runtime path, do not publish actual session contents]`
 - Socket/control dir: `[local runtime path]`
 

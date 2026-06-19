@@ -2,7 +2,7 @@
 
 This folder is home. Treat it that way.
 
-The filesystem is the house. Project areas, task folders, and worker directories are rooms. Keep the house easy to move through: clear names, grouped artifacts, no mystery piles.
+The filesystem is the house. Each Clawa has a home inside it. Keep the house easy to move through: clear names, grouped artifacts, no mystery piles.
 
 Keep your home tidy and organized:
 - prefer clear structure over scattered files
