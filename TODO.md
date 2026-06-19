@@ -171,6 +171,7 @@ Requirements:
 - generic enough for any Clawa install
 - small API for listing work, assigning work, and reporting status
 - clean UI surface in `/claw` or the monitor widget later
+- do not mention a task protocol in templates until it exists
 
 Depends on: C runtime surfaces.
 Do not block first clean-room test unless we decide work tracking is part of first release.

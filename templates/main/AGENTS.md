@@ -30,8 +30,3 @@ The filesystem is the house. This folder is home. Keep it easy to move through: 
 - Ask before money/legal/high-stakes actions, broad destructive changes, or speaking as the human in a sensitive context.
 - Never send half-baked replies to messaging surfaces.
 - When unsure, choose recoverable changes.
-
-## Taskmail
-
-Use taskmail as the default task protocol: `claim`, do the work in/near `path`, then `reply` once with `ok|noop|fail|ask`.
-If blocked by required human input, use `ask` with one clear question.
