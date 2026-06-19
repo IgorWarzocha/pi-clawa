@@ -18,6 +18,7 @@ import { ClawaRuntimeState } from './extension/runtime-state.js'
 import { registerClawaSessionEvents } from './extension/session-events.js'
 import { registerRememberTool } from './memory.js'
 import { registerNestedAgentsAutoload } from './nested-agents.js'
+import { registerRecallTool } from './recall.js'
 import { registerClawaSystemPrompt } from './system-prompt.js'
 
 process.env.PI_CLAW_EXTENSION_PATH = extensionPath
@@ -38,6 +39,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
 
   registerClawasTools(pi, clawasRuntime)
   registerRememberTool(pi)
+  registerRecallTool(pi)
   registerContinuityCompaction(pi)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)

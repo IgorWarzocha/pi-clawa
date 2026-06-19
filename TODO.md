@@ -219,14 +219,16 @@ Do not block first clean-room test unless we decide work tracking is part of fir
 
 ## Memory tools
 
-Status: first write lane exists; recall is intentionally not designed here yet.
+Status: first write/read lane exists.
 
 Shared house memory lives at `.pi/clawa-memory.sqlite` for all Clawas.
 
 - [x] `remember` tool creates a short memory and returns its id
 - [x] `remember` with `id` overwrites that memory
 - [x] `remember` with `id` and empty text deletes that memory
-- [ ] design recall separately
+- [x] `recall` searches shared memory plus only the current Clawa's own session file(s)
+- [x] session recall skips tool calls and tool results
+- [x] session recall returns file, line, and entry id anchors for deeper manual reads
 - [ ] decide how memories are promoted into `HUMAN.md`, `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, or `AGENTS.md`
 
 Keep the schema small until recall proves what access patterns matter.

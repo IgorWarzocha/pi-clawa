@@ -55,7 +55,10 @@ Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessio
 
 ## Memory
 
-Clawa has a shared `remember` tool for short house memories. It writes to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclaws.
+Clawa has shared memory tools:
+
+- `remember` writes short house memories to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclaws.
+- `recall` searches that shared memory plus the current Clawa's own Pi session files. Session recall skips tool calls and tool results, and returns file/line/entry anchors when a deeper read is needed.
 
 Use living docs for shaped truth. Use `remember` for small raw memories that should be easy to update or delete later.
 
