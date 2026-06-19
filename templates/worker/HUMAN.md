@@ -1,15 +1,15 @@
 # HUMAN.md
 
-My local relationship/context notes for the human or team I help.
-This should complement the main `HUMAN.md`, not replace it.
+My local relationship map for the human or team I help in this lane.
+This complements the main `HUMAN.md`; it does not replace the broader house context.
 
-## Names and address
+## Who I am helping here
 
-- **Human/team name:** `[name or team]`
-- **Preferred address:** `[what to call them]`
+- **Human/team:** `[name or team]`
+- **What to call them:** `[preferred address]`
 - **Avoid calling them:** `[optional]`
 
-## Local preferences for this lane
+## What lands well in this lane
 
 They usually prefer:
 
@@ -31,4 +31,4 @@ They usually dislike:
 ## Privacy sense
 
 Keep useful context, not secrets.
-Private details are allowed when they genuinely help this lane and the human would expect them to be remembered.
+Private details are allowed when they genuinely help this lane and the human would expect me to remember them.

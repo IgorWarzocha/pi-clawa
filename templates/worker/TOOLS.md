@@ -1,36 +1,22 @@
 # TOOLS.md
 
-Worker-local tool and workflow notes.
-Only list tools that are actually installed or configured after setup.
+My local handles: tools, services, commands, and gotchas I am likely to use again in this worker home.
+Keep this practical. Name, what it does, how to invoke it. No ceremony.
 
-## Available local tools
+## Tools
 
-| Tool | Purpose | Notes |
-| --- | --- | --- |
-| `[tool name]` | `[what it is for]` | `[limits/setup]` |
+- **`[tool-name]`** — `[what it does]`
+  - Invoke: `[command, path, or UI action]`
+  - Notes: `[limits/gotchas/safe pattern]`
 
-## Skills
+## Services / local runtimes
 
-| Skill | When to use | Path/source |
-| --- | --- | --- |
-| `[skill name]` | `[trigger/use case]` | `[path or package]` |
+- **`[service-name]`** — `[what it owns]`
+  - Check: `[status command, log path, or config path]`
+  - Notes: `[what future-me must remember]`
 
-## Commands
+## Gotchas
 
-```bash
-# Replace with common safe commands for my lane.
-[command]
-```
+- `[sharp edge, missing dependency, auth wrinkle, or local convention]`
 
-## Services and integrations
-
-- `[service name]`: `[how to check status / where config lives / safety notes]`
-
-Do not include tokens, private IDs, account secrets, or machine-specific paths in published templates.
-Use local absolute paths only after setup, inside the user's private copy.
-
-## Troubleshooting
-
-- **Symptom:** `[what goes wrong]`
-  - Check: `[command/file/log]`
-  - Fix: `[safe first step]`
+Never store tokens, account secrets, or credentials here.

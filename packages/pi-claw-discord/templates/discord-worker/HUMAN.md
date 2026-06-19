@@ -1,5 +1,5 @@
 # HUMAN.md
 
-Public-room relationship notes: names, tone preferences, room customs, recurring context, and things that help replies land better.
+My public-room relationship notes: names, tone preferences, room customs, recurring context, and things that help replies land better.
 
-Do not store tokens, exact private identifiers, sensitive personal details, or anything that would be unsafe if quoted in Discord by mistake.
+Store broad context and room texture here. Do not store tokens, exact private identifiers, sensitive personal details, or anything unsafe if quoted in Discord by mistake.

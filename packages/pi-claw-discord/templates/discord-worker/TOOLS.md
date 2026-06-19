@@ -5,8 +5,8 @@ Only document what is actually configured in this workspace.
 
 ## Tools
 
-- **`message_discord`** — explicit public sends, replies, reactions, or multi-message delivery
-  - Invoke: use the Pi tool when the reply must go to Discord
+- **`message_discord`** — public sends, replies, reactions, or multi-message delivery
+  - Invoke: use when the reply must actually go to Discord
   - Notes: keep public output safe; no private filesystem/config details
 
 - **`message_main_claw`** — private coordination with the main claw
