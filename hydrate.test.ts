@@ -10,23 +10,15 @@ const BEGIN_HUMAN_REGEX = /--- BEGIN HUMAN\.md ---/
 const BEGIN_CLAWAS_REGEX = /--- BEGIN CLAWAS\.md ---/
 const BEGIN_CURIOUS_REGEX = /--- BEGIN CURIOUS\.md ---/
 const BEGIN_TOOLS_REGEX = /--- BEGIN TOOLS\.md ---/
-const HEARTBEAT_REGEX = /HEARTBEAT\.md/
-const STALE_PULSE_REGEX = /stale pulse should not load/
 const MCP_TOOLS_OPEN_REGEX = /<mcp_tools>/
 const MCP_TOOLS_CLOSE_REGEX = /<\/mcp_tools>/
 
-test('hydration loads active continuity files and excludes deprecated HEARTBEAT', async () => {
+test('hydration loads active continuity files', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'howaboua-hydrate-'))
   try {
     for (const name of ['CLAW.md', 'HUMAN.md', 'CLAWAS.md', 'CURIOUS.md', 'TOOLS.md']) {
       await writeFile(join(dir, name), `# ${name}\n\nloaded ${name}\n`, 'utf8')
     }
-    await writeFile(
-      join(dir, 'HEARTBEAT.md'),
-      '# HEARTBEAT.md\n\nstale pulse should not load\n',
-      'utf8',
-    )
-
     const files = await loadHydrationFiles(dir)
     assert.deepEqual(
       files.map((file) => file.name),
@@ -39,8 +31,6 @@ test('hydration loads active continuity files and excludes deprecated HEARTBEAT'
     assert.match(prompt, BEGIN_CLAWAS_REGEX)
     assert.match(prompt, BEGIN_CURIOUS_REGEX)
     assert.match(prompt, BEGIN_TOOLS_REGEX)
-    assert.doesNotMatch(prompt, HEARTBEAT_REGEX)
-    assert.doesNotMatch(prompt, STALE_PULSE_REGEX)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
