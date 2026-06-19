@@ -6,7 +6,6 @@
     "config.ts": ["exports"],
     "gui-primitives.ts": ["types"],
     "clawas/**/*.ts": ["exports", "types"],
-    "state.ts": ["exports"],
     "packages/pi-claw-discord/index.ts": ["exports"]
   },
   "ignore": ["packages/pi-claw-discord/src/gateway/**"],

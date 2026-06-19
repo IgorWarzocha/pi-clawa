@@ -1,10 +1,45 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { copyFile, mkdir, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 export interface TemplateCopyResult {
   copied: string[]
-  skipped: string[]
+  loadedFiles: Array<{ name: string; chars: number }>
+}
+
+const CORE_MARKDOWN_FILES = [
+  'AGENTS.md',
+  'IDENTITY.md',
+  'SOUL.md',
+  'TOOLS.md',
+  'USER.md',
+  'MEMORY.md',
+  'CURIOUS.md',
+] as const
+
+async function templateFileNames(templateDir: string): Promise<string[]> {
+  const entries = await readdir(templateDir, { withFileTypes: true })
+  return entries.filter((entry) => entry.isFile()).map((entry) => entry.name)
+}
+
+export async function findExistingTemplateFiles(
+  templateDir: string,
+  targetDir: string,
+): Promise<string[]> {
+  const files = await templateFileNames(templateDir)
+  return files.filter((file) => existsSync(join(targetDir, file)))
+}
+
+export async function hasAllTemplateFiles(
+  templateDir: string,
+  targetDir: string,
+): Promise<boolean> {
+  const files = await templateFileNames(templateDir)
+  return files.length > 0 && files.every((file) => existsSync(join(targetDir, file)))
+}
+
+export function hasAllCoreMarkdownFiles(targetDir: string): boolean {
+  return CORE_MARKDOWN_FILES.every((file) => existsSync(join(targetDir, file)))
 }
 
 export async function copyTemplateFiles(
@@ -14,21 +49,16 @@ export async function copyTemplateFiles(
   await mkdir(targetDir, { recursive: true })
 
   const copied: string[] = []
-  const skipped: string[] = []
-  const entries = await readdir(templateDir, { withFileTypes: true })
+  const loadedFiles: Array<{ name: string; chars: number }> = []
+  const files = await templateFileNames(templateDir)
 
-  for (const entry of entries) {
-    if (!entry.isFile()) continue
-
-    const targetPath = join(targetDir, entry.name)
-    if (existsSync(targetPath)) {
-      skipped.push(entry.name)
-      continue
-    }
-
-    await copyFile(join(templateDir, entry.name), targetPath)
-    copied.push(entry.name)
+  for (const file of files) {
+    const sourcePath = join(templateDir, file)
+    const targetPath = join(targetDir, file)
+    await copyFile(sourcePath, targetPath)
+    copied.push(file)
+    loadedFiles.push({ name: file, chars: readFileSync(targetPath, 'utf8').length })
   }
 
-  return { copied, skipped }
+  return { copied, loadedFiles }
 }

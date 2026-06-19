@@ -36,7 +36,9 @@ Clawa creates missing home files in the project root:
 - `CURIOUS.md`
 - `TOOLS.md`
 
-Existing files are preserved. The boot state lives in `.pi/claw.jsonc` and `.pi/claw-state.json`.
+Clawa expects those core markdown files to be absent before first run. If one is already present, bootstrapping is blocked so the generated home shape stays clean. Move existing files out first, start Clawa, then ask your claw to adapt the generated files.
+
+The boot state lives in `.pi/claw.jsonc`.
 
 ## Nested context
 

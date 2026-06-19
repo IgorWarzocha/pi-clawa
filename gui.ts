@@ -38,7 +38,7 @@ import {
   text,
   up,
 } from './gui-primitives.js'
-import { isClawBootstrapped, readClawState } from './state'
+import { hasAllCoreMarkdownFiles } from './template-files.js'
 
 interface ActionItem {
   label: string
@@ -90,12 +90,12 @@ interface ClawStatus {
 async function getClawStatus(repoRoot: string, claw: ClawaConfig): Promise<ClawStatus> {
   const absPath = resolve(repoRoot, claw.path)
   const exists = existsSync(absPath)
-  const state = exists ? await readClawState(absPath) : { bootstrapped: false }
+  const bootstrapped = exists ? hasAllCoreMarkdownFiles(absPath) : false
   const socketPath = await resolveSocketPath(claw.name)
   return {
     absPath,
     exists,
-    bootstrapped: state.bootstrapped === true,
+    bootstrapped,
     live: Boolean(socketPath),
     socketPath,
   }
@@ -366,7 +366,7 @@ async function runClawApp<Screen extends string>(
 
 export async function runClawGui(
   ctx: ExtensionCommandContext,
-  performBootstrap: () => Promise<BootstrapResult>,
+  performBootstrap: () => Promise<BootstrapResult | null>,
   performCreate: (request: CreateClawRequest) => Promise<{ name: string; path: string }>,
   runtime: ClawasRuntime,
 ): Promise<void> {
@@ -377,7 +377,7 @@ export async function runClawGui(
   const configPath = getClawasConfigPath(repoRoot)
   const claws = loaded.config.clawas.claws
   const clawStatuses = await Promise.all(claws.map((claw) => getClawStatus(repoRoot, claw)))
-  const currentWorkspaceBootstrapped = await isClawBootstrapped(ctx.cwd)
+  const currentWorkspaceBootstrapped = loaded.config.bootstrapped === true
   const liveWorkers = new Map(
     (runtime.getState()?.workers ?? []).map((worker) => [worker.definition.id, worker]),
   )
@@ -499,6 +499,7 @@ export async function runClawGui(
           }
 
           const result = await performBootstrap()
+          if (!result) return
           lastStatus = `Bootstrap done: ${result.created} created, ${result.overwritten} overwritten.`
           ctx.ui.notify(lastStatus, 'info')
         })()

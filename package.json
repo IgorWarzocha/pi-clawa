@@ -40,7 +40,6 @@
     "gui.ts",
     "hydrate.ts",
     "nested-agents.ts",
-    "state.ts",
     "system-prompt.ts",
     "template-files.ts",
     "clawas/**/*.ts",

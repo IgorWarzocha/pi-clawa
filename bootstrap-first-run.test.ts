@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -8,39 +8,44 @@ import {
   findRepoRoot,
   markClawEnvironmentBootstrapped,
 } from './config.js'
-import { markClawBootstrapped } from './state.js'
-import { copyTemplateFiles } from './template-files.js'
+import { copyTemplateFiles, findExistingTemplateFiles } from './template-files.js'
 
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
+const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
 
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path)
-    return true
-  } catch {
-    return false
-  }
-}
-
-test('first-run bootstrap sequence preserves existing home files and marks config', async () => {
+test('first-run bootstrap sequence creates core files and marks config', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-first-run-'))
   try {
     await mkdir(join(root, '.git'))
-    await writeFile(join(root, 'AGENTS.md'), 'existing project rules', 'utf8')
 
     const extensionConfig = ensureClawEnvironmentConfig(root)
+    const conflicts = await findExistingTemplateFiles(MAIN_TEMPLATES_DIR, root)
+    assert.deepEqual(conflicts, [])
+
     const copied = await copyTemplateFiles(MAIN_TEMPLATES_DIR, root)
-    await markClawBootstrapped(root)
     const marked = markClawEnvironmentBootstrapped(findRepoRoot(root))
 
     assert.equal(extensionConfig.created, true)
     assert.equal(extensionConfig.config.bootstrapped, false)
     assert.equal(marked.config.bootstrapped, true)
-    assert.equal(await readFile(join(root, 'AGENTS.md'), 'utf8'), 'existing project rules')
-    assert.ok(copied.skipped.includes('AGENTS.md'))
+    assert.ok(copied.copied.includes('AGENTS.md'))
     assert.ok(copied.copied.includes('IDENTITY.md'))
-    assert.ok(await exists(join(root, '.pi', 'claw-state.json')))
-    assert.ok(await exists(join(root, '.pi', 'claw.jsonc')))
+    assert.match(await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8'), BOOTSTRAPPED_TRUE_PATTERN)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('first-run bootstrap detects pre-existing core markdown files', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-first-run-conflict-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await writeFile(join(root, 'AGENTS.md'), 'existing project rules', 'utf8')
+    await writeFile(join(root, 'MEMORY.md'), 'existing memory', 'utf8')
+
+    const conflicts = await findExistingTemplateFiles(MAIN_TEMPLATES_DIR, root)
+
+    assert.deepEqual(conflicts.sort(), ['AGENTS.md', 'MEMORY.md'].sort())
   } finally {
     await rm(root, { recursive: true, force: true })
   }

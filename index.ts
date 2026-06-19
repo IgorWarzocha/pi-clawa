@@ -33,9 +33,12 @@ import { registerContinuityCompaction } from './continuity-compaction'
 import { type CreateClawRequest, runClawGui } from './gui'
 import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate'
 import { registerNestedAgentsAutoload } from './nested-agents'
-import { isClawBootstrapped, markClawBootstrapped } from './state'
 import { registerClawaSystemPrompt } from './system-prompt'
-import { copyTemplateFiles, type TemplateCopyResult } from './template-files'
+import {
+  copyTemplateFiles,
+  findExistingTemplateFiles,
+  type TemplateCopyResult,
+} from './template-files'
 
 const extensionDir = dirname(fileURLToPath(import.meta.url))
 process.env.PI_CLAW_EXTENSION_PATH = fileURLToPath(import.meta.url)
@@ -124,7 +127,7 @@ async function ensureBootstrapped(cwd: string): Promise<boolean> {
     runtime.needsHydrate = false
   }
   if (!runtime.bootstrappedKnown) {
-    runtime.bootstrapped = await isClawBootstrapped(cwd)
+    runtime.bootstrapped = loadClawEnvironmentConfig(findRepoRoot(cwd)).config.bootstrapped === true
     runtime.bootstrappedKnown = true
   }
   return runtime.bootstrapped
@@ -178,11 +181,31 @@ function notifyInitialBootstrap(
   if (extensionConfig.created) {
     ctx.ui.notify(`Clawa config created at ${extensionConfig.path}`, 'info')
   }
-  const skipped = copied.skipped.length > 0 ? `, skipped ${copied.skipped.length}` : ''
   ctx.ui.notify(
-    `Clawa initialized ${copied.copied.length} main files${skipped} and marked ${markedPath} bootstrapped`,
+    `Clawa initialized ${copied.copied.length} main files and marked ${markedPath} bootstrapped`,
     'info',
   )
+}
+
+function buildBootstrapBlockedMessage(files: string[]): string {
+  const listed = files.map((file) => `- ${file}`).join('\n')
+  return [
+    'Clawa cannot initialize in this folder because it already contains Clawa core markdown files:',
+    listed,
+    '',
+    'This extension is supposed to be initialized without those files present.',
+    'Please move them out of the folder, start Clawa again, then ask your claw to manually edit the generated files to suit.',
+    'Clawa core markdown files are slightly different from what you might be used to.',
+  ].join('\n')
+}
+
+function reportBootstrapBlocked(pi: ExtensionAPI, ctx: ExtensionContext, files: string[]): void {
+  const message = buildBootstrapBlockedMessage(files)
+  sendDimNote(pi, message)
+  if (ctx.hasUI) {
+    ctx.ui.setStatus('clawa', 'clawa: bootstrap blocked')
+    ctx.ui.notify(`Clawa bootstrap blocked by existing files: ${files.join(', ')}`, 'warning')
+  }
 }
 
 function buildHydrationProbeNote(text: string): string {
@@ -223,9 +246,15 @@ async function buildHydrationText(
 }
 
 async function executeBootstrap(pi: ExtensionAPI, ctx: ExtensionCommandContext) {
+  const conflicts = await findExistingTemplateFiles(mainTemplatesDir, ctx.cwd)
+  if (conflicts.length > 0) {
+    reportBootstrapBlocked(pi, ctx, conflicts)
+    return null
+  }
+
   const result = await runBootstrap(ctx.cwd, mainTemplatesDir)
   setBootstrappedRuntime(ctx.cwd)
-  markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
+  const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
 
   sendDimNote(
     pi,
@@ -233,7 +262,7 @@ async function executeBootstrap(pi: ExtensionAPI, ctx: ExtensionCommandContext) 
       'claw bootstrap complete',
       'claw loaded workspace files:',
       ...result.loadedFiles.map((file) => `- ${file.name} (${file.chars} chars)`),
-      `state: ${result.statePath}`,
+      `config: ${marked.path}`,
     ].join('\n'),
   )
 
@@ -362,8 +391,13 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
 
     const needsInitialBootstrap = !extensionConfig.bootstrapped
     if (needsInitialBootstrap) {
+      const conflicts = await findExistingTemplateFiles(mainTemplatesDir, ctx.cwd)
+      if (conflicts.length > 0) {
+        reportBootstrapBlocked(pi, ctx, conflicts)
+        return
+      }
+
       const copied = await copyTemplateFiles(mainTemplatesDir, ctx.cwd)
-      await markClawBootstrapped(ctx.cwd)
       const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
       runtime.extensionBootstrapped = true
       setBootstrappedRuntime(ctx.cwd)
