@@ -96,10 +96,10 @@ Status: intentionally minimal so far.
 
 - [x] `bun run ai:check` passes
 - [ ] strict cleanup plan, not necessarily full strict pass yet
-- [ ] README pass after product shape settles
-- [ ] install instructions for core package
-- [ ] install instructions for adapter package
-- [ ] security notes for local secrets and external adapters
+- [x] README pass after product shape settles
+- [x] install instructions for core package
+- [x] install instructions for adapter package
+- [x] security notes for local secrets and external adapters
 - [ ] package publish checklist
 
 Depends on: A-D feature shape.
