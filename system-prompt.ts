@@ -169,7 +169,7 @@ export function registerClawaSystemPrompt(pi: ExtensionAPI): void {
     const suffix = paths && paths.length > 0 ? ` Ignored: ${paths.join(', ')}` : ''
     pi.sendMessage({
       customType: 'claw-dim',
-      content: `Clawa ignores custom SYSTEM.md prompts and keeps Pi's default prompt with the Clawa personal-assistant intro. Put local behavior in AGENTS.md instead.${suffix}`,
+      content: `Clawa is ignoring custom SYSTEM.md prompts and keeping Pi's default prompt with the Clawa personal-assistant intro. If you need extra custom instructions, move the compatible parts into this project's .pi/APPEND_SYSTEM.md instead.${suffix}`,
       display: true,
     })
   }
