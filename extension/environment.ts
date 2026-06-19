@@ -3,6 +3,8 @@ import { getWorkerSessionName } from '../clawas/worker-identity.js'
 import { findRepoRoot, resolveClawaDefaults } from '../config.js'
 import { INITIAL_BOOTSTRAP_PROMPT, IS_CLAWAS_WORKER } from './constants.js'
 
+const BOOTSTRAP_MESSAGE_TYPE = 'clawa-bootstrap'
+
 export function syncClawaEnvironment(cwd: string): void {
   const repoRoot = findRepoRoot(cwd)
   const clawaDefaults = resolveClawaDefaults(cwd)
@@ -17,11 +19,16 @@ export function getWorkerAlias(): string | undefined {
 }
 
 export function sendInitialBootstrapPrompt(pi: ExtensionAPI, ctx: ExtensionContext): void {
+  const message = {
+    customType: BOOTSTRAP_MESSAGE_TYPE,
+    content: INITIAL_BOOTSTRAP_PROMPT,
+    display: false,
+  }
   if (ctx.isIdle()) {
-    pi.sendUserMessage(INITIAL_BOOTSTRAP_PROMPT)
+    pi.sendMessage(message, { triggerTurn: true })
     return
   }
-  pi.sendUserMessage(INITIAL_BOOTSTRAP_PROMPT, { deliverAs: 'followUp' })
+  pi.sendMessage(message, { triggerTurn: true, deliverAs: 'followUp' })
 }
 
 export function maybeSetWorkerSessionName(pi: ExtensionAPI, ctx: ExtensionContext): void {
