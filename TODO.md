@@ -61,7 +61,7 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [x] custom compaction extracts continuity + durable memories
 - [x] hydration loads main continuity markdowns
 - [ ] simplify `/claw` remaining screens/actions
-- [ ] remove or retire parked `/clawas` command code if unused
+- [x] remove or retire parked `/clawas` command code if unused
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for worker launch/report/steer/jump/restart
 - [ ] decide whether `.pi/clawa-memory.jsonl` stays for first release
