@@ -4,6 +4,17 @@
 
 Do not start clean-room/end-to-end testing until the feature set below is ready enough to test in one pass. Otherwise we will keep reinstalling, rebootstraping, and redoing the same manual checks.
 
+## Product direction from QA
+
+- North star: a warm, intimate companion layer for people who already live with agents.
+- Stay a thin Pi layer: do not own model routing, generic tools, a full gateway empire, or a fake task system.
+- Own the taste/home layer: living docs, nested context, companion memory, Clawas lanes, and optional surfaces.
+- Keep the low-bloat test as few concepts, not just few files.
+- Clawas are created for real specialized lanes; no default generic worker.
+- Memory should first preserve human texture and curiosity sparks, with shaped truth in docs and raw/simple capture in JSONL.
+- Discord is a core surface, not a toy; DMs and free safe/on-brand posting matter.
+- Heartbeat is gone; any future ambient life should be gentle, explicit, and low-noise.
+
 ## Dependency map
 
 ```text
@@ -40,11 +51,12 @@ Status: mechanically working, product flow not final.
 - [x] first run copies `templates/main/*` into project root
 - [x] first run sends bootstrap instructions programmatically
 - [x] first run then proceeds into normal runtime path
-- [ ] finalize first bootstrap prompt
+- [ ] finalize first bootstrap prompt around progressive calibration, not a one-shot interrogation
 - [ ] finalize main markdown templates
 - [x] finalize worker seed templates
 - [x] make bootstrap idempotence policy explicit
 - [x] add a focused bootstrap test/smoke script
+- [ ] clean-room judge the first-run conversation for taste: specific voice, curiosity, restraint, no generic assistant sludge
 
 Depends on: A config names should be settled first.
 Blocks: clean-room install test.
@@ -63,15 +75,18 @@ Status: usable extracted runtime, still not fully package-shaped.
 - [ ] simplify `/claw` remaining screens/actions
 - [x] remove or retire parked `/clawas` command code if unused
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
-- [ ] add runtime smoke checks for worker launch/report/steer/jump/restart
+- [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
 - [x] decide whether `.pi/clawa-memory.jsonl` stays for first release
+- [ ] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
+- [ ] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
+- [ ] consider Clawa rename/folder/config alignment after a seed grows into a better name
 
 Depends on: A, B.
 Blocks: adapter finalization and clean-room runtime test.
 
 ## D. Optional adapters
 
-Status: Discord exists, adapter seam still rough.
+Status: Discord exists and is a core first surface, but adapter seam and product polish are still rough.
 
 - [x] Discord package exists at `packages/pi-claw-discord/`
 - [x] copied gateway source into adapter package
@@ -83,7 +98,9 @@ Status: Discord exists, adapter seam still rough.
 - [x] GUI helper action sends setup-guidance prompt with doc/source paths
 - [ ] polish `/discord` states and copy
 - [ ] validate gateway process lifecycle under Pi shutdown/restart
-- [ ] decide multi-channel support now vs later
+- [ ] decide Discord DM support shape for first release
+- [ ] decide multi-channel support now vs later; one Discord Clawa should own Discord as a surface unless we choose otherwise
+- [ ] calibrate Discord autonomy: free safe/on-brand posting, ask only for doxxing/secrets/money/commitments/impersonation/high-stakes
 - [ ] decide whether to generate invite URL or keep manual instructions
 - [x] add adapter smoke test that does not require a real Discord token
 
@@ -148,6 +165,28 @@ Test once, in this order:
 15. run `/discord` setup without token
 16. save fake token/channel and verify config writes only
 17. if using a real token, verify Discord message round trip
+
+## Gentle ambient lane
+
+Status: idea only.
+
+Heartbeat was removed. Do not bring it back as a blind loop.
+
+If Clawa gets ambient life, it should be gentle, explicit, and low-noise. Possible shapes:
+
+- curiosity nudges from `CURIOUS.md`
+- relationship/privacy calibration follow-ups over time
+- house/doc/tool tidying suggestions
+- Discord/social presence when channel context genuinely benefits
+
+Requirements:
+
+- no hidden token burn
+- no noisy background daemon by default
+- easy to understand and disable
+- must feel like taste and attention, not a cron job pretending to be alive
+
+Do not block first clean-room test unless we decide ambient life is part of the first release.
 
 ## Replacement work-tracking lane
 
