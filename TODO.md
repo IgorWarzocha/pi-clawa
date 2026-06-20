@@ -30,7 +30,7 @@ A. Package/install shape
 
 ## A. Package/install shape
 
-Status: half-baked.
+Status: mostly settled; final proof is a full clean-room install/package pass.
 
 - [x] root package is `@howaboua/pi-claw`
 - [x] local project install config exists at `install/pi-settings.json`
@@ -38,7 +38,7 @@ Status: half-baked.
 - [x] main Clawa sessions are project-local via `.pi/settings.json` `sessionDir: .pi/sessions`
 - [x] workspace package exists for Discord adapter
 - [x] decide final core config filename for this pass: `.pi/claw.jsonc`
-- [ ] keep setup automatic; refine first-run behavior from real clean-room failures
+- [x] keep setup automatic; refine first-run behavior from real clean-room failures
 - [x] verify package exports are intentional, not accidental internals
 
 Depends on: nothing.
@@ -46,13 +46,13 @@ Blocks: all clean-room testing.
 
 ## B. First-run bootstrap
 
-Status: mechanically working, product flow not final.
+Status: working and taste-tested; remaining work is template review and full clean-room replay.
 
 - [x] extension config has `bootstrapped: false/true`
 - [x] first run copies `templates/main/*` into project root
 - [x] first run sends bootstrap instructions programmatically
 - [x] first run then proceeds into normal runtime path
-- [x] finalize first bootstrap prompt around progressive calibration, not a one-shot interrogation (`extension/constants.ts` `INITIAL_BOOTSTRAP_PROMPT`; worksheet text in `templates/bootstrap/PRIVACY.md`)
+- [x] finalize first bootstrap prompt around progressive calibration, not a one-shot interrogation (`extension/onboarding.ts` `INITIAL_BOOTSTRAP_PROMPT`; worksheet text in `templates/bootstrap/PRIVACY.md`)
 - [ ] finalize main markdown templates
 - [x] finalize worker seed templates
 - [x] make bootstrap idempotence policy explicit
@@ -64,7 +64,7 @@ Blocks: clean-room install test.
 
 ## C. Core runtime surfaces
 
-Status: usable extracted runtime, still not fully package-shaped.
+Status: usable and stricter; remaining work is smoke coverage and seam polish.
 
 - [x] Clawas runtime copied into core package
 - [x] monitor widget replaces footer status
@@ -111,10 +111,10 @@ Blocks: full clean-room test if Discord is included in first release.
 
 ## E. Release docs/checks
 
-Status: intentionally minimal so far.
+Status: release-shaped; package dry-runs and full clean-room install are still pending.
 
 - [x] `bun run ai:check` passes
-- [x] strict cleanup plan, not necessarily full strict pass yet
+- [x] strict cleanup complete: `bun run ai:check:strict` passes
 - [x] README pass after product shape settles
 - [x] install instructions for core package
 - [x] install instructions for adapter package
@@ -124,12 +124,11 @@ Status: intentionally minimal so far.
 Depends on: A-D feature shape.
 Blocks: publishing.
 
-Strict cleanup plan:
+Strict release gate:
 
-1. Keep `ai:check` green as the release gate for now.
-2. Burn down Biome warnings first: top-level regex/no-non-null/assertion/simple complexity.
-3. Then tackle `typecheck:strict` by area: config/jsonc, comms, daemon/runtime, GUI, Discord adapter.
-4. Do not mix strict cleanup with feature work unless the touched file is already in hand.
+1. Keep `bun run ai:check:strict` green.
+2. Do not add broad ignores to make checks pass; fix code/contracts instead.
+3. If strict debt reappears, burn it down before clean-room release testing.
 
 Publish checklist:
 
@@ -142,7 +141,7 @@ Publish checklist:
 
 ## F. Clean-room test pass
 
-Status: not started on purpose.
+Status: onboarding clean-room pass was done; full install/runtime/adapter pass remains.
 
 Run only after A-E are ready enough.
 
