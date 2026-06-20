@@ -2,6 +2,11 @@ import { join } from 'node:path'
 import type { ClawaDefaults } from '../config'
 import { sendClawasSessionMessage } from './comms/client.js'
 import { sendWorkerPrompt } from './daemon-prompt.js'
+import {
+  clearManualSessionState,
+  markWorkerDetachedState,
+  resetStateForRestart,
+} from './daemon-state.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
 import { ClawasRpcWorker } from './rpc-worker.js'
 import { resolveWorkerSessionFile } from './session-registry.js'
@@ -13,22 +18,6 @@ import { getWorkerSessionName, getWorkerSocketAlias } from './worker-identity.js
 
 function now(): number {
   return Date.now()
-}
-
-function resetStateForRestart(state: ClawasState, timestamp: number): void {
-  state.events = []
-  state.nextEventId = 1
-
-  for (const worker of state.workers) {
-    worker.status = 'stopped'
-    worker.manualSession = undefined
-    worker.pid = undefined
-    worker.currentTask = undefined
-    worker.currentToolName = undefined
-    worker.lastError = undefined
-    worker.lastSummary = 'restarting daemon'
-    worker.updatedAt = timestamp
-  }
 }
 
 /**
@@ -184,40 +173,12 @@ export class ClawasDaemon {
     // Detached/manual means Clawas deliberately lets go of orchestration.
     // The worker stays reachable to the human, but not to clawas tools.
     await this.stopWorker(workerId)
-    patchWorkerState(
-      this.state,
-      workerId,
-      {
-        status: 'stopped',
-        manualSession: true,
-        pid: undefined,
-        currentTask: label,
-        currentToolName: undefined,
-        lastError: undefined,
-        lastSummary: label,
-      },
-      now(),
-    )
-    pushEvent(this.state, workerId, `${workerId} opened as ${label}`, now())
+    markWorkerDetachedState(this.state, workerId, label, now())
     this.notifyChanged()
   }
 
   clearManualSession(workerId: string, label = 'manual session closed'): void {
-    patchWorkerState(
-      this.state,
-      workerId,
-      {
-        status: 'stopped',
-        manualSession: false,
-        pid: undefined,
-        currentTask: undefined,
-        currentToolName: undefined,
-        lastError: undefined,
-        lastSummary: label,
-      },
-      now(),
-    )
-    pushEvent(this.state, workerId, `${workerId} ${label}`, now())
+    clearManualSessionState(this.state, workerId, label, now())
     this.notifyChanged()
   }
 
