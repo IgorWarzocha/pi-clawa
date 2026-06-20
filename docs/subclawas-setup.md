@@ -10,18 +10,24 @@ Propose a subclawa when the human keeps needing a durable specialty, such as rep
 
 Name the purpose in plain language. Keep the lane narrow and useful.
 
+## Establish the naming convention
+
+If this is the first subclawa in the house, set the naming convention with the human before locking in the id. Keep it quick. Guess from the human's taste if you can; ask one small question if you cannot.
+
+The convention should make routing obvious to future agents. It can still have flavor: `einstein` may be right for one house, `research-clawa` for another, and `researcher` for a third. Once a convention exists, follow it unless there is a good reason to bend it.
+
 ## Create it by shaping the house
 
 Create the subclawa by editing the house files directly. Do not make this a wizard.
 
-Use a short stable id:
+Use a short stable id that speaks for the responsibility:
 
-- lowercase slug
-- usually 2–4 useful words
-- ends with `-clawa`
-- clear over cute
+- lowercase slug is safest
+- usually 1–2 useful words; 3 can be okay, but it is a stretch
+- clear enough that future agents know what lane it owns
+- house taste wins: `einstein` can be fine for research if that is what the human wants their crew to feel like
 
-Examples: `repo-archaeologist`, `release-notes-clawa`, `discord-clawa`.
+Examples: `repo-archaeologist`, `research-clawa`, `einstein`, `release-notes-clawa`, `discord-clawa`.
 
 Create the home:
 
@@ -42,7 +48,7 @@ Keep these first drafts narrow. They only need enough shape for the subclawa to 
 
 ## Register it
 
-Add the worker to `.pi/clawas/config.jsonc`:
+Add the worker to `.pi/clawas/config.jsonc`. Append to the existing `workers` array; do not replace the other workers.
 
 ```jsonc
 {
@@ -61,7 +67,7 @@ Add the worker to `.pi/clawas/config.jsonc`:
 }
 ```
 
-Also add it to `.pi/claw.jsonc` under `clawas.claws` so the house knows the visible home exists:
+Also add it to `.pi/claw.jsonc` under `clawas.claws` so the house knows the visible home exists. Append to the existing array; do not wipe the current entries.
 
 ```jsonc
 {
