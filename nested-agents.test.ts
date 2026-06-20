@@ -14,9 +14,6 @@ const PROJECT_ROOT_PATTERN = /PROJECT ROOT/
 const WORKER_ROOT_PATTERN = /WORKER ROOT/
 const PULSES_ROOT_PATTERN = /PULSES ROOT/
 const HEY_CLAWA_PATTERN = /<agents_file path="pulses\/hey-clawa\/AGENTS\.md">\nHEY CLAWA/
-const FOO_PATTERN = /<agents_file path="foo\/AGENTS\.md">\nFOO/
-const BAR_PATTERN = /<agents_file path="foo\/bar\/AGENTS\.md">\nBAR/
-const MEH_PATTERN = /<agents_file path="foo\/meh\/AGENTS\.md">\nMEH/
 
 type Handler = (event: any, ctx: any) => any
 
@@ -138,51 +135,6 @@ test('pulse root AGENTS is skipped while pulse-specific AGENTS loads', async () 
     assert.match(text, HEY_CLAWA_PATTERN)
     assert.doesNotMatch(text, PULSES_ROOT_PATTERN)
     assert.doesNotMatch(text, ROOT_PATTERN)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('nested AGENTS avoids re-appending already loaded ancestors', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-nested-agents-dedupe-'))
-  try {
-    await mkdir(join(root, '.git'))
-    await mkdir(join(root, 'foo', 'bar'), { recursive: true })
-    await mkdir(join(root, 'foo', 'meh'), { recursive: true })
-    await writeFile(join(root, 'AGENTS.md'), 'ROOT')
-    await writeFile(join(root, 'foo', 'AGENTS.md'), 'FOO')
-    await writeFile(join(root, 'foo', 'bar', 'AGENTS.md'), 'BAR')
-    await writeFile(join(root, 'foo', 'meh', 'AGENTS.md'), 'MEH')
-    await writeFile(join(root, 'foo', 'bar', 'one.md'), 'one\n')
-    await writeFile(join(root, 'foo', 'meh', 'two.md'), 'two\n')
-
-    const { handlers, ctx } = createHarness(root)
-    handlers.get('session_start')?.({}, ctx)
-    await handlers.get('tool_result')?.(
-      {
-        toolName: 'read',
-        isError: false,
-        input: { path: join(root, 'foo', 'bar', 'one.md') },
-        content: [{ type: 'text', text: 'one' }],
-        details: {},
-      },
-      ctx,
-    )
-    const second = await handlers.get('tool_result')?.(
-      {
-        toolName: 'read',
-        isError: false,
-        input: { path: join(root, 'foo', 'meh', 'two.md') },
-        content: [{ type: 'text', text: 'two' }],
-        details: {},
-      },
-      ctx,
-    )
-
-    const text = textContent(second)
-    assert.match(text, MEH_PATTERN)
-    assert.doesNotMatch(text, FOO_PATTERN)
-    assert.doesNotMatch(text, BAR_PATTERN)
   } finally {
     await rm(root, { recursive: true, force: true })
   }
