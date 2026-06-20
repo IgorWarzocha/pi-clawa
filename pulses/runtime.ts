@@ -1,8 +1,6 @@
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { sendClawasSessionMessage } from '../clawas/comms/client.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import type { WorkerState } from '../clawas/types.js'
-import { getWorkerSocketAlias } from '../clawas/worker-identity.js'
 import { discoverPulseDefinitions, type PulseDefinition } from './definitions.js'
 import { buildPulseInstruction, CLAWA_PULSE_MESSAGE_TYPE, pulseDetails } from './message.js'
 import { isPulseDue, pulseDueKey } from './schedule.js'
@@ -81,7 +79,7 @@ export class PulseRuntime {
           lastDueKey: entry?.lastDueKey,
         })
         if (!due.due) continue
-        if (!(await this.canRunPulse(pulse))) continue
+        if (!(await this.canQueuePulse(pulse))) continue
         await this.dispatchPulse(pulse, 'scheduled')
         state.pulses[pulse.key] = {
           ...entry,
@@ -106,11 +104,10 @@ export class PulseRuntime {
     this.timer.unref?.()
   }
 
-  private async canRunPulse(pulse: PulseDefinition): Promise<boolean> {
-    const ctx = this.requireContext()
-    if (pulse.ownerId === 'main') return ctx.isIdle()
+  private async canQueuePulse(pulse: PulseDefinition): Promise<boolean> {
+    if (pulse.ownerId === 'main') return true
     await this.clawasRuntime.refreshFromConfig()
-    return !isWorkerBusy(findWorker(this.clawasRuntime, pulse.ownerId))
+    return !findWorker(this.clawasRuntime, pulse.ownerId)?.manualSession
   }
 
   private async dispatchPulse(pulse: PulseDefinition, mode: PulseRunMode): Promise<void> {
@@ -138,20 +135,9 @@ export class PulseRuntime {
 
   private async sendWorkerPulse(pulse: PulseDefinition, instruction: string): Promise<void> {
     await this.clawasRuntime.refreshFromConfig()
-    const definition = this.clawasRuntime.getWorkerDefinition(pulse.ownerId)
-    await this.clawasRuntime.ensureWorkerRunning(pulse.ownerId)
-    await sendClawasSessionMessage(getWorkerSocketAlias(definition), {
-      message: instruction,
-      messageType: 'session',
-      mode: 'steer',
-      sender: {
-        workerId: 'main-claw',
-        workerTitle: this.clawasRuntime.getClawaDefaults().mainClawName,
-      },
-      kind: 'instruction',
-      intent: 'reply_requested',
-      visibility: 'worker',
-    })
+    const worker = findWorker(this.clawasRuntime, pulse.ownerId)
+    const mode = isWorkerBusy(worker) ? 'followUp' : 'prompt'
+    await this.clawasRuntime.sendPrompt(pulse.ownerId, instruction, mode)
   }
 
   private requireContext(): ExtensionContext {
