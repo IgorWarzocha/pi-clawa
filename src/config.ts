@@ -80,6 +80,13 @@ function asBoolean(value: unknown): boolean | undefined {
   return typeof value === 'boolean' ? value : undefined
 }
 
+function asRecord(value: unknown, label: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${label} must be a JSON object`)
+  }
+  return value as Record<string, unknown>
+}
+
 function asStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   const items = value
@@ -107,12 +114,12 @@ function asReportMode(value: unknown): ClawaWorkerReportMode | undefined {
   return undefined
 }
 
-function clampWorker(item: unknown): ClawaWorkerConfig | null {
-  if (!item || typeof item !== 'object') return null
-  const rec = item as Record<string, unknown>
+function normalizeWorker(item: unknown, index: number): ClawaWorkerConfig {
+  const rec = asRecord(item, `clawas.workers[${index}]`)
   const id = asString(rec['id'])
   const cwd = asString(rec['cwd']) ?? asString(rec['workspace'])
-  if (!(id && cwd)) return null
+  if (!id) throw new Error(`clawas.workers[${index}] is missing a string id`)
+  if (!cwd) throw new Error(`clawas.workers[${index}] is missing a string cwd`)
   return {
     id,
     title: asString(rec['title']) ?? id,
@@ -129,14 +136,9 @@ function clampWorker(item: unknown): ClawaWorkerConfig | null {
   }
 }
 
-function clampWorkers(input: unknown): ClawaWorkerConfig[] {
-  if (!Array.isArray(input)) return []
-  const out: ClawaWorkerConfig[] = []
-  for (const item of input) {
-    const worker = clampWorker(item)
-    if (worker) out.push(worker)
-  }
-  return out
+function normalizeWorkers(input: unknown): ClawaWorkerConfig[] {
+  if (!Array.isArray(input)) throw new Error('clawas.workers must be an array')
+  return input.map(normalizeWorker)
 }
 
 function clampClawaDefaults(input: unknown): ClawaDefaults {
@@ -199,32 +201,19 @@ export function loadClawEnvironmentConfig(repoRoot: string): {
     return { path, config: DEFAULT_CONFIG }
   }
 
-  try {
-    const raw = parseJsonc(readFileSync(path, 'utf8')) as Record<string, unknown>
-    const clawas =
-      raw['clawas'] && typeof raw['clawas'] === 'object'
-        ? (raw['clawas'] as Record<string, unknown>)
-        : {}
-    return {
-      path,
-      config: {
-        bootstrapped: raw['bootstrapped'] === true,
-        clawas: {
-          baseDir:
-            typeof clawas['baseDir'] === 'string' && clawas['baseDir'].trim()
-              ? clawas['baseDir']
-              : DEFAULT_CONFIG.clawas.baseDir,
-          tmuxSession:
-            typeof clawas['tmuxSession'] === 'string' && clawas['tmuxSession'].trim()
-              ? clawas['tmuxSession']
-              : DEFAULT_CONFIG.clawas.tmuxSession,
-          workers: clampWorkers(clawas['workers']),
-        },
-        clawa: clampClawaDefaults(raw['clawa']),
+  const raw = asRecord(parseJsonc(readFileSync(path, 'utf8')), '.pi/claw.jsonc')
+  const clawas = asRecord(raw['clawas'], '.pi/claw.jsonc clawas')
+  return {
+    path,
+    config: {
+      bootstrapped: raw['bootstrapped'] === true,
+      clawas: {
+        baseDir: asString(clawas['baseDir']) ?? DEFAULT_CONFIG.clawas.baseDir,
+        tmuxSession: asString(clawas['tmuxSession']) ?? DEFAULT_CONFIG.clawas.tmuxSession,
+        workers: normalizeWorkers(clawas['workers']),
       },
-    }
-  } catch {
-    return { path, config: DEFAULT_CONFIG }
+      clawa: clampClawaDefaults(raw['clawa']),
+    },
   }
 }
 

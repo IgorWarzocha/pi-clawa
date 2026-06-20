@@ -272,7 +272,10 @@ function notifyMemoryFailure(ctx: ExtensionContext, signal: AbortSignal, error: 
 export function registerContinuityCompaction(pi: ExtensionAPI): void {
   pi.on('session_before_compact', async (event, ctx) => {
     const prepared = prepareCompactionInput(event)
-    if (!prepared) return
+    if (!prepared) {
+      if (ctx.hasUI) ctx.ui.notify('Clawa compaction cancelled: nothing to compact', 'warning')
+      return { cancel: true }
+    }
 
     try {
       const model = requireActiveModel(ctx)
@@ -327,7 +330,7 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
       }
     } catch (error) {
       notifyCompactionFailure(ctx, prepared.signal, error)
-      return
+      return { cancel: true }
     }
   })
 }
