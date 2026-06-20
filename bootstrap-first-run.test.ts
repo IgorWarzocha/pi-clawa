@@ -16,6 +16,7 @@ import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-fil
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
 const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
 const SEEDED_WORKER_PATTERN = /"id": "research-odd-local-tools-clawa"/
+const STARTUP_PROMPT_PATTERN = /"startupPrompt"/
 const SEEDED_PURPOSE_PATTERN = /Research odd local tools/
 const LONG_SEEDED_WORKER_PATTERN = /"id": "documentation-and-release-notes-polishing-clawa"/
 const BOOTSTRAP_WAKE_PATTERN = /where the hell am I/
@@ -124,7 +125,9 @@ test('create Clawa seeds a specialized worker home from purpose', async () => {
 
     assert.equal(created.name, 'research-odd-local-tools-clawa')
     assert.equal(created.path, join('clawas', 'research-odd-local-tools-clawa'))
-    assert.match(await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8'), SEEDED_WORKER_PATTERN)
+    const config = await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8')
+    assert.match(config, SEEDED_WORKER_PATTERN)
+    assert.doesNotMatch(config, STARTUP_PROMPT_PATTERN)
     assert.equal(await readlink(join(root, created.path, 'HUMAN.md')), SHARED_HUMAN_LINK_TARGET)
     assert.equal(await readlink(join(root, created.path, 'CLAWAS.md')), SHARED_CLAWAS_LINK_TARGET)
     assert.match(await readFile(join(root, 'CLAWAS.md'), 'utf8'), SEEDED_PURPOSE_PATTERN)

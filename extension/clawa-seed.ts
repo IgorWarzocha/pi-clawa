@@ -32,7 +32,7 @@ export async function createNewClaw(
   await symlinkSharedFile(repoRoot, absolutePath, 'HUMAN.md')
   await symlinkSharedFile(repoRoot, absolutePath, 'CLAWAS.md')
 
-  const worker = buildSeedWorker(seedId, relativePath, purpose)
+  const worker = buildSeedWorker(seedId, relativePath)
   const saved = upsertClawaWorkerConfig(repoRoot, worker)
   await updateClawasMap(repoRoot, seedId, purpose)
 
@@ -93,7 +93,7 @@ async function nextAvailableSeedId(
   throw new Error(`Could not find an unused Clawa seed name for ${slug}`)
 }
 
-function buildSeedWorker(id: string, cwd: string, purpose: string): WorkerDefinition {
+function buildSeedWorker(id: string, cwd: string): WorkerDefinition {
   return {
     id,
     title: id,
@@ -101,7 +101,6 @@ function buildSeedWorker(id: string, cwd: string, purpose: string): WorkerDefini
     cwd,
     enabled: true,
     autostart: true,
-    startupPrompt: buildWorkerSeedPrompt(id, cwd, purpose),
     thinking: 'medium',
   }
 }
@@ -171,7 +170,7 @@ function buildMainClawaCreatePrompt(name: string, path: string, purpose: string)
 
 function buildWorkerSeedPrompt(name: string, path: string, purpose: string): string {
   return [
-    'You have just been created as a specialized Clawa.',
+    'You have just woken up as a specialized Clawa in this house.',
     '',
     `Seed name: ${name}`,
     `Home: ${path}`,
@@ -179,7 +178,7 @@ function buildWorkerSeedPrompt(name: string, path: string, purpose: string): str
     'Purpose from the human:',
     purpose,
     '',
-    'Orient in your home. Read your local AGENTS.md and CLAW.md, notice that HUMAN.md and CLAWAS.md are shared house links, then shape your own CLAW.md, AGENTS.md, TOOLS.md, and CURIOUS.md for this lane. Stay specialized, but do not wake up blank.',
+    'Your home context is already loaded. Start small: say what lane you think you own, what belongs elsewhere, and what you would shape first. Do not overfill every doc at once; become specific through the onboarding conversation.',
   ].join('\n')
 }
 

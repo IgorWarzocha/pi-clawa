@@ -95,7 +95,7 @@ function buildDiscordWorker(current: Record<string, unknown>, adapterExtension: 
     startupPrompt:
       typeof current['startupPrompt'] === 'string'
         ? current['startupPrompt']
-        : 'You are the Discord-facing Clawa worker. Orient in your home, follow AGENTS.md, and handle Discord turns safely.',
+        : 'Wake up in the Discord lane. Your home context is already loaded; stay public-safe, warm, and ready for Discord turns.',
   }
 }
 

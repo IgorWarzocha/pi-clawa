@@ -59,7 +59,7 @@ Common:
 
 Less common:
 
-- `startupPrompt` — optional boot cue for unusual lanes. Most subclawas do not need one; their local `AGENTS.md` and `CLAW.md` should carry the shape.
+- `startupPrompt` — optional boot cue for unusual lanes. Most subclawas do not need one; their local docs and hydration should carry the shape. If used, keep it generic and do not tell the Clawa to read already-loaded docs.
 
 If you are unsure about model, omit `model` and inherit the current Pi default.
 

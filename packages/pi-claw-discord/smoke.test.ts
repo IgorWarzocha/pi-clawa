@@ -7,6 +7,8 @@ import clawDiscord from './index.js'
 
 const TOKEN_ENV_PATTERN = /DISCORD_BOT_TOKEN=/
 const DISCORD_WORKER_PATTERN = /"id": "discord-clawa"/
+const DISCORD_GENERIC_WAKE_PATTERN = /Your home context is already loaded/
+const STALE_STARTUP_READ_PATTERN = /follow AGENTS|Read AGENTS|Orient in your home/
 const DISCORD_AGENTS_PATTERN = /Discord/
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
 const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
@@ -77,6 +79,8 @@ test('Discord adapter first session creates tokenless config and worker without 
 
       assert.match(env, TOKEN_ENV_PATTERN)
       assert.match(workers, DISCORD_WORKER_PATTERN)
+      assert.match(workers, DISCORD_GENERIC_WAKE_PATTERN)
+      assert.doesNotMatch(workers, STALE_STARTUP_READ_PATTERN)
       assert.match(agents, DISCORD_AGENTS_PATTERN)
       assert.equal(humanLink, SHARED_HUMAN_LINK_TARGET)
       assert.equal(clawasLink, SHARED_CLAWAS_LINK_TARGET)
