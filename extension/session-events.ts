@@ -8,6 +8,7 @@ import {
   markClawEnvironmentBootstrapped,
   resolveClawaDefaults,
 } from '../config.js'
+import type { PulseRuntime } from '../pulses/runtime.js'
 import { copyTemplateFiles, findExistingCoreMarkdownFiles } from '../template-files.js'
 import { IS_CLAWAS_WORKER, mainTemplatesDir } from './constants.js'
 import {
@@ -23,6 +24,7 @@ export function registerClawaSessionEvents(
   options: {
     runtime: ClawaRuntimeState
     clawasRuntime: ClawasRuntime
+    pulseRuntime: PulseRuntime
     commsServer: ClawasCommsServer
     setDefaults: (defaults: ClawaDefaults) => void
   },
@@ -43,6 +45,7 @@ export function registerClawaSessionEvents(
     await options.commsServer.start(ctx)
     await options.runtime.armHydration(ctx.cwd)
     if (!IS_CLAWAS_WORKER) options.clawasRuntime.attach(ctx)
+    if (!IS_CLAWAS_WORKER) options.pulseRuntime.attach(ctx)
     if (needsInitialBootstrap) sendInitialBootstrapPrompt(pi, ctx)
   }
 
@@ -67,7 +70,10 @@ export function registerClawaSessionEvents(
 
   pi.on('session_shutdown', async () => {
     await options.commsServer.stop()
-    if (!IS_CLAWAS_WORKER) await options.clawasRuntime.dispose()
+    if (!IS_CLAWAS_WORKER) {
+      options.pulseRuntime.dispose()
+      await options.clawasRuntime.dispose()
+    }
   })
 }
 

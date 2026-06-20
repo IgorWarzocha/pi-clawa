@@ -18,6 +18,8 @@ import { ClawaRuntimeState } from './extension/runtime-state.js'
 import { registerClawaSessionEvents } from './extension/session-events.js'
 import { registerRememberTool } from './memory.js'
 import { registerNestedAgentsAutoload } from './nested-agents.js'
+import { registerPulseCommand } from './pulses/command.js'
+import { PulseRuntime } from './pulses/runtime.js'
 import { registerRecallTool } from './recall.js'
 import { registerClawaSystemPrompt } from './system-prompt.js'
 
@@ -29,6 +31,7 @@ const DEBUG_HYDRATION_PROBE = false
 
 export default function howabouaClaw(pi: ExtensionAPI): void {
   const clawasRuntime = new ClawasRuntime()
+  const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
   const runtime = new ClawaRuntimeState()
   const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias())
   let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
@@ -50,8 +53,9 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     registerSteerCommand(pi, clawasRuntime)
     registerJumpCommand(pi, clawasRuntime)
     registerClawasMonitorShortcuts(pi, clawasRuntime)
+    registerPulseCommand(pi, pulseRuntime)
   }
 
-  registerClawaSessionEvents(pi, { runtime, clawasRuntime, commsServer, setDefaults })
+  registerClawaSessionEvents(pi, { runtime, clawasRuntime, pulseRuntime, commsServer, setDefaults })
   registerClawCommand(pi, { runtime, clawasRuntime, setDefaults })
 }

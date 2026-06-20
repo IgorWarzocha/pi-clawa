@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { copyFile, mkdir, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 export interface TemplateCopyResult {
   copied: string[]
@@ -23,9 +23,19 @@ const LEGACY_CORE_MARKDOWN_FILES = [
   'TECHNICAL.md',
 ] as const
 
-async function templateFileNames(templateDir: string): Promise<string[]> {
-  const entries = await readdir(templateDir, { withFileTypes: true })
-  return entries.filter((entry) => entry.isFile()).map((entry) => entry.name)
+async function templateFileNames(templateDir: string, prefix = ''): Promise<string[]> {
+  const dir = join(templateDir, prefix)
+  const entries = await readdir(dir, { withFileTypes: true })
+  const files: string[] = []
+  for (const entry of entries) {
+    const relative = join(prefix, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...(await templateFileNames(templateDir, relative)))
+      continue
+    }
+    if (entry.isFile()) files.push(relative)
+  }
+  return files.sort()
 }
 
 export async function findExistingTemplateFiles(
@@ -67,6 +77,7 @@ export async function copyTemplateFiles(
   for (const file of files) {
     const sourcePath = join(templateDir, file)
     const targetPath = join(targetDir, file)
+    await mkdir(dirname(targetPath), { recursive: true })
     await copyFile(sourcePath, targetPath)
     copied.push(file)
     loadedFiles.push({ name: file, chars: readFileSync(targetPath, 'utf8').length })

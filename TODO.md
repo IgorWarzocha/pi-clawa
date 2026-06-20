@@ -13,7 +13,7 @@ Do not start clean-room/end-to-end testing until the feature set below is ready 
 - Clawas are created for real specialized lanes; no default generic worker.
 - Memory should first preserve human texture and curiosity sparks, with shaped truth in docs and raw/simple capture in SQLite.
 - Discord is a core surface, not a toy; DMs and free safe/on-brand posting matter.
-- Heartbeat is gone; any future ambient life should be gentle, explicit, and low-noise.
+- Heartbeat is gone; Pulse is the Clawa-native scheduled/ambient wake layer.
 
 ## Dependency map
 
@@ -167,27 +167,29 @@ Test once, in this order:
 16. save fake token/channel and verify config writes only
 17. if using a real token, verify Discord message round trip
 
-## Gentle ambient lane
+## Pulse scheduled/ambient lane
 
-Status: idea only.
+Status: first implementation exists. Needs real-life playground pressure.
 
-Heartbeat was removed. Do not bring it back as a blind loop.
+Pulse replaces heartbeat/cron as one Clawa-native concept: markdown definitions in each Clawa home under `pulses/`, coordinated by main Clawa, dispatched as compact custom messages into real Clawa sessions.
 
-If Clawa gets ambient life, it should be gentle, explicit, and low-noise. Possible shapes:
+Done:
 
-- curiosity nudges from `CURIOUS.md`
-- relationship/privacy calibration follow-ups over time
-- house/doc/tool tidying suggestions
-- Discord/social presence when channel context genuinely benefits
+- [x] recursive template copy creates `pulses/AGENTS.md`
+- [x] main template includes weekly pulse review and disabled generic wake starter
+- [x] worker template includes lane pulse journal
+- [x] scheduler scans main and subclawa homes
+- [x] supports `every`, `daily`, `weekly`, and `at` schedules
+- [x] pulse runs use compact custom message provenance
+- [x] `/pulse list` and `/pulse run <id>` exist for inspection/manual run-now
+- [x] pulse docs live at `docs/pulses.md`
 
-Requirements:
+Needs follow-up:
 
-- no hidden token burn
-- no noisy background daemon by default
-- easy to understand and disable
-- must feel like taste and attention, not a cron job pretending to be alive
-
-Do not block first clean-room test unless we decide ambient life is part of the first release.
+- [ ] clean-room pulse playground: run main pulse and subclawa pulse for real
+- [ ] tune `pulses/AGENTS.md` journal shape after actual runs
+- [ ] decide whether active-hours/social delivery belongs in Pulse config or higher-level comms policy
+- [ ] consider persistent run records only if markdown journal/session transcripts prove insufficient
 
 ## Replacement work-tracking lane
 
