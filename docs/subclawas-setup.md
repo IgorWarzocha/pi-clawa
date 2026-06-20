@@ -84,6 +84,18 @@ Update shared `CLAWAS.md` with one routing line:
 - **`release-notes-clawa`** — Polishes release notes from diffs, commits, issues, changelog fragments, or rough bullets without inventing impact.
 ```
 
+## Onboard it
+
+After registration, do a short wake-up conversation. Do not only ping it.
+
+Use `message_clawa` to introduce yourself, why it exists, and where its home is. Ask it to read local `AGENTS.md` and `CLAW.md`, then reply with:
+
+- what it thinks its lane owns
+- what it should refuse or escalate
+- any doc correction it wants before real work starts
+
+Keep this to one or two tight back-and-forths. Let the subclawa adjust its own local docs if something is off. Update `CLAWAS.md` or config only if the name/routing needs a clear correction.
+
 ## Talk to it
 
 Use `message_clawa` with the worker id/name/title from `CLAWAS.md` or `.pi/clawas/config.jsonc`.
