@@ -64,7 +64,7 @@ Blocks: clean-room install test.
 
 ## C. Core runtime surfaces
 
-Status: usable and stricter; remaining work is smoke coverage and seam polish.
+Status: usable and stricter; remaining work is mostly UX polish from real use.
 
 - [x] Clawas runtime copied into core package
 - [x] monitor widget replaces footer status
@@ -73,11 +73,9 @@ Status: usable and stricter; remaining work is smoke coverage and seam polish.
 - [x] `/claw` remains management console
 - [x] custom compaction extracts continuity + durable memories
 - [x] hydration loads main continuity markdowns
-- [ ] simplify `/claw` remaining screens/actions
+- [ ] simplify `/claw` remaining screens/actions if real use keeps exposing awkwardness
 - [x] remove or retire parked `/clawas` command code if unused
-- [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
-- [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
-  - playground proved repeated `/jump` and `/claw` recovery; still needs a clean deterministic smoke path
+- [x] repeated `/jump` and `/claw` recovery tested in playground
 - [x] use shared home SQLite memory at `.pi/clawa-memory.sqlite`
 - [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
 - [x] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
@@ -85,7 +83,7 @@ Status: usable and stricter; remaining work is smoke coverage and seam polish.
 - [ ] consider Clawa rename/folder/config alignment after a seed grows into a better name
 
 Depends on: A, B.
-Blocks: adapter finalization and clean-room runtime test.
+Blocks: clean-room runtime test.
 
 ## D. Optional adapters
 
@@ -99,6 +97,7 @@ Status: Discord exists and is a core first surface, but adapter seam and product
 - [x] `/discord` can start/restart/stop gateway
 - [x] setup guide doc exists inside adapter package
 - [x] GUI helper action sends setup-guidance prompt with doc/source paths
+- [ ] review Discord adapter boundary: only use exported root APIs, write config through intended helpers, and avoid private runtime/path coupling
 - [ ] polish `/discord` states and copy
 - [ ] validate gateway process lifecycle under Pi shutdown/restart
 - [ ] decide Discord DM support shape for first release
@@ -107,7 +106,7 @@ Status: Discord exists and is a core first surface, but adapter seam and product
 - [ ] decide whether to generate invite URL or keep manual instructions
 - [x] add adapter smoke test that does not require a real Discord token
 
-Depends on: C adapter seam.
+Depends on: C runtime surfaces.
 Blocks: full clean-room test if Discord is included in first release.
 
 ## E. Release docs/checks
@@ -170,7 +169,7 @@ Test once, in this order:
 
 ## Pulse scheduled/ambient lane
 
-Status: first implementation exists. Needs real-life playground pressure.
+Status: first implementation exists and has had real-life playground pressure.
 
 Pulse replaces heartbeat/cron as one Clawa-native concept: markdown definitions in each Clawa home under `pulses/`, with each Clawa responsible for its own pulse folder.
 
@@ -185,12 +184,14 @@ Done:
 - [x] `/pulse` opens the pulse tab; `/pulse run <id>` exists for manual run-now
 - [x] pulse scheduler state is tiny runtime state at `.pi/pulses.json`
 - [x] pulse scheduler uses roughly five-minute resolution
+- [x] Hey Clawa collision handling delays ambient wake when a specific same-owner pulse is due
+- [x] playground proved main pulse dispatch, subclawa pulse dispatch, and collision delay
 - [x] pulse docs live in `skills/clawa-ops/references/pulses.md`
 
 Needs follow-up:
 
-- [ ] clean-room pulse playground: run main pulse and subclawa pulse for real
-- [ ] tune `pulses/AGENTS.md` journal shape after actual runs
+- [ ] optionally prove `hey-clawa/` specifically inside a subclawa home if we want exact coverage
+- [ ] tune `pulses/AGENTS.md` journal shape only if more real runs show it becoming noisy
 - [ ] decide whether active-hours/social delivery belongs in Pulse config or higher-level comms policy
 - [ ] consider persistent run records only if markdown journal/session transcripts prove insufficient
 
