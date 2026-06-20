@@ -13,7 +13,7 @@ This folder is my scheduled/ambient wake layer. Pulse files tell me what to do w
 ## Index
 
 - `weekly-pulse-review.md` — review whether my pulses and subclawa pulses are still useful.
-- `generic-wake.md` — hourly “Hey, Clawa” wake for small curious/self-tuning moves.
+- `hey-clawa.md` — hourly “Hey, Clawa” wake for small curious/self-tuning moves.
 
 ## Journal
 

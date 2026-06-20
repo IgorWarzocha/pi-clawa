@@ -7,7 +7,7 @@ Every Clawa can have its own pulse folder:
 ```text
 pulses/
   AGENTS.md
-  generic-wake.md
+  hey-clawa.md
   weekly-pulse-review.md
 ```
 
