@@ -31,13 +31,14 @@ Read `pulses/AGENTS.md` before creating or editing a pulse.
 
 Use frontmatter plus a body in `PULSE.md`:
 
-`PULSE.md` must start with YAML frontmatter including at least `title: "..."`; pulses without a frontmatter title are not discovered by `/pulse list`.
+`PULSE.md` must start with YAML frontmatter including `title`, `schedule`, and `enabled`. Manual pulses use `schedule: manual`; omitting `schedule` is unclear and invalid.
 
 A pulse must be executable from its own definition. If it needs a target, the definition must say how to choose one. Do not create pulses that rely on hidden command parameters.
 
 ```md
 ---
 title: Curiosity poke
+schedule: manual
 enabled: true
 journal: pulses/AGENTS.md
 ---
@@ -54,7 +55,7 @@ Good result:
 
 Supported schedules:
 
-- no `schedule` — manual-only pulse
+- `schedule: manual` — manual-only pulse
 - `every 30m`
 - `every 6h`
 - `every 1d`

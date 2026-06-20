@@ -34,7 +34,7 @@ test('pulse schedules parse and skip first-seen interval runs', () => {
   })
   assert.equal(isPulseDue({ schedule: schedule!, nowMs: 1_810_000, firstSeenAt: 10_000 }).due, true)
   assert.deepEqual(parsePulseSchedule('manual'), { kind: 'manual' })
-  assert.deepEqual(parsePulseSchedule(''), { kind: 'manual' })
+  assert.equal(parsePulseSchedule(''), null)
   assert.deepEqual(isPulseDue({ schedule: { kind: 'manual' }, nowMs: 10_000 }), {
     due: false,
     dueKey: null,
@@ -65,7 +65,15 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     await mkdir(join(root, 'pulses', 'manual-note'), { recursive: true })
     await writeFile(
       join(root, 'pulses', 'manual-note', 'PULSE.md'),
-      ['---', 'title: Manual note', 'enabled: true', '---', '', '# Manual note'].join('\n'),
+      [
+        '---',
+        'title: Manual note',
+        'schedule: manual',
+        'enabled: true',
+        '---',
+        '',
+        '# Manual note',
+      ].join('\n'),
       'utf8',
     )
     await mkdir(join(root, 'pulses', 'curiosity-poke'), { recursive: true })
@@ -82,7 +90,7 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     )
 
     const definitions = await discoverPulseDefinitions(root)
-    assert.equal(definitions.length, 3)
+    assert.equal(definitions.length, 2)
     assert.equal(
       definitions.find((definition) => definition.id === 'tiny-check')?.key,
       'main:tiny-check',
@@ -90,9 +98,9 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     assert.deepEqual(definitions.find((definition) => definition.id === 'manual-note')?.schedule, {
       kind: 'manual',
     })
-    assert.deepEqual(
-      definitions.find((definition) => definition.id === 'curiosity-poke')?.schedule,
-      { kind: 'manual' },
+    assert.equal(
+      definitions.some((definition) => definition.id === 'curiosity-poke'),
+      false,
     )
     assert.equal(
       definitions.some((definition) => definition.id === 'loose-note'),

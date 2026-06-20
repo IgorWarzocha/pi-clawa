@@ -54,7 +54,8 @@ function validTime(hour: number, minute: number): boolean {
 
 export function parsePulseSchedule(raw: string): PulseSchedule | null {
   const text = raw.trim()
-  if (text === '' || text.toLowerCase() === 'manual') return { kind: 'manual' }
+  if (text === '') return null
+  if (text.toLowerCase() === 'manual') return { kind: 'manual' }
 
   return (
     parseIntervalSchedule(text) ??

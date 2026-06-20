@@ -2,6 +2,7 @@
 title: Weekly pulse review
 schedule: weekly mon 10:00
 enabled: true
+journal: pulses/AGENTS.md
 ---
 
 # Weekly pulse review

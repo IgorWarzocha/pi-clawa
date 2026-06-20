@@ -11,3 +11,7 @@ dist/
 .pi/semantic-grep.sqlite
 
 .pi/clawa-discord/
+
+# Python cache
+__pycache__/
+*.py[cod]

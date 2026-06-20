@@ -55,7 +55,8 @@ async function readPulseFolder(options: {
   const scheduleText =
     typeof parsed.data['schedule'] === 'string' && parsed.data['schedule'].trim()
       ? parsed.data['schedule'].trim()
-      : 'manual'
+      : null
+  if (!scheduleText) return null
   const schedule = parsePulseSchedule(scheduleText)
   if (!(enabled && schedule)) return null
 
