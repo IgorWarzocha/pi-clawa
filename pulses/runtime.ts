@@ -9,8 +9,11 @@ import { isPulseDue, pulseDueKey } from './schedule.js'
 import { type PulseSchedulerState, readPulseState, writePulseState } from './state.js'
 
 const PULSE_TICK_MS = 5 * 60 * 1000
+const HEY_CLAWA_PULSE_ID = 'hey-clawa'
+const HEY_CLAWA_COLLISION_DELAY_MS = 15 * 60 * 1000
 
 type PulseRunMode = 'scheduled' | 'forced'
+type DuePulse = { pulse: PulseDefinition; dueKey: string | null }
 
 type PulseWorkerSender = typeof sendClawasSessionMessage
 
@@ -78,23 +81,20 @@ export class PulseRuntime {
       const state = await readPulseState(ctx.cwd)
       let changed = seedNewPulses(state, pulses, nowMs)
 
-      for (const pulse of pulses) {
-        if (pulse.schedule.kind === 'manual') continue
+      const duePulses = collectDuePulses(pulses, state, nowMs)
+      const delayedHeyPulses = findHeyClawaCollisions(duePulses)
+      changed = delayHeyClawaPulses(state, delayedHeyPulses, nowMs) || changed
+
+      for (const { pulse, dueKey } of duePulses) {
+        if (delayedHeyPulses.has(pulse)) continue
         const entry = state.pulses[pulse.key]
-        const due = isPulseDue({
-          schedule: pulse.schedule,
-          nowMs,
-          firstSeenAt: entry?.firstSeenAt,
-          lastRunAt: entry?.lastRunAt,
-          lastDueKey: entry?.lastDueKey,
-        })
-        if (!due.due) continue
         await this.dispatchPulse(pulse, 'scheduled')
         state.pulses[pulse.key] = {
           ...entry,
           firstSeenAt: entry?.firstSeenAt ?? nowMs,
           lastRunAt: nowMs,
-          lastDueKey: due.dueKey ?? entry?.lastDueKey,
+          lastDueKey: dueKey ?? entry?.lastDueKey,
+          deferUntil: undefined,
         }
         changed = true
       }
@@ -170,6 +170,66 @@ export class PulseRuntime {
       'error',
     )
   }
+}
+
+function collectDuePulses(
+  pulses: PulseDefinition[],
+  state: PulseSchedulerState,
+  nowMs: number,
+): DuePulse[] {
+  const duePulses: DuePulse[] = []
+  for (const pulse of pulses) {
+    if (pulse.schedule.kind === 'manual') continue
+    const entry = state.pulses[pulse.key]
+    if (entry?.deferUntil && nowMs < entry.deferUntil) continue
+    const due = isPulseDue({
+      schedule: pulse.schedule,
+      nowMs,
+      firstSeenAt: entry?.firstSeenAt,
+      lastRunAt: entry?.lastRunAt,
+      lastDueKey: entry?.lastDueKey,
+    })
+    if (due.due) duePulses.push({ pulse, dueKey: due.dueKey })
+  }
+  return duePulses
+}
+
+function delayHeyClawaPulses(
+  state: PulseSchedulerState,
+  pulses: Set<PulseDefinition>,
+  nowMs: number,
+): boolean {
+  let changed = false
+  for (const pulse of pulses) {
+    const entry = state.pulses[pulse.key]
+    state.pulses[pulse.key] = {
+      ...entry,
+      firstSeenAt: entry?.firstSeenAt ?? nowMs,
+      deferUntil: nowMs + HEY_CLAWA_COLLISION_DELAY_MS,
+    }
+    changed = true
+  }
+  return changed
+}
+
+function findHeyClawaCollisions(duePulses: DuePulse[]): Set<PulseDefinition> {
+  const byOwner = new Map<string, PulseDefinition[]>()
+  for (const { pulse } of duePulses) {
+    const group = byOwner.get(pulse.ownerId) ?? []
+    group.push(pulse)
+    byOwner.set(pulse.ownerId, group)
+  }
+
+  const delayed = new Set<PulseDefinition>()
+  for (const group of byOwner.values()) {
+    if (group.length < 2) continue
+    const hasNonHeyPulse = group.some((pulse) => pulse.id !== HEY_CLAWA_PULSE_ID)
+    if (!hasNonHeyPulse) continue
+    for (const pulse of group) {
+      if (pulse.id === HEY_CLAWA_PULSE_ID) delayed.add(pulse)
+    }
+  }
+  return delayed
 }
 
 function seedNewPulses(

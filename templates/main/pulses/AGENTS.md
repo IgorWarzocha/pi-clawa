@@ -18,6 +18,7 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 - A pulse run is a real session turn. Finish with a concise result message.
 - If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 - Pulse timing has roughly five-minute resolution. Treat schedules as gentle wakes, not second-perfect alarms.
+- If `hey-clawa/` is due at the same time as another pulse in this house, it waits about 15 minutes so the specific pulse gets the room.
 
 ## Index
 

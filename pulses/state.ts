@@ -6,6 +6,7 @@ interface PulseEntryState {
   firstSeenAt?: number | undefined
   lastRunAt?: number | undefined
   lastDueKey?: string | undefined
+  deferUntil?: number | undefined
 }
 
 export interface PulseSchedulerState {
@@ -33,6 +34,7 @@ function normalizeState(value: unknown): PulseSchedulerState {
       firstSeenAt: asNumber(raw['firstSeenAt']),
       lastRunAt: asNumber(raw['lastRunAt']),
       lastDueKey: asString(raw['lastDueKey']),
+      deferUntil: asNumber(raw['deferUntil']),
     }
   }
   return { pulses }

@@ -64,6 +64,7 @@ Supported schedules:
 - `at 2026-06-20T15:00:00Z`
 
 Pulse timing has roughly five-minute resolution. Treat schedules as gentle wakes, not second-perfect alarms.
+If `hey-clawa` is due in the same scan as another pulse for the same Clawa, it is delayed by about 15 minutes so the ambient wake does not crowd the more specific pulse.
 
 ## Managing pulses
 

@@ -12,6 +12,10 @@ const TINY_CHECK_FILE_PATTERN = /Definition file: .*pulses\/tiny-check\/PULSE.md
 const TINY_CHECK_STATE_PATTERN = /tiny-check/
 const MANUAL_PULSE_FILE_PATTERN = /Definition file: pulses\/manual-note\/PULSE.md/
 const MANUAL_PULSE_STATE_PATTERN = /manual-note/
+const EXACT_CHECK_FILE_PATTERN = /exact-check\/PULSE.md/
+const HEY_CLAWA_FILE_PATTERN = /hey-clawa\/PULSE.md/
+const HEY_CLAWA_STATE_PATTERN = /"main:hey-clawa"/
+const HEY_CLAWA_DEFER_PATTERN = /"deferUntil": 962000/
 
 function stubClawasRuntime() {
   return {
@@ -185,6 +189,61 @@ test('pulse runtime queues main pulse as follow-up while main Clawa is busy', as
 
     assert.deepEqual(messages[0]?.options, { triggerTurn: true, deliverAs: 'followUp' })
     assert.match(messages[0]?.content ?? '', TINY_CHECK_FILE_PATTERN)
+    pulseRuntime.dispose()
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('pulse runtime delays Hey Clawa when another same-owner pulse is due', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-hey-collision-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, 'pulses', 'hey-clawa'), { recursive: true })
+    await mkdir(join(root, 'pulses', 'exact-check'), { recursive: true })
+    await writeFile(
+      join(root, 'pulses', 'hey-clawa', 'PULSE.md'),
+      ['---', 'title: Hey, Clawa', 'schedule: every 1m', 'enabled: true', '---', '', '# Hey'].join(
+        '\n',
+      ),
+      'utf8',
+    )
+    await writeFile(
+      join(root, 'pulses', 'exact-check', 'PULSE.md'),
+      [
+        '---',
+        'title: Exact check',
+        'schedule: at 1970-01-01T00:01:02.000Z',
+        'enabled: true',
+        '---',
+        '',
+        '# Exact check',
+      ].join('\n'),
+      'utf8',
+    )
+
+    const messages: string[] = []
+    const pulseRuntime = new PulseRuntime(
+      {
+        sendMessage: (message: { content?: string }) => messages.push(message.content ?? ''),
+      } as never,
+      stubClawasRuntime() as never,
+    )
+    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+
+    await pulseRuntime.scanAndRunDue(1_000)
+    await pulseRuntime.scanAndRunDue(62_000)
+
+    assert.equal(messages.length, 1)
+    assert.match(messages[0] ?? '', EXACT_CHECK_FILE_PATTERN)
+    const deferredState = await readFile(join(root, '.pi', 'pulses.json'), 'utf8')
+    assert.match(deferredState, HEY_CLAWA_STATE_PATTERN)
+    assert.match(deferredState, HEY_CLAWA_DEFER_PATTERN)
+
+    await pulseRuntime.scanAndRunDue(962_000)
+
+    assert.equal(messages.length, 2)
+    assert.match(messages[1] ?? '', HEY_CLAWA_FILE_PATTERN)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
