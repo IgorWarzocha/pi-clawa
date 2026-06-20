@@ -1,28 +1,46 @@
 import type { ExtensionAPI, ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
-import type { PulseDefinition } from './definitions.js'
+import type { ClawasRuntime } from '../clawas/runtime.js'
+import { type ClawaDefaults, resolveClawaDefaults } from '../config.js'
+import { executeBootstrap } from '../extension/bootstrap-actions.js'
+import { createNewClaw } from '../extension/clawa-seed.js'
+import { syncClawaEnvironment } from '../extension/environment.js'
+import type { ClawaRuntimeState } from '../extension/runtime-state.js'
+import { runClawGui } from '../gui.js'
 import type { PulseRuntime } from './runtime.js'
 
 const SPACE_PATTERN = /\s+/u
 
 function usage(): string {
-  return ['Usage:', '/pulse list', '/pulse run <pulse-id|owner:pulse-id|title>'].join('\n')
+  return ['Usage:', '/pulses', '/pulse run <pulse-id|owner:pulse-id|title>'].join('\n')
 }
 
-function renderPulseList(pulses: PulseDefinition[]): string {
-  if (pulses.length === 0) return 'No enabled pulses found.'
-  return pulses
-    .map(
-      (pulse) => `- ${pulse.key} — ${pulse.title} (${pulse.scheduleText}, ${pulse.relativeFile})`,
-    )
-    .join('\n')
-}
+async function openPulsesGui(
+  pi: ExtensionAPI,
+  ctx: ExtensionCommandContext,
+  options: {
+    runtime: ClawaRuntimeState
+    clawasRuntime: ClawasRuntime
+    pulseRuntime: PulseRuntime
+    setDefaults: (defaults: ClawaDefaults) => void
+  },
+): Promise<void> {
+  options.runtime.ensureExtensionConfig(ctx.cwd)
+  options.setDefaults(resolveClawaDefaults(ctx.cwd))
+  syncClawaEnvironment(ctx.cwd)
 
-async function listPulses(pi: ExtensionAPI, runtime: PulseRuntime): Promise<void> {
-  pi.sendMessage({
-    customType: 'claw-dim',
-    content: renderPulseList(await runtime.list()),
-    display: true,
-  })
+  if (!ctx.hasUI) {
+    ctx.ui.notify(usage(), 'warning')
+    return
+  }
+
+  await runClawGui(
+    ctx,
+    async () => await executeBootstrap(pi, ctx, options.runtime),
+    async (createRequest) => await createNewClaw(pi, ctx, createRequest, options.clawasRuntime),
+    options.clawasRuntime,
+    options.pulseRuntime,
+    'pulses',
+  )
 }
 
 async function runPulse(
@@ -42,17 +60,30 @@ async function runPulse(
   }
 }
 
-export function registerPulseCommand(pi: ExtensionAPI, runtime: PulseRuntime): void {
+export function registerPulseCommand(
+  pi: ExtensionAPI,
+  options: {
+    runtime: ClawaRuntimeState
+    clawasRuntime: ClawasRuntime
+    pulseRuntime: PulseRuntime
+    setDefaults: (defaults: ClawaDefaults) => void
+  },
+): void {
+  pi.registerCommand('pulses', {
+    description: 'Open the Clawa pulse tab',
+    handler: async (_args, ctx) => await openPulsesGui(pi, ctx, options),
+  })
+
   pi.registerCommand('pulse', {
-    description: 'List or run Clawa pulse definitions',
+    description: 'Open Clawa pulses or run one pulse directly',
     handler: async (args, ctx) => {
       const [command, ...rest] = (args ?? '').trim().split(SPACE_PATTERN).filter(Boolean)
       if (!command || command === 'list') {
-        await listPulses(pi, runtime)
+        await openPulsesGui(pi, ctx, options)
         return
       }
       if (command === 'run') {
-        await runPulse(runtime, rest.join(' ').trim(), ctx)
+        await runPulse(options.pulseRuntime, rest.join(' ').trim(), ctx)
         return
       }
       ctx.ui.notify(usage(), 'warning')

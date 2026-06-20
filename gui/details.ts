@@ -1,6 +1,6 @@
 import { createDetail, type Primitive } from '../gui-primitives.js'
 import type { ClawGuiModel } from './model.js'
-import type { ClawItem } from './types.js'
+import type { ClawItem, PulseItem } from './types.js'
 
 export function buildDetails(model: ClawGuiModel): Record<string, Primitive> {
   const details: Record<string, Primitive> = {
@@ -38,7 +38,25 @@ export function buildDetails(model: ClawGuiModel): Record<string, Primitive> {
   for (const item of model.clawItems) {
     details[item.detailKey] = buildClawDetail(item)
   }
+  for (const item of model.pulseItems) {
+    details[item.detailKey] = buildPulseDetail(item)
+  }
   return details
+}
+
+function buildPulseDetail(item: PulseItem): Primitive {
+  const pulse = item.definition
+  return createDetail({
+    title: pulse.title,
+    meta: [
+      `key: ${pulse.key}`,
+      `owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
+      `schedule: ${pulse.scheduleText}`,
+      `folder: ${pulse.relativeHome}`,
+      `definition: ${pulse.relativeFile}`,
+    ],
+    body: pulse.body.split('\n'),
+  })
 }
 
 function buildClawDetail(item: ClawItem): Primitive {

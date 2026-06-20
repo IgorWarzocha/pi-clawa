@@ -53,9 +53,9 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     registerSteerCommand(pi, clawasRuntime)
     registerJumpCommand(pi, clawasRuntime)
     registerClawasMonitorShortcuts(pi, clawasRuntime)
-    registerPulseCommand(pi, pulseRuntime)
+    registerPulseCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
   }
 
   registerClawaSessionEvents(pi, { runtime, clawasRuntime, pulseRuntime, commsServer, setDefaults })
-  registerClawCommand(pi, { runtime, clawasRuntime, setDefaults })
+  registerClawCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
 }

@@ -2,8 +2,15 @@ import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 import type { BootstrapResult } from '../bootstrap.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import { runComposer, runPicker } from '../gui-primitives.js'
+import type { PulseRuntime } from '../pulses/runtime.js'
 import type { ClawGuiModel } from './model.js'
-import type { ActionItem, CreateClawAction, ManagedWorker, WorkerAction } from './types.js'
+import type {
+  ActionItem,
+  CreateClawAction,
+  ManagedWorker,
+  PulseItem,
+  WorkerAction,
+} from './types.js'
 
 export function buildControlActions(model: ClawGuiModel): ActionItem[] {
   const actions: ActionItem[] = [
@@ -75,6 +82,24 @@ export async function runWorkerAction(
   const status = `Sent ${action} note to ${worker.title}. Reopen /claw to refresh status.`
   setStatus(status)
   ctx.ui.notify(status, 'info')
+}
+
+export async function runPulseAction(
+  ctx: ExtensionCommandContext,
+  runtime: PulseRuntime,
+  item: PulseItem,
+  setStatus: (message: string) => void,
+): Promise<void> {
+  try {
+    const pulse = await runtime.runNow(item.key)
+    const status = `Queued pulse ${pulse.title}.`
+    setStatus(status)
+    ctx.ui.notify(status, 'info')
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    setStatus(message)
+    ctx.ui.notify(message, 'error')
+  }
 }
 
 export async function runControlAction(options: {

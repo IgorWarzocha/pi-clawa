@@ -10,8 +10,9 @@ import {
   loadClawEnvironmentConfig,
   resolveClawaDefaults,
 } from '../config.js'
+import { discoverPulseDefinitions } from '../pulses/definitions.js'
 import { hasAllCoreMarkdownFiles } from '../template-files.js'
-import type { ClawItem, ClawStatus, ManagedWorker } from './types.js'
+import type { ClawItem, ClawStatus, ManagedWorker, PulseItem } from './types.js'
 
 export type ClawGuiModel = {
   repoRoot: string
@@ -20,6 +21,7 @@ export type ClawGuiModel = {
   configPath: string
   currentWorkspaceBootstrapped: boolean
   clawItems: ClawItem[]
+  pulseItems: PulseItem[]
 }
 
 async function getClawStatus(repoRoot: string, claw: ClawaConfig): Promise<ClawStatus> {
@@ -134,6 +136,18 @@ function workerToClawConfig(worker: WorkerDefinition): ClawaConfig {
   }
 }
 
+function buildPulseItems(
+  definitions: Awaited<ReturnType<typeof discoverPulseDefinitions>>,
+): PulseItem[] {
+  return definitions.map((definition) => ({
+    key: definition.key,
+    title: definition.title,
+    summary: `${definition.ownerTitle} • ${definition.scheduleText} • ${definition.relativeFile}`,
+    detailKey: `pulse:${definition.key}`,
+    definition,
+  }))
+}
+
 export async function loadClawGuiModel(cwd: string, runtime: ClawasRuntime): Promise<ClawGuiModel> {
   const repoRoot = findRepoRoot(cwd)
   const clawa = resolveClawaDefaults(repoRoot)
@@ -141,6 +155,7 @@ export async function loadClawGuiModel(cwd: string, runtime: ClawasRuntime): Pro
   const clawasConfig = await loadClawasConfig(repoRoot)
   const configPath = getClawasConfigPath(repoRoot)
   const workerDefinitions = clawasConfig?.workers ?? []
+  const pulseDefinitions = await discoverPulseDefinitions(repoRoot)
   const claws = workerDefinitions.map(workerToClawConfig)
   const clawStatuses = await Promise.all(claws.map((claw) => getClawStatus(repoRoot, claw)))
   const liveWorkers = new Map(
@@ -154,5 +169,6 @@ export async function loadClawGuiModel(cwd: string, runtime: ClawasRuntime): Pro
     configPath,
     currentWorkspaceBootstrapped: loaded.config.bootstrapped === true,
     clawItems: buildClawItems(claws, clawStatuses, workersByCwd),
+    pulseItems: buildPulseItems(pulseDefinitions),
   }
 }

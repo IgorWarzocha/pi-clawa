@@ -1,5 +1,6 @@
 import type { WorkerState, WorkerThinkingLevel } from '../clawas/types.js'
 import type { ClawaConfig } from '../config.js'
+import type { PulseDefinition } from '../pulses/definitions.js'
 
 export interface ActionItem {
   label: string
@@ -32,7 +33,15 @@ export interface ClawItem {
   workers: ManagedWorker[]
 }
 
-export type Screen = 'claws' | 'manage' | 'about' | 'help'
+export interface PulseItem {
+  key: string
+  title: string
+  summary: string
+  detailKey: string
+  definition: PulseDefinition
+}
+
+export type Screen = 'claws' | 'manage' | 'pulses' | 'about' | 'help'
 export type WorkerAction = 'prompt' | 'steer'
 
 export interface CreateClawRequest {
