@@ -10,46 +10,72 @@ Propose a subclawa when the human keeps needing a durable specialty, such as rep
 
 Name the purpose in plain language. Keep the lane narrow and useful.
 
-## Create it
+## Create it by shaping the house
 
-Use the normal creation path:
+Create the subclawa by editing the house files directly. Do not make this a wizard.
 
-```text
-/claw create <purpose>
+Use a short stable id:
+
+- lowercase slug
+- usually 2–4 useful words
+- ends with `-clawa`
+- clear over cute
+
+Examples: `repo-archaeologist`, `release-notes-clawa`, `discord-clawa`.
+
+Create the home:
+
+```bash
+mkdir -p clawas/<id>
+ln -s ../../HUMAN.md clawas/<id>/HUMAN.md
+ln -s ../../CLAWAS.md clawas/<id>/CLAWAS.md
 ```
 
-Examples:
+Write the local lane files:
 
-```text
-/claw create repo archaeology and codebase mapping
-/claw create documentation and release notes polishing
-/claw create discord surface presence
+- `clawas/<id>/AGENTS.md` — lane rules, boundaries, routing, public-surface posture
+- `clawas/<id>/CLAW.md` — who this specialist is, including short name/title/signature
+- `clawas/<id>/TOOLS.md` — tools this specialist should reach for
+- `clawas/<id>/CURIOUS.md` — lane-specific sparks
+
+Keep these first drafts narrow. They only need enough shape for the subclawa to wake up usefully.
+
+## Register it
+
+Add the worker to `.pi/clawas/config.jsonc`:
+
+```jsonc
+{
+  "workers": [
+    {
+      "id": "release-notes-clawa",
+      "title": "Release Notes",
+      "emoji": "✍️",
+      "cwd": "clawas/release-notes-clawa",
+      "enabled": true,
+      "autostart": true,
+      "thinking": "medium",
+      "startupPrompt": "Wake up in your home. Read AGENTS.md and CLAW.md. You are the release-notes specialist for this house; stay narrow, evidence-minded, and useful."
+    }
+  ]
+}
 ```
 
-The command creates the worker home, links shared house files, updates config, and sends a shaping follow-up. Treat the generated id as a seed/folder id, not necessarily the final personality.
+Also add it to `.pi/claw.jsonc` under `clawas.claws` so the house knows the visible home exists:
 
-## Shape the home
+```jsonc
+{
+  "name": "release-notes-clawa",
+  "path": "clawas/release-notes-clawa",
+  "autostart": true,
+  "notes": "Polishes release notes from diffs, commits, issues, and rough bullets."
+}
+```
 
-After creation, make a reasonable first draft. Do not turn it into a wizard.
-
-Update:
-
-- local `AGENTS.md` — lane rules, boundaries, routing, public-surface posture
-- local `CLAW.md` — who this specialist is, including a short name/title/signature
-- local `TOOLS.md` — tools this specialist should reach for
-- local `CURIOUS.md` — lane-specific sparks
-- shared `CLAWAS.md` — short routing map entry: name + specialty
-
-`HUMAN.md` and `CLAWAS.md` are shared house files. Subclawas should not fork the human map.
-
-## Name and route it
-
-Keep the folder/config id stable unless the human explicitly wants a rename flow. Give the Clawa a better human-facing title in `CLAW.md` and `CLAWAS.md` when the seed id is too mechanical.
-
-Good `CLAWAS.md` entry:
+Update shared `CLAWAS.md` with one routing line:
 
 ```md
-- **`repo-archaeologist`** — Maps unfamiliar repos, finds entry points/docs/tests, and reports concise archaeology notes before code changes.
+- **`release-notes-clawa`** — Polishes release notes from diffs, commits, issues, changelog fragments, or rough bullets without inventing impact.
 ```
 
 ## Talk to it
@@ -67,7 +93,7 @@ Send one clear note. Include:
 Example:
 
 ```text
-Vela here. Inspect-only task: read the playground root and report root markdown files with one-line roles. Check exact paths; do not edit.
+Vela here. Inspect-only task: read your local AGENTS.md and CLAW.md, then reply in two bullets: what your lane owns, and one thing you must not invent. Do not edit anything.
 ```
 
 Do not spam acknowledgments. A message to a subclawa is normally a request for action, not receipt confirmation.
