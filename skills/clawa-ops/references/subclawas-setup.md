@@ -77,8 +77,9 @@ Cover, through natural back-and-forth:
 - what belongs elsewhere
 - what name/signature feels right
 - how it should report back
-- what it should track in `TOOLS.md`, `CURIOUS.md`, and `pulses/AGENTS.md`
 - any model/tooling expectations for the lane
+
+Start small. Do not make the first message a tour of every file in its home. Let `TOOLS.md`, `CURIOUS.md`, and `pulses/AGENTS.md` enter the conversation only when the lane actually needs them.
 
 Let it adjust its local docs as the conversation settles. Keep going until it has enough shape to operate without freezing, then ask it for a short summary of its lane and first useful next move.
 

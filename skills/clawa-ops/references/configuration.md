@@ -54,9 +54,12 @@ Common:
 - `autostart` — start with the Clawas runtime.
 - `model` — optional Pi model ref.
 - `thinking` — `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`.
-- `startupPrompt` — optional wake note for the worker.
 - `extensions` — optional extra Pi extensions for that worker.
 - `reportMode` — `auto`, `explicit`, or `off`.
+
+Less common:
+
+- `startupPrompt` — optional boot cue for unusual lanes. Most subclawas do not need one; their local `AGENTS.md` and `CLAW.md` should carry the shape.
 
 If you are unsure about model, omit `model` and inherit the current Pi default.
 
