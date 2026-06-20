@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import type { ClawaDefaults } from '../config'
 import { sendWorkerPrompt } from './daemon-prompt.js'
 import { stopAllWorkers } from './daemon-shutdown.js'
+import { startWorkerProcess } from './daemon-start-worker.js'
 import {
   clearManualSessionState,
   markWorkerDetachedState,
@@ -16,9 +17,7 @@ import {
 } from './daemon-worker-lifecycle.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
 import type { ClawasRpcWorker } from './rpc-worker.js'
-import { resolveWorkerSessionFile } from './session-registry.js'
-import { createInitialState, getWorkerState, patchWorkerState, pushEvent } from './state.js'
-import { summarizePrompt } from './summaries.js'
+import { createInitialState, getWorkerState } from './state.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 import { ClawasWorkerEventRouter } from './worker-event-router.js'
 
@@ -207,50 +206,24 @@ export class ClawasDaemon {
   }
 
   private async startWorker(workerId: string): Promise<void> {
-    if (this.workers.has(workerId)) {
-      return
-    }
-
-    const workerState = getWorkerState(this.state, workerId)
-    const definition = workerState.definition
-    const sessionFile = await resolveWorkerSessionFile(
-      this.controlPlaneRoot,
-      definition,
-      workerState.cwd,
-    )
-    const worker = this.createWorker(workerState.cwd, definition, sessionFile)
-
-    this.workers.set(workerId, worker)
-    this.streamBuffers.set(workerId, '')
-    this.attachWorkerListeners(workerId, worker)
-
-    patchWorkerState(
-      this.state,
+    await startWorkerProcess({
+      state: this.state,
+      workers: this.workers,
+      streamBuffers: this.streamBuffers,
+      controlPlaneRoot: this.controlPlaneRoot,
       workerId,
-      {
-        status: 'starting',
-        manualSession: false,
-        sessionFile,
-        currentTask: definition.startupPrompt
-          ? summarizePrompt(definition.startupPrompt)
-          : undefined,
-      },
-      now(),
-    )
-    pushEvent(this.state, workerId, `${definition.title} starting in ${workerState.cwd}`, now())
-    this.notifyChanged()
-
-    try {
-      await worker.start()
-      await nameWorkerSession(worker, this.clawaDefaults)
-      await this.markWorkerReady(workerId, worker, workerState.lastSummary)
-
-      if (definition.startupPrompt) {
-        await this.sendStartupPrompt(workerId, definition)
-      }
-    } catch (error) {
-      await this.handleWorkerStartFailure(workerId, worker, definition, error)
-    }
+      createWorker: (cwd, definition, sessionFile) =>
+        this.createWorker(cwd, definition, sessionFile),
+      attachWorkerListeners: (id, worker) => this.attachWorkerListeners(id, worker),
+      nameWorkerSession: async (worker) => await nameWorkerSession(worker, this.clawaDefaults),
+      markWorkerReady: async (id, worker, fallbackSummary) =>
+        await this.markWorkerReady(id, worker, fallbackSummary),
+      sendStartupPrompt: async (id, definition) => await this.sendStartupPrompt(id, definition),
+      handleWorkerStartFailure: async (id, worker, definition, error) =>
+        await this.handleWorkerStartFailure(id, worker, definition, error),
+      notifyChanged: () => this.notifyChanged(),
+      getNow: now,
+    })
   }
 
   private async sendStartupPrompt(workerId: string, definition: WorkerDefinition): Promise<void> {
