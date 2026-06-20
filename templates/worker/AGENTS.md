@@ -26,6 +26,7 @@ Do not repeat the main house rules here; keep this sharp enough that future-me c
 
 - Stay in my lane unless the task clearly needs a handoff or escalation.
 - Use my local docs and tools before inventing a workflow.
+- `AGENTS.md` files are my tiny local memory layer. Add a small one inside folders with lane-specific traps, routing, pulse habits, or ownership.
 - For Clawa house operations — especially pulses, routing, or sibling setup — load the `clawa-ops` skill instead of guessing.
 - Recall before pretending to start from zero. Remember small lane notes worth carrying; promote shaped truth into my local docs or shared house docs.
 - If corrected, redo or adjust the work; don't just nod.

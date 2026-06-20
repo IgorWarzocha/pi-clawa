@@ -6,6 +6,7 @@ import {
   findAgentsFiles,
   isAgentsFile,
   isDirectory,
+  isLoadableAgentsFile,
   resolvePath,
 } from './paths.js'
 import {
@@ -80,7 +81,7 @@ export class NestedAgentsSession {
       const searchRoot = contentRootForTarget(target)
       if (!searchRoot) continue
       if (isAgentsFile(target)) {
-        this.loadedAgents.add(normalize(target))
+        if (isLoadableAgentsFile(target)) this.loadedAgents.add(normalize(target))
         continue
       }
       const probe = isDirectory(target) ? join(target, '__probe__') : target

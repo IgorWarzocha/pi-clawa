@@ -1,6 +1,9 @@
 import { existsSync, realpathSync, statSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, normalize, relative, resolve } from 'node:path'
 
+const AGENTS_FILE = 'AGENTS.md'
+const PULSES_DIR = 'pulses'
+
 function normalizeAtPrefix(inputPath: string): string {
   return inputPath.startsWith('@') ? inputPath.slice(1) : inputPath
 }
@@ -51,8 +54,8 @@ export function agentsFromCwdToRoot(cwd: string): Set<string> {
   if (!root) return ignored
   let dir = cwd
   while (isInsideRoot(root, dir)) {
-    const candidate = join(dir, 'AGENTS.md')
-    if (existsSync(candidate)) ignored.add(normalize(candidate))
+    const candidate = normalize(join(dir, AGENTS_FILE))
+    if (isLoadableAgentsFile(candidate) && existsSync(candidate)) ignored.add(candidate)
     if (dir === root) break
     const parent = dirname(dir)
     if (parent === dir) break
@@ -70,8 +73,10 @@ export function findAgentsFiles(
   const agentsFiles: string[] = []
   let dir = dirname(filePath)
   while (isInsideRoot(rootDir, dir)) {
-    const candidate = normalize(join(dir, 'AGENTS.md'))
-    if (!ignoredAgents.has(candidate) && existsSync(candidate)) agentsFiles.push(candidate)
+    const candidate = normalize(join(dir, AGENTS_FILE))
+    if (isLoadableAgentsFile(candidate) && !ignoredAgents.has(candidate) && existsSync(candidate)) {
+      agentsFiles.push(candidate)
+    }
     if (dir === rootDir) break
     const parent = dirname(dir)
     if (parent === dir) break
@@ -89,5 +94,9 @@ export function isDirectory(path: string): boolean {
 }
 
 export function isAgentsFile(path: string): boolean {
-  return basename(path) === 'AGENTS.md'
+  return basename(path) === AGENTS_FILE
+}
+
+export function isLoadableAgentsFile(path: string): boolean {
+  return isAgentsFile(path) && basename(dirname(path)) !== PULSES_DIR
 }
