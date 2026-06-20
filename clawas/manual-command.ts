@@ -7,7 +7,6 @@ export interface LaunchOptions {
   cwd: string
   extensionPaths: string[]
   clawaDefaults: ClawaDefaults
-  reportSessionId?: string | undefined
   sessionFile?: string | undefined
 }
 
@@ -43,15 +42,11 @@ export function buildInteractiveCommand(options: LaunchOptions, replaceShell = f
     PI_CLAWAS_WORKER_TITLE: options.definition.title,
     PI_CLAWAS_SOCKET_ALIAS: getWorkerSocketAlias(options.definition),
   }
-  if (options.reportSessionId) {
-    envVars['PI_CLAWAS_REPORT_SESSION_ID'] = options.reportSessionId
-  }
   if (process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']) {
     envVars['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
   }
   if (process.env['PI_CLAW_PROJECT_ROOT']) {
     envVars['PI_CLAW_PROJECT_ROOT'] = process.env['PI_CLAW_PROJECT_ROOT']
-    envVars['PI_CWD'] = process.env['PI_CLAW_PROJECT_ROOT']
   }
 
   const envPrefix = Object.entries(envVars)
