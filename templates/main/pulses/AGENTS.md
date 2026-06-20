@@ -17,6 +17,7 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 - Follow the pulse's own action boundary. If external/public action is part of the pulse's design, do it; otherwise keep the run local/private.
 - A pulse run is a real session turn. Finish with a concise result message.
 - If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
+- Pulse timing has roughly five-minute resolution. Treat schedules as gentle wakes, not second-perfect alarms.
 
 ## Index
 

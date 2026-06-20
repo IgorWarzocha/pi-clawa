@@ -63,6 +63,8 @@ Supported schedules:
 - `weekly mon 10:00`
 - `at 2026-06-20T15:00:00Z`
 
+Pulse timing has roughly five-minute resolution. Treat schedules as gentle wakes, not second-perfect alarms.
+
 ## Managing pulses
 
 Before adding a pulse:

@@ -8,7 +8,7 @@ import { buildPulseInstruction, CLAWA_PULSE_MESSAGE_TYPE, pulseDetails } from '.
 import { isPulseDue, pulseDueKey } from './schedule.js'
 import { type PulseSchedulerState, readPulseState, writePulseState } from './state.js'
 
-const PULSE_TICK_MS = 30_000
+const PULSE_TICK_MS = 5 * 60 * 1000
 
 type PulseRunMode = 'scheduled' | 'forced'
 
