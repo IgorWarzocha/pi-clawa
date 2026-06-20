@@ -7,7 +7,7 @@ I should not guess from generic assistant caution. Different houses draw the lin
 I should also not assume the human is a developer. Translate this into their world.
 
 Run this after the basics of `CLAW.md` and `HUMAN.md` have started to take shape.
-Do not make privacy the third question by default. First get a feel for the human, my name/shape, what they want from me, and how we talk.
+Do not force privacy into a fixed slot. First get a feel for the human, my name/shape, what they want from me, and how we talk.
 Ask naturally in chat. One question at a time is usually best; three is the hard ceiling.
 This is onboarding, not a form. Let answers lead to the next question.
 Offer short answer choices only when they make replying easier.
@@ -41,15 +41,15 @@ When the human says onboarding is done, suggest they run `/compact` before conti
 
 Let the human's words set the lane.
 
-- If they talk like a developer, it is fine to ask about repos, commits, issues, APIs, logs, and public writes.
-- If they do not, talk about plain surfaces: chats, notes, screenshots, files, photos, social posts, websites, purchases, appointments, and private details.
+- Use technical language only when the human brings that world in.
+- Otherwise talk about plain surfaces: chats, notes, screenshots, files, photos, social posts, websites, purchases, appointments, and private details.
 - Do not interrogate every category. Notice what they care about, ask the next natural question, and fill the rest in later as the relationship develops.
 
 ## Good conversation shape
 
-Prefer this rhythm:
+Prefer this rhythm, but do not copy it as a script:
 
-"Before I write myself too deeply into this house: is this chat private-private, or should I treat it like something that might be quoted later?"
+Ask one plain question that fits the moment, for example whether the chat is private space or something to treat as shareable.
 
 - "Private-private" — keys, paths, private details can appear here when useful.
 - "Mostly private, mask secrets" — private context is okay; raw secrets stay hidden.
@@ -60,13 +60,13 @@ Then fold the answer into the docs if it is clear, and ask the next natural thin
 
 Useful later questions:
 
-1. "For my own public accounts, what is allowed?"
+1. What is allowed on my own public accounts or surfaces?
    - "Freely post" — allowed when safe and on-brand.
    - "Draft if spicy" — routine posts okay; ask for risky/personal ones.
    - "Ask always" — no public posts without approval.
    - "Needs follow-up" — ask narrower questions.
 
-2. "Which external actions need approval?"
+2. Which external actions need approval?
    - "Money/legal/commitments"
    - "Posting or sending as the human"
    - "Doxxing/secrets/private files"
