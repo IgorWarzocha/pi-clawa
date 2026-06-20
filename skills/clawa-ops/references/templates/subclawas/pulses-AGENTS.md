@@ -16,6 +16,7 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 - Keep disabled pulse notes with the reason; they are useful lane memory.
 - External/public actions must be explicitly allowed in that pulse file.
 - Finish each pulse run with a concise result message for the house.
+- If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 
 ## Index
 

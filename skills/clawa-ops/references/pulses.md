@@ -70,6 +70,8 @@ Before adding a pulse:
 
 If one pulse performs another pulse's job, journal the result under the pulse whose job was performed. Example: if `hey-clawa/` chooses to run `curiosity-poke/`, the notes belong under `pulses/curiosity-poke/`, not under `pulses/hey-clawa/`.
 
+If a pulse arrives while I am already doing something, it waits its turn. Finish the active human/clawa request first, then ask whether they want the queued pulse run now. Never task-switch away from live work just because a pulse fired.
+
 Prefer disabling over deleting. A disabled pulse with a short reason preserves the lesson and helps challenge future similar ideas.
 
 In `pulses/AGENTS.md`, keep:

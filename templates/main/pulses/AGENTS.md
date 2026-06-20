@@ -14,6 +14,7 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 - Keep disabled pulse notes with the reason; they are useful house memory.
 - External/public actions must be explicitly allowed in that pulse file.
 - A pulse run is a real session turn. Finish with a concise result message.
+- If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 
 ## Index
 

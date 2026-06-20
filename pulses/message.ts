@@ -11,7 +11,26 @@ export interface PulseMessageDetails {
   forced?: boolean | undefined
 }
 
-export function buildPulseInstruction(pulse: PulseDefinition, forced = false): string {
+export interface PulseInstructionOptions {
+  forced?: boolean | undefined
+  queued?: boolean | undefined
+}
+
+function queuedPulseLines(queued: boolean): string[] {
+  if (!queued) return []
+  return [
+    'This pulse arrived while active work was already in flight.',
+    'Do not task-switch. Finish the current human/clawa request first.',
+    'When that is done, say this pulse is waiting and ask if they are happy for you to run it now. Run it only after they agree.',
+  ]
+}
+
+export function buildPulseInstruction(
+  pulse: PulseDefinition,
+  options: PulseInstructionOptions = {},
+): string {
+  const forced = options.forced === true
+  const queued = options.queued === true
   return [
     `Pulse: ${pulse.title}`,
     `Owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
@@ -19,10 +38,18 @@ export function buildPulseInstruction(pulse: PulseDefinition, forced = false): s
     `Definition file: ${pulse.relativeFile}`,
     forced ? 'Trigger: manual run-now' : `Trigger: schedule ${pulse.scheduleText}`,
     '',
-    'Read the pulse definition file and execute it now.',
+    ...queuedPulseLines(queued),
+    queued ? '' : null,
+    queued
+      ? 'After they agree, read the pulse definition file and execute it.'
+      : 'Read the pulse definition file and execute it now.',
     'Also read the pulse folder AGENTS.md if present, plus pulses/AGENTS.md in your home; keep the relevant pulse notes/journal tidy if this run teaches anything.',
-    'This is a real scheduled Clawa invocation, not a ghost side conversation. Do the work in this session and finish with a concise result message.',
-  ].join('\n')
+    queued
+      ? 'This is a real scheduled Clawa invocation, not a ghost side conversation. When you do run it, do the work in this session and finish with a concise result message.'
+      : 'This is a real scheduled Clawa invocation, not a ghost side conversation. Do the work in this session and finish with a concise result message.',
+  ]
+    .filter((line): line is string => line !== null)
+    .join('\n')
 }
 
 export function pulseDetails(pulse: PulseDefinition, forced = false): PulseMessageDetails {

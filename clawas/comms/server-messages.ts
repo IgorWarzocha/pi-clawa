@@ -160,3 +160,7 @@ export function getLegacyMailCustomType(command: ClawasSendCommand): string {
 export function shouldTriggerTurn(command: ClawasSendCommand): boolean {
   return command.intent !== 'for_context'
 }
+
+export function shouldAllowManualSessionSend(command: ClawasSendCommand): boolean {
+  return command.mode === 'followUp' && command.kind === 'instruction'
+}

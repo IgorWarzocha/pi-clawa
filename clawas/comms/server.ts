@@ -16,6 +16,7 @@ import {
   resolveMessageIntent,
   resolveMessageKind,
   resolveMessageVisibility,
+  shouldAllowManualSessionSend,
   shouldDeliverClawasMailAsUserMessage,
   shouldTriggerTurn,
 } from './server-messages.js'
@@ -25,6 +26,12 @@ export { buildMessageDetails, buildWorkerUserMessage, shouldDeliverClawasMailAsU
 import type { ClawasCommsCommand, ClawasRpcResponse, ClawasSendCommand } from './types.js'
 
 const IS_MANUAL_SESSION = process.env['PI_CLAWAS_MANUAL_SESSION'] === '1'
+type CommandResponder = (
+  success: boolean,
+  commandName: string,
+  data?: unknown,
+  error?: string,
+) => void
 function parseCommand(line: string): {
   command?: ClawasCommsCommand
   error?: string
@@ -181,43 +188,59 @@ export class ClawasCommsServer {
     }
 
     if (command.type === 'get_message') {
-      if (IS_MANUAL_SESSION) {
-        respond(false, 'get_message', undefined, 'Worker is in a manual session')
-        return
-      }
-      respond(true, 'get_message', {
-        message: getLastAssistantMessage(ctx) ?? null,
-        delivery: getLastDeliveryMessage(ctx) ?? null,
-      })
+      this.handleGetMessageCommand(ctx, respond)
       return
     }
 
     if (command.type === 'get_status') {
-      if (IS_MANUAL_SESSION) {
-        respond(false, 'get_status', undefined, 'Worker is in a manual session')
-        return
-      }
-      respond(true, 'get_status', {
-        isIdle: ctx.isIdle(),
-        hasPendingMessages: ctx.hasPendingMessages(),
-      })
+      this.handleGetStatusCommand(ctx, respond)
       return
     }
 
     if (command.type === 'send') {
-      if (IS_MANUAL_SESSION) {
-        respond(false, 'send', undefined, 'Worker is in a manual session')
-        return
-      }
-      this.handleSendCommand(ctx, command)
-      respond(true, 'send', {
-        delivered: true,
-        type: command.messageType ?? 'session',
-      })
+      this.handleSendRpcCommand(ctx, command, respond)
       return
     }
 
     respond(false, 'unknown', undefined, 'Unsupported command')
+  }
+
+  private handleGetMessageCommand(ctx: ExtensionContext, respond: CommandResponder): void {
+    if (IS_MANUAL_SESSION) {
+      respond(false, 'get_message', undefined, 'Worker is in a manual session')
+      return
+    }
+    respond(true, 'get_message', {
+      message: getLastAssistantMessage(ctx) ?? null,
+      delivery: getLastDeliveryMessage(ctx) ?? null,
+    })
+  }
+
+  private handleGetStatusCommand(ctx: ExtensionContext, respond: CommandResponder): void {
+    if (IS_MANUAL_SESSION) {
+      respond(false, 'get_status', undefined, 'Worker is in a manual session')
+      return
+    }
+    respond(true, 'get_status', {
+      isIdle: ctx.isIdle(),
+      hasPendingMessages: ctx.hasPendingMessages(),
+    })
+  }
+
+  private handleSendRpcCommand(
+    ctx: ExtensionContext,
+    command: ClawasSendCommand,
+    respond: CommandResponder,
+  ): void {
+    if (IS_MANUAL_SESSION && !shouldAllowManualSessionSend(command)) {
+      respond(false, 'send', undefined, 'Worker is in a manual session')
+      return
+    }
+    this.handleSendCommand(ctx, command)
+    respond(true, 'send', {
+      delivered: true,
+      type: command.messageType ?? 'session',
+    })
   }
 
   private handleSendCommand(ctx: ExtensionContext, command: ClawasSendCommand): void {
