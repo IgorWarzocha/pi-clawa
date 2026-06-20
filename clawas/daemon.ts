@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import type { ClawaDefaults } from '../config'
 import { sendWorkerPrompt } from './daemon-prompt.js'
+import { stopAllWorkers } from './daemon-shutdown.js'
 import {
   clearManualSessionState,
   markWorkerDetachedState,
@@ -328,25 +329,14 @@ export class ClawasDaemon {
     // should not prevent the rest from being torn down cleanly.
     this.stopping = true
     try {
-      const runningWorkers = [...this.workers.values()]
-      const results = await Promise.allSettled(
-        runningWorkers.map(async (worker) => await worker.stop()),
-      )
-      for (const [index, result] of results.entries()) {
-        if (result.status === 'fulfilled') {
-          continue
-        }
-        const worker = runningWorkers[index]
-        pushEvent(
-          this.state,
-          worker?.definition.id ?? this.getClawasId(),
-          `shutdown warning: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
-          now(),
-        )
-      }
+      await stopAllWorkers({
+        state: this.state,
+        workers: this.workers,
+        streamBuffers: this.streamBuffers,
+        getFallbackId: () => this.getClawasId(),
+        getNow: now,
+      })
     } finally {
-      this.workers.clear()
-      this.streamBuffers.clear()
       this.stopping = false
       this.notifyChanged()
     }
