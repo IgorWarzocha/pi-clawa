@@ -35,7 +35,7 @@ function getDetailSegments(worker: WorkerState, theme: Theme): string[] {
   } else if (worker.status === 'stopped' && worker.lastSummary === 'not started yet') {
     segments.push(theme.fg('dim', 'not started'))
   } else {
-    segments.push(theme.fg('dim', 'no task'))
+    segments.push(theme.fg('dim', 'idle'))
   }
 
   if (worker.status === 'error') {
