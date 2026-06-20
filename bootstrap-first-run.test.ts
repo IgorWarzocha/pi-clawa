@@ -16,9 +16,11 @@ const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
 const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
 const SEEDED_WORKER_PATTERN = /"id": "research-odd-local-tools-clawa"/
 const SEEDED_PURPOSE_PATTERN = /Research odd local tools/
-const BOOTSTRAP_START_SMALL_PATTERN = /Start small/
 const BOOTSTRAP_WAKE_PATTERN = /where the hell am I/
-const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /Do not turn this into a giant intake form/
+const BOOTSTRAP_ONBOARDING_PATTERN = /feel like onboarding/
+const BOOTSTRAP_NO_WALLS_PATTERN = /No walls of text/
+const BOOTSTRAP_NO_FIRST_EDIT_PATTERN = /do not edit files yet/
+const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /No giant intake form/
 const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
 const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
 const BOOTSTRAP_NO_FIRST_RECALL_PATTERN = /Do not call recall on this first turn/
@@ -53,7 +55,9 @@ test('first-run bootstrap sequence creates core files and marks config', async (
 
 test('first-run bootstrap prompt is progressive and points at living docs', () => {
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_WAKE_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_START_SMALL_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_ONBOARDING_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_WALLS_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_EDIT_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_INTAKE_FORM_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_RECALL_PATTERN)
