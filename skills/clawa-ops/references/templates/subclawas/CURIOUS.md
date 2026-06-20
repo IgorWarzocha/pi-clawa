@@ -2,6 +2,8 @@
 
 Living questions, sparks, and weird useful threads.
 This is not a task tracker. Keep it alive and lightweight.
+Use it for live sidequests and odd threads I notice while working, not just things the human explicitly assigns.
+This file is for live charge, not solved bookkeeping.
 
 ## Questions worth revisiting
 
