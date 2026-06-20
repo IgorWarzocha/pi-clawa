@@ -21,10 +21,19 @@ If you prefer to write the settings file yourself:
 
 ```json
 {
-  "packages": ["npm:@howaboua/pi-claw"],
+  "packages": ["git:github.com/howaboua/pi-claw"],
   "sessionDir": ".pi/sessions"
 }
 ```
+
+For now Clawa is expected to be installed from the git repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-claw`.
+
+Clawa works best as a long-lived Pi home:
+
+- run it inside herdr, tmux, or another persistent terminal environment
+- use an always-on machine if pulses, Discord, or ambient behavior should keep running
+- after stopping, resume the same home with `pi -c` instead of starting a fresh session
+- start a new session only when the branch is badly wedged or the compacted context has become too bloated
 
 ## First run
 
@@ -56,11 +65,11 @@ Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessio
 
 ## Pulses
 
-Pulses are Clawa's scheduled wake layer. Each pulse is a named folder in a Clawa home, for example `pulses/weekly-pulse-review/PULSE.md`, with frontmatter for the schedule and a short tasklist in the body. Omit `schedule` for a manual-only pulse that another pulse or direct nudge can invoke.
+Pulses are Clawa's scheduled wake layer. Each pulse is a named folder in a Clawa home, for example `pulses/weekly-pulse-review/PULSE.md`, with frontmatter for the schedule and a short tasklist in the body. Manual-only pulses use `schedule: manual`.
 
 The scheduler sends a compact custom message into the owning Clawa session and tells it which pulse file to read. No ghost sessions: the pulse runs in a real main/subclawa conversation.
 
-Use `/pulse list` to inspect enabled pulses and `/pulse run <id>` to run one now.
+Use `/pulse` to open the pulse tab, or `/pulse run <id>` to run one directly.
 
 ## Memory
 
@@ -89,11 +98,15 @@ Pi discovers them from the package `skills/` directory.
 
 ## Optional Discord adapter
 
-To install Clawa plus Discord support, use project settings like:
+The Discord adapter lives in this repo at `packages/pi-clawa-discord/`. Until the adapter is published separately, use it from a local checkout:
 
 ```json
 {
-  "packages": ["npm:@howaboua/pi-claw", "npm:@howaboua/pi-clawa-discord"]
+  "packages": [
+    "git:github.com/howaboua/pi-claw",
+    "/absolute/path/to/pi-claw/packages/pi-clawa-discord"
+  ],
+  "sessionDir": ".pi/sessions"
 }
 ```
 

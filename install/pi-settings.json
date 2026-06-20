@@ -1,4 +1,4 @@
 {
-  "packages": ["npm:@howaboua/pi-claw"],
+  "packages": ["git:github.com/howaboua/pi-claw"],
   "sessionDir": ".pi/sessions"
 }

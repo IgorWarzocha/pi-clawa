@@ -23,7 +23,6 @@
     "index.ts",
     "src/**",
     "templates/**",
-    "install/**",
     "tsconfig.gateway.json"
   ],
   "exports": {

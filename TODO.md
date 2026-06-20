@@ -111,13 +111,13 @@ Blocks: full clean-room test if Discord is included in first release.
 
 ## E. Release docs/checks
 
-Status: release-shaped; package dry-runs and full clean-room install are still pending.
+Status: git-repo release-shaped; full clean-room install is still pending.
 
 - [x] `bun run ai:check` passes
 - [x] strict cleanup complete: `bun run ai:check:strict` passes
 - [x] README pass after product shape settles
-- [x] install instructions for core package
-- [x] install instructions for adapter package
+- [x] git install instructions for core package
+- [x] local-checkout install instructions for adapter package until npm publishing
 - [x] security notes for local secrets and external adapters
 - [x] package publish checklist
 
@@ -130,14 +130,12 @@ Strict release gate:
 2. Do not add broad ignores to make checks pass; fix code/contracts instead.
 3. If strict debt reappears, burn it down before clean-room release testing.
 
-Publish checklist:
+Git release checklist:
 
 1. `bun run ai:check`
-2. `npm pack --dry-run --json`
-3. `npm pack --dry-run --json --workspace @howaboua/pi-clawa-discord`
-4. clean-room install pass from an empty project
-5. publish root package, then Discord adapter
-6. install published packages in a fresh project and run the smoke path once
+2. clean-room install pass from an empty project using `git:github.com/howaboua/pi-claw`
+3. tag/push the repo once the clean-room pass is good
+4. if publishing to npm later, run `npm pack --dry-run --json` for root and Discord adapter first
 
 ## F. Clean-room test pass
 
