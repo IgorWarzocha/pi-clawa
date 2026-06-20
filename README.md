@@ -81,6 +81,7 @@ Use short nested `AGENTS.md` files for local rules, traps, ownership, or routing
 
 This package bundles:
 
+- `claw-ops`
 - `warmth-pass`
 - `skill-creator`
 

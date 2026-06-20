@@ -54,7 +54,6 @@
     "templates/**",
     "skills/**",
     "install/**",
-    "docs/**",
     "scripts/**"
   ],
   "peerDependencies": {

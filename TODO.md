@@ -182,7 +182,7 @@ Done:
 - [x] supports `every`, `daily`, `weekly`, and `at` schedules
 - [x] pulse runs use compact custom message provenance
 - [x] `/pulse list` and `/pulse run <id>` exist for inspection/manual run-now
-- [x] pulse docs live at `docs/pulses.md`
+- [x] pulse docs live in `skills/claw-ops/references/pulses.md`
 
 Needs follow-up:
 
