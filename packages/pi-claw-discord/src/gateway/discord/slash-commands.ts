@@ -1,12 +1,11 @@
 import {
   MessageFlags,
-  SlashCommandBuilder,
   type AutocompleteInteraction,
   type ChatInputCommandInteraction,
   type Client,
   type InteractionReplyOptions,
 } from 'discord.js';
-import { getChannelSessionStatus, type ChannelSessionStatus, type SessionContextUsage, type SessionTokenUsage } from '../agent/invoke.js';
+import { getChannelSessionStatus } from '../agent/invoke.js';
 import { config } from '../config.js';
 import {
   clearChannelModelOverride,
@@ -30,66 +29,12 @@ import {
   buildThinkingAdjustmentMessage,
   computeEffectiveChannelSettings,
   getDesiredThinkingLevel,
-  type EffectiveChannelSettings,
 } from '../agent/channel-settings.js';
 import { abortChannelTask, isChannelProcessing } from '../agent/queue.js';
 import { rotateChannelSessionDir } from '../session/path.js';
+import { PI_COMMAND } from './slash-schema.js';
+import { buildStatusMessage } from './slash-status.js';
 import type { RegisteredChannel } from '../types.js';
-
-const PI_COMMAND = new SlashCommandBuilder()
-  .setName('pi')
-  .setDescription('Inspect or change pi model settings for this channel')
-  .addSubcommand((sub) =>
-    sub
-      .setName('status')
-      .setDescription('Show the current model and thinking configuration for this channel'),
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('model')
-      .setDescription('Set the default model for this channel')
-      .addStringOption((option) =>
-        option
-          .setName('model')
-          .setDescription('Choose one of pi\'s currently available models')
-          .setRequired(true)
-          .setAutocomplete(true),
-      ),
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('reset-model')
-      .setDescription('Reset this channel to the gateway\'s default model'),
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('thinking')
-      .setDescription('Set the default thinking level for this channel')
-      .addStringOption((option) =>
-        option
-          .setName('level')
-          .setDescription('Thinking level')
-          .setRequired(true)
-          .addChoices(
-            { name: 'off', value: 'off' },
-            { name: 'minimal', value: 'minimal' },
-            { name: 'low', value: 'low' },
-            { name: 'medium', value: 'medium' },
-            { name: 'high', value: 'high' },
-            { name: 'xhigh', value: 'xhigh' },
-          ),
-      ),
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('new')
-      .setDescription('Start a fresh pi session for this channel'),
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('stop')
-      .setDescription('Abort the current task and clear the queue for this channel'),
-  );
 
 export async function registerGlobalCommands(client: Client<true>): Promise<void> {
   await client.application.commands.set([PI_COMMAND.toJSON()]);
@@ -319,118 +264,6 @@ function ensureManagedChannel(interaction: ChatInputCommandInteraction): Registe
 
 function notRegisteredMessage(): string {
   return 'This channel is not registered yet. Send a regular message in this channel first — the gateway will auto-register it (if channel policy is `open` or `open-trigger`).';
-}
-
-function buildStatusMessage(effective: EffectiveChannelSettings, sessionStatus: ChannelSessionStatus): string {
-  const rows: Array<[string, string]> = [
-    ['Model', formatModelValue(effective)],
-    ['Thinking', formatThinkingValue(effective)],
-    ['Working dir', formatWorkingDirValue(effective)],
-  ];
-
-  if (effective.thinkingAdjusted) {
-    rows.push(['Fallback', formatThinkingFallback(effective)]);
-  }
-
-  rows.push(
-    ['Reasoning', effective.modelInfo ? (effective.modelInfo.reasoning ? 'yes' : 'no') : 'unknown'],
-    ['Session', sessionStatus.createdAt ? formatSessionCreatedAt(sessionStatus.createdAt) : 'not started'],
-    ['Tokens', formatTokenUsage(sessionStatus.tokens, sessionStatus.statsSource)],
-    ['Context', formatContextUsage(sessionStatus.contextUsage)],
-  );
-
-  return `\`\`\`text\n${formatTwoColumnRows(rows)}\n\`\`\``;
-}
-
-function formatModelValue(effective: EffectiveChannelSettings): string {
-  if (effective.modelSource === 'pi runtime default') {
-    return 'pi runtime default';
-  }
-
-  return `${effective.displayModel} (${formatSettingSource(effective.modelSource)})`;
-}
-
-function formatThinkingValue(effective: EffectiveChannelSettings): string {
-  if (!effective.hasManagedThinking || effective.thinkingSource === 'pi runtime default') {
-    return 'pi runtime default';
-  }
-
-  return `${effective.effectiveThinking} (${formatSettingSource(effective.thinkingSource)})`;
-}
-
-function formatThinkingFallback(effective: EffectiveChannelSettings): string {
-  if (effective.modelInfo && !effective.modelInfo.reasoning && effective.requestedThinking !== 'off') {
-    return `${effective.requestedThinking} -> off (no reasoning)`;
-  }
-
-  if (effective.requestedThinking === 'xhigh' && effective.effectiveThinking === 'high') {
-    return 'xhigh -> high (unsupported)';
-  }
-
-  return `${effective.requestedThinking} -> ${effective.effectiveThinking}`;
-}
-
-function formatWorkingDirValue(effective: EffectiveChannelSettings): string {
-  return `${effective.effectiveCwd} (${effective.cwdSource === 'override' ? 'channel' : 'gateway'})`;
-}
-
-function formatSettingSource(source: EffectiveChannelSettings['modelSource']): string {
-  switch (source) {
-    case 'override':
-      return 'channel';
-    case 'default':
-      return 'gateway';
-    case 'pi runtime default':
-      return 'pi';
-  }
-}
-
-function formatSessionCreatedAt(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return timestamp;
-  }
-
-  return date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC');
-}
-
-function formatTokenUsage(tokens: SessionTokenUsage | undefined, statsSource: ChannelSessionStatus['statsSource']): string {
-  if (!tokens) {
-    return statsSource === 'none' ? '0 total' : '?';
-  }
-
-  const cache = tokens.cacheRead + tokens.cacheWrite;
-  const details = [`${formatNumber(tokens.input)} in`, `${formatNumber(tokens.output)} out`];
-  if (cache > 0) {
-    details.push(`${formatNumber(cache)} cache`);
-  }
-
-  const showDetails = tokens.input > 0 || tokens.output > 0 || cache > 0;
-  return `${formatNumber(tokens.total)} total${showDetails ? ` (${details.join(' / ')})` : ''}`;
-}
-
-function formatContextUsage(contextUsage: SessionContextUsage | undefined): string {
-  if (!contextUsage) {
-    return '?';
-  }
-
-  const tokens = contextUsage.tokens == null ? '?' : formatNumber(contextUsage.tokens);
-  const window = contextUsage.contextWindow == null ? '?' : formatNumber(contextUsage.contextWindow);
-  const percent = contextUsage.percent == null ? '?' : `${formatPercent(contextUsage.percent)}%`;
-  return `${tokens} / ${window} (${percent})`;
-}
-
-function formatTwoColumnRows(rows: Array<[string, string]>): string {
-  const width = rows.reduce((max, [label]) => Math.max(max, label.length), 0);
-  return rows.map(([label, value]) => `${label.padEnd(width)}  ${value}`).join('\n');
-}
-
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US').format(value);
-}
-
-function formatPercent(value: number): string {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
 }
 
 function reply(content: string, interaction: ChatInputCommandInteraction): InteractionReplyOptions {
