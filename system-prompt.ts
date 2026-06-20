@@ -202,7 +202,7 @@ Pi documentation (read only when the user asks about pi itself, its SDK, extensi
 - Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)
 
 Clawa documentation (read only when operating Clawa itself, creating or coordinating subclawas, memory, onboarding, adapters, or house docs):
-- Subclawas: ${join(clawaDocsPath, 'subclawas.md')}`
+- Subclawas setup: ${join(clawaDocsPath, 'subclawas-setup.md')}`
 }
 
 export function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
