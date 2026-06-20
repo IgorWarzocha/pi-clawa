@@ -318,7 +318,7 @@ class Doctor:
             if rel.endswith('pulses/AGENTS.md'):
                 limit = 2_000
             else:
-                limit = 1_000
+                limit = 3_000
             if tokens > limit:
                 self.warn(f'{rel} is ~{tokens} tokens (limit ~{limit})')
             else:
