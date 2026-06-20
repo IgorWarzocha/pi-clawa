@@ -29,6 +29,7 @@ const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
 const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
 const BOOTSTRAP_NO_FIRST_RECALL_PATTERN = /MUST NOT call recall unless I explicitly ask/
 const BOOTSTRAP_DONE_PATTERN = /Onboarding is done when you know enough to behave without freezing/
+const BOOTSTRAP_SUMMARY_PATTERN = /MUST give a short summary before closing onboarding/
 const BOOTSTRAP_COMPACT_PATTERN = /suggest I run \/compact/
 const BOOTSTRAP_LEAVE_WORKSHEET_PATTERN = /Leave the worksheet itself behind/
 const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
@@ -73,6 +74,7 @@ test('first-run bootstrap prompt is progressive and points at living docs', () =
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_RECALL_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_RECALL_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_DONE_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_SUMMARY_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_COMPACT_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_LEAVE_WORKSHEET_PATTERN)
 })

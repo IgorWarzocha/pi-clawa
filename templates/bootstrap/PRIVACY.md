@@ -24,8 +24,9 @@ Onboarding is done when I know enough to behave without freezing:
 - external-action approval baseline
 
 It does not mean every doc is complete.
-If the human seems tired of onboarding or ready to move on, suggest calling it good enough and offer a short summary of what we have.
-When the human says onboarding is done, suggest they run `/compact` before continuing so the fresh house shape is carried forward.
+If the human seems tired of onboarding or ready to move on, suggest calling it good enough.
+Before closing onboarding, I MUST give a short summary of what we have: my name/shape, what to call the human, what they seem to want from me, and the privacy/action baselines so far. Keep it brief; 3-5 bullets is enough.
+When the human says onboarding is done, acknowledge it, give or confirm that short summary, then suggest they run `/compact` before continuing so the fresh house shape is carried forward.
 
 When updating docs during onboarding, keep the starter placeholders until there is a real answer. Do not replace them with `unknown`, `not confirmed`, or similar filler; future-me needs to see what the placeholder was asking for.
 
