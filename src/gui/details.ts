@@ -46,12 +46,24 @@ export function buildDetails(model: ClawGuiModel): Record<string, Primitive> {
 
 function buildPulseDetail(item: PulseItem): Primitive {
   const pulse = item.definition
+  if (pulse.status === 'invalid') {
+    return createDetail({
+      title: pulse.title,
+      meta: [
+        `key: ${pulse.key}`,
+        `owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
+        `folder: ${pulse.relativeHome}`,
+        `definition: ${pulse.relativeFile}`,
+      ],
+      body: [`Invalid pulse definition: ${pulse.error}`],
+    })
+  }
   return createDetail({
     title: pulse.title,
     meta: [
       `key: ${pulse.key}`,
       `owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
-      `schedule: ${pulse.scheduleText}`,
+      `schedule: ${pulse.enabled ? pulse.scheduleText : `${pulse.scheduleText} (disabled)`}`,
       `folder: ${pulse.relativeHome}`,
       `definition: ${pulse.relativeFile}`,
     ],

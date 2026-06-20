@@ -104,6 +104,12 @@ export async function runPulseAction(
   item: PulseItem,
   setStatus: (message: string) => void,
 ): Promise<void> {
+  if (item.definition.status === 'invalid') {
+    const message = `Cannot run invalid pulse ${item.key}: ${item.definition.error}`
+    setStatus(message)
+    ctx.ui.notify(message, 'error')
+    return
+  }
   try {
     const pulse = await runtime.runNow(item.key)
     const status = `Queued pulse ${pulse.title}.`

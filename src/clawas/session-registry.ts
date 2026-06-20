@@ -28,17 +28,19 @@ function isThinkingLevel(value: unknown): value is ThinkingLevel {
 
 function normalizeWorkerRecord(
   entry: WorkerSessionRecord | string | undefined,
+  workerId: string,
 ): WorkerSessionRecord | null {
   if (!entry) {
     return null
   }
 
   if (typeof entry === 'string') {
+    if (!entry) throw new Error(`Clawas session registry entry for ${workerId} is empty`)
     return { path: entry }
   }
 
   if (typeof entry.path !== 'string' || !entry.path) {
-    return null
+    throw new Error(`Clawas session registry entry for ${workerId} is missing a path`)
   }
 
   return entry
@@ -71,8 +73,10 @@ async function readSessionIdentity(sessionFile: string): Promise<{
     }
 
     return identity
-  } catch {
-    return {}
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return {}
+    throw error
   }
 }
 
@@ -152,10 +156,19 @@ export function getClawaSessionsDir(cwd: string): string {
 async function readRegistry(rootDir: string): Promise<SessionRegistry> {
   try {
     const content = await fs.readFile(getRegistryPath(rootDir), 'utf8')
-    const parsed = JSON.parse(content) as SessionRegistry
-    return { workers: parsed.workers ?? {} }
-  } catch {
-    return { workers: {} }
+    const parsed = JSON.parse(content) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Clawas session registry must be a JSON object')
+    }
+    const workers = (parsed as Record<string, unknown>)['workers']
+    if (!workers || typeof workers !== 'object' || Array.isArray(workers)) {
+      throw new Error('Clawas session registry must contain a workers object')
+    }
+    return { workers: workers as SessionRegistry['workers'] }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return { workers: {} }
+    throw error
   }
 }
 
@@ -171,7 +184,7 @@ export async function resolveWorkerSessionFile(
 ): Promise<string> {
   const registry = await readRegistry(rootDir)
   const workerId = definition.id
-  const knownRecord = normalizeWorkerRecord(registry.workers[workerId])
+  const knownRecord = normalizeWorkerRecord(registry.workers[workerId], workerId)
   if (knownRecord) {
     try {
       await fs.access(knownRecord.path)
@@ -180,8 +193,10 @@ export async function resolveWorkerSessionFile(
         await writeRegistry(rootDir, registry)
         return knownRecord.path
       }
-    } catch {
-      // Fall through and recreate the session file.
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code !== 'ENOENT') throw error
+      // Missing session file: create a replacement and update the registry.
     }
   }
 

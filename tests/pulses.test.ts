@@ -3,10 +3,11 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { discoverPulseDefinitions } from '../src/pulses/definitions.js'
+import { discoverPulseCatalog, discoverPulseDefinitions } from '../src/pulses/definitions.js'
 import { CLAWA_PULSE_MESSAGE_TYPE } from '../src/pulses/message.js'
 import { PulseRuntime } from '../src/pulses/runtime.js'
 import { isPulseDue, parsePulseSchedule } from '../src/pulses/schedule.js'
+import { readPulseState } from '../src/pulses/state.js'
 
 const TINY_CHECK_FILE_PATTERN = /Definition file: .*pulses\/tiny-check\/PULSE.md/
 const TINY_CHECK_STATE_PATTERN = /tiny-check/
@@ -16,6 +17,7 @@ const EXACT_CHECK_FILE_PATTERN = /exact-check\/PULSE.md/
 const HEY_CLAWA_FILE_PATTERN = /hey-clawa\/PULSE.md/
 const HEY_CLAWA_STATE_PATTERN = /"main:hey-clawa"/
 const HEY_CLAWA_DEFER_PATTERN = /"deferUntil": 962000/
+const JSON_ERROR_PATTERN = /JSON/
 
 function stubClawasRuntime() {
   return {
@@ -94,10 +96,16 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     )
 
     const definitions = await discoverPulseDefinitions(root)
+    const catalog = await discoverPulseCatalog(root)
     assert.equal(definitions.length, 2)
+    assert.equal(catalog.length, 3)
     assert.equal(
       definitions.find((definition) => definition.id === 'tiny-check')?.key,
       'main:tiny-check',
+    )
+    assert.equal(
+      catalog.find((definition) => definition.id === 'curiosity-poke')?.status,
+      'invalid',
     )
     assert.deepEqual(definitions.find((definition) => definition.id === 'manual-note')?.schedule, {
       kind: 'manual',
@@ -145,6 +153,19 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     assert.equal(messages.length, 2)
     assert.match(messages[1]?.content ?? '', MANUAL_PULSE_FILE_PATTERN)
     pulseRuntime.dispose()
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('pulse state corruption fails instead of resetting scheduler history', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-state-corrupt-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, '.pi'), { recursive: true })
+    await writeFile(join(root, '.pi', 'pulses.json'), '{ nope', 'utf8')
+
+    await assert.rejects(() => readPulseState(root), JSON_ERROR_PATTERN)
   } finally {
     await rm(root, { recursive: true, force: true })
   }

@@ -179,6 +179,7 @@ function collectDuePulses(
 ): DuePulse[] {
   const duePulses: DuePulse[] = []
   for (const pulse of pulses) {
+    if (!pulse.enabled) continue
     if (pulse.schedule.kind === 'manual') continue
     const entry = state.pulses[pulse.key]
     if (entry?.deferUntil && nowMs < entry.deferUntil) continue
@@ -239,8 +240,9 @@ function seedNewPulses(
 ): boolean {
   let changed = false
   const scheduledPulses = pulses.filter((pulse) => pulse.schedule.kind !== 'manual')
-  const live = new Set(scheduledPulses.map((pulse) => pulse.key))
-  for (const pulse of scheduledPulses) {
+  const enabledScheduledPulses = scheduledPulses.filter((pulse) => pulse.enabled)
+  const live = new Set(enabledScheduledPulses.map((pulse) => pulse.key))
+  for (const pulse of enabledScheduledPulses) {
     if (state.pulses[pulse.key]) continue
     state.pulses[pulse.key] = {
       firstSeenAt: nowMs,
@@ -261,9 +263,10 @@ function resolvePulseTarget(
   target: string,
 ): PulseDefinition | undefined {
   const normalized = target.trim().toLowerCase()
-  return (
-    pulses.find((pulse) => pulse.key.toLowerCase() === normalized) ??
-    pulses.find((pulse) => pulse.id.toLowerCase() === normalized) ??
-    pulses.find((pulse) => pulse.title.toLowerCase() === normalized)
-  )
+  const pulse =
+    pulses.find((candidate) => candidate.key.toLowerCase() === normalized) ??
+    pulses.find((candidate) => candidate.id.toLowerCase() === normalized) ??
+    pulses.find((candidate) => candidate.title.toLowerCase() === normalized)
+  if (pulse && !pulse.enabled) throw new Error(`Pulse is disabled: ${pulse.key}`)
+  return pulse
 }

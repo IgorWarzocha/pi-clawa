@@ -26,10 +26,12 @@ function asString(value: unknown): string | undefined {
 }
 
 function normalizeState(value: unknown): PulseSchedulerState {
-  if (!(isRecord(value) && isRecord(value['pulses']))) return { pulses: {} }
+  if (!(isRecord(value) && isRecord(value['pulses']))) {
+    throw new Error('Pulse scheduler state must contain a pulses object')
+  }
   const pulses: Record<string, PulseEntryState> = {}
   for (const [key, raw] of Object.entries(value['pulses'])) {
-    if (!isRecord(raw)) continue
+    if (!isRecord(raw)) throw new Error(`Pulse scheduler state for ${key} must be an object`)
     pulses[key] = {
       firstSeenAt: asNumber(raw['firstSeenAt']),
       lastRunAt: asNumber(raw['lastRunAt']),
@@ -43,8 +45,10 @@ function normalizeState(value: unknown): PulseSchedulerState {
 export async function readPulseState(cwd: string): Promise<PulseSchedulerState> {
   try {
     return normalizeState(JSON.parse(await readFile(getPulseStatePath(cwd), 'utf8')))
-  } catch {
-    return { pulses: {} }
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return { pulses: {} }
+    throw error
   }
 }
 

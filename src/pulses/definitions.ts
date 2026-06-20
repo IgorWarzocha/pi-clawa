@@ -6,6 +6,7 @@ import { parsePulseFrontmatter } from './frontmatter.js'
 import { type PulseSchedule, parsePulseSchedule } from './schedule.js'
 
 export interface PulseDefinition {
+  status: 'valid'
   key: string
   id: string
   title: string
@@ -22,6 +23,23 @@ export interface PulseDefinition {
   body: string
 }
 
+interface InvalidPulseDefinition {
+  status: 'invalid'
+  key: string
+  id: string
+  title: string
+  ownerId: 'main' | string
+  ownerTitle: string
+  ownerHome: string
+  pulseHome: string
+  relativeHome: string
+  relativeFile: string
+  absoluteFile: string
+  error: string
+}
+
+export type PulseCatalogItem = PulseDefinition | InvalidPulseDefinition
+
 const PULSE_FOLDER_PATTERN = /^[a-z0-9][a-z0-9-]*$/u
 const PULSE_DEFINITION_FILE = 'PULSE.md'
 
@@ -29,8 +47,10 @@ async function pathExists(path: string): Promise<boolean> {
   try {
     await stat(path)
     return true
-  } catch {
-    return false
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return false
+    throw error
   }
 }
 
@@ -40,29 +60,54 @@ async function readPulseFolder(options: {
   ownerTitle: string
   ownerHome: string
   pulseHome: string
-}): Promise<PulseDefinition | null> {
+}): Promise<PulseCatalogItem> {
   const id = relative(join(options.ownerHome, 'pulses'), options.pulseHome)
-  if (!PULSE_FOLDER_PATTERN.test(id)) return null
-
   const file = join(options.pulseHome, PULSE_DEFINITION_FILE)
-  const text = await readFile(file, 'utf8').catch(() => '')
-  if (!text) return null
+  const invalid = (error: string): InvalidPulseDefinition => ({
+    status: 'invalid',
+    key: `${options.ownerId}:${id}`,
+    id,
+    title: `Invalid pulse: ${id}`,
+    ownerId: options.ownerId,
+    ownerTitle: options.ownerTitle,
+    ownerHome: options.ownerHome,
+    pulseHome: options.pulseHome,
+    relativeHome: relative(options.repoRoot, options.pulseHome),
+    relativeFile: relative(options.repoRoot, file),
+    absoluteFile: file,
+    error,
+  })
+
+  if (!PULSE_FOLDER_PATTERN.test(id)) return invalid('pulse folder name must be kebab-case')
+
+  let text: string
+  try {
+    text = await readFile(file, 'utf8')
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return invalid('missing PULSE.md')
+    throw error
+  }
+  if (!text.trim()) return invalid('PULSE.md is empty')
 
   const parsed = parsePulseFrontmatter(text)
-  if (!(typeof parsed.data['title'] === 'string' && parsed.data['title'].trim())) return null
+  if (!(typeof parsed.data['title'] === 'string' && parsed.data['title'].trim())) {
+    return invalid('frontmatter must include title')
+  }
 
   const enabled = parsed.data['enabled'] !== false
   const scheduleText =
     typeof parsed.data['schedule'] === 'string' && parsed.data['schedule'].trim()
       ? parsed.data['schedule'].trim()
       : null
-  if (!scheduleText) return null
+  if (!scheduleText) return invalid('frontmatter must include schedule')
   const schedule = parsePulseSchedule(scheduleText)
-  if (!(enabled && schedule)) return null
+  if (!schedule) return invalid(`invalid schedule: ${scheduleText}`)
 
   const title = parsed.data['title'].trim()
 
   return {
+    status: 'valid',
     key: `${options.ownerId}:${id}`,
     id,
     title,
@@ -84,11 +129,13 @@ async function listPulseFolders(dir: string): Promise<string[]> {
   try {
     const entries = await readdir(dir, { withFileTypes: true })
     return entries
-      .filter((entry) => entry.isDirectory() && PULSE_FOLDER_PATTERN.test(entry.name))
+      .filter((entry) => entry.isDirectory())
       .map((entry) => join(dir, entry.name))
       .sort()
-  } catch {
-    return []
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code === 'ENOENT') return []
+    throw error
   }
 }
 
@@ -97,19 +144,16 @@ async function readHomePulses(options: {
   ownerId: 'main' | string
   ownerTitle: string
   ownerHome: string
-}): Promise<PulseDefinition[]> {
+}): Promise<PulseCatalogItem[]> {
   const dir = join(options.ownerHome, 'pulses')
   if (!(await pathExists(dir))) return []
   const folders = await listPulseFolders(dir)
-  const definitions = await Promise.all(
-    folders.map((pulseHome) => readPulseFolder({ ...options, pulseHome })),
-  )
-  return definitions.filter((definition): definition is PulseDefinition => Boolean(definition))
+  return await Promise.all(folders.map((pulseHome) => readPulseFolder({ ...options, pulseHome })))
 }
 
-export async function discoverPulseDefinitions(cwd: string): Promise<PulseDefinition[]> {
+export async function discoverPulseCatalog(cwd: string): Promise<PulseCatalogItem[]> {
   const repoRoot = findRepoRoot(cwd)
-  const definitions: PulseDefinition[] = []
+  const definitions: PulseCatalogItem[] = []
   definitions.push(
     ...(await readHomePulses({
       repoRoot,
@@ -119,7 +163,7 @@ export async function discoverPulseDefinitions(cwd: string): Promise<PulseDefini
     })),
   )
 
-  const config = await loadClawasConfig(repoRoot).catch(() => null)
+  const config = await loadClawasConfig(repoRoot)
   for (const worker of config?.workers ?? []) {
     definitions.push(
       ...(await readHomePulses({
@@ -132,6 +176,13 @@ export async function discoverPulseDefinitions(cwd: string): Promise<PulseDefini
   }
 
   return definitions
+}
+
+export async function discoverPulseDefinitions(cwd: string): Promise<PulseDefinition[]> {
+  const definitions = await discoverPulseCatalog(cwd)
+  return definitions.filter(
+    (definition): definition is PulseDefinition => definition.status === 'valid',
+  )
 }
 
 export function getPulseStatePath(cwd: string): string {

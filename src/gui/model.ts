@@ -10,7 +10,7 @@ import {
   loadClawEnvironmentConfig,
   resolveClawaDefaults,
 } from '../config.js'
-import { discoverPulseDefinitions } from '../pulses/definitions.js'
+import { discoverPulseCatalog } from '../pulses/definitions.js'
 import { hasAllCoreMarkdownFiles } from '../template-files.js'
 import type { ClawItem, ClawStatus, ManagedWorker, PulseItem } from './types.js'
 
@@ -137,12 +137,15 @@ function workerToClawConfig(worker: WorkerDefinition): ClawaConfig {
 }
 
 function buildPulseItems(
-  definitions: Awaited<ReturnType<typeof discoverPulseDefinitions>>,
+  definitions: Awaited<ReturnType<typeof discoverPulseCatalog>>,
 ): PulseItem[] {
   return definitions.map((definition) => ({
     key: definition.key,
     title: definition.title,
-    summary: `${definition.ownerTitle} • ${definition.scheduleText} • ${definition.relativeFile}`,
+    summary:
+      definition.status === 'valid'
+        ? `${definition.ownerTitle} • ${definition.enabled ? definition.scheduleText : 'disabled'} • ${definition.relativeFile}`
+        : `${definition.ownerTitle} • invalid • ${definition.error}`,
     detailKey: `pulse:${definition.key}`,
     definition,
   }))
@@ -155,7 +158,7 @@ export async function loadClawGuiModel(cwd: string, runtime: ClawasRuntime): Pro
   const clawasConfig = await loadClawasConfig(repoRoot)
   const configPath = getClawasConfigPath(repoRoot)
   const workerDefinitions = clawasConfig?.workers ?? []
-  const pulseDefinitions = await discoverPulseDefinitions(repoRoot)
+  const pulseDefinitions = await discoverPulseCatalog(repoRoot)
   const claws = workerDefinitions.map(workerToClawConfig)
   const clawStatuses = await Promise.all(claws.map((claw) => getClawStatus(repoRoot, claw)))
   const liveWorkers = new Map(

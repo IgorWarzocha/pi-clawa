@@ -1,6 +1,6 @@
 import type { WorkerState, WorkerThinkingLevel } from '../clawas/types.js'
 import type { ClawaConfig } from '../config.js'
-import type { PulseDefinition } from '../pulses/definitions.js'
+import type { PulseCatalogItem } from '../pulses/definitions.js'
 
 export interface ActionItem {
   label: string
@@ -38,7 +38,7 @@ export interface PulseItem {
   title: string
   summary: string
   detailKey: string
-  definition: PulseDefinition
+  definition: PulseCatalogItem
 }
 
 export type Screen = 'claws' | 'manage' | 'pulses' | 'about' | 'help'
