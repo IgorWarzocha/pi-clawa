@@ -12,31 +12,9 @@ import {
 	channelsWithPending,
 	claimNextMessage,
 	clearPendingMessages,
-	getChannel,
-	markAmbientSeen,
-	markMessageDone,
-	markMessageFailed,
 	recoverStuckMessages,
 } from "../db.js";
-import { invokeAgent } from "./invoke.js";
-import {
-	getClawasWorkerStatus,
-	invokeClawasWorker,
-	steerClawasWorker,
-} from "./invoke-clawas.js";
-import { sendResponse } from "../discord/client.js";
-import { computeEffectiveChannelSettings } from "./channel-settings.js";
-import { AMBIENT_SENDER } from "./ambient.js";
-import {
-	buildGatewayPrompt,
-	getReplyAnchorSourceMessageId,
-} from "./gateway-prompt.js";
-import { settleDiscordDelivery } from "./delivery.js";
-import {
-	createNoopTypingLoop,
-	createTypingLoop,
-	ensureWorkerTypingMonitor,
-} from "./typing.js";
+import { processQueuedMessage, processSteeredClawasMessage } from "./queue-processing.js";
 
 /** Channels currently being processed (per-channel serial lock) */
 const activeChannels = new Set<string>();
@@ -136,15 +114,18 @@ function dispatch(): void {
 			if (!msg) continue;
 
 			const taskPromise = processSteeredClawasMessage(
-				mappedWorker,
-				jid,
-				msg.rowid,
-				msg.sender,
-				msg.sender_name,
-				msg.source_message_id,
-				msg.content,
-				msg.attachments,
-				msg.log_rowid,
+				{
+					workerId: mappedWorker,
+					jid,
+					rowid: msg.rowid,
+					sender: msg.sender,
+					senderName: msg.sender_name,
+					sourceMessageId: msg.source_message_id,
+					content: msg.content,
+					attachments: msg.attachments,
+					logRowId: msg.log_rowid,
+				},
+				processingState(),
 			).finally(() => {
 				activeTaskPromises.delete(taskPromise);
 
@@ -166,16 +147,19 @@ function dispatch(): void {
 		activeTaskControllers.set(msg.rowid, controller);
 		activeChannelControllers.set(jid, controller);
 
-		const taskPromise = processMessage(
-			jid,
-			msg.rowid,
-			msg.sender,
-			msg.sender_name,
-			msg.source_message_id,
-			msg.content,
-			controller.signal,
-			msg.attachments,
-			msg.log_rowid,
+		const taskPromise = processQueuedMessage(
+			{
+				jid,
+				rowid: msg.rowid,
+				sender: msg.sender,
+				senderName: msg.sender_name,
+				sourceMessageId: msg.source_message_id,
+				content: msg.content,
+				signal: controller.signal,
+				attachments: msg.attachments,
+				logRowId: msg.log_rowid,
+			},
+			processingState(),
 		).finally(() => {
 			activeChannels.delete(jid);
 			activeTaskControllers.delete(msg.rowid);
@@ -189,6 +173,14 @@ function dispatch(): void {
 
 		activeTaskPromises.add(taskPromise);
 	}
+}
+
+function processingState() {
+	return {
+		activeClawasWorkers,
+		activeReplyAnchors,
+		isRunning: () => running,
+	};
 }
 
 async function drainActiveTasks(timeoutMs: number): Promise<void> {
@@ -243,170 +235,4 @@ async function waitForPromise(
 	return activeTaskPromises.size === 0;
 }
 
-
-function setActiveReplyAnchor(
-	jid: string,
-	sender: string,
-	sourceMessageId: string | null,
-): void {
-	if (sender === AMBIENT_SENDER || !sourceMessageId) {
-		return;
-	}
-
-	activeReplyAnchors.set(jid, sourceMessageId);
-}
-
-async function processMessage(
-	jid: string,
-	rowid: number,
-	sender: string,
-	senderName: string,
-	sourceMessageId: string | null,
-	content: string,
-	signal: AbortSignal,
-	attachments?: string | null,
-	logRowId?: number | null,
-): Promise<void> {
-	const channel = getChannel(jid);
-	if (!channel) {
-		logger.warn({ jid }, "Channel disappeared during processing");
-		markMessageFailed(rowid);
-		return;
-	}
-
-	logger.info({ jid, senderName, len: content.length }, "Processing message");
-
-	const typingLoop =
-		sender === AMBIENT_SENDER ? createNoopTypingLoop() : createTypingLoop(jid);
-	setActiveReplyAnchor(jid, sender, sourceMessageId);
-
-	try {
-		const mappedWorker = config.clawasChannelWorkers.get(jid);
-		const { prompt, observedThroughRowId } = buildGatewayPrompt({
-			jid,
-			sender,
-			senderName,
-			content,
-			mappedWorker,
-			logRowId,
-		});
-
-		const effective = computeEffectiveChannelSettings(channel);
-		if (mappedWorker) {
-			activeClawasWorkers.set(jid, mappedWorker);
-		}
-
-		const result = mappedWorker
-			? await invokeClawasWorker(mappedWorker, prompt, {
-					signal,
-					attachments,
-					sourceMessageId: getReplyAnchorSourceMessageId(
-						sender,
-						sourceMessageId,
-					),
-				})
-			: await invokeAgent(channel.folder, prompt, {
-					model: effective.rawModelRef || undefined,
-					thinking: effective.hasManagedThinking
-						? effective.effectiveThinking
-						: undefined,
-					cwd: effective.effectiveCwd,
-					signal,
-					attachments,
-				});
-
-		if (signal.aborted) {
-			markMessageFailed(rowid);
-			logger.info(
-				{ jid, rowid },
-				"Message abandoned: shutdown interrupted processing",
-			);
-			return;
-		}
-
-		markAmbientSeen(jid, observedThroughRowId);
-		await settleDiscordDelivery({
-			jid,
-			rowid,
-			sender,
-			sourceMessageId: activeReplyAnchors.get(jid) ?? sourceMessageId,
-			mappedWorker,
-			result,
-		});
-	} catch (err: any) {
-		if (signal.aborted) {
-			markMessageFailed(rowid);
-			logger.info(
-				{ jid, rowid },
-				"Message abandoned: shutdown interrupted processing",
-			);
-			return;
-		}
-
-		logger.error({ jid, err: err.message }, "processMessage failed");
-		markMessageFailed(rowid);
-		try {
-			await sendResponse(
-				jid,
-				`⚠️ Internal error: ${err.message?.slice(0, 200)}`,
-			);
-		} catch {
-			// Nothing else to do here.
-		}
-	} finally {
-		activeClawasWorkers.delete(jid);
-		activeReplyAnchors.delete(jid);
-		await typingLoop.stop();
-	}
-}
-
-async function processSteeredClawasMessage(
-	workerId: string,
-	jid: string,
-	rowid: number,
-	sender: string,
-	senderName: string,
-	sourceMessageId: string | null,
-	content: string,
-	attachments?: string | null,
-	logRowId?: number | null,
-): Promise<void> {
-	try {
-		setActiveReplyAnchor(jid, sender, sourceMessageId);
-
-		const { prompt, observedThroughRowId } = buildGatewayPrompt({
-			jid,
-			sender,
-			senderName,
-			content,
-			mappedWorker: workerId,
-			logRowId,
-		});
-
-		await steerClawasWorker(workerId, prompt, {
-			attachments,
-			sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),
-		});
-
-		if (sender !== AMBIENT_SENDER) {
-			ensureWorkerTypingMonitor(jid, workerId, {
-				isRunning: () => running,
-				getStatus: getClawasWorkerStatus,
-			});
-		}
-
-		markAmbientSeen(jid, observedThroughRowId);
-		markMessageDone(rowid);
-		logger.info(
-			{ jid, worker: workerId, rowid },
-			"Steered queued Discord message into active CLAWAS worker",
-		);
-	} catch (err: any) {
-		markMessageFailed(rowid);
-		logger.warn(
-			{ jid, worker: workerId, rowid, err: err.message },
-			"Failed to steer queued Discord message into CLAWAS worker",
-		);
-	}
-}
 
