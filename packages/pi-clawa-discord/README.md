@@ -2,6 +2,8 @@
 
 Discord adapter for `@howaboua/pi-claw`.
 
+Status: WIP. The adapter works, but setup polish, lifecycle behavior, DMs, multi-channel support, and autonomy policy are still being shaped.
+
 Setup guide: `DISCORD-BOT-SETUP.md`.
 
 For git-repo installs, add the core package from git and this adapter from a local checkout path:

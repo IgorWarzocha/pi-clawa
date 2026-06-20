@@ -96,9 +96,11 @@ This package bundles:
 
 Pi discovers them from the package `skills/` directory.
 
-## Optional Discord adapter
+## Optional Discord adapter — WIP
 
-The Discord adapter lives in this repo at `packages/pi-clawa-discord/`. Until the adapter is published separately, use it from a local checkout:
+The Discord adapter lives in this repo at `packages/pi-clawa-discord/`. It is working, but still WIP: expect rough edges around setup copy, lifecycle, DMs, multi-channel behavior, and autonomy policy.
+
+Until the adapter is published separately, use it from a local checkout:
 
 ```json
 {
