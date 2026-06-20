@@ -14,6 +14,7 @@ Start by reading `pulses/AGENTS.md`, then choose one lane that feels worth it to
 
 - bring one still-glowing thing from `CURIOUS.md` a little closer
 - notice a pattern in my memories/docs and shape it gently
+- check whether one living doc wants a small fresh edit from recent work
 - tidy one small bit of the home that future-me will actually thank me for
 - write down a useful tool/workflow note I keep reaching for
 - ask the human one good, low-pressure question if conversation feels warmer than solo rummaging
