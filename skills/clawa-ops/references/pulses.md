@@ -1,33 +1,39 @@
 # Pulses
 
-Pulses are scheduled Clawa wakes. They can be exact jobs or ambient nudges.
-Some pulses are manual-only: they have no `schedule` and are invoked by another pulse or a direct house nudge.
+Pulses are scheduled Clawa wakes. They can be exact jobs, manual-only routines, or ambient nudges.
 
-Every Clawa can have its own pulse folder:
+Every pulse is a named folder:
 
 ```text
 pulses/
   AGENTS.md
-  hey-clawa.md
-  weekly-pulse-review.md
-  manual/
-    curiosity-poke.md
-  2026-06/
-    run-notes.md
+  hey-clawa/
+    AGENTS.md
+    PULSE.md
+  weekly-pulse-review/
+    AGENTS.md
+    PULSE.md
+  curiosity-poke/
+    AGENTS.md
+    PULSE.md
+    2026-06/
+      notes.md
 ```
 
-`pulses/AGENTS.md` is the local pulse index and journal. Keep it short and snappy. Read it before creating or editing a pulse.
+- `pulses/AGENTS.md` is the folder index and house-level pulse journal. It can hold up to ~50 short entries.
+- `pulses/<pulse-name>/PULSE.md` is the runnable definition.
+- `pulses/<pulse-name>/AGENTS.md` is a short local note for that one pulse.
+- Extra notes/results live inside the relevant pulse folder, organized however that pulse needs.
 
-Organize supporting notes/results by date, pulse name, or purpose. Do not dump every file loose into `pulses/`.
+Read `pulses/AGENTS.md` before creating or editing a pulse.
 
 ## Pulse file shape
 
-Use frontmatter plus a body:
+Use frontmatter plus a body in `PULSE.md`:
 
 ```md
 ---
 title: Curiosity poke
-schedule: every 2d
 enabled: true
 journal: pulses/AGENTS.md
 ---
@@ -39,10 +45,8 @@ Pick one still-glowing thread from `CURIOUS.md` and make a small move: ask the h
 Good result:
 
 - one small useful note, question, or doc edit
-- a short journal entry in `pulses/AGENTS.md`
+- a short journal entry in `pulses/AGENTS.md`, linking deeper notes in this folder if needed
 ```
-
-Runnable pulse definitions need frontmatter with `title`. Ordinary notes/results without frontmatter can live under `pulses/` without becoming runnable pulses.
 
 Supported schedules:
 
@@ -61,10 +65,10 @@ Before adding a pulse:
 1. Read `pulses/AGENTS.md`.
 2. Check existing active and disabled pulses.
 3. Consolidate if a similar pulse already exists.
-4. Create the smallest pulse that could work.
-5. Add/update the index and journal notes.
+4. Create `pulses/<pulse-name>/` with `PULSE.md` and short `AGENTS.md`.
+5. Update the index and journal notes.
 
-If one pulse performs another pulse's job, journal the result under the pulse whose job was performed. Example: if `hey-clawa.md` chooses to run a manual `curiosity-poke.md`, the journal entry belongs to `curiosity-poke.md`.
+If one pulse performs another pulse's job, journal the result under the pulse whose job was performed. Example: if `hey-clawa/` chooses to run `curiosity-poke/`, the notes belong under `pulses/curiosity-poke/`, not under `pulses/hey-clawa/`.
 
 Prefer disabling over deleting. A disabled pulse with a short reason preserves the lesson and helps challenge future similar ideas.
 
@@ -75,8 +79,8 @@ In `pulses/AGENTS.md`, keep:
 - short run journal, max ~50 useful entries
 - pruning/consolidation notes
 
-Put bulky run notes in dated or pulse-specific files/folders and link them from the journal.
+Put bulky run notes in the relevant pulse folder and link them from the journal.
 
 If a pulse repeatedly produces low-value work, edit it, merge it, or disable it with a reason.
 
-If a pulse should post, send, buy, publish, or change an external surface, say that plainly in the pulse file.
+If a pulse should post, send, buy, publish, or change an external surface, say that plainly in that pulse's `PULSE.md`.

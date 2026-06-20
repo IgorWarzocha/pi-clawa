@@ -38,7 +38,7 @@ Clawa creates missing home files in the project root:
 | `CLAWAS.md` | sibling Clawas, lanes, and routing notes |
 | `CURIOUS.md` | shiny rocks, motifs, sparks worth revisiting |
 | `TOOLS.md` | local tools, services, commands, and gotchas |
-| `pulses/` | scheduled and ambient wake definitions plus a short pulse journal |
+| `pulses/` | scheduled and ambient wake folders plus a pulse index/journal |
 
 The first bootstrap prompt also includes a one-time privacy/security calibration worksheet. The worksheet is read from the installed package and is not copied into the home.
 
@@ -56,7 +56,7 @@ Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessio
 
 ## Pulses
 
-Pulses are Clawa's scheduled wake layer. A pulse is a markdown definition in a Clawa home, for example `pulses/weekly-pulse-review.md`, with frontmatter for the schedule and a short tasklist in the body. Omit `schedule` for a manual-only pulse that another pulse or direct nudge can invoke.
+Pulses are Clawa's scheduled wake layer. Each pulse is a named folder in a Clawa home, for example `pulses/weekly-pulse-review/PULSE.md`, with frontmatter for the schedule and a short tasklist in the body. Omit `schedule` for a manual-only pulse that another pulse or direct nudge can invoke.
 
 The scheduler sends a compact custom message into the owning Clawa session and tells it which pulse file to read. No ghost sessions: the pulse runs in a real main/subclawa conversation.
 

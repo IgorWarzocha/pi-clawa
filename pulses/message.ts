@@ -15,11 +15,12 @@ export function buildPulseInstruction(pulse: PulseDefinition, forced = false): s
   return [
     `Pulse: ${pulse.title}`,
     `Owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
+    `Pulse folder: ${pulse.relativeHome}`,
     `Definition file: ${pulse.relativeFile}`,
     forced ? 'Trigger: manual run-now' : `Trigger: schedule ${pulse.scheduleText}`,
     '',
     'Read the pulse definition file and execute it now.',
-    'Also read pulses/AGENTS.md in your home before choosing how to run it; keep the pulse journal tidy if this run teaches anything.',
+    'Also read the pulse folder AGENTS.md if present, plus pulses/AGENTS.md in your home; keep the relevant pulse notes/journal tidy if this run teaches anything.',
     'This is a real scheduled Clawa invocation, not a ghost side conversation. Do the work in this session and finish with a concise result message.',
   ].join('\n')
 }

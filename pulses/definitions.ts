@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { basename, join, relative, resolve, sep } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import { loadClawasConfig } from '../clawas/config-loader.js'
 import { findRepoRoot } from '../config.js'
 import { parsePulseFrontmatter } from './frontmatter.js'
@@ -12,6 +12,8 @@ export interface PulseDefinition {
   ownerId: 'main' | string
   ownerTitle: string
   ownerHome: string
+  pulseHome: string
+  relativeHome: string
   relativeFile: string
   absoluteFile: string
   scheduleText: string
@@ -20,9 +22,8 @@ export interface PulseDefinition {
   body: string
 }
 
-const PULSE_FILE_PATTERN = /^[a-z0-9][a-z0-9-]*\.md$/u
-const MARKDOWN_H1_PATTERN = /^#\s+(.+)$/mu
-const MARKDOWN_SUFFIX_PATTERN = /\.md$/u
+const PULSE_FOLDER_PATTERN = /^[a-z0-9][a-z0-9-]*$/u
+const PULSE_DEFINITION_FILE = 'PULSE.md'
 
 async function pathExists(path: string): Promise<boolean> {
   try {
@@ -33,27 +34,20 @@ async function pathExists(path: string): Promise<boolean> {
   }
 }
 
-function titleFromBody(body: string, fallback: string): string {
-  const heading = body.match(MARKDOWN_H1_PATTERN)?.[1]?.trim()
-  if (heading) return heading
-  return fallback
-    .split('-')
-    .filter(Boolean)
-    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
-    .join(' ')
-}
-
-async function readPulseFile(options: {
+async function readPulseFolder(options: {
   repoRoot: string
   ownerId: 'main' | string
   ownerTitle: string
   ownerHome: string
-  file: string
+  pulseHome: string
 }): Promise<PulseDefinition | null> {
-  if (!PULSE_FILE_PATTERN.test(basename(options.file))) return null
-  if (basename(options.file) === 'AGENTS.md') return null
+  const id = relative(join(options.ownerHome, 'pulses'), options.pulseHome)
+  if (!PULSE_FOLDER_PATTERN.test(id)) return null
 
-  const text = await readFile(options.file, 'utf8')
+  const file = join(options.pulseHome, PULSE_DEFINITION_FILE)
+  const text = await readFile(file, 'utf8').catch(() => '')
+  if (!text) return null
+
   const parsed = parsePulseFrontmatter(text)
   if (!(typeof parsed.data['title'] === 'string' && parsed.data['title'].trim())) return null
 
@@ -65,11 +59,7 @@ async function readPulseFile(options: {
   const schedule = parsePulseSchedule(scheduleText)
   if (!(enabled && schedule)) return null
 
-  const pulsesDir = join(options.ownerHome, 'pulses')
-  const id = relative(pulsesDir, options.file)
-    .replaceAll(sep, '/')
-    .replace(MARKDOWN_SUFFIX_PATTERN, '')
-  const title = parsed.data['title'].trim() || titleFromBody(parsed.body, id)
+  const title = parsed.data['title'].trim()
 
   return {
     key: `${options.ownerId}:${id}`,
@@ -78,8 +68,10 @@ async function readPulseFile(options: {
     ownerId: options.ownerId,
     ownerTitle: options.ownerTitle,
     ownerHome: options.ownerHome,
-    relativeFile: relative(options.repoRoot, options.file),
-    absoluteFile: options.file,
+    pulseHome: options.pulseHome,
+    relativeHome: relative(options.repoRoot, options.pulseHome),
+    relativeFile: relative(options.repoRoot, file),
+    absoluteFile: file,
     scheduleText,
     schedule,
     enabled,
@@ -87,22 +79,13 @@ async function readPulseFile(options: {
   }
 }
 
-async function listPulseFiles(dir: string): Promise<string[]> {
+async function listPulseFolders(dir: string): Promise<string[]> {
   try {
     const entries = await readdir(dir, { withFileTypes: true })
-    const files: string[] = []
-    for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue
-      const path = join(dir, entry.name)
-      if (entry.isDirectory()) {
-        files.push(...(await listPulseFiles(path)))
-        continue
-      }
-      if (entry.isFile() && PULSE_FILE_PATTERN.test(entry.name) && entry.name !== 'AGENTS.md') {
-        files.push(path)
-      }
-    }
-    return files.sort()
+    return entries
+      .filter((entry) => entry.isDirectory() && PULSE_FOLDER_PATTERN.test(entry.name))
+      .map((entry) => join(dir, entry.name))
+      .sort()
   } catch {
     return []
   }
@@ -116,8 +99,10 @@ async function readHomePulses(options: {
 }): Promise<PulseDefinition[]> {
   const dir = join(options.ownerHome, 'pulses')
   if (!(await pathExists(dir))) return []
-  const files = await listPulseFiles(dir)
-  const definitions = await Promise.all(files.map((file) => readPulseFile({ ...options, file })))
+  const folders = await listPulseFolders(dir)
+  const definitions = await Promise.all(
+    folders.map((pulseHome) => readPulseFolder({ ...options, pulseHome })),
+  )
   return definitions.filter((definition): definition is PulseDefinition => Boolean(definition))
 }
 

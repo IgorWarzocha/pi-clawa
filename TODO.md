@@ -176,7 +176,7 @@ Pulse replaces heartbeat/cron as one Clawa-native concept: markdown definitions 
 Done:
 
 - [x] recursive template copy creates `pulses/AGENTS.md`
-- [x] main template includes weekly pulse review and disabled generic wake starter
+- [x] main template includes `weekly-pulse-review/` and hourly `hey-clawa/` pulse folders
 - [x] worker template includes lane pulse journal
 - [x] scheduler scans main and subclawa homes
 - [x] supports `every`, `daily`, `weekly`, and `at` schedules

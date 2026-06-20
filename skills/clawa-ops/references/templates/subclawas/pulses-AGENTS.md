@@ -4,12 +4,13 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 
 ## Rules
 
-- Keep this file short and snappy: index, current rules, tiny journal. Do not turn it into an archive.
-- Organize extra pulse files into small folders by purpose, pulse name, or date. Avoid one loose junk drawer.
+- Every pulse is a named folder: `pulses/<pulse-name>/`.
+- The runnable definition is `pulses/<pulse-name>/PULSE.md`.
+- Each pulse folder should have a short local `AGENTS.md` for that pulse only.
+- Put that pulse's notes/results inside its folder, organized however the pulse needs.
 - Keep each pulse narrow to my specialty.
 - A pulse can be scheduled or manual-only. Manual pulses have no `schedule` and can be used by another pulse or a direct house nudge.
-- Pulse definitions need frontmatter with `title`; ordinary notes/results without frontmatter are not runnable pulses.
-- If one pulse invokes another pulse's job, record the result under the invoked pulse's journal entry.
+- If one pulse invokes another pulse's job, record the result in the invoked pulse's folder/journal, not the caller's.
 - Do not use pulses to escape my lane.
 - If a pulse is repetitive or low-value, edit or disable it.
 - Keep disabled pulse notes with the reason; they are useful lane memory.
@@ -18,10 +19,10 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 
 ## Index
 
-- `[pulse-file.md]` — `[what it wakes me to do]`
+- `[pulse-folder]/` — `[what it wakes me to do]`
 
 ## Journal
 
-Keep max 50 short entries. Store bulky notes in dated or pulse-specific files/folders and link them here.
+Keep max 50 short entries here. Link to pulse-folder notes when a run needs more room.
 
 - `[date]` — `[pulse]` — `[what happened / useful? / change made]`
