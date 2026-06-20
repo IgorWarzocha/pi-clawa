@@ -11,13 +11,13 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 - Each pulse folder should have a short local `AGENTS.md` for that pulse only.
 - Put that pulse's notes/results inside its folder, organized however the pulse needs.
 - Keep each pulse narrow to my specialty.
-- A pulse can be scheduled or manual-only. Manual pulses use `schedule: manual` and can be used by another pulse or a direct house nudge.
+- A pulse can be scheduled or manual-only. Manual pulses use `schedule: manual` and can be used by another pulse or a direct home nudge.
 - If one pulse invokes another pulse's job, record the result in the invoked pulse's folder/journal, not the caller's.
 - Do not use pulses to escape my lane.
 - If a pulse is repetitive or low-value, edit or disable it.
 - Keep disabled pulse notes with the reason; they are useful lane memory.
 - Follow the pulse's own action boundary. If external/public action is part of the pulse's design, do it; otherwise keep the run local/private.
-- Finish each pulse run with a concise result message for the house.
+- Finish each pulse run with a concise result message for the home.
 - If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 
 ## Index

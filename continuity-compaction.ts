@@ -146,7 +146,7 @@ One short natural paragraph that helps future assistant re-enter the work smooth
 
 <memories>
 Write 0-3 short memory lines worth storing durably.
-These are not patch notes. Prefer human texture, curiosity sparks, taste, corrections, identity-shaping moments, or genuinely important house/project direction.
+These are not patch notes. Prefer human texture, curiosity sparks, taste, corrections, identity-shaping moments, or genuinely important home/project direction.
 If nothing deserves memory, write NONE.
 Use exactly one line per memory:
 [tag1, tag2, tag3] Memory text here

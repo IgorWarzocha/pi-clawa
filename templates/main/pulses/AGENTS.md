@@ -13,12 +13,12 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 - A pulse can be scheduled or manual-only. Manual pulses use `schedule: manual` and can be used by another pulse or a direct human nudge.
 - If one pulse invokes another pulse's job, record the result in the invoked pulse's folder/journal, not the caller's.
 - Keep pulses useful, not performative. If a pulse keeps producing the same useless result, edit or disable it.
-- Keep disabled pulse notes with the reason; they are useful house memory.
+- Keep disabled pulse notes with the reason; they are useful home memory.
 - Follow the pulse's own action boundary. If external/public action is part of the pulse's design, do it; otherwise keep the run local/private.
 - A pulse run is a real session turn. Finish with a concise result message.
 - If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 - Pulse timing has roughly five-minute resolution. Treat schedules as gentle wakes, not second-perfect alarms.
-- If `hey-clawa/` is due at the same time as another pulse in this house, it waits about 15 minutes so the specific pulse gets the room.
+- If `hey-clawa/` is due at the same time as another pulse in this home, it waits about 15 minutes so the specific pulse gets the room.
 
 ## Index
 

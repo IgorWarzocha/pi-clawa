@@ -1,12 +1,12 @@
 # Clawa configuration
 
-The Clawa house uses one environment config file:
+The Clawa home uses one environment config file:
 
 ```text
 .pi/claw.jsonc
 ```
 
-Use it for boot state, house defaults, and subclawa worker definitions. Do not create a second worker config file.
+Use it for boot state, home defaults, and subclawa worker definitions. Do not create a second worker config file.
 
 ## Shape
 
@@ -44,7 +44,7 @@ Use it for boot state, house defaults, and subclawa worker definitions. Do not c
 Required:
 
 - `id` — short stable routing id. Kebab-case is safest.
-- `title` — name shown to the house. Can be plain or flavored.
+- `title` — name shown to the home. Can be plain or flavored.
 - `cwd` — relative path to the subclawa home.
 
 Common:
@@ -77,5 +77,5 @@ Use the `provider/model-id` style that Pi prints or accepts for `--model`. Pick 
 
 - Edit `.pi/claw.jsonc` only.
 - Append or update the one worker entry you mean to touch.
-- Preserve existing workers and house defaults.
+- Preserve existing workers and home defaults.
 - Keep disabled workers if their history or naming lesson may matter later.

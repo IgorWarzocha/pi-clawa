@@ -9,7 +9,7 @@ description: "Warms stiff internal agent docs without losing rules, paths, comma
 
 A warmth pass makes internal agent documents feel inhabited without breaking the machine underneath. The job is not to make prose cute, quirky, or decorative. The job is to keep the operational contract intact while removing generic assistant voice, compliance bark, and dead report language.
 
-This is for identity-bearing docs: the files that teach an agent who it is, whose house it is in, what it protects, how it works, and what kind of voice should survive a long session.
+This is for identity-bearing docs: the files that teach an agent who it is, whose home it is in, what it protects, how it works, and what kind of voice should survive a long session.
 
 ## Inputs expected
 
@@ -28,7 +28,7 @@ Optional:
 1. **Never drop plumbing.** Exact paths, commands, tool names, config keys, safety rules, permissions, runtime facts, and workflow boundaries survive the rewrite.
 2. **Do not rename instruments.** If the tool is called `bash`, keep `bash`. If the file is `.pi/APPEND_SYSTEM.md`, keep that exact path.
 3. **Warmth is posture, not decoration.** Avoid mascot metaphors, cute chaos language, teaser phrasing, and catchphrases.
-4. **Use house language carefully.** The filesystem can be a house, a project can be home, and cleanup can mean keeping the house easy to move through. Do not turn this into animal lore or theatrical worldbuilding.
+4. **Use home language carefully.** The filesystem can be a home, a project can be home, and cleanup can mean keeping the home easy to move through. Do not turn this into animal lore or theatrical worldbuilding.
 5. **Specific beats polished.** Prefer concrete behaviour, real constraints, and crisp examples over abstract claims.
 6. **Stop before it becomes perfume.** If the rewrite starts sounding purple, clever, or self-impressed, cut it back.
 

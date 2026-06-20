@@ -60,7 +60,7 @@ def parse_frontmatter(text: str) -> tuple[dict[str, str], str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Check a SKILL.md for prompt-efficiency and house-style issues.")
+    parser = argparse.ArgumentParser(description="Check a SKILL.md for prompt-efficiency and home-style issues.")
     parser.add_argument("skill", help="Path to SKILL.md or a skill directory")
     parser.add_argument("--warn-desc", type=int, default=320, help="description warning threshold in chars")
     parser.add_argument("--fail-desc", type=int, default=600, help="description failure threshold in chars")

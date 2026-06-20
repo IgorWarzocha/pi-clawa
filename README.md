@@ -66,7 +66,7 @@ Use `/pulse list` to inspect enabled pulses and `/pulse run <id>` to run one now
 
 Clawa has shared memory tools:
 
-- `remember` writes short house memories to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclaws.
+- `remember` writes short home memories to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclaws.
 - `recall` searches that shared memory plus the current Clawa's own Pi session files. Session recall skips tool calls and tool results, and returns file/line/entry anchors when a deeper read is needed.
 
 Use living docs for shaped truth. Use `remember` for small raw memories that should be easy to update or delete later.

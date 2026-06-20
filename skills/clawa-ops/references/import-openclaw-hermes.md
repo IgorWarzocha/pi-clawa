@@ -2,7 +2,7 @@
 
 Use this when the human says something like: “import my OpenClaw/Hermes environment from this folder.”
 
-This is not a raw migration. Treat the old environment as source material, then shape it into the Clawa house: living docs, `.pi/claw.jsonc`, subclawas, pulses, and tool notes.
+This is not a raw migration. Treat the old environment as source material, then shape it into the Clawa home: living docs, `.pi/claw.jsonc`, subclawas, pulses, and tool notes.
 
 ## First move
 
@@ -66,7 +66,7 @@ OpenClaw agents may have richer routing than Clawa needs. Prefer fewer, obvious 
 
 ## Import style
 
-- Keep the human in the loop for taste calls: names, which old agents survive, which channels matter, and which schedules should keep waking the house.
+- Keep the human in the loop for taste calls: names, which old agents survive, which channels matter, and which schedules should keep waking the home.
 - Preserve useful identity/context; leave old platform machinery behind.
 - Convert schedules into pulses that are self-contained and agentic.
 - Convert recurring specialist agents into subclawas and onboard them properly.

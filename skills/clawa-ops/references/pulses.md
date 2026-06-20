@@ -20,7 +20,7 @@ pulses/
       notes.md
 ```
 
-- `pulses/AGENTS.md` is the folder index and house-level pulse journal. It can hold up to ~50 short entries.
+- `pulses/AGENTS.md` is the folder index and home-level pulse journal. It can hold up to ~50 short entries.
 - `pulses/<pulse-name>/PULSE.md` is the runnable definition.
 - `pulses/<pulse-name>/AGENTS.md` is a short local note for that one pulse.
 - Extra notes/results live inside the relevant pulse folder, organized however that pulse needs.
@@ -45,7 +45,7 @@ journal: pulses/AGENTS.md
 
 # Curiosity poke
 
-Pick one still-glowing thread from `CURIOUS.md` and make a small move: ask the human a good question, collect one useful note, or connect it to something already in the house.
+Pick one still-glowing thread from `CURIOUS.md` and make a small move: ask the human a good question, collect one useful note, or connect it to something already in the home.
 
 Good result:
 
@@ -93,4 +93,4 @@ Put bulky run notes in the relevant pulse folder and link them from the journal.
 
 If a pulse repeatedly produces low-value work, edit it, merge it, or disable it with a reason.
 
-The pulse definition is the action contract. If it is designed to post, send, buy, publish, or change an external surface, say that plainly in `PULSE.md` and execute it as part of the run. Do not invent extra approval gates unless the pulse itself, the human, or the house spine asks for them.
+The pulse definition is the action contract. If it is designed to post, send, buy, publish, or change an external surface, say that plainly in `PULSE.md` and execute it as part of the run. Do not invent extra approval gates unless the pulse itself, the human, or the home spine asks for them.

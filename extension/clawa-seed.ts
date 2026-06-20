@@ -123,7 +123,7 @@ async function updateClawasMap(repoRoot: string, name: string, purpose: string):
   try {
     content = await readFile(path, 'utf8')
   } catch {
-    content = '# CLAWAS.md\n\n## House crew\n'
+    content = '# CLAWAS.md\n\n## Home crew\n'
   }
 
   if (content.includes(`**\`${name}\`**`)) return
@@ -132,11 +132,11 @@ async function updateClawasMap(repoRoot: string, name: string, purpose: string):
     await writeFile(path, content.replace(CLAWAS_PLACEHOLDER_LINE_REGEX, entry), 'utf8')
     return
   }
-  if (content.includes('## House crew')) {
+  if (content.includes('## Home crew')) {
     await writeFile(path, `${content.trimEnd()}\n${entry}\n`, 'utf8')
     return
   }
-  await writeFile(path, `${content.trimEnd()}\n\n## House crew\n\n${entry}\n`, 'utf8')
+  await writeFile(path, `${content.trimEnd()}\n\n## Home crew\n\n${entry}\n`, 'utf8')
 }
 
 function buildSeedCreatedNote(
@@ -170,7 +170,7 @@ function buildMainClawaCreatePrompt(name: string, path: string, purpose: string)
 
 function buildWorkerSeedPrompt(name: string, path: string, purpose: string): string {
   return [
-    'You have just woken up as a specialized Clawa in this house.',
+    'You have just woken up as a specialized Clawa in this home.',
     '',
     `Seed name: ${name}`,
     `Home: ${path}`,
@@ -192,6 +192,6 @@ async function notifySeedWorker(
     await runtime.restart()
     await runtime.sendPrompt(workerId, prompt, 'prompt')
   } catch {
-    // The main Clawa prompt still tells the household how to finish shaping this seed.
+    // The main Clawa prompt still tells the home how to finish shaping this seed.
   }
 }

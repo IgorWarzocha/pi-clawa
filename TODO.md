@@ -78,7 +78,7 @@ Status: usable and stricter; remaining work is smoke coverage and seam polish.
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
   - playground proved repeated `/jump` and `/claw` recovery; still needs a clean deterministic smoke path
-- [x] use shared house SQLite memory at `.pi/clawa-memory.sqlite`
+- [x] use shared home SQLite memory at `.pi/clawa-memory.sqlite`
 - [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
 - [x] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
 - [x] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
@@ -198,7 +198,7 @@ Needs follow-up:
 
 Status: not designed.
 
-The extracted extension no longer carries the old work-tracking integration. It was too complex and too house-specific for this package.
+The extracted extension no longer carries the old work-tracking integration. It was too complex and too home-specific for this package.
 
 Pick a simpler replacement for routing durable work between claws. Options are open:
 
@@ -225,7 +225,7 @@ Do not block first clean-room test unless we decide work tracking is part of fir
 
 Status: first write/read lane exists.
 
-Shared house memory lives at `.pi/clawa-memory.sqlite` for all Clawas.
+Shared home memory lives at `.pi/clawa-memory.sqlite` for all Clawas.
 
 - [x] `remember` tool creates a short memory and returns its id
 - [x] `remember` with `id` overwrites that memory

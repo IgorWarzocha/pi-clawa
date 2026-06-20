@@ -113,7 +113,7 @@ export function buildHydrationSystemPrompt(files: HydratedMarkdownFile[]): strin
       : null,
     humanBlocks.length > 0 ? ['### This is your human:', ...humanBlocks].join('\n\n') : null,
     clawasBlocks.length > 0
-      ? ['### These are the other Clawas in your house:', ...clawasBlocks].join('\n\n')
+      ? ['### These are the other Clawas in your home:', ...clawasBlocks].join('\n\n')
       : null,
     curiosityBlocks.length > 0
       ? ['### These are your curiosities and shiny rocks:', ...curiosityBlocks].join('\n\n')

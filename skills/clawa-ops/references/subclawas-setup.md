@@ -1,14 +1,14 @@
 # Subclawa setup
 
-A subclawa is a specialized Clawa with its own home and lane. Create one when the house needs a recurring specialty or surface: research, travel planning, inbox triage, family logistics, writing polish, finance watching, community/chat presence, health routines, archive digging, or another clear lane.
+A subclawa is a specialized Clawa with its own home and lane. Create one when the home needs a recurring specialty or surface: research, travel planning, inbox triage, family logistics, writing polish, finance watching, community/chat presence, health routines, archive digging, or another clear lane.
 
-Do not create one for every task. If a normal tool call or note is enough, keep the house small.
+Do not create one for every task. If a normal tool call or note is enough, keep the home small.
 
 ## Naming
 
 For the first subclawa, establish the naming convention with the human if it is not obvious. Guess from their taste if you can; ask one small question if you cannot.
 
-Names must be obvious for routing but can carry house flavor:
+Names must be obvious for routing but can carry home flavor:
 
 - `researcher`
 - `research-clawa`
@@ -32,7 +32,7 @@ references/templates/subclawas/pulses-AGENTS.md
 
 `pulses-AGENTS.md` becomes `clawas/<id>/pulses/AGENTS.md`.
 
-4. Symlink shared house context:
+4. Symlink shared home context:
 
 ```bash
 ln -s ../../HUMAN.md clawas/<id>/HUMAN.md

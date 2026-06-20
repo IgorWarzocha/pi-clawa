@@ -5,7 +5,7 @@ description: "Operates a Clawa home. Use when asked to create or onboard subclaw
 
 # Clawa Ops
 
-Operate the Clawa house through readable files and real conversation. Do not guess config shapes, invent hidden control planes, or use human slash commands as agent workflows.
+Operate the Clawa home through readable files and real conversation. Do not guess config shapes, invent hidden control planes, or use human slash commands as agent workflows.
 
 Load the needed reference before editing:
 
@@ -14,6 +14,6 @@ Load the needed reference before editing:
 - `references/subclawas-setup.md` — create, register, name, and onboard a subclawa.
 - `references/pulses.md` — create, edit, disable, or review pulses.
 
-If the house feels structurally weird, run `scripts/doctor.py` from the Clawa home before guessing. It is read-only and checks core files, `.pi/claw.jsonc`, worker homes, pulse frontmatter, and rough context-size budgets.
+If the home feels structurally weird, run `scripts/doctor.py` from the Clawa home before guessing. It is read-only and checks core files, `.pi/claw.jsonc`, worker homes, pulse frontmatter, and rough context-size budgets.
 
-Keep house changes small, legible, and grounded in the current files. If a choice is taste/product-shaped, ask the human naturally instead of turning it into a wizard.
+Keep home changes small, legible, and grounded in the current files. If a choice is taste/product-shaped, ask the human naturally instead of turning it into a wizard.

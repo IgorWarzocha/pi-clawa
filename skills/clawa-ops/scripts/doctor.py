@@ -384,7 +384,7 @@ class Doctor:
             self.ok_line(f'{self.rel(path)} frontmatter is valid')
 
     def run(self) -> int:
-        print(f'Clawa house doctor: {self.root}')
+        print(f'Clawa home doctor: {self.root}')
         self.check_root_docs()
         self.check_config()
         self.check_all_pulses()
@@ -403,7 +403,7 @@ class Doctor:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description='Check a Clawa house for structural config/doc/pulse issues.'
+        description='Check a Clawa home for structural config/doc/pulse issues.'
     )
     parser.add_argument('path', nargs='?', default='.', help='Clawa home/project root')
     args = parser.parse_args()

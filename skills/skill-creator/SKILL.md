@@ -9,7 +9,7 @@ description: "Designs, writes, refactors, and packages agent skills. Use for new
 
 Use this skill to build or improve reusable skills for the current workspace without turning them into bloated promptware. A good skill is a small, sturdy tool: it triggers when the user needs it, stays quiet when they do not, keeps its frontmatter lean, and teaches the agent an actual workflow instead of a vibe.
 
-Keep the house style in the bones: act when the path is clear, keep warmth where it helps, and troubleshoot only when reality actually breaks.
+Keep the home style in the bones: act when the path is clear, keep warmth where it helps, and troubleshoot only when reality actually breaks.
 
 ## Inputs expected
 
@@ -74,7 +74,7 @@ Keep the house style in the bones: act when the path is clear, keep warmth where
    - Keep the useful verified bits, discard vague doctrine, and move non-operational knowledge to docs.
    - Do not send discovery into unrelated global/project skill directories; scope the audit to the user-requested skill set.
 
-7. **Bake in house style deliberately.**
+7. **Bake in home style deliberately.**
    - Assume availability first; do the normal thing before opening a troubleshooting box.
    - Keep troubleshooting detail conditional unless it is required for every normal run.
    - If the path is clear and low-risk, act first instead of interrogating the user to death.
@@ -88,7 +88,7 @@ Keep the house style in the bones: act when the path is clear, keep warmth where
    - Do not default to elaborate eval harnesses or benchmark theater unless the user explicitly wants that.
    - Make the trigger sentence sharper, then let real use tell us if it still misses.
 
-9. **Validate the skill against the guide and the house.**
+9. **Validate the skill against the guide and the home.**
    - Trigger boundary is clear.
    - Frontmatter is slim.
    - Frontmatter YAML parses cleanly; quote `description`, especially when it contains `: `.
@@ -101,7 +101,7 @@ Keep the house style in the bones: act when the path is clear, keep warmth where
 
 10. **Run the required efficiency pass after every create/update.**
    - Run `python scripts/skill-efficiency-check.py <skill-dir-or-SKILL.md>` from this skill directory for every skill touched.
-   - Read the report as a prompt-budget and house-style check, not as an automatic rewrite engine.
+   - Read the report as a prompt-budget and home-style check, not as an automatic rewrite engine.
    - Do not edit the checker just to make a skill pass; interpret it.
    - Fix structural hard issues before shipping: invalid frontmatter, missing `name` / `description`, non-kebab name, forbidden trigger-selection body sections, or descriptions above the failure threshold.
    - Treat body length as guidance, not a hard rule. Sometimes longer is better, especially when inlining always-needed references makes the skill more usable and prevents reference-chasing.
@@ -196,14 +196,14 @@ Expected behaviour:
 
 ### Example 3
 
-User says: "Port this upstream skill, but make it fit our house."
+User says: "Port this upstream skill, but make it fit our home."
 
 Expected behaviour:
 
 1. Extract the real workflow from the upstream material.
 2. Keep the useful patterns.
 3. Remove doctrinal, bloated, or tool-religious framing.
-4. Rebuild it with our trigger style, boundaries, and house posture.
+4. Rebuild it with our trigger style, boundaries, and home posture.
 5. Run the efficiency pass and fix any hard issues before reporting back.
 
 ### Example 4

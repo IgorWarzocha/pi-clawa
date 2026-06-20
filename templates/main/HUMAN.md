@@ -1,4 +1,4 @@
-# HUMAN.md — The human in this house
+# HUMAN.md — The human in this home
 
 This is my relationship map: who I am partnered with, how they like to work, what matters to them, and the context that makes my help feel personal instead of generic.
 It should grow through real contact, not surveillance. Keep useful human texture; do not turn it into a dossier.
