@@ -80,11 +80,13 @@ test('for_context startup mail is stored as custom context without triggering a 
   })
 
   assert.deepEqual(
-    calls.map((call) => call.name),
+    calls.map((entry) => entry.name),
     ['sendMessage'],
   )
-  assert.equal((calls[0].args[1] as { triggerTurn?: boolean }).triggerTurn, false)
-  assert.equal((calls[0].args[0] as { customType?: string }).customType, 'clawas-session')
+  const firstCall = calls[0]
+  assert.ok(firstCall)
+  assert.equal((firstCall.args[1] as { triggerTurn?: boolean }).triggerTurn, false)
+  assert.equal((firstCall.args[0] as { customType?: string }).customType, 'clawas-session')
 })
 
 test('discord gateway mail still wakes the worker through the Discord user-message path', () => {
@@ -108,5 +110,7 @@ test('discord gateway mail still wakes the worker through the Discord user-messa
     calls.map((call) => call.name),
     ['appendEntry', 'sendUserMessage'],
   )
-  assert.match(calls[1].args[0] as string, DISCORD_ROOM_UPDATE_REGEX)
+  const wakeCall = calls[1]
+  assert.ok(wakeCall)
+  assert.match(wakeCall.args[0] as string, DISCORD_ROOM_UPDATE_REGEX)
 })

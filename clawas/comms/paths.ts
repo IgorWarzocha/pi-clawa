@@ -12,10 +12,11 @@ function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
 }
 
 export function getClawasControlDir(): string {
-  const dirName = process.env.PI_CLAWAS_CONTROL_SOCKET_DIR?.trim() || DEFAULT_CONTROL_SOCKET_DIR
-  const projectRoot = process.env.PI_CLAW_PROJECT_ROOT?.trim() || process.cwd()
+  const dirName = process.env['PI_CLAWAS_CONTROL_SOCKET_DIR']?.trim() || DEFAULT_CONTROL_SOCKET_DIR
+  const projectRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || process.cwd()
   const rootDir =
-    process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT?.trim() || resolveClawasControlSocketRoot(projectRoot)
+    process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']?.trim() ||
+    resolveClawasControlSocketRoot(projectRoot)
   return path.join(rootDir, dirName)
 }
 

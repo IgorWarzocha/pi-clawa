@@ -15,12 +15,12 @@ export interface ManagedWorker {
   status: WorkerState['status']
   manualSession: boolean
   autostart: boolean
-  model?: string
-  thinking?: WorkerThinkingLevel
-  currentTask?: string
-  lastSummary?: string
-  lastError?: string
-  sessionFile?: string
+  model?: string | undefined
+  thinking?: WorkerThinkingLevel | undefined
+  currentTask?: string | undefined
+  lastSummary?: string | undefined
+  lastError?: string | undefined
+  sessionFile?: string | undefined
 }
 
 export interface ClawItem {

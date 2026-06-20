@@ -100,15 +100,15 @@ function readWorkerNameCandidates(repoRoot: string, controlPlaneDir: string): Cl
       string,
       unknown
     >
-    const workers = Array.isArray(parsed.workers) ? parsed.workers : []
+    const workers = Array.isArray(parsed['workers']) ? parsed['workers'] : []
     return workers
       .map((worker): ClawaNameCandidate | null => {
         if (!worker || typeof worker !== 'object') return null
         const rec = worker as Record<string, unknown>
-        const cwd = typeof rec.cwd === 'string' ? rec.cwd.trim() : ''
+        const cwd = typeof rec['cwd'] === 'string' ? rec['cwd'].trim() : ''
         if (!cwd) return null
-        const title = typeof rec.title === 'string' ? sanitizeClawaName(rec.title) : ''
-        const id = typeof rec.id === 'string' ? sanitizeClawaName(rec.id) : ''
+        const title = typeof rec['title'] === 'string' ? sanitizeClawaName(rec['title']) : ''
+        const id = typeof rec['id'] === 'string' ? sanitizeClawaName(rec['id']) : ''
         const name = title || id
         if (!name) return null
         return { name, path: resolve(repoRoot, cwd) }

@@ -6,7 +6,7 @@ import { ensureDiscordConfig, readEnvFile } from './env-file.js'
 import { getGatewayProcess, setGatewayConfigPath, setGatewayProcess } from './gateway-state.js'
 
 function hasGatewayToken(configPath: string): boolean {
-  return Boolean(readEnvFile(configPath).DISCORD_BOT_TOKEN || process.env.DISCORD_BOT_TOKEN)
+  return Boolean(readEnvFile(configPath)['DISCORD_BOT_TOKEN'] || process.env['DISCORD_BOT_TOKEN'])
 }
 
 export function startGateway(projectRoot: string, ctx: ExtensionContext): void {

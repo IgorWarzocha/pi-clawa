@@ -7,8 +7,8 @@ export interface LaunchOptions {
   cwd: string
   extensionPaths: string[]
   clawaDefaults: ClawaDefaults
-  reportSessionId?: string
-  sessionFile?: string
+  reportSessionId?: string | undefined
+  sessionFile?: string | undefined
 }
 
 function shellEscape(value: string): string {
@@ -44,14 +44,14 @@ export function buildInteractiveCommand(options: LaunchOptions, replaceShell = f
     PI_CLAWAS_SOCKET_ALIAS: getWorkerSocketAlias(options.definition),
   }
   if (options.reportSessionId) {
-    envVars.PI_CLAWAS_REPORT_SESSION_ID = options.reportSessionId
+    envVars['PI_CLAWAS_REPORT_SESSION_ID'] = options.reportSessionId
   }
-  if (process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT) {
-    envVars.PI_CLAWAS_CONTROL_SOCKET_ROOT = process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT
+  if (process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']) {
+    envVars['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
   }
-  if (process.env.PI_CLAW_PROJECT_ROOT) {
-    envVars.PI_CLAW_PROJECT_ROOT = process.env.PI_CLAW_PROJECT_ROOT
-    envVars.PI_CWD = process.env.PI_CLAW_PROJECT_ROOT
+  if (process.env['PI_CLAW_PROJECT_ROOT']) {
+    envVars['PI_CLAW_PROJECT_ROOT'] = process.env['PI_CLAW_PROJECT_ROOT']
+    envVars['PI_CWD'] = process.env['PI_CLAW_PROJECT_ROOT']
   }
 
   const envPrefix = Object.entries(envVars)

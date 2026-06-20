@@ -3,7 +3,7 @@ import * as path from 'node:path'
 import type { WorkerDefinition } from './types.js'
 
 export function discoverProjectExtensionPaths(_projectRoot: string): string[] {
-  const envExtensionPath = process.env.PI_CLAW_EXTENSION_PATH?.trim()
+  const envExtensionPath = process.env['PI_CLAW_EXTENSION_PATH']?.trim()
   if (
     envExtensionPath &&
     fs.existsSync(envExtensionPath) &&

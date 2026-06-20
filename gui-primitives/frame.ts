@@ -1,5 +1,5 @@
 import { truncateToWidth, visibleWidth } from '@earendil-works/pi-tui'
-import type { Align, Line, Slot, Theme, Tone } from './types.js'
+import type { Align, Line, Primitive, Slot, Theme, Tone } from './types.js'
 import { FRAME_ROWS } from './types.js'
 
 function coloredLine(line: Line, theme: Theme): string {
@@ -49,7 +49,9 @@ export function create(
         blank(width),
       )
       for (let i = 0; i < rows.length; i++) {
-        const value = coloredLine(rows[i], theme)
+        const line = rows[i]
+        if (!line) continue
+        const value = coloredLine(line, theme)
         out.push(cut(slot.active.includes(i) ? theme.fg('accent', value) : value, width))
       }
       for (let i = 0; i < Math.max(0, FRAME_ROWS - (8 + rows.length)); i++) out.push(blank(width))

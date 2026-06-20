@@ -55,7 +55,7 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
   const content = [
     '# Clawa Discord gateway config.',
     '# Fill DISCORD_BOT_TOKEN and CLAWAS_CHANNEL_WORKERS, then restart Pi.',
-    `DISCORD_BOT_TOKEN=${process.env.DISCORD_BOT_TOKEN ?? ''}`,
+    `DISCORD_BOT_TOKEN=${process.env['DISCORD_BOT_TOKEN'] ?? ''}`,
     'CHANNEL_POLICY=allowlist',
     'TRIGGER_NAME=clawa',
     'TRIGGER_ALIASES=claw,clawa',
@@ -65,7 +65,7 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
     `PI_CLAWAS_CONTROL_SOCKET_ROOT=${resolveClawasControlSocketRoot(projectRoot)}`,
     `PI_CLAWAS_CONTROL_SOCKET_DIR=${clawa.controlSocketDir}`,
     '# Example: CLAWAS_CHANNEL_WORKERS=123456789012345678=discord-clawa',
-    `CLAWAS_CHANNEL_WORKERS=${process.env.CLAWAS_CHANNEL_WORKERS ?? ''}`,
+    `CLAWAS_CHANNEL_WORKERS=${process.env['CLAWAS_CHANNEL_WORKERS'] ?? ''}`,
     'MAX_CONCURRENCY=3',
     'ENABLE_SCHEDULER=false',
     '',

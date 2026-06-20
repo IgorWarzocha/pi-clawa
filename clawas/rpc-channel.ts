@@ -2,7 +2,7 @@ import type { ChildProcess } from 'node:child_process'
 import type { AgentEvent } from '@earendil-works/pi-agent-core'
 import { attachJsonlLineReader, serializeJsonLine } from './jsonl.js'
 import { isAgentEvent, isRpcResponse } from './rpc-guards.js'
-import type { ClawasRpcCommand, ClawasRpcResponse } from './rpc-types.js'
+import type { ClawasRpcCommand, ClawasRpcCommandInput, ClawasRpcResponse } from './rpc-types.js'
 
 type PendingRequest = {
   resolve: (response: ClawasRpcResponse) => void
@@ -24,8 +24,11 @@ export class ClawasRpcChannel {
   private readonly pending = new Map<string, PendingRequest>()
   private stopReadingStdout: (() => void) | null = null
   private nextRequestId = 0
+  private readonly options: RpcChannelOptions
 
-  constructor(private readonly options: RpcChannelOptions) {}
+  constructor(options: RpcChannelOptions) {
+    this.options = options
+  }
 
   attach(process: ChildProcess): void {
     if (!process.stdout) {
@@ -52,10 +55,7 @@ export class ClawasRpcChannel {
     this.pending.clear()
   }
 
-  async send(
-    process: ChildProcess,
-    command: Omit<ClawasRpcCommand, 'id'>,
-  ): Promise<ClawasRpcResponse> {
+  async send(process: ChildProcess, command: ClawasRpcCommandInput): Promise<ClawasRpcResponse> {
     if (!process.stdin) {
       throw new Error(`Worker ${this.options.workerId} is not running`)
     }

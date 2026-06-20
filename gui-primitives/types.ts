@@ -17,7 +17,8 @@ export type Slot = {
   tab: boolean
 }
 
-export type Theme = { fg: (color: string, text: string) => string }
+type ThemeColor = 'accent' | 'borderMuted' | 'dim'
+export type Theme = { fg: (color: ThemeColor, text: string) => string }
 type View = {
   render: (width: number) => string[]
   invalidate: () => void

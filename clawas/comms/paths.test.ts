@@ -7,10 +7,10 @@ const SESSION_ID = '019ee48f-8976-7a7a-8e14-c68625934c5b'
 
 test('socket paths stay short for long project directories', () => {
   const previous = {
-    PI_CLAW_PROJECT_ROOT: process.env.PI_CLAW_PROJECT_ROOT,
-    PI_CLAWAS_CONTROL_SOCKET_ROOT: process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT,
-    PI_CLAWAS_CONTROL_SOCKET_DIR: process.env.PI_CLAWAS_CONTROL_SOCKET_DIR,
-    XDG_RUNTIME_DIR: process.env.XDG_RUNTIME_DIR,
+    PI_CLAW_PROJECT_ROOT: process.env['PI_CLAW_PROJECT_ROOT'],
+    PI_CLAWAS_CONTROL_SOCKET_ROOT: process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'],
+    PI_CLAWAS_CONTROL_SOCKET_DIR: process.env['PI_CLAWAS_CONTROL_SOCKET_DIR'],
+    XDG_RUNTIME_DIR: process.env['XDG_RUNTIME_DIR'],
   }
 
   try {
@@ -18,10 +18,10 @@ test('socket paths stay short for long project directories', () => {
       '/home/igorw/Work/tries',
       '2026-06-20 clawa-cleanroom-bootstrap-with-a-very-long-name',
     )
-    process.env.PI_CLAW_PROJECT_ROOT = projectRoot
-    process.env.XDG_RUNTIME_DIR = '/run/user/1000'
-    delete process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT
-    delete process.env.PI_CLAWAS_CONTROL_SOCKET_DIR
+    process.env['PI_CLAW_PROJECT_ROOT'] = projectRoot
+    process.env['XDG_RUNTIME_DIR'] = '/run/user/1000'
+    delete process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
+    delete process.env['PI_CLAWAS_CONTROL_SOCKET_DIR']
 
     const socketPath = getSocketPath(SESSION_ID)
 

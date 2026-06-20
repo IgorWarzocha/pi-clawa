@@ -11,13 +11,13 @@ import type { DiscordGuiItem, DiscordGuiMode, DiscordGuiSnapshot } from './gui-t
 export function buildDiscordSnapshot(projectRoot: string): DiscordGuiSnapshot {
   const configPath = ensureDiscordConfig(projectRoot)
   const config = readEnvFile(configPath)
-  const token = config.DISCORD_BOT_TOKEN || process.env.DISCORD_BOT_TOKEN
+  const token = config['DISCORD_BOT_TOKEN'] || process.env['DISCORD_BOT_TOKEN']
   return {
     projectRoot,
     configPath,
     tokenSet: Boolean(token?.trim()),
     maskedToken: maskSecret(token),
-    channelMap: config.CLAWAS_CHANNEL_WORKERS?.trim() || 'missing',
+    channelMap: config['CLAWAS_CHANNEL_WORKERS']?.trim() || 'missing',
     gatewayRunning: isGatewayRunning(),
   }
 }

@@ -1,7 +1,7 @@
 import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
-import { AttachmentBuilder, Client, GatewayIntentBits } from "discord.js";
+import { AttachmentBuilder, Client, GatewayIntentBits, type MessageCreateOptions } from "discord.js";
 import { config } from "../config.js";
 import { extractDiscordDirectives } from "../agent/discord-directives.js";
 
@@ -9,13 +9,13 @@ export const NOTHING_FOR_DISCORD_SENTINEL = "[nothing_for_discord]";
 
 export interface SendRequest {
 	channelJid: string;
-	text?: string;
-	replyToMessageId?: string;
+	text?: string | undefined;
+	replyToMessageId?: string | undefined;
 	files: string[];
 }
 
 export interface PreparedSendText {
-	text?: string;
+	text?: string | undefined;
 	reaction: string | null;
 }
 
@@ -155,20 +155,21 @@ export async function sendFilesToDiscord(
 			}
 		}
 
-		if (text || attachments.length > 0) {
-			await channel.send({
-				content: text,
-				...(request.replyToMessageId
-					? {
-							reply: {
+			if (text || attachments.length > 0) {
+				const payload: MessageCreateOptions = {
+					...(text ? { content: text } : {}),
+					...(request.replyToMessageId
+						? {
+								reply: {
 								messageReference: request.replyToMessageId,
 								failIfNotExists: false,
 							},
 						}
-					: {}),
-				...(attachments.length > 0 ? { files: attachments } : {}),
-			});
-		}
+						: {}),
+					...(attachments.length > 0 ? { files: attachments } : {}),
+				};
+				await channel.send(payload);
+			}
 		return { sentFiles: attachments.length, sentText: Boolean(text), reacted };
 	} finally {
 		client.destroy();

@@ -37,9 +37,10 @@ function getMailDetail(
   if (!details || typeof details !== 'object') {
     return undefined
   }
+  const rec = details as Record<string, unknown>
 
-  if (key in details && typeof details[key] === 'string') {
-    return details[key]
+  if (typeof rec[key] === 'string') {
+    return rec[key]
   }
 
   return undefined

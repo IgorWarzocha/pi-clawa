@@ -5,10 +5,10 @@ import { dirname, join } from 'node:path'
 
 export interface ClawaConfig {
   name: string
-  emoji?: string
+  emoji?: string | undefined
   path: string
-  autostart?: boolean
-  notes?: string
+  autostart?: boolean | undefined
+  notes?: string | undefined
 }
 
 export interface ClawaDefaults {
@@ -38,7 +38,7 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
 }
 
 export function resolveClawasControlSocketRoot(projectRoot: string): string {
-  const runtimeRoot = process.env.XDG_RUNTIME_DIR?.trim() || tmpdir()
+  const runtimeRoot = process.env['XDG_RUNTIME_DIR']?.trim() || tmpdir()
   const hash = createHash('sha256').update(projectRoot).digest('hex').slice(0, 16)
   return join(runtimeRoot, 'pi-claw', hash)
 }
@@ -74,15 +74,15 @@ function clampClaws(input: unknown): ClawaConfig[] {
 function clampClaw(item: unknown): ClawaConfig | null {
   if (!item || typeof item !== 'object') return null
   const rec = item as Record<string, unknown>
-  const name = typeof rec.name === 'string' ? rec.name.trim() : ''
-  const path = typeof rec.path === 'string' ? rec.path.trim() : ''
+  const name = typeof rec['name'] === 'string' ? rec['name'].trim() : ''
+  const path = typeof rec['path'] === 'string' ? rec['path'].trim() : ''
   if (!(name && path)) return null
   return {
     name,
-    emoji: typeof rec.emoji === 'string' ? rec.emoji : undefined,
+    emoji: typeof rec['emoji'] === 'string' ? rec['emoji'] : undefined,
     path,
-    autostart: rec.autostart === true,
-    notes: typeof rec.notes === 'string' ? rec.notes : undefined,
+    autostart: rec['autostart'] === true,
+    notes: typeof rec['notes'] === 'string' ? rec['notes'] : undefined,
   }
 }
 
@@ -93,26 +93,26 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
 
   const rec = input as Record<string, unknown>
   const clawasName =
-    typeof rec.clawasName === 'string' && rec.clawasName.trim()
-      ? rec.clawasName.trim()
+    typeof rec['clawasName'] === 'string' && rec['clawasName'].trim()
+      ? rec['clawasName'].trim()
       : DEFAULT_CLAWA_DEFAULTS.clawasName
   return {
     mainClawName:
-      typeof rec.mainClawName === 'string' && rec.mainClawName.trim()
-        ? rec.mainClawName.trim()
+      typeof rec['mainClawName'] === 'string' && rec['mainClawName'].trim()
+        ? rec['mainClawName'].trim()
         : DEFAULT_CLAWA_DEFAULTS.mainClawName,
     clawasName,
     workerSessionPrefix:
-      typeof rec.workerSessionPrefix === 'string' && rec.workerSessionPrefix.trim()
-        ? rec.workerSessionPrefix.trim()
+      typeof rec['workerSessionPrefix'] === 'string' && rec['workerSessionPrefix'].trim()
+        ? rec['workerSessionPrefix'].trim()
         : clawasName,
     controlPlaneDir:
-      typeof rec.controlPlaneDir === 'string' && rec.controlPlaneDir.trim()
-        ? rec.controlPlaneDir.trim()
+      typeof rec['controlPlaneDir'] === 'string' && rec['controlPlaneDir'].trim()
+        ? rec['controlPlaneDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlPlaneDir,
     controlSocketDir:
-      typeof rec.controlSocketDir === 'string' && rec.controlSocketDir.trim()
-        ? rec.controlSocketDir.trim()
+      typeof rec['controlSocketDir'] === 'string' && rec['controlSocketDir'].trim()
+        ? rec['controlSocketDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
   }
 }
@@ -149,23 +149,25 @@ export function loadClawEnvironmentConfig(repoRoot: string): {
   try {
     const raw = parseJsonc(readFileSync(path, 'utf8')) as Record<string, unknown>
     const clawas =
-      raw.clawas && typeof raw.clawas === 'object' ? (raw.clawas as Record<string, unknown>) : {}
+      raw['clawas'] && typeof raw['clawas'] === 'object'
+        ? (raw['clawas'] as Record<string, unknown>)
+        : {}
     return {
       path,
       config: {
-        bootstrapped: raw.bootstrapped === true,
+        bootstrapped: raw['bootstrapped'] === true,
         clawas: {
           baseDir:
-            typeof clawas.baseDir === 'string' && clawas.baseDir.trim()
-              ? clawas.baseDir
+            typeof clawas['baseDir'] === 'string' && clawas['baseDir'].trim()
+              ? clawas['baseDir']
               : DEFAULT_CONFIG.clawas.baseDir,
           tmuxSession:
-            typeof clawas.tmuxSession === 'string' && clawas.tmuxSession.trim()
-              ? clawas.tmuxSession
+            typeof clawas['tmuxSession'] === 'string' && clawas['tmuxSession'].trim()
+              ? clawas['tmuxSession']
               : DEFAULT_CONFIG.clawas.tmuxSession,
-          claws: clampClaws(clawas.claws),
+          claws: clampClaws(clawas['claws']),
         },
-        clawa: clampClawaDefaults(raw.clawa),
+        clawa: clampClawaDefaults(raw['clawa']),
       },
     }
   } catch {

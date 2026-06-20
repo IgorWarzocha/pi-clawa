@@ -108,6 +108,9 @@ function buildClawItems(
 ): ClawItem[] {
   return claws.map((claw, index) => {
     const status = statuses[index]
+    if (!status) {
+      throw new Error(`Missing GUI status for ${claw.name}`)
+    }
     const workers = workersByCwd.get(status.absPath) ?? []
     const primaryWorker = workers[0]
     return {

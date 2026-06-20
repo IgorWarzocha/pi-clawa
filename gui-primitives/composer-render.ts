@@ -81,7 +81,11 @@ export function composerSlot(state: ComposerState, options: ComposerOptions): Sl
     const item = body[i]
     if (!item) continue
     lines.push(
-      composerBodyLine({ state, item, focused: i === focus, placeholder: options.placeholder }),
+      composerBodyLine(
+        options.placeholder === undefined
+          ? { state, item, focused: i === focus }
+          : { state, item, focused: i === focus, placeholder: options.placeholder },
+      ),
     )
   }
   return {

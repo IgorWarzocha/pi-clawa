@@ -6,14 +6,14 @@ import { isAbsolute, resolve } from 'node:path';
 export const DEFAULT_PI_BIN = 'pi';
 export const DEFAULT_CHANNEL_POLICY = 'allowlist' as const;
 
-const DEFAULT_PROJECT_ROOT = process.env.PI_CWD?.trim() || process.cwd();
+const DEFAULT_PROJECT_ROOT = process.env['PI_CWD']?.trim() || process.cwd();
 const DEFAULT_CONFIG_PATH = resolve(DEFAULT_PROJECT_ROOT, '.pi/claw-discord/config.env');
 const DEFAULT_DATA_DIR = resolve(DEFAULT_PROJECT_ROOT, '.pi/claw-discord');
 const LEGACY_ENV_PATH = resolve(process.cwd(), '.env');
 const CONFIG_SOURCE = buildConfigSource();
 
 export function resolveConfigPath(): string {
-  const configuredPath = process.env.PIDG_CONFIG?.trim() ?? '';
+  const configuredPath = process.env['PIDG_CONFIG']?.trim() ?? '';
   if (configuredPath) {
     return resolveUserPath(configuredPath);
   }

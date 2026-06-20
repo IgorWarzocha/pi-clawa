@@ -22,8 +22,8 @@ function extractTextContent(content: unknown, assistant = false): string {
     .flatMap((part): string[] => {
       const record = asRecord(part)
       if (!record) return []
-      if (record.type !== 'text') return []
-      return typeof record.text === 'string' ? [record.text.trim()] : []
+      if (record['type'] !== 'text') return []
+      return typeof record['text'] === 'string' ? [record['text'].trim()] : []
     })
     .filter(Boolean)
     .join(assistant ? '\n' : '\n')
@@ -40,12 +40,12 @@ function extractedSessionText(
 function extractMessageEntry(
   entry: SessionEntryRecord,
 ): { role: SessionRole; text: string } | null {
-  const message = asRecord(entry.message)
-  if (message?.role === 'user') {
-    return extractedSessionText('user', extractTextContent(message.content))
+  const message = asRecord(entry['message'])
+  if (message?.['role'] === 'user') {
+    return extractedSessionText('user', extractTextContent(message['content']))
   }
-  if (message?.role === 'assistant') {
-    return extractedSessionText('assistant', extractTextContent(message.content, true))
+  if (message?.['role'] === 'assistant') {
+    return extractedSessionText('assistant', extractTextContent(message['content'], true))
   }
   return null
 }
@@ -53,19 +53,19 @@ function extractMessageEntry(
 function extractCustomMessageEntry(
   entry: SessionEntryRecord,
 ): { role: SessionRole; text: string } | null {
-  const text = extractTextContent(entry.content)
-  const customType = typeof entry.customType === 'string' ? `[${entry.customType}] ` : ''
+  const text = extractTextContent(entry['content'])
+  const customType = typeof entry['customType'] === 'string' ? `[${entry['customType']}] ` : ''
   return extractedSessionText('custom', `${customType}${text}`)
 }
 
 function extractSessionText(entry: SessionEntryRecord): { role: SessionRole; text: string } | null {
   if (entry.type === 'message') return extractMessageEntry(entry)
   if (entry.type === 'custom_message') return extractCustomMessageEntry(entry)
-  if (entry.type === 'compaction' && typeof entry.summary === 'string') {
-    return extractedSessionText('compaction', entry.summary)
+  if (entry.type === 'compaction' && typeof entry['summary'] === 'string') {
+    return extractedSessionText('compaction', entry['summary'])
   }
-  if (entry.type === 'branch_summary' && typeof entry.summary === 'string') {
-    return extractedSessionText('branch', entry.summary)
+  if (entry.type === 'branch_summary' && typeof entry['summary'] === 'string') {
+    return extractedSessionText('branch', entry['summary'])
   }
   return null
 }

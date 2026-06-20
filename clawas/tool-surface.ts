@@ -31,13 +31,14 @@ function manualSessionError(title: string, clawasName: string) {
         text: `${title} is in a manual session and disconnected from ${clawasName}.`,
       },
     ],
+    details: { workerId: title },
     isError: true,
   }
 }
 
 export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): void {
   const configPath = getClawasConfigPath(process.cwd())
-  if (process.env.PI_CLAWAS_ROLE === 'worker') {
+  if (process.env['PI_CLAWAS_ROLE'] === 'worker') {
     pi.registerTool({
       name: 'message_main_claw',
       label: 'Message Clawa',
@@ -48,8 +49,8 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
         }),
       }),
       async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-        const workerId = process.env.PI_CLAWAS_WORKER_ID?.trim()
-        const workerTitle = process.env.PI_CLAWAS_WORKER_TITLE?.trim() || workerId || 'worker'
+        const workerId = process.env['PI_CLAWAS_WORKER_ID']?.trim()
+        const workerTitle = process.env['PI_CLAWAS_WORKER_TITLE']?.trim() || workerId || 'worker'
 
         try {
           if (
@@ -102,6 +103,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
                 text: error instanceof Error ? error.message : String(error),
               },
             ],
+            details: { workerId },
             isError: true,
           }
         }
@@ -133,6 +135,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
               text: `Unknown ${runtime.getClawaDefaults().clawasName} claw: ${params.claw}`,
             },
           ],
+          details: { workerId: params.claw },
           isError: true,
         }
       }
@@ -172,6 +175,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
               text: error instanceof Error ? error.message : String(error),
             },
           ],
+          details: { workerId: definition.id },
           isError: true,
         }
       }

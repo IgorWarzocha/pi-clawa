@@ -122,8 +122,8 @@ export class NestedAgentsSession {
 }
 
 function getShellInput(event: ToolResultLike): string | undefined {
-  if (typeof event.input.command === 'string') return event.input.command
-  if (typeof event.input.cmd === 'string') return event.input.cmd
+  if (typeof event.input['command'] === 'string') return event.input['command']
+  if (typeof event.input['cmd'] === 'string') return event.input['cmd']
   return undefined
 }
 
@@ -136,12 +136,12 @@ function shouldInspectEvent(event: ToolResultLike, shellInput: string | undefine
 }
 
 function readTargets(event: ToolResultLike, currentCwd: string): string[] {
-  const pathInput = typeof event.input.path === 'string' ? event.input.path : undefined
+  const pathInput = typeof event.input['path'] === 'string' ? event.input['path'] : undefined
   return pathInput ? [resolvePath(pathInput, currentCwd)] : [currentCwd]
 }
 
 function discoveryToolTargets(event: ToolResultLike, currentCwd: string): string[] {
-  const pathInput = typeof event.input.path === 'string' ? event.input.path : undefined
+  const pathInput = typeof event.input['path'] === 'string' ? event.input['path'] : undefined
   const base = pathInput ? resolvePath(pathInput, currentCwd) : currentCwd
   return [base, ...pathsFromToolText(event.content, base, event.toolName)]
 }

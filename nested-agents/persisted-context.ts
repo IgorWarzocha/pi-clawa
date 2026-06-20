@@ -12,7 +12,7 @@ function parsePersistedContextDetails(details: unknown): PersistedAgentsDetails 
   if (!details || typeof details !== 'object' || Array.isArray(details)) return null
   const value = (details as Record<string, unknown>)[DETAILS_KEY]
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
-  const files = (value as Record<string, unknown>).files
+  const files = (value as Record<string, unknown>)['files']
   if (!Array.isArray(files)) return null
   const parsed = files.filter(isPersistedAgentsFile)
   if (parsed.length === 0) return null
@@ -21,8 +21,8 @@ function parsePersistedContextDetails(details: unknown): PersistedAgentsDetails 
 
 function isPersistedAgentsFile(item: unknown): item is PersistedAgentsFile {
   if (!item || typeof item !== 'object' || Array.isArray(item)) return false
-  const pathValue = (item as Record<string, unknown>).path
-  const contentValue = (item as Record<string, unknown>).content
+  const pathValue = (item as Record<string, unknown>)['path']
+  const contentValue = (item as Record<string, unknown>)['content']
   return typeof pathValue === 'string' && typeof contentValue === 'string'
 }
 
@@ -61,8 +61,8 @@ function isMessageEntry(
 ): entry is { type: 'message'; message: { details?: unknown } } {
   if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false
   const record = entry as Record<string, unknown>
-  if (record.type !== 'message') return false
-  const message = record.message
+  if (record['type'] !== 'message') return false
+  const message = record['message']
   return Boolean(message && typeof message === 'object' && !Array.isArray(message))
 }
 

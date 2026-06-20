@@ -4,7 +4,7 @@ const INLINE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s+([\s\S]+)$/i
 
 export interface DiscordRelayCandidate {
   content: string
-  timestamp?: number
+  timestamp?: number | undefined
 }
 
 export interface LastDiscordDelivery {
@@ -26,15 +26,15 @@ export function extractClawaReportText(content: string): string | null {
 
   const withInlineDirective = trimmed.match(INLINE_CLAWAS_DIRECTIVE_REGEX)
   if (withInlineDirective) {
-    return withInlineDirective[1].trim()
+    return (withInlineDirective[1] ?? '').trim()
   }
 
   return null
 }
 
 export function shouldAutoRelayFinalAssistantToDiscord(_options?: {
-  workerId?: string
-  discordEnabled?: string
+  workerId?: string | undefined
+  discordEnabled?: string | undefined
 }): boolean {
   return false
 }
@@ -54,7 +54,7 @@ export function normalizeDiscordReplyText(content: string | null | undefined): s
 
 export function shouldSkipAutoDiscordRelay(options: {
   message: DiscordRelayCandidate
-  lastDelivery?: LastDiscordDelivery
+  lastDelivery?: LastDiscordDelivery | undefined
 }): boolean {
   const { message, lastDelivery } = options
   if (lastDelivery?.route !== 'discord') {
@@ -66,8 +66,8 @@ export function shouldSkipAutoDiscordRelay(options: {
 }
 
 export function shouldSkipAutoMainClawStatusRelay(options: {
-  lastDelivery?: LastDiscordDelivery
-  lastMailTimestamp?: number
+  lastDelivery?: LastDiscordDelivery | undefined
+  lastMailTimestamp?: number | undefined
 }): boolean {
   const { lastDelivery, lastMailTimestamp } = options
   if (lastDelivery?.route !== 'main-claw') {
@@ -87,13 +87,13 @@ export function isHydrationPreloadText(content: string | null | undefined): bool
 
 export function shouldReportClawaFinalToMain(options: {
   messageContent: string
-  lastMailDetails?: Record<string, unknown>
+  lastMailDetails?: Record<string, unknown> | undefined
 }): boolean {
   if (isHydrationPreloadText(options.messageContent)) {
     return false
   }
 
-  if (options.lastMailDetails?.intent === 'for_context') {
+  if (options.lastMailDetails?.['intent'] === 'for_context') {
     return false
   }
 

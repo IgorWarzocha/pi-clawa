@@ -78,7 +78,7 @@ export function buildMessageDetails(
 
 function splitDiscordGatewayPrompt(message: string): {
   currentTrigger: string
-  recentContext?: string
+  recentContext?: string | undefined
 } {
   const lines = message.split(LINE_SPLIT_REGEX)
   const kept: string[] = []

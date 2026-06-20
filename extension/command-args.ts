@@ -8,7 +8,7 @@ export function resolveBootstrapRequest(args: string): boolean {
 
 export function resolveCreateRequest(args: string): {
   run: boolean
-  purpose?: string
+  purpose?: string | undefined
 } {
   const trimmed = args.trim()
   if (!trimmed) return { run: false }

@@ -12,9 +12,9 @@ function sessionLine(value: unknown): string {
 
 test('recall searches shared memory and current session text while skipping tools', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-recall-'))
-  const previousRoot = process.env.PI_CLAW_PROJECT_ROOT
+  const previousRoot = process.env['PI_CLAW_PROJECT_ROOT']
   try {
-    process.env.PI_CLAW_PROJECT_ROOT = root
+    process.env['PI_CLAW_PROJECT_ROOT'] = root
     const sessionDir = join(root, '.pi', 'sessions')
     await mkdir(sessionDir, { recursive: true })
     const sessionFile = join(sessionDir, 'session.jsonl')
@@ -107,8 +107,8 @@ test('recall searches shared memory and current session text while skipping tool
       [],
     )
   } finally {
-    if (previousRoot === undefined) delete process.env.PI_CLAW_PROJECT_ROOT
-    else process.env.PI_CLAW_PROJECT_ROOT = previousRoot
+    if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
+    else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot
     await rm(root, { recursive: true, force: true })
   }
 })

@@ -58,9 +58,9 @@ export function registerClawaSessionEvents(
     if (!IS_CLAWAS_WORKER) return
 
     await reportFinalAssistantMessageToMain(pi, ctx, {
-      workerId: process.env.PI_CLAWAS_WORKER_ID,
-      workerTitle: process.env.PI_CLAWAS_WORKER_TITLE,
-      targetSessionId: process.env.PI_CLAWAS_REPORT_SESSION_ID,
+      workerId: process.env['PI_CLAWAS_WORKER_ID'],
+      workerTitle: process.env['PI_CLAWAS_WORKER_TITLE'],
+      targetSessionId: process.env['PI_CLAWAS_REPORT_SESSION_ID'],
       agentMessages: event.messages,
     })
   })

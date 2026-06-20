@@ -5,16 +5,16 @@ export type WorkerReportMode = 'auto' | 'explicit' | 'off'
 export interface WorkerDefinition {
   id: string
   title: string
-  emoji?: string
+  emoji?: string | undefined
   cwd: string
-  discordEnabled?: boolean
-  extensions?: string[]
+  discordEnabled?: boolean | undefined
+  extensions?: string[] | undefined
   enabled: boolean
   autostart: boolean
-  startupPrompt?: string
-  model?: string
-  thinking?: WorkerThinkingLevel
-  reportMode?: WorkerReportMode
+  startupPrompt?: string | undefined
+  model?: string | undefined
+  thinking?: WorkerThinkingLevel | undefined
+  reportMode?: WorkerReportMode | undefined
 }
 
 export interface ClawasConfig {
@@ -27,13 +27,13 @@ export interface WorkerState {
   definition: WorkerDefinition
   cwd: string
   status: WorkerStatus
-  manualSession?: boolean
-  sessionFile?: string
-  pid?: number
-  currentTask?: string
-  currentToolName?: string
+  manualSession?: boolean | undefined
+  sessionFile?: string | undefined
+  pid?: number | undefined
+  currentTask?: string | undefined
+  currentToolName?: string | undefined
   lastSummary: string
-  lastError?: string
+  lastError?: string | undefined
   updatedAt: number
 }
 

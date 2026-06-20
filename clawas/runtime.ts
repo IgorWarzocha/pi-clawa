@@ -15,7 +15,7 @@ import {
 } from './monitor-state.js'
 import { openWorkerManualSession } from './runtime-manual.js'
 import { ClawasUiBridge } from './runtime-ui.js'
-import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
+import type { ClawasConfig, ClawasState, WorkerDefinition, WorkerState } from './types.js'
 
 /**
  * Thin UI/runtime shell around the daemon.
@@ -193,7 +193,8 @@ export class ClawasRuntime {
     this.createDaemon(context, config)
 
     try {
-      await this.daemon.start()
+      const daemon = this.requireDaemon()
+      await daemon.start()
       this.notifyDaemonStarted(configPath)
     } catch (error) {
       this.notifyDaemonFailed(error)
@@ -312,10 +313,6 @@ export class ClawasRuntime {
       throw new Error(`${this.clawaDefaults.clawasName} daemon is not running`)
     }
     return this.daemon
-  }
-
-  private getWorkerCwd(workerId: string): string {
-    return this.requireDaemon().getWorkerCwd(workerId)
   }
 
   private daemonExtensionPaths(workerId?: string): string[] {

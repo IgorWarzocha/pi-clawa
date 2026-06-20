@@ -15,22 +15,22 @@ type Handler = (event: unknown, ctx: any) => unknown
 
 function withCleanDiscordEnv<T>(run: () => Promise<T>): Promise<T> {
   const previous = {
-    PI_CLAWAS_DISCORD_ENABLED: process.env.PI_CLAWAS_DISCORD_ENABLED,
-    PI_CLAWAS_ROLE: process.env.PI_CLAWAS_ROLE,
-    DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN,
-    CLAWAS_CHANNEL_WORKERS: process.env.CLAWAS_CHANNEL_WORKERS,
-    PIDG_CONFIG: process.env.PIDG_CONFIG,
-    PI_CLAW_PROJECT_ROOT: process.env.PI_CLAW_PROJECT_ROOT,
-    PI_CWD: process.env.PI_CWD,
+    PI_CLAWAS_DISCORD_ENABLED: process.env['PI_CLAWAS_DISCORD_ENABLED'],
+    PI_CLAWAS_ROLE: process.env['PI_CLAWAS_ROLE'],
+    DISCORD_BOT_TOKEN: process.env['DISCORD_BOT_TOKEN'],
+    CLAWAS_CHANNEL_WORKERS: process.env['CLAWAS_CHANNEL_WORKERS'],
+    PIDG_CONFIG: process.env['PIDG_CONFIG'],
+    PI_CLAW_PROJECT_ROOT: process.env['PI_CLAW_PROJECT_ROOT'],
+    PI_CWD: process.env['PI_CWD'],
   }
 
-  delete process.env.PI_CLAWAS_DISCORD_ENABLED
-  delete process.env.PI_CLAWAS_ROLE
-  delete process.env.DISCORD_BOT_TOKEN
-  delete process.env.CLAWAS_CHANNEL_WORKERS
-  delete process.env.PIDG_CONFIG
-  delete process.env.PI_CLAW_PROJECT_ROOT
-  delete process.env.PI_CWD
+  delete process.env['PI_CLAWAS_DISCORD_ENABLED']
+  delete process.env['PI_CLAWAS_ROLE']
+  delete process.env['DISCORD_BOT_TOKEN']
+  delete process.env['CLAWAS_CHANNEL_WORKERS']
+  delete process.env['PIDG_CONFIG']
+  delete process.env['PI_CLAW_PROJECT_ROOT']
+  delete process.env['PI_CWD']
 
   return run().finally(() => {
     for (const [key, value] of Object.entries(previous)) {

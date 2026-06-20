@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import type { AgentEvent } from '@earendil-works/pi-agent-core'
 import { ClawasRpcChannel } from './rpc-channel.js'
-import type { ClawasRpcCommand, ClawasRpcSessionState } from './rpc-types.js'
+import type { ClawasRpcCommandInput, ClawasRpcSessionState } from './rpc-types.js'
 import type { WorkerDefinition } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
 
@@ -9,8 +9,8 @@ interface WorkerProcessOptions {
   definition: WorkerDefinition
   cwd: string
   extensionPaths: string[]
-  reportSessionId?: string
-  sessionFile?: string
+  reportSessionId?: string | undefined
+  sessionFile?: string | undefined
 }
 
 function buildWorkerProcessArgs(options: WorkerProcessOptions): string[] {
@@ -40,21 +40,21 @@ function buildWorkerEnvironment(options: WorkerProcessOptions): NodeJS.ProcessEn
     ...process.env,
     PI_SKIP_VERSION_CHECK: '1',
     PI_CLAWAS_ROLE: 'worker',
-    PI_CLAW_PROJECT_ROOT: process.env.PI_CLAW_PROJECT_ROOT,
-    PI_CWD: process.env.PI_CLAW_PROJECT_ROOT,
-    PI_CLAWAS_CONTROL_SOCKET_ROOT: process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT,
+    PI_CLAW_PROJECT_ROOT: process.env['PI_CLAW_PROJECT_ROOT'],
+    PI_CWD: process.env['PI_CLAW_PROJECT_ROOT'],
+    PI_CLAWAS_CONTROL_SOCKET_ROOT: process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'],
     PI_CLAWAS_WORKER_ID: options.definition.id,
     PI_CLAWAS_WORKER_TITLE: options.definition.title,
     PI_CLAWAS_SOCKET_ALIAS: getWorkerSocketAlias(options.definition),
   }
   if (options.reportSessionId) {
-    env.PI_CLAWAS_REPORT_SESSION_ID = options.reportSessionId
+    env['PI_CLAWAS_REPORT_SESSION_ID'] = options.reportSessionId
   }
   if (options.definition.discordEnabled) {
-    env.PI_CLAWAS_DISCORD_ENABLED = '1'
+    env['PI_CLAWAS_DISCORD_ENABLED'] = '1'
   }
   if (options.definition.reportMode) {
-    env.PI_CLAWAS_REPORT_MODE = options.definition.reportMode
+    env['PI_CLAWAS_REPORT_MODE'] = options.definition.reportMode
   }
   return env
 }
@@ -74,8 +74,8 @@ export class ClawasRpcWorker {
     (code: number | null, signal: NodeJS.Signals | null) => void
   >()
   private readonly channel: ClawasRpcChannel
-  private readonly reportSessionId?: string
-  private readonly sessionFile?: string
+  private readonly reportSessionId?: string | undefined
+  private readonly sessionFile?: string | undefined
   private stderr = ''
 
   constructor(options: WorkerProcessOptions) {
@@ -212,7 +212,7 @@ export class ClawasRpcWorker {
     await this.send({ type: 'set_session_name', name })
   }
 
-  private async send(command: Omit<ClawasRpcCommand, 'id'>) {
+  private async send(command: ClawasRpcCommandInput) {
     if (!this.process) {
       throw new Error(`Worker ${this.definition.id} is not running`)
     }

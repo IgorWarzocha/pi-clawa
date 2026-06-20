@@ -12,7 +12,7 @@ import { getGatewayConfigPath, setGatewayConfigPath } from './gateway-state.js'
 function resolveWorkerChannelJid(workerId: string): string | null {
   const configPath = getGatewayConfigPath()
   if (!configPath) return null
-  const map = readEnvFile(configPath).CLAWAS_CHANNEL_WORKERS ?? ''
+  const map = readEnvFile(configPath)['CLAWAS_CHANNEL_WORKERS'] ?? ''
   for (const entry of map
     .split(',')
     .map((part) => part.trim())
@@ -27,8 +27,8 @@ function resolveWorkerChannelJid(workerId: string): string | null {
 }
 
 function prepareDiscordToolEnvironment(): void {
-  const projectRoot = process.env.PI_CLAW_PROJECT_ROOT ?? findRepoRoot(process.cwd())
-  const configuredGatewayPath = process.env.PIDG_CONFIG?.trim()
+  const projectRoot = process.env['PI_CLAW_PROJECT_ROOT'] ?? findRepoRoot(process.cwd())
+  const configuredGatewayPath = process.env['PIDG_CONFIG']?.trim()
   setGatewayConfigPath(
     configuredGatewayPath
       ? isAbsolute(configuredGatewayPath)
@@ -36,13 +36,13 @@ function prepareDiscordToolEnvironment(): void {
         : resolve(projectRoot, configuredGatewayPath)
       : resolve(projectRoot, DISCORD_CONFIG_RELATIVE),
   )
-  process.env.PIDG_CONFIG ??= DISCORD_CONFIG_RELATIVE
-  process.env.PI_CLAW_PROJECT_ROOT ??= projectRoot
-  process.env.PI_CWD ??= projectRoot
+  process.env['PIDG_CONFIG'] ??= DISCORD_CONFIG_RELATIVE
+  process.env['PI_CLAW_PROJECT_ROOT'] ??= projectRoot
+  process.env['PI_CWD'] ??= projectRoot
 }
 
 export function registerDiscordTool(pi: ExtensionAPI): void {
-  if (process.env.PI_CLAWAS_DISCORD_ENABLED !== '1') return
+  if (process.env['PI_CLAWAS_DISCORD_ENABLED'] !== '1') return
   prepareDiscordToolEnvironment()
 
   pi.registerTool({
@@ -57,11 +57,15 @@ export function registerDiscordTool(pi: ExtensionAPI): void {
       ),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      const workerId = process.env.PI_CLAWAS_WORKER_ID?.trim()
-      const workerTitle = process.env.PI_CLAWAS_WORKER_TITLE?.trim() || workerId || 'worker'
+      const workerId = process.env['PI_CLAWAS_WORKER_ID']?.trim()
+      const workerTitle = process.env['PI_CLAWAS_WORKER_TITLE']?.trim() || workerId || 'worker'
       const message = normalizeDiscordReplyText(params.message)
       if (!workerId) throw new Error('PI_CLAWAS_WORKER_ID is missing')
-      if (!message) return { content: [{ type: 'text', text: 'No public Discord beat sent.' }] }
+      if (!message)
+        return {
+          content: [{ type: 'text', text: 'No public Discord beat sent.' }],
+          details: { workerId },
+        }
 
       const channelJid = resolveWorkerChannelJid(workerId)
       if (!channelJid)

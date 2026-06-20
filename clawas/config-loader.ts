@@ -58,29 +58,29 @@ function normalizeWorker(value: unknown, index: number): WorkerDefinition {
     throw new Error(`Clawas worker at index ${index} must be an object`)
   }
 
-  const id = asString(value.id)
+  const id = asString(value['id'])
   if (!id) {
     throw new Error(`Clawas worker at index ${index} is missing a string id`)
   }
 
-  const cwd = asString(value.cwd) ?? asString(value.workspace)
+  const cwd = asString(value['cwd']) ?? asString(value['workspace'])
   if (!cwd) {
     throw new Error(`Clawas worker "${id}" is missing a string cwd/workspace`)
   }
 
   return {
     id,
-    title: asString(value.title) ?? id,
-    emoji: asString(value.emoji),
+    title: asString(value['title']) ?? id,
+    emoji: asString(value['emoji']),
     cwd,
-    discordEnabled: asBoolean(value.discordEnabled) ?? false,
-    extensions: asStringArray(value.extensions),
-    enabled: asBoolean(value.enabled) ?? true,
-    autostart: asBoolean(value.autostart) ?? true,
-    startupPrompt: asString(value.startupPrompt) ?? asString(value.initialPrompt),
-    model: asString(value.model),
-    thinking: asThinkingLevel(value.thinking),
-    reportMode: asReportMode(value.reportMode),
+    discordEnabled: asBoolean(value['discordEnabled']) ?? false,
+    extensions: asStringArray(value['extensions']),
+    enabled: asBoolean(value['enabled']) ?? true,
+    autostart: asBoolean(value['autostart']) ?? true,
+    startupPrompt: asString(value['startupPrompt']) ?? asString(value['initialPrompt']),
+    model: asString(value['model']),
+    thinking: asThinkingLevel(value['thinking']),
+    reportMode: asReportMode(value['reportMode']),
   }
 }
 
@@ -89,7 +89,7 @@ function normalizeConfig(value: unknown): ClawasConfig {
     throw new Error('Clawas config must be a JSON object')
   }
 
-  const rawWorkers = value.workers
+  const rawWorkers = value['workers']
   if (!Array.isArray(rawWorkers)) {
     throw new Error('Clawas config must define a workers array')
   }

@@ -22,9 +22,9 @@ function readMemories(path: string): Array<{ id: number; text: string; tags: str
 
 test('remember creates updates and deletes shared sqlite memories', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-memory-'))
-  const previousRoot = process.env.PI_CLAW_PROJECT_ROOT
+  const previousRoot = process.env['PI_CLAW_PROJECT_ROOT']
   try {
-    process.env.PI_CLAW_PROJECT_ROOT = root
+    process.env['PI_CLAW_PROJECT_ROOT'] = root
     const workerCwd = join(root, 'clawas', 'research-clawa')
     const dbPath = resolveMemoryDbPath(workerCwd)
 
@@ -61,8 +61,8 @@ test('remember creates updates and deletes shared sqlite memories', async () => 
     assert.equal(deleted.action, 'deleted')
     assert.deepEqual(readMemories(dbPath), [])
   } finally {
-    if (previousRoot === undefined) delete process.env.PI_CLAW_PROJECT_ROOT
-    else process.env.PI_CLAW_PROJECT_ROOT = previousRoot
+    if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
+    else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot
     await rm(root, { recursive: true, force: true })
   }
 })

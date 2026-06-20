@@ -20,9 +20,9 @@ export function extractDiscordDirectives(text: string): ParsedDiscordDirectives 
         return true;
       }
 
-      if (!reaction) {
-        reaction = match[1].trim();
-      }
+		if (!reaction) {
+			reaction = (match[1] ?? '').trim();
+		}
 
       return false;
     });

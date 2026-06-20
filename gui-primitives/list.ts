@@ -13,6 +13,7 @@ function listLine<T>(item: T, mark: string, cols: Col<T>[]): Line {
   const cells: Cell[] = [{ text: mark, tone: 'normal' }]
   for (let i = 0; i < visible.length; i++) {
     const col = visible[i]
+    if (!col) continue
     cells.push({ text: padCell(col.pick(item), col.width, col.align), tone: col.tone })
     if (i < visible.length - 1) cells.push({ text: '  ', tone: 'normal' })
   }
@@ -37,8 +38,10 @@ function flowline<T>(
       continue
     }
     const mark = idx === state.sel ? '› ' : '  '
+    const item = list[idx]
+    if (item === undefined) continue
     cells.push({
-      text: mark + padCell(col.pick(list[idx]), col.width, 'left'),
+      text: mark + padCell(col.pick(item), col.width, 'left'),
       tone: idx === state.sel ? 'accent' : col.tone,
     })
     if (c < cols - 1) cells.push({ text: gap, tone: 'normal' })
@@ -99,10 +102,9 @@ function createFlatSlot<T>(
 ): ReturnType<Primitive['slot']> {
   for (let i = 0; i < opts.page; i++) {
     const idx = state.top + i
+    const item = list[idx]
     rows.push(
-      idx >= list.length
-        ? row('')
-        : listLine(list[idx], idx === state.sel ? '› ' : '  ', opts.cols),
+      item === undefined ? row('') : listLine(item, idx === state.sel ? '› ' : '  ', opts.cols),
     )
   }
   const base = opts.prompt ? 2 : 0
@@ -159,13 +161,15 @@ export function createList<T>(opts: ListOptions<T>): Primitive & { query: () => 
     search: () => opts.search,
     enter: () => {
       const rows = listView(opts, state.query)
-      return rows.length === 0 ? undefined : opts.intent(rows[state.sel])
+      const item = rows[state.sel]
+      return item === undefined ? undefined : opts.intent(item)
     },
     hasView: () => opts.view !== undefined,
     view: () => {
       if (!opts.view) return undefined
       const rows = listView(opts, state.query)
-      return rows.length === 0 ? undefined : opts.view(rows[state.sel])
+      const item = rows[state.sel]
+      return item === undefined ? undefined : opts.view(item)
     },
     slot: () => createListSlot(opts, state),
   }

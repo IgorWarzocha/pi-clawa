@@ -6,18 +6,25 @@ import type { WorkerState } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
 
 function shouldProbeManualSession(worker: WorkerState): boolean {
-  return worker.manualSession && Date.now() - worker.updatedAt >= 5_000
+  return worker.manualSession === true && Date.now() - worker.updatedAt >= 5_000
 }
 
 export class ManualSessionWatcher {
   private timer: ReturnType<typeof setInterval> | null = null
   private inFlight = false
+  private readonly getDaemon: () => ClawasDaemon | null
+  private readonly getContext: () => ExtensionContext | null
+  private readonly getDefaults: () => ClawaDefaults
 
   constructor(
-    private readonly getDaemon: () => ClawasDaemon | null,
-    private readonly getContext: () => ExtensionContext | null,
-    private readonly getDefaults: () => ClawaDefaults,
-  ) {}
+    getDaemon: () => ClawasDaemon | null,
+    getContext: () => ExtensionContext | null,
+    getDefaults: () => ClawaDefaults,
+  ) {
+    this.getDaemon = getDaemon
+    this.getContext = getContext
+    this.getDefaults = getDefaults
+  }
 
   start(): void {
     if (this.timer) return

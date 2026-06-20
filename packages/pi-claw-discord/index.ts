@@ -9,7 +9,7 @@ import { ensureDiscordWorker } from './src/extension/worker.js'
 export default function clawDiscord(pi: ExtensionAPI): void {
   registerDiscordTool(pi)
 
-  if (process.env.PI_CLAWAS_ROLE === 'worker') return
+  if (process.env['PI_CLAWAS_ROLE'] === 'worker') return
 
   pi.registerCommand('discord', {
     description: 'Open Clawa Discord setup',

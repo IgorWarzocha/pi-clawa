@@ -59,8 +59,8 @@ function isWorkerEntry(entry: unknown): entry is Record<string, unknown> {
 
 function readExtensions(current: Record<string, unknown>, adapterExtension: string): string[] {
   const extensions = new Set(
-    Array.isArray(current.extensions)
-      ? current.extensions.filter((entry): entry is string => typeof entry === 'string')
+    Array.isArray(current['extensions'])
+      ? current['extensions'].filter((entry): entry is string => typeof entry === 'string')
       : [],
   )
   extensions.add(adapterExtension)
@@ -71,17 +71,17 @@ function buildDiscordWorker(current: Record<string, unknown>, adapterExtension: 
   return {
     ...current,
     id: DISCORD_WORKER_ID,
-    title: typeof current.title === 'string' ? current.title : DISCORD_WORKER_TITLE,
-    emoji: typeof current.emoji === 'string' ? current.emoji : '💬',
-    cwd: typeof current.cwd === 'string' ? current.cwd : DISCORD_WORKER_CWD,
+    title: typeof current['title'] === 'string' ? current['title'] : DISCORD_WORKER_TITLE,
+    emoji: typeof current['emoji'] === 'string' ? current['emoji'] : '💬',
+    cwd: typeof current['cwd'] === 'string' ? current['cwd'] : DISCORD_WORKER_CWD,
     enabled: true,
-    autostart: current.autostart !== false,
+    autostart: current['autostart'] !== false,
     discordEnabled: true,
-    reportMode: typeof current.reportMode === 'string' ? current.reportMode : 'explicit',
+    reportMode: typeof current['reportMode'] === 'string' ? current['reportMode'] : 'explicit',
     extensions: readExtensions(current, adapterExtension),
     startupPrompt:
-      typeof current.startupPrompt === 'string'
-        ? current.startupPrompt
+      typeof current['startupPrompt'] === 'string'
+        ? current['startupPrompt']
         : 'You are the Discord-facing Clawa worker. Orient in your home, follow AGENTS.md, and handle Discord turns safely.',
   }
 }
@@ -89,10 +89,10 @@ function buildDiscordWorker(current: Record<string, unknown>, adapterExtension: 
 export async function ensureDiscordWorker(projectRoot: string): Promise<void> {
   const configPath = getClawasConfigPath(projectRoot)
   const config = await loadClawasConfig(configPath)
-  const workers = Array.isArray(config.workers) ? [...config.workers] : []
+  const workers = Array.isArray(config['workers']) ? [...config['workers']] : []
   const adapterExtension = projectRelativePath(projectRoot, adapterEntryPath)
   const existingIndex = workers.findIndex(
-    (entry) => isWorkerEntry(entry) && entry.id === DISCORD_WORKER_ID,
+    (entry) => isWorkerEntry(entry) && entry['id'] === DISCORD_WORKER_ID,
   )
   const current =
     existingIndex >= 0 && isWorkerEntry(workers[existingIndex]) ? workers[existingIndex] : {}
@@ -101,8 +101,8 @@ export async function ensureDiscordWorker(projectRoot: string): Promise<void> {
   if (existingIndex >= 0) workers[existingIndex] = worker
   else workers.push(worker)
 
-  config.workers = workers
+  config['workers'] = workers
   await mkdir(dirname(configPath), { recursive: true })
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
-  await copyDiscordWorkerTemplates(projectRoot, resolve(projectRoot, worker.cwd))
+  await copyDiscordWorkerTemplates(projectRoot, resolve(projectRoot, worker['cwd']))
 }

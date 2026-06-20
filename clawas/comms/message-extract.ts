@@ -16,8 +16,8 @@ function getTextFromMessageContent(content: unknown): string {
       (part): part is { type: 'text'; text: string } =>
         typeof part === 'object' &&
         part !== null &&
-        part.type === 'text' &&
-        typeof part.text === 'string',
+        (part as Record<string, unknown>)['type'] === 'text' &&
+        typeof (part as Record<string, unknown>)['text'] === 'string',
     )
     .map((part) => part.text)
     .join('\n')
@@ -55,7 +55,7 @@ function getRecord(value: unknown): Record<string, unknown> | null {
 }
 
 function getClawasMailDetails(entry: Record<string, unknown>): Record<string, unknown> | null {
-  const customType = entry.customType
+  const customType = entry['customType']
   if (
     customType !== CLAWAS_MAIL_MESSAGE_TYPE &&
     customType !== 'clawas-session' &&
@@ -64,13 +64,13 @@ function getClawasMailDetails(entry: Record<string, unknown>): Record<string, un
     return null
   }
 
-  if (entry.type === 'custom_message') {
-    return getRecord(entry.details) ?? {}
+  if (entry['type'] === 'custom_message') {
+    return getRecord(entry['details']) ?? {}
   }
 
-  if (entry.type === 'custom') {
-    const data = getRecord(entry.data)
-    return getRecord(data?.details) ?? {}
+  if (entry['type'] === 'custom') {
+    const data = getRecord(entry['data'])
+    return getRecord(data?.['details']) ?? {}
   }
 
   return null
@@ -82,7 +82,8 @@ export function getLastMailMessageDetails(
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = branch[index] as Record<string, unknown>
+    const entry = getRecord(branch[index])
+    if (!entry) continue
     const details = getClawasMailDetails(entry)
     if (!details) {
       continue
@@ -98,17 +99,17 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = branch[index]
-    if (entry.type !== 'message') {
+    const entry = getRecord(branch[index])
+    if (entry?.['type'] !== 'message') {
       continue
     }
 
-    const message = entry.message
-    if (!('role' in message) || message.role !== 'assistant') {
+    const message = getRecord(entry['message'])
+    if (message?.['role'] !== 'assistant') {
       continue
     }
 
-    const text = getTextFromMessageContent(message.content).trim()
+    const text = getTextFromMessageContent(message['content']).trim()
 
     if (!text) {
       continue
@@ -117,14 +118,14 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
     // Assistant messages that also contain tool calls are pre-tool narration,
     // not final Discord copy. The gateway may poll while those tool turns are
     // still running, so never expose them as deliverable public text.
-    if (messageContentHasToolCall(message.content)) {
+    if (messageContentHasToolCall(message['content'])) {
       continue
     }
 
     return {
       role: 'assistant',
       content: text,
-      timestamp: message.timestamp,
+      timestamp: getEntryTimestamp(message['timestamp']),
     }
   }
 
@@ -135,25 +136,25 @@ export function getLastDeliveryMessage(ctx: ExtensionContext): ClawasExtractedDe
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = branch[index] as Record<string, unknown>
-    if (entry.type !== 'custom_message') {
+    const entry = getRecord(branch[index])
+    if (entry?.['type'] !== 'custom_message') {
       continue
     }
 
-    if (entry.customType !== CLAWAS_DELIVERY_MESSAGE_TYPE) {
+    if (entry['customType'] !== CLAWAS_DELIVERY_MESSAGE_TYPE) {
       continue
     }
 
     const details =
-      typeof entry.details === 'object' && entry.details !== null
-        ? (entry.details as Record<string, unknown>)
+      typeof entry['details'] === 'object' && entry['details'] !== null
+        ? (entry['details'] as Record<string, unknown>)
         : null
-    const route = details?.route
+    const route = details?.['route']
     if (route !== 'discord' && route !== 'main-claw') {
       continue
     }
 
-    const text = getTextFromMessageContent(entry.content).trim()
+    const text = getTextFromMessageContent(entry['content']).trim()
     if (!text) {
       continue
     }
@@ -161,7 +162,7 @@ export function getLastDeliveryMessage(ctx: ExtensionContext): ClawasExtractedDe
     return {
       route,
       content: text,
-      timestamp: getEntryTimestamp(entry.timestamp),
+      timestamp: getEntryTimestamp(entry['timestamp']),
     }
   }
 
@@ -172,12 +173,13 @@ export function getLastMailMessageTimestamp(ctx: ExtensionContext): number | und
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = branch[index] as Record<string, unknown>
+    const entry = getRecord(branch[index])
+    if (!entry) continue
     if (!getClawasMailDetails(entry)) {
       continue
     }
 
-    return getEntryTimestamp(entry.timestamp)
+    return getEntryTimestamp(entry['timestamp'])
   }
 
   return undefined
@@ -187,7 +189,8 @@ export function getLastDiscordSourceMessageId(ctx: ExtensionContext): string | u
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = branch[index] as Record<string, unknown>
+    const entry = getRecord(branch[index])
+    if (!entry) continue
     const details = getClawasMailDetails(entry)
     if (!details) {
       continue
@@ -198,12 +201,12 @@ export function getLastDiscordSourceMessageId(ctx: ExtensionContext): string | u
     // message; walking past it would reuse an older gateway source id and
     // incorrectly thread the new public reply under an unrelated Discord
     // conversation.
-    if (details?.workerId !== 'discord-gateway') {
+    if (details?.['workerId'] !== 'discord-gateway') {
       return undefined
     }
 
-    if (typeof details?.sourceMessageId === 'string' && details.sourceMessageId.trim()) {
-      return details.sourceMessageId
+    if (typeof details?.['sourceMessageId'] === 'string' && details['sourceMessageId'].trim()) {
+      return details['sourceMessageId']
     }
 
     return undefined

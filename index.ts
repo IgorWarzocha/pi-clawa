@@ -21,7 +21,7 @@ import { registerNestedAgentsAutoload } from './nested-agents.js'
 import { registerRecallTool } from './recall.js'
 import { registerClawaSystemPrompt } from './system-prompt.js'
 
-process.env.PI_CLAW_EXTENSION_PATH = extensionPath
+process.env['PI_CLAW_EXTENSION_PATH'] = extensionPath
 
 // TEMP DEBUG PROBE.
 // Leave false by default. Turn on only when tracing hydration, then turn it back off.

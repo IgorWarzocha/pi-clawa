@@ -6,13 +6,24 @@ import type { WorkerDefinition } from './types.js'
 
 interface WorkerSessionRecord {
   path: string
-  model?: string
-  thinking?: ThinkingLevel
-  cwd?: string
+  model?: string | undefined
+  thinking?: ThinkingLevel | undefined
+  cwd?: string | undefined
 }
 
 interface SessionRegistry {
   workers: Record<string, WorkerSessionRecord | string>
+}
+
+function isThinkingLevel(value: unknown): value is ThinkingLevel {
+  return (
+    value === 'off' ||
+    value === 'minimal' ||
+    value === 'low' ||
+    value === 'medium' ||
+    value === 'high' ||
+    value === 'xhigh'
+  )
 }
 
 function normalizeWorkerRecord(
@@ -68,9 +79,9 @@ async function readSessionIdentity(sessionFile: string): Promise<{
 function readSessionIdentityLine(line: string): { model?: string; thinking?: ThinkingLevel } {
   const entry = parseSessionEntry(line)
   if (!entry) return {}
-  if (entry.type === 'model_change') return modelChangeIdentity(entry)
-  if (entry.type === 'thinking_level_change') return thinkingChangeIdentity(entry)
-  if (entry.type === 'message') return assistantMessageIdentity(entry)
+  if (entry['type'] === 'model_change') return modelChangeIdentity(entry)
+  if (entry['type'] === 'thinking_level_change') return thinkingChangeIdentity(entry)
+  if (entry['type'] === 'message') return assistantMessageIdentity(entry)
   return {}
 }
 
@@ -84,26 +95,27 @@ function parseSessionEntry(line: string): Record<string, unknown> | null {
 }
 
 function modelChangeIdentity(entry: Record<string, unknown>): { model?: string } {
-  if (typeof entry.provider === 'string' && typeof entry.modelId === 'string') {
-    return { model: `${entry.provider}/${entry.modelId}` }
+  if (typeof entry['provider'] === 'string' && typeof entry['modelId'] === 'string') {
+    return { model: `${entry['provider']}/${entry['modelId']}` }
   }
   return {}
 }
 
 function thinkingChangeIdentity(entry: Record<string, unknown>): { thinking?: ThinkingLevel } {
-  return typeof entry.thinkingLevel === 'string' ? { thinking: entry.thinkingLevel } : {}
+  const value = entry['thinkingLevel']
+  return isThinkingLevel(value) ? { thinking: value } : {}
 }
 
 function assistantMessageIdentity(entry: Record<string, unknown>): { model?: string } {
-  const message = entry.message
+  const message = entry['message']
   if (!message || typeof message !== 'object') return {}
   const record = message as Record<string, unknown>
   if (
-    record.role === 'assistant' &&
-    typeof record.provider === 'string' &&
-    typeof record.model === 'string'
+    record['role'] === 'assistant' &&
+    typeof record['provider'] === 'string' &&
+    typeof record['model'] === 'string'
   ) {
-    return { model: `${record.provider}/${record.model}` }
+    return { model: `${record['provider']}/${record['model']}` }
   }
   return {}
 }

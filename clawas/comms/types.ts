@@ -17,35 +17,35 @@ export type ClawasMessageIntent = 'reply_requested' | 'for_context' | 'handoff' 
 export type ClawasMessageVisibility = 'worker' | 'main-claw' | 'private'
 
 export interface ClawasSenderInfo {
-  workerId?: string
-  workerTitle?: string
+  workerId?: string | undefined
+  workerTitle?: string | undefined
 }
 
 export interface ClawasDiscordContext {
-  sourceMessageId?: string
+  sourceMessageId?: string | undefined
 }
 
 export interface ClawasSendCommand {
   type: 'send'
   message: string
-  mode?: 'steer' | 'followUp'
-  messageType?: 'session' | 'report'
-  discordContext?: ClawasDiscordContext
-  sender?: ClawasSenderInfo
-  kind?: ClawasMessageKind
-  intent?: ClawasMessageIntent
-  visibility?: ClawasMessageVisibility
-  id?: string
+  mode?: 'steer' | 'followUp' | undefined
+  messageType?: 'session' | 'report' | undefined
+  discordContext?: ClawasDiscordContext | undefined
+  sender?: ClawasSenderInfo | undefined
+  kind?: ClawasMessageKind | undefined
+  intent?: ClawasMessageIntent | undefined
+  visibility?: ClawasMessageVisibility | undefined
+  id?: string | undefined
 }
 
 export interface ClawasGetMessageCommand {
   type: 'get_message'
-  id?: string
+  id?: string | undefined
 }
 
 export interface ClawasGetStatusCommand {
   type: 'get_status'
-  id?: string
+  id?: string | undefined
 }
 
 export type ClawasCommsCommand =

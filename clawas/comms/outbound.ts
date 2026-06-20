@@ -17,8 +17,8 @@ export interface ClawasOutboundDetails {
 
 export interface ClawasDeliveryDetails {
   route: ClawasDeliveryRoute
-  workerId?: string
-  workerTitle?: string
+  workerId?: string | undefined
+  workerTitle?: string | undefined
 }
 
 export function publishClawasOutboundMessage(

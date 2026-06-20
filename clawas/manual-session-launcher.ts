@@ -35,7 +35,7 @@ export class ClawasManualSessionLauncher {
     this.tmuxContext = null
     this.herdrContext = null
 
-    if (process.env.HERDR_ENV === '1' && process.env.HERDR_PANE_ID?.trim()) {
+    if (process.env['HERDR_ENV'] === '1' && process.env['HERDR_PANE_ID']?.trim()) {
       await this.captureCurrentHerdrPane()
       if (this.herdrContext) {
         return
@@ -46,7 +46,7 @@ export class ClawasManualSessionLauncher {
   }
 
   async captureCurrentTmuxPane(): Promise<void> {
-    if (!process.env.TMUX) {
+    if (!process.env['TMUX']) {
       this.tmuxContext = null
       return
     }
@@ -62,7 +62,7 @@ export class ClawasManualSessionLauncher {
   }
 
   async captureCurrentHerdrPane(): Promise<void> {
-    const mainPaneId = process.env.HERDR_PANE_ID?.trim()
+    const mainPaneId = process.env['HERDR_PANE_ID']?.trim()
     if (!mainPaneId) {
       this.herdrContext = null
       return
@@ -71,12 +71,12 @@ export class ClawasManualSessionLauncher {
     try {
       const result = await execFileAsync(herdrBin(), ['pane', 'current', '--pane', mainPaneId])
       const parsed = parseHerdrResponse(result.stdout)
-      const pane = asRecord(asRecord(parsed.result)?.pane)
-      const paneId = typeof pane?.pane_id === 'string' ? pane.pane_id : mainPaneId
+      const pane = asRecord(asRecord(parsed['result'])?.['pane'])
+      const paneId = typeof pane?.['pane_id'] === 'string' ? pane['pane_id'] : mainPaneId
       const workspaceId =
-        typeof pane?.workspace_id === 'string'
-          ? pane.workspace_id
-          : process.env.HERDR_WORKSPACE_ID?.trim() || undefined
+        typeof pane?.['workspace_id'] === 'string'
+          ? pane['workspace_id']
+          : process.env['HERDR_WORKSPACE_ID']?.trim() || undefined
       this.herdrContext = { mainPaneId: paneId, workspaceId }
     } catch {
       this.herdrContext = null

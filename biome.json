@@ -49,6 +49,7 @@
         "noExcessiveCognitiveComplexity": "warn",
         "noUselessStringConcat": "error",
         "noUselessUndefinedInitialization": "error",
+        "useLiteralKeys": "off",
         "useSimplifiedLogicExpression": "warn"
       },
       "correctness": {

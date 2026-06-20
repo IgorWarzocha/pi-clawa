@@ -78,6 +78,7 @@ export function registerRecallTool(pi: ExtensionAPI): void {
               text: error instanceof Error ? error.message : String(error),
             },
           ],
+          details: { count: 0, results: [] },
           isError: true,
         }
       }

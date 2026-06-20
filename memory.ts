@@ -8,9 +8,9 @@ import { findRepoRoot } from './config.js'
 const MEMORY_DB_RELATIVE_PATH = join('.pi', 'clawa-memory.sqlite')
 
 export interface RememberMemoryInput {
-  id?: number
+  id?: number | undefined
   text: string
-  tags?: string[]
+  tags?: string[] | undefined
 }
 
 export type RememberMemoryResult =
@@ -39,7 +39,7 @@ function normalizeId(id: number | undefined): number | undefined {
 }
 
 export function resolveMemoryDbPath(cwd: string): string {
-  const root = process.env.PI_CLAW_PROJECT_ROOT?.trim() || findRepoRoot(cwd)
+  const root = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || findRepoRoot(cwd)
   return join(root, MEMORY_DB_RELATIVE_PATH)
 }
 
@@ -161,6 +161,10 @@ export function registerRememberTool(pi: ExtensionAPI): void {
               text: error instanceof Error ? error.message : String(error),
             },
           ],
+          details: {
+            action: 'error',
+            error: error instanceof Error ? error.message : String(error),
+          },
           isError: true,
         }
       }

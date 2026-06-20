@@ -132,7 +132,7 @@ async function readWorkersConfig(configPath: string): Promise<WorkersConfigFile>
     const parsed = parseJsonc(await readFile(configPath, 'utf8'))
     if (!parsed || typeof parsed !== 'object') return { workers: [] }
     const record = parsed as Record<string, unknown>
-    return { ...record, workers: Array.isArray(record.workers) ? record.workers : [] }
+    return { ...record, workers: Array.isArray(record['workers']) ? record['workers'] : [] }
   } catch {
     return { workers: [] }
   }

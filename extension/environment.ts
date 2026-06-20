@@ -9,14 +9,14 @@ const BOOTSTRAP_MESSAGE_TYPE = 'clawa-bootstrap'
 export function syncClawaEnvironment(cwd: string): void {
   const repoRoot = findRepoRoot(cwd)
   const clawaDefaults = resolveClawaDefaults(cwd)
-  process.env.PI_CLAW_PROJECT_ROOT = repoRoot
-  process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT = resolveClawasControlSocketRoot(repoRoot)
-  process.env.PI_CLAWAS_CONTROL_SOCKET_DIR = clawaDefaults.controlSocketDir
+  process.env['PI_CLAW_PROJECT_ROOT'] = repoRoot
+  process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = resolveClawasControlSocketRoot(repoRoot)
+  process.env['PI_CLAWAS_CONTROL_SOCKET_DIR'] = clawaDefaults.controlSocketDir
 }
 
 export function getWorkerAlias(): string | undefined {
   if (!IS_CLAWAS_WORKER) return 'main-claw'
-  return process.env.PI_CLAWAS_SOCKET_ALIAS?.trim() || undefined
+  return process.env['PI_CLAWAS_SOCKET_ALIAS']?.trim() || undefined
 }
 
 export function sendInitialBootstrapPrompt(pi: ExtensionAPI, ctx: ExtensionContext): void {
@@ -37,8 +37,8 @@ export function sendInitialBootstrapPrompt(pi: ExtensionAPI, ctx: ExtensionConte
 export function maybeSetWorkerSessionName(pi: ExtensionAPI, ctx: ExtensionContext): void {
   if (!IS_CLAWAS_WORKER) return
 
-  const workerId = process.env.PI_CLAWAS_WORKER_ID?.trim()
-  const workerTitle = process.env.PI_CLAWAS_WORKER_TITLE?.trim() || workerId
+  const workerId = process.env['PI_CLAWAS_WORKER_ID']?.trim()
+  const workerTitle = process.env['PI_CLAWAS_WORKER_TITLE']?.trim() || workerId
   if (!(workerId && workerTitle)) return
 
   pi.setSessionName(

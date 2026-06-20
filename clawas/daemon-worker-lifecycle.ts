@@ -34,7 +34,7 @@ export function createRpcWorker(options: {
   definition: WorkerDefinition
   cwd: string
   extensionPaths: string[]
-  sessionFile?: string
+  sessionFile?: string | undefined
 }): ClawasRpcWorker {
   return new ClawasRpcWorker({
     definition: options.definition,
@@ -50,7 +50,7 @@ export async function markWorkerReadyState(options: {
   workerId: string
   worker: ClawasRpcWorker
   fallbackSummary: string
-  clawaDefaults?: ClawaDefaults
+  clawaDefaults?: ClawaDefaults | undefined
   timestamp: number
 }): Promise<void> {
   const lastAssistantText = await options.worker.getLastAssistantText()

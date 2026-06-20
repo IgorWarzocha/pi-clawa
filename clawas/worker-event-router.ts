@@ -16,9 +16,11 @@ interface WorkerEventRouterOptions {
  * The daemon owns workers; this router owns how worker events shape feed state.
  */
 export class ClawasWorkerEventRouter {
+  private readonly options: WorkerEventRouterOptions
   private readonly getNow: () => number
 
-  constructor(private readonly options: WorkerEventRouterOptions) {
+  constructor(options: WorkerEventRouterOptions) {
+    this.options = options
     this.getNow = options.getNow ?? (() => Date.now())
   }
 

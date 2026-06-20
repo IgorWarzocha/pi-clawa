@@ -24,7 +24,7 @@ export { buildMessageDetails, buildWorkerUserMessage, shouldDeliverClawasMailAsU
 
 import type { ClawasCommsCommand, ClawasRpcResponse, ClawasSendCommand } from './types.js'
 
-const IS_MANUAL_SESSION = process.env.PI_CLAWAS_MANUAL_SESSION === '1'
+const IS_MANUAL_SESSION = process.env['PI_CLAWAS_MANUAL_SESSION'] === '1'
 function parseCommand(line: string): {
   command?: ClawasCommsCommand
   error?: string
@@ -59,11 +59,13 @@ export class ClawasCommsServer {
   private socketPath: string | null = null
   private aliasTimer: ReturnType<typeof setInterval> | null = null
   private context: ExtensionContext | null = null
+  private readonly pi: ExtensionAPI
+  private readonly getAlias: () => string | undefined
 
-  constructor(
-    private readonly pi: ExtensionAPI,
-    private readonly getAlias: () => string | undefined,
-  ) {}
+  constructor(pi: ExtensionAPI, getAlias: () => string | undefined) {
+    this.pi = pi
+    this.getAlias = getAlias
+  }
 
   async start(ctx: ExtensionContext): Promise<void> {
     await ensureControlDir()
@@ -215,7 +217,7 @@ export class ClawasCommsServer {
       return
     }
 
-    respond(false, command.type, undefined, `Unsupported command: ${command.type}`)
+    respond(false, 'unknown', undefined, 'Unsupported command')
   }
 
   private handleSendCommand(ctx: ExtensionContext, command: ClawasSendCommand): void {
@@ -250,7 +252,7 @@ export class ClawasCommsServer {
         mode: command.mode,
       })
 
-      this.pi.sendUserMessage(content, { deliverAs })
+      this.pi.sendUserMessage(content, deliverAs ? { deliverAs } : {})
       return
     }
 
@@ -261,7 +263,9 @@ export class ClawasCommsServer {
         display: true,
         details,
       },
-      { triggerTurn: shouldTriggerTurn(command), deliverAs },
+      deliverAs
+        ? { triggerTurn: shouldTriggerTurn(command), deliverAs }
+        : { triggerTurn: shouldTriggerTurn(command) },
     )
   }
 }

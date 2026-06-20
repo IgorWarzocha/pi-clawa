@@ -17,6 +17,7 @@ import {
 } from './daemon-worker-lifecycle.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
 import type { ClawasRpcWorker } from './rpc-worker.js'
+import { resolveWorkerSessionFile } from './session-registry.js'
 import { createInitialState, getWorkerState } from './state.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 import { ClawasWorkerEventRouter } from './worker-event-router.js'
@@ -37,15 +38,21 @@ export class ClawasDaemon {
   private readonly projectRoot: string
   private readonly controlPlaneRoot: string
   private readonly eventRouter: ClawasWorkerEventRouter
+  private readonly config: ClawasConfig
+  private readonly onStateChange: () => void
+  private readonly clawaDefaults?: ClawaDefaults | undefined
   private started = false
   private stopping = false
 
   constructor(
     projectRoot: string,
-    private readonly config: ClawasConfig,
-    private readonly onStateChange: () => void,
-    private readonly clawaDefaults?: ClawaDefaults,
+    config: ClawasConfig,
+    onStateChange: () => void,
+    clawaDefaults?: ClawaDefaults | undefined,
   ) {
+    this.config = config
+    this.onStateChange = onStateChange
+    this.clawaDefaults = clawaDefaults
     this.projectRoot = projectRoot
     this.state = createInitialState(config.workers, projectRoot, now())
     this.extensionPaths = discoverProjectExtensionPaths(projectRoot)
