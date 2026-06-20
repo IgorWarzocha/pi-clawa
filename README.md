@@ -93,15 +93,15 @@ To install Clawa plus Discord support, use project settings like:
 
 ```json
 {
-  "packages": ["npm:@howaboua/pi-claw", "npm:@howaboua/pi-claw-discord"]
+  "packages": ["npm:@howaboua/pi-claw", "npm:@howaboua/pi-clawa-discord"]
 }
 ```
 
 Then start Pi and run `/discord`.
 
-The adapter creates project-local config at `.pi/claw-discord/config.env`. Bot tokens stay local; do not commit `.pi/` secrets.
+The adapter creates project-local config at `.pi/clawa-discord/config.env`. Bot tokens stay local; do not commit `.pi/` secrets.
 
-Detailed Discord setup lives in `packages/pi-claw-discord/DISCORD-BOT-SETUP.md`.
+Detailed Discord setup lives in `packages/pi-clawa-discord/DISCORD-BOT-SETUP.md`.
 
 ## Notes
 

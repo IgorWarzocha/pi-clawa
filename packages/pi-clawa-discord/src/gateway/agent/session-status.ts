@@ -88,7 +88,7 @@ async function getSessionStatsViaRpc(
   cwd: string,
 ): Promise<{ tokens: SessionTokenUsage; contextUsage?: SessionContextUsage }> {
   const args = ['--mode', 'rpc', '--session', sessionFile];
-  const requestId = 'pi-claw-discord-session-stats';
+  const requestId = 'pi-clawa-discord-session-stats';
 
   return new Promise((resolve, reject) => {
     const proc = spawn(config.piBin, args, {

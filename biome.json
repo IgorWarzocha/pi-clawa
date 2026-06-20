@@ -11,7 +11,7 @@
       "!**/dist",
       "!**/node_modules",
       "!**/vendor",
-      "!packages/pi-claw-discord/src/gateway"
+      "!packages/pi-clawa-discord/src/gateway"
     ],
     "ignoreUnknown": true
   },

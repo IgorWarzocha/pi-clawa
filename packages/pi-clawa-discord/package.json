@@ -1,5 +1,5 @@
 {
-  "name": "@howaboua/pi-claw-discord",
+  "name": "@howaboua/pi-clawa-discord",
   "version": "0.0.0",
   "type": "module",
   "description": "Discord adapter package for @howaboua/pi-claw.",

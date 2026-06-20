@@ -90,7 +90,7 @@ Blocks: adapter finalization and clean-room runtime test.
 
 Status: Discord exists and is a core first surface, but adapter seam and product polish are still rough.
 
-- [x] Discord package exists at `packages/pi-claw-discord/`
+- [x] Discord package exists at `packages/pi-clawa-discord/`
 - [x] copied gateway source into adapter package
 - [x] core no longer owns direct Discord delivery tool
 - [x] `/discord` GUI exists
@@ -134,7 +134,7 @@ Publish checklist:
 
 1. `bun run ai:check`
 2. `npm pack --dry-run --json`
-3. `npm pack --dry-run --json --workspace @howaboua/pi-claw-discord`
+3. `npm pack --dry-run --json --workspace @howaboua/pi-clawa-discord`
 4. clean-room install pass from an empty project
 5. publish root package, then Discord adapter
 6. install published packages in a fresh project and run the smoke path once

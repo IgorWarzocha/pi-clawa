@@ -8,7 +8,7 @@ import { startProcessingLoop, stopProcessingLoop } from './agent/queue.js';
 import { startScheduler } from './agent/scheduler.js';
 
 /**
- * pi-claw-discord-gateway - Lightweight Discord gateway for pi coding agent.
+ * pi-clawa-discord-gateway - Lightweight Discord gateway for pi coding agent.
  *
  * Architecture inspired by NanoClaw (https://github.com/qwibitai/nanoclaw).
  * Discord messages -> SQLite queue -> pi subprocess -> Discord response.
@@ -61,7 +61,7 @@ export async function startGateway(): Promise<void> {
   };
 
   try {
-    logger.info('Starting pi-claw-discord-gateway...');
+    logger.info('Starting pi-clawa-discord-gateway...');
 
     await startDiscord();
     if (shutdownPromise) {

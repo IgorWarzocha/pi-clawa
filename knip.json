@@ -10,9 +10,9 @@
     "config.ts": ["exports"],
     "gui-primitives.ts": ["types"],
     "clawas/**/*.ts": ["exports", "types"],
-    "packages/pi-claw-discord/index.ts": ["exports"]
+    "packages/pi-clawa-discord/index.ts": ["exports"]
   },
-  "ignore": ["packages/pi-claw-discord/src/gateway/**"],
+  "ignore": ["packages/pi-clawa-discord/src/gateway/**"],
   "ignoreDependencies": [
     "@clack/prompts",
     "better-sqlite3",

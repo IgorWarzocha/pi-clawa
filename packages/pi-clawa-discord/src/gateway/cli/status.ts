@@ -6,7 +6,7 @@ import { config, resolveConfigPath } from '../config.js';
 import { closeDb, getAllChannels, initDb } from '../db.js';
 
 const AUTH_PATH = resolve(homedir(), '.pi/agent/auth.json');
-const SERVICE_NAME = 'pi-claw-discord-gateway';
+const SERVICE_NAME = 'pi-clawa-discord-gateway';
 
 export function runStatus(): void {
   const configPath = resolveConfigPath();
@@ -19,7 +19,7 @@ export function runStatus(): void {
   const sessionFolderCount = countSessionFolders(sessionsPath);
 
   const lines = [
-    'pi-claw-discord status',
+    'pi-clawa-discord status',
     '',
     `Pi binary: ${piPath || 'not found'}`,
     `Pi version: ${piVersion || 'unknown'}`,

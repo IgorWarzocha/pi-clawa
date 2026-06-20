@@ -58,4 +58,4 @@ Back in `/discord`:
 2. Save the channel id.
 3. Choose **start gateway**.
 
-The setup writes project-local config to `.pi/claw-discord/config.env`.
+The setup writes project-local config to `.pi/clawa-discord/config.env`.

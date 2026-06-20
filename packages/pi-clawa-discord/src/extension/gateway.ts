@@ -30,7 +30,7 @@ export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
     cwd: projectRoot,
     env: {
       ...process.env,
-      PI_CLAW_DISCORD_CONFIG: DISCORD_CONFIG_RELATIVE,
+      PI_CLAWA_DISCORD_CONFIG: DISCORD_CONFIG_RELATIVE,
       PI_CWD: '.',
       PI_CLAW_PROJECT_ROOT: projectRoot,
       PI_CLAWAS_CONTROL_SOCKET_ROOT: resolveClawasControlSocketRoot(projectRoot),

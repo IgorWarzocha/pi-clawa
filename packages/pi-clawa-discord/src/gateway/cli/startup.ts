@@ -10,7 +10,7 @@ export async function maybeRunFirstTimeSetup(): Promise<boolean> {
   const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
   if (!interactive) {
     throw new Error(
-      `No config found at ${configPath}. Run "pi-claw-discord setup" first, or set PI_CLAW_DISCORD_CONFIG to point to your config file.`,
+      `No config found at ${configPath}. Run "pi-clawa-discord setup" first, or set PI_CLAWA_DISCORD_CONFIG to point to your config file.`,
     );
   }
 

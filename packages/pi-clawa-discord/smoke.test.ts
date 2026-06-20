@@ -19,7 +19,7 @@ function withCleanDiscordEnv<T>(run: () => Promise<T>): Promise<T> {
     PI_CLAWAS_ROLE: process.env['PI_CLAWAS_ROLE'],
     DISCORD_BOT_TOKEN: process.env['DISCORD_BOT_TOKEN'],
     CLAWAS_CHANNEL_WORKERS: process.env['CLAWAS_CHANNEL_WORKERS'],
-    PI_CLAW_DISCORD_CONFIG: process.env['PI_CLAW_DISCORD_CONFIG'],
+    PI_CLAWA_DISCORD_CONFIG: process.env['PI_CLAWA_DISCORD_CONFIG'],
     PI_CLAW_PROJECT_ROOT: process.env['PI_CLAW_PROJECT_ROOT'],
     PI_CWD: process.env['PI_CWD'],
   }
@@ -28,7 +28,7 @@ function withCleanDiscordEnv<T>(run: () => Promise<T>): Promise<T> {
   delete process.env['PI_CLAWAS_ROLE']
   delete process.env['DISCORD_BOT_TOKEN']
   delete process.env['CLAWAS_CHANNEL_WORKERS']
-  delete process.env['PI_CLAW_DISCORD_CONFIG']
+  delete process.env['PI_CLAWA_DISCORD_CONFIG']
   delete process.env['PI_CLAW_PROJECT_ROOT']
   delete process.env['PI_CWD']
 
@@ -69,7 +69,7 @@ test('Discord adapter first session creates tokenless config and worker without 
         },
       )
 
-      const env = await readFile(join(root, '.pi', 'claw-discord', 'config.env'), 'utf8')
+      const env = await readFile(join(root, '.pi', 'clawa-discord', 'config.env'), 'utf8')
       const workers = await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8')
       const agents = await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8')
       const humanLink = await readlink(join(root, 'clawas', 'discord-clawa', 'HUMAN.md'))

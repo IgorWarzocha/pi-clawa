@@ -1,4 +1,4 @@
-# @howaboua/pi-claw-discord
+# @howaboua/pi-clawa-discord
 
 Discord adapter for `@howaboua/pi-claw`.
 

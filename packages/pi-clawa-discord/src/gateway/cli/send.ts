@@ -1,7 +1,7 @@
 import { toDiscordChannelJid } from './channel-id.js';
 
 export async function cliSend(args: string[]): Promise<void> {
-  const usage = 'Usage: pi-claw-discord send --channel <jid> [--text <message>] [--reply-to <message-id>] [--file <path> ...]';
+  const usage = 'Usage: pi-clawa-discord send --channel <jid> [--text <message>] [--reply-to <message-id>] [--file <path> ...]';
   let channel: string | undefined;
   let text: string | undefined;
   let replyToMessageId: string | undefined;

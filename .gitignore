@@ -10,4 +10,4 @@ dist/
 .pi/claw.jsonc
 .pi/semantic-grep.sqlite
 
-.pi/claw-discord/
+.pi/clawa-discord/

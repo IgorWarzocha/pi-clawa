@@ -9,7 +9,7 @@ export async function cliArchive(args: string[]): Promise<void> {
       await cliArchiveCleanup(subArgs);
       return;
     default:
-      throw new Error('Usage: pi-claw-discord archive <list|cleanup [--dry-run]>');
+      throw new Error('Usage: pi-clawa-discord archive <list|cleanup [--dry-run]>');
   }
 }
 
@@ -39,7 +39,7 @@ async function cliArchiveCleanup(args: string[]): Promise<void> {
   const dryRun = args.includes('--dry-run');
   const unknownArgs = args.filter((arg) => arg !== '--dry-run');
   if (unknownArgs.length > 0) {
-    throw new Error('Usage: pi-claw-discord archive cleanup [--dry-run]');
+    throw new Error('Usage: pi-clawa-discord archive cleanup [--dry-run]');
   }
 
   const [{ cleanupArchivedSessions }, { config }] = await Promise.all([

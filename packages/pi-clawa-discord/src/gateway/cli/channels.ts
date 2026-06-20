@@ -5,13 +5,13 @@ import { withDb } from './db-context.js';
 
 export async function cliRegister(args: string[]): Promise<void> {
   if (args.length < 2) {
-    throw new Error('Usage: pi-claw-discord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
+    throw new Error('Usage: pi-clawa-discord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
   }
 
   const { validateSessionFolder } = await import('../session/path.js');
   const [channelId, name, ...optionArgs] = args;
   if (!(channelId && name)) {
-    throw new Error('Usage: pi-claw-discord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
+    throw new Error('Usage: pi-clawa-discord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
   }
   const options = parseRegisterOptions(channelId, optionArgs, validateSessionFolder);
 
@@ -42,13 +42,13 @@ export async function cliRegister(args: string[]): Promise<void> {
 
 export async function cliUnregister(args: string[]): Promise<void> {
   if (args.length < 1) {
-    throw new Error('Usage: pi-claw-discord unregister <channel-id>');
+    throw new Error('Usage: pi-clawa-discord unregister <channel-id>');
   }
 
   await withDb(({ unregisterChannel }) => {
     const channelId = args[0];
     if (!channelId) {
-      throw new Error('Usage: pi-claw-discord unregister <channel-id>');
+      throw new Error('Usage: pi-clawa-discord unregister <channel-id>');
     }
     const jid = toDiscordChannelJid(channelId);
     const ok = unregisterChannel(jid);
