@@ -11,7 +11,7 @@ import type { PulseRuntime } from './runtime.js'
 const SPACE_PATTERN = /\s+/u
 
 function usage(): string {
-  return ['Usage:', '/pulses', '/pulse run <pulse-id|owner:pulse-id|title>'].join('\n')
+  return ['Usage:', '/pulse', '/pulse run <pulse-id|owner:pulse-id|title>'].join('\n')
 }
 
 async function openPulsesGui(
@@ -69,16 +69,11 @@ export function registerPulseCommand(
     setDefaults: (defaults: ClawaDefaults) => void
   },
 ): void {
-  pi.registerCommand('pulses', {
-    description: 'Open the Clawa pulse tab',
-    handler: async (_args, ctx) => await openPulsesGui(pi, ctx, options),
-  })
-
   pi.registerCommand('pulse', {
     description: 'Open Clawa pulses or run one pulse directly',
     handler: async (args, ctx) => {
       const [command, ...rest] = (args ?? '').trim().split(SPACE_PATTERN).filter(Boolean)
-      if (!command || command === 'list') {
+      if (!command) {
         await openPulsesGui(pi, ctx, options)
         return
       }
