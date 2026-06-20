@@ -32,7 +32,7 @@ Main Clawa sessions live in `.pi/sessions`. Subclawa sessions live under their o
 Clone the repo first, then run Clawa from the checkout. This makes it easy to tweak obvious rough edges locally and report the ones that should be fixed upstream.
 
 ```sh
-git clone https://github.com/howaboua/pi-clawa.git
+git clone https://github.com/IgorWarzocha/pi-clawa.git
 cd /path/to/your-clawa-home
 pi -e /absolute/path/to/pi-clawa
 ```
@@ -47,26 +47,26 @@ If something feels clearly broken or confusing, open an issue on GitHub with wha
 
 ## Project settings install
 
-From the project folder:
+If you want the home to remember the local checkout path, run the helper from your desired Clawa home:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/howaboua/pi-clawa/main/scripts/install-project.sh | sh
+/absolute/path/to/pi-clawa/scripts/install-project.sh
 ```
 
 Then start Pi from that folder.
 
-The installer only writes `.pi/settings.json`. On first Pi start, Clawa bootstraps the home automatically. There is no `init` step.
+The helper only writes `.pi/settings.json`. On first Pi start, Clawa bootstraps the home automatically. There is no `init` step.
 
 If you prefer to write the settings file yourself:
 
 ```json
 {
-  "packages": ["git:github.com/howaboua/pi-clawa"],
+  "packages": ["/absolute/path/to/pi-clawa"],
   "sessionDir": ".pi/sessions"
 }
 ```
 
-For now Clawa is expected to be installed from the git repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-clawa`.
+For now Clawa is expected to be run from a cloned repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-clawa`.
 
 ## First run
 
@@ -122,7 +122,7 @@ Until the adapter is published separately, use it from a local checkout:
 ```json
 {
   "packages": [
-    "git:github.com/howaboua/pi-clawa",
+    "/absolute/path/to/pi-clawa",
     "/absolute/path/to/pi-clawa/packages/pi-clawa-discord"
   ],
   "sessionDir": ".pi/sessions"

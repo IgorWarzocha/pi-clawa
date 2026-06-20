@@ -1,4 +1,4 @@
 {
-  "packages": ["git:github.com/howaboua/pi-clawa"],
+  "packages": ["/absolute/path/to/pi-clawa"],
   "sessionDir": ".pi/sessions"
 }

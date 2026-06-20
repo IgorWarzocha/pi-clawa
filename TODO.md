@@ -133,7 +133,7 @@ Strict release gate:
 Git release checklist:
 
 1. `bun run ai:check`
-2. clean-room install pass from an empty project using `git:github.com/howaboua/pi-clawa`
+2. clean-room install pass from an empty project using a local checkout path
 3. tag/push the repo once the clean-room pass is good
 4. if publishing to npm later, run `npm pack --dry-run --json` for root and Discord adapter first
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env sh
 set -eu
 
-BASE_URL="${CLAWA_INSTALL_BASE:-https://raw.githubusercontent.com/howaboua/pi-clawa/main}"
 TARGET_DIR=".pi"
 TARGET_FILE="$TARGET_DIR/settings.json"
-SOURCE_URL="$BASE_URL/install/pi-settings.json"
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd -P)
+PACKAGE_SOURCE="${CLAWA_PACKAGE_SOURCE:-$REPO_ROOT}"
 
 mkdir -p "$TARGET_DIR"
 
@@ -14,14 +16,12 @@ if [ -e "$TARGET_FILE" ] && [ "${CLAWA_INSTALL_OVERWRITE:-0}" != "1" ]; then
   exit 1
 fi
 
-if command -v curl >/dev/null 2>&1; then
-  curl -fsSL "$SOURCE_URL" -o "$TARGET_FILE"
-elif command -v wget >/dev/null 2>&1; then
-  wget -qO "$TARGET_FILE" "$SOURCE_URL"
-else
-  echo "Need curl or wget to download $SOURCE_URL" >&2
-  exit 1
-fi
+cat >"$TARGET_FILE" <<JSON
+{
+  "packages": ["$PACKAGE_SOURCE"],
+  "sessionDir": ".pi/sessions"
+}
+JSON
 
 echo "Wrote $TARGET_FILE"
-echo "Run pi from this directory to install project packages."
+echo "Run pi from this directory. Resume later with pi -c."
