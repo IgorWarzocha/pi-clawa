@@ -77,6 +77,7 @@ Status: usable and stricter; remaining work is smoke coverage and seam polish.
 - [x] remove or retire parked `/clawas` command code if unused
 - [ ] formalize worker adapter seam instead of ad-hoc env/extension paths
 - [ ] add runtime smoke checks for purpose-created Clawa launch/report/steer/jump/restart
+  - playground proved repeated `/jump` and `/claw` recovery; still needs a clean deterministic smoke path
 - [x] use shared house SQLite memory at `.pi/clawa-memory.sqlite`
 - [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
 - [x] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
@@ -181,7 +182,9 @@ Done:
 - [x] scheduler scans main and subclawa homes
 - [x] supports `every`, `daily`, `weekly`, and `at` schedules
 - [x] pulse runs use compact custom message provenance
-- [x] `/pulse list` and `/pulse run <id>` exist for inspection/manual run-now
+- [x] `/pulse` opens the pulse tab; `/pulse run <id>` exists for manual run-now
+- [x] pulse scheduler state is tiny runtime state at `.pi/pulses.json`
+- [x] pulse scheduler uses roughly five-minute resolution
 - [x] pulse docs live in `skills/clawa-ops/references/pulses.md`
 
 Needs follow-up:
