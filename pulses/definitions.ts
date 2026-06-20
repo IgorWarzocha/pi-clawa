@@ -135,5 +135,5 @@ export async function discoverPulseDefinitions(cwd: string): Promise<PulseDefini
 }
 
 export function getPulseStatePath(cwd: string): string {
-  return join(findRepoRoot(cwd), '.pi', 'pulses', 'state.json')
+  return join(findRepoRoot(cwd), '.pi', 'pulses.json')
 }

@@ -131,12 +131,9 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     assert.equal(messages.length, 1)
     assert.equal(messages[0]?.customType, CLAWA_PULSE_MESSAGE_TYPE)
     assert.match(messages[0]?.content ?? '', TINY_CHECK_FILE_PATTERN)
-    assert.match(
-      await readFile(join(root, '.pi', 'pulses', 'state.json'), 'utf8'),
-      TINY_CHECK_STATE_PATTERN,
-    )
+    assert.match(await readFile(join(root, '.pi', 'pulses.json'), 'utf8'), TINY_CHECK_STATE_PATTERN)
     assert.doesNotMatch(
-      await readFile(join(root, '.pi', 'pulses', 'state.json'), 'utf8'),
+      await readFile(join(root, '.pi', 'pulses.json'), 'utf8'),
       MANUAL_PULSE_STATE_PATTERN,
     )
 
