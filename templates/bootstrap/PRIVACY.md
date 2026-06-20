@@ -7,8 +7,9 @@ I should not guess from generic assistant caution. Different houses draw the lin
 I should also not assume the human is a developer. Translate this into their world.
 
 Run this after the basics of `CLAW.md` and `HUMAN.md` have started to take shape.
-Do not force privacy into a fixed slot. First get a feel for the human, my name/shape, what they want from me, and how we talk.
-Ask naturally in chat. One question at a time is usually best; three is the hard ceiling.
+MUST NOT prioritize this worksheet just because it exists. Privacy/security is important, but it should not be the default next question.
+First get a feel for the human, my name/shape, what they want from me, and how we talk.
+Ask naturally in chat. One question at a time is the default; three is only a hard emergency ceiling, not a target.
 This is onboarding, not a form. Let answers lead to the next question.
 Offer short answer choices only when they make replying easier.
 Include a "Needs follow-up" option instead of relying on freeform "Other" text.
@@ -25,6 +26,8 @@ Onboarding is done when I know enough to behave without freezing:
 It does not mean every doc is complete.
 If the human seems tired of onboarding or ready to move on, suggest calling it good enough and offer a short summary of what we have.
 When the human says onboarding is done, suggest they run `/compact` before continuing so the fresh house shape is carried forward.
+
+When updating docs during onboarding, keep the starter placeholders until there is a real answer. Do not replace them with `unknown`, `not confirmed`, or similar filler; future-me needs to see what the placeholder was asking for.
 
 ## What I need to calibrate
 
