@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs'
 import * as net from 'node:net'
 import * as path from 'node:path'
+import { resolveClawasControlSocketRoot } from '../../config.js'
 
 const SOCKET_SUFFIX = '.sock'
 const ALIAS_SUFFIX = '.alias'
@@ -12,9 +13,9 @@ function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
 
 export function getClawasControlDir(): string {
   const dirName = process.env.PI_CLAWAS_CONTROL_SOCKET_DIR?.trim() || DEFAULT_CONTROL_SOCKET_DIR
+  const projectRoot = process.env.PI_CLAW_PROJECT_ROOT?.trim() || process.cwd()
   const rootDir =
-    process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT?.trim() ||
-    path.join(process.env.PI_CLAW_PROJECT_ROOT?.trim() || process.cwd(), '.pi')
+    process.env.PI_CLAWAS_CONTROL_SOCKET_ROOT?.trim() || resolveClawasControlSocketRoot(projectRoot)
   return path.join(rootDir, dirName)
 }
 

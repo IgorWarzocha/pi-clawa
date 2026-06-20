@@ -21,6 +21,7 @@ const BOOTSTRAP_WAKE_PATTERN = /where the hell am I/
 const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /Do not turn this into a giant intake form/
 const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
 const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
+const BOOTSTRAP_NO_FIRST_RECALL_PATTERN = /Do not call recall on this first turn/
 const BOOTSTRAP_LEAVE_WORKSHEET_PATTERN = /Leave the worksheet itself behind/
 const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
@@ -56,6 +57,7 @@ test('first-run bootstrap prompt is progressive and points at living docs', () =
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_INTAKE_FORM_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_RECALL_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_RECALL_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_LEAVE_WORKSHEET_PATTERN)
 })
 

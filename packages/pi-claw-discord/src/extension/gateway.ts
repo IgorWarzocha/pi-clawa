@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { resolveClawaDefaults } from '@howaboua/pi-claw/config'
+import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-claw/config'
 import { DISCORD_CONFIG_RELATIVE, GATEWAY_ENTRY } from './constants.js'
 import { ensureDiscordConfig, readEnvFile } from './env-file.js'
 import { getGatewayProcess, setGatewayConfigPath, setGatewayProcess } from './gateway-state.js'
@@ -33,7 +33,7 @@ export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
       PIDG_CONFIG: DISCORD_CONFIG_RELATIVE,
       PI_CWD: '.',
       PI_CLAW_PROJECT_ROOT: projectRoot,
-      PI_CLAWAS_CONTROL_SOCKET_ROOT: '.pi',
+      PI_CLAWAS_CONTROL_SOCKET_ROOT: resolveClawasControlSocketRoot(projectRoot),
       PI_CLAWAS_CONTROL_SOCKET_DIR: clawa.controlSocketDir,
     },
     stdio: ['ignore', 'ignore', 'pipe'],

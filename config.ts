@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
 export interface ClawaConfig {
@@ -33,6 +35,12 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
   workerSessionPrefix: 'Clawas',
   controlPlaneDir: 'clawas',
   controlSocketDir: 'clawas-control',
+}
+
+export function resolveClawasControlSocketRoot(projectRoot: string): string {
+  const runtimeRoot = process.env.XDG_RUNTIME_DIR?.trim() || tmpdir()
+  const hash = createHash('sha256').update(projectRoot).digest('hex').slice(0, 16)
+  return join(runtimeRoot, 'pi-claw', hash)
 }
 
 const DEFAULT_CONFIG: ClawEnvironmentConfig = {

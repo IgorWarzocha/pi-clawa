@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { resolveClawaDefaults } from '@howaboua/pi-claw/config'
+import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-claw/config'
 import {
   DISCORD_CONFIG_RELATIVE,
   DISCORD_DATA_RELATIVE,
@@ -62,7 +62,7 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
     'PI_CWD=.',
     `DB_PATH=${join(DISCORD_DATA_RELATIVE, 'gateway.db')}`,
     `SESSIONS_DIR=${join(DISCORD_DATA_RELATIVE, 'sessions')}`,
-    'PI_CLAWAS_CONTROL_SOCKET_ROOT=.pi',
+    `PI_CLAWAS_CONTROL_SOCKET_ROOT=${resolveClawasControlSocketRoot(projectRoot)}`,
     `PI_CLAWAS_CONTROL_SOCKET_DIR=${clawa.controlSocketDir}`,
     '# Example: CLAWAS_CHANNEL_WORKERS=123456789012345678=discord-clawa',
     `CLAWAS_CHANNEL_WORKERS=${process.env.CLAWAS_CHANNEL_WORKERS ?? ''}`,

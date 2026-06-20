@@ -57,7 +57,7 @@ Status: mechanically working, product flow not final.
 - [x] finalize worker seed templates
 - [x] make bootstrap idempotence policy explicit
 - [x] add a focused bootstrap test/smoke script
-- [ ] clean-room judge the first-run conversation for taste: specific voice, curiosity, restraint, no flat helper voice
+- [x] clean-room judge the first-run conversation for taste: specific voice, curiosity, restraint, no flat helper voice (`~/Work/tries/2026-06-20 clawa-cleanroom-bootstrap-final` local-extension smoke)
 
 Depends on: A config names should be settled first.
 Blocks: clean-room install test.

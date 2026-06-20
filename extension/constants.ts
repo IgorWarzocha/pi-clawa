@@ -38,6 +38,7 @@ export const INITIAL_BOOTSTRAP_PROMPT = [
   '',
   'There are no default subclawas. If a real specialized lane appears later, propose one and create it from a purpose.',
   'Use recall before pretending the house has no past; use remember for small raw notes worth carrying, then promote shaped truth into the docs.',
+  'Do not call recall on this first turn. There is no house past yet beyond these bootstrap instructions.',
   '',
   'Final bootstrap step: run the privacy/security calibration below.',
   'Ask naturally in chat, up to three questions at a time, include "Needs follow-up", and keep going until the baseline is clear.',
