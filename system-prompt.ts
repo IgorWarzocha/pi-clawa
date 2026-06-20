@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -8,9 +8,6 @@ import { findRepoRoot, loadClawEnvironmentConfig } from './config.js'
 const PI_DEFAULT_ASSISTANT_INTRO =
   'You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.'
 
-const BLOCK_COMMENT_PATTERN = /\/\*[\s\S]*?\*\//g
-const LINE_COMMENT_PATTERN = /^\s*\/\/.*$/gm
-const TRAILING_COMMA_PATTERN = /,\s*([}\]])/g
 const WHITESPACE_PATTERN = /\s+/g
 
 function buildClawaPersonalAssistantIntro(clawaName = 'Clawa'): string {
@@ -79,44 +76,9 @@ function sanitizeClawaName(name: string): string {
   return name.replace(WHITESPACE_PATTERN, ' ').trim().slice(0, 80)
 }
 
-function stripJsonc(text: string): string {
-  return text
-    .replace(BLOCK_COMMENT_PATTERN, '')
-    .replace(LINE_COMMENT_PATTERN, '')
-    .replace(TRAILING_COMMA_PATTERN, '$1')
-}
-
 function isPathInsideOrSame(childPath: string, parentPath: string): boolean {
   const rel = relative(parentPath, childPath)
   return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel))
-}
-
-function readWorkerNameCandidates(repoRoot: string, controlPlaneDir: string): ClawaNameCandidate[] {
-  const configPath = join(repoRoot, '.pi', controlPlaneDir, 'config.jsonc')
-  if (!existsSync(configPath)) return []
-
-  try {
-    const parsed = JSON.parse(stripJsonc(readFileSync(configPath, 'utf8'))) as Record<
-      string,
-      unknown
-    >
-    const workers = Array.isArray(parsed['workers']) ? parsed['workers'] : []
-    return workers
-      .map((worker): ClawaNameCandidate | null => {
-        if (!worker || typeof worker !== 'object') return null
-        const rec = worker as Record<string, unknown>
-        const cwd = typeof rec['cwd'] === 'string' ? rec['cwd'].trim() : ''
-        if (!cwd) return null
-        const title = typeof rec['title'] === 'string' ? sanitizeClawaName(rec['title']) : ''
-        const id = typeof rec['id'] === 'string' ? sanitizeClawaName(rec['id']) : ''
-        const name = title || id
-        if (!name) return null
-        return { name, path: resolve(repoRoot, cwd) }
-      })
-      .filter((candidate): candidate is ClawaNameCandidate => Boolean(candidate))
-  } catch {
-    return []
-  }
 }
 
 export function resolveClawaPromptName(cwd: string): string {
@@ -125,11 +87,10 @@ export function resolveClawaPromptName(cwd: string): string {
   const mainName = sanitizeClawaName(loaded.config.clawa.mainClawName) || 'Clawa'
   const candidates: ClawaNameCandidate[] = [
     { name: mainName, path: repoRoot },
-    ...loaded.config.clawas.claws.map((claw) => ({
-      name: sanitizeClawaName(claw.name),
-      path: resolve(repoRoot, claw.path),
+    ...loaded.config.clawas.workers.map((worker) => ({
+      name: sanitizeClawaName(worker.title) || sanitizeClawaName(worker.id),
+      path: resolve(repoRoot, worker.cwd),
     })),
-    ...readWorkerNameCandidates(repoRoot, loaded.config.clawa.controlPlaneDir),
   ].filter((candidate) => candidate.name)
 
   const resolvedCwd = resolve(cwd)

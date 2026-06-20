@@ -1,6 +1,5 @@
 import * as fs from 'node:fs/promises'
-import * as path from 'node:path'
-import { resolveClawaDefaults } from '../config'
+import { getClawEnvironmentConfigPath } from '../config'
 import { parseJsonc } from './jsonc.js'
 import type {
   ClawasConfig,
@@ -89,9 +88,14 @@ function normalizeConfig(value: unknown): ClawasConfig {
     throw new Error('Clawas config must be a JSON object')
   }
 
-  const rawWorkers = value['workers']
+  const clawas = value['clawas']
+  if (!isRecord(clawas)) {
+    throw new Error('Clawa config must define a clawas object')
+  }
+
+  const rawWorkers = clawas['workers']
   if (!Array.isArray(rawWorkers)) {
-    throw new Error('Clawas config must define a workers array')
+    throw new Error('Clawa config must define clawas.workers as an array')
   }
 
   const workers = rawWorkers
@@ -102,8 +106,7 @@ function normalizeConfig(value: unknown): ClawasConfig {
 }
 
 export function getClawasConfigPath(projectRoot: string): string {
-  const clawa = resolveClawaDefaults(projectRoot)
-  return path.join(projectRoot, '.pi', clawa.controlPlaneDir, 'config.jsonc')
+  return getClawEnvironmentConfigPath(projectRoot)
 }
 
 export async function loadClawasConfig(projectRoot: string): Promise<ClawasConfig | null> {

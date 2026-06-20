@@ -171,7 +171,7 @@ Test once, in this order:
 
 Status: first implementation exists. Needs real-life playground pressure.
 
-Pulse replaces heartbeat/cron as one Clawa-native concept: markdown definitions in each Clawa home under `pulses/`, coordinated by main Clawa, dispatched as compact custom messages into real Clawa sessions.
+Pulse replaces heartbeat/cron as one Clawa-native concept: markdown definitions in each Clawa home under `pulses/`, with each Clawa responsible for its own pulse folder.
 
 Done:
 
@@ -182,7 +182,7 @@ Done:
 - [x] supports `every`, `daily`, `weekly`, and `at` schedules
 - [x] pulse runs use compact custom message provenance
 - [x] `/pulse list` and `/pulse run <id>` exist for inspection/manual run-now
-- [x] pulse docs live in `skills/claw-ops/references/pulses.md`
+- [x] pulse docs live in `skills/clawa-ops/references/pulses.md`
 
 Needs follow-up:
 

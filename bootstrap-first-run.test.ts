@@ -124,10 +124,7 @@ test('create Clawa seeds a specialized worker home from purpose', async () => {
 
     assert.equal(created.name, 'research-odd-local-tools-clawa')
     assert.equal(created.path, join('clawas', 'research-odd-local-tools-clawa'))
-    assert.match(
-      await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8'),
-      SEEDED_WORKER_PATTERN,
-    )
+    assert.match(await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8'), SEEDED_WORKER_PATTERN)
     assert.equal(await readlink(join(root, created.path, 'HUMAN.md')), SHARED_HUMAN_LINK_TARGET)
     assert.equal(await readlink(join(root, created.path, 'CLAWAS.md')), SHARED_CLAWAS_LINK_TARGET)
     assert.match(await readFile(join(root, 'CLAWAS.md'), 'utf8'), SEEDED_PURPOSE_PATTERN)
@@ -157,7 +154,7 @@ test('create Clawa seed slugs keep whole useful words near the limit', async () 
 
     assert.equal(created.name, 'documentation-and-release-notes-polishing-clawa')
     assert.match(
-      await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8'),
+      await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8'),
       LONG_SEEDED_WORKER_PATTERN,
     )
   } finally {
@@ -169,8 +166,8 @@ test('Clawas runtime refresh picks up worker config changes without full extensi
   const root = await mkdtemp(join(tmpdir(), 'clawa-runtime-refresh-'))
   try {
     await mkdir(join(root, '.git'))
-    await mkdir(join(root, '.pi', 'clawas'), { recursive: true })
-    await writeFile(join(root, '.pi', 'clawas', 'config.jsonc'), '{ "workers": [] }\n', 'utf8')
+    const initialConfig = ensureClawEnvironmentConfig(root)
+    assert.equal(initialConfig.config.clawas.workers.length, 0)
 
     const runtime = new ClawasRuntime()
     const ctx = {
@@ -190,16 +187,21 @@ test('Clawas runtime refresh picks up worker config changes without full extensi
 
     await mkdir(join(root, 'clawas', 'docs-clawa'), { recursive: true })
     await writeFile(
-      join(root, '.pi', 'clawas', 'config.jsonc'),
+      join(root, '.pi', 'claw.jsonc'),
       JSON.stringify({
-        workers: [
-          {
-            id: 'docs-clawa',
-            title: 'Docs Clawa',
-            cwd: 'clawas/docs-clawa',
-            autostart: false,
-          },
-        ],
+        bootstrapped: true,
+        clawas: {
+          baseDir: 'clawas',
+          tmuxSession: 'clawas',
+          workers: [
+            {
+              id: 'docs-clawa',
+              title: 'Docs Clawa',
+              cwd: 'clawas/docs-clawa',
+              autostart: false,
+            },
+          ],
+        },
       }),
       'utf8',
     )

@@ -124,18 +124,29 @@ function buildClawItems(
   })
 }
 
+function workerToClawConfig(worker: WorkerDefinition): ClawaConfig {
+  return {
+    name: worker.title || worker.id,
+    emoji: worker.emoji,
+    path: worker.cwd,
+    autostart: worker.autostart,
+    notes: worker.id,
+  }
+}
+
 export async function loadClawGuiModel(cwd: string, runtime: ClawasRuntime): Promise<ClawGuiModel> {
   const repoRoot = findRepoRoot(cwd)
   const clawa = resolveClawaDefaults(repoRoot)
   const loaded = loadClawEnvironmentConfig(repoRoot)
   const clawasConfig = await loadClawasConfig(repoRoot)
   const configPath = getClawasConfigPath(repoRoot)
-  const claws = loaded.config.clawas.claws
+  const workerDefinitions = clawasConfig?.workers ?? []
+  const claws = workerDefinitions.map(workerToClawConfig)
   const clawStatuses = await Promise.all(claws.map((claw) => getClawStatus(repoRoot, claw)))
   const liveWorkers = new Map(
     (runtime.getState()?.workers ?? []).map((worker) => [worker.definition.id, worker]),
   )
-  const workersByCwd = groupWorkersByCwd(repoRoot, clawasConfig?.workers ?? [], liveWorkers)
+  const workersByCwd = groupWorkersByCwd(repoRoot, workerDefinitions, liveWorkers)
   return {
     repoRoot,
     clawa,

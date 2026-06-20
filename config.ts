@@ -11,6 +11,24 @@ export interface ClawaConfig {
   notes?: string | undefined
 }
 
+export type ClawaWorkerThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+export type ClawaWorkerReportMode = 'auto' | 'explicit' | 'off'
+
+export interface ClawaWorkerConfig {
+  id: string
+  title: string
+  emoji?: string | undefined
+  cwd: string
+  discordEnabled?: boolean | undefined
+  extensions?: string[] | undefined
+  enabled?: boolean | undefined
+  autostart?: boolean | undefined
+  startupPrompt?: string | undefined
+  model?: string | undefined
+  thinking?: ClawaWorkerThinkingLevel | undefined
+  reportMode?: ClawaWorkerReportMode | undefined
+}
+
 export interface ClawaDefaults {
   mainClawName: string
   clawasName: string
@@ -24,7 +42,7 @@ export interface ClawEnvironmentConfig {
   clawas: {
     baseDir: string
     tmuxSession: string
-    claws: ClawaConfig[]
+    workers: ClawaWorkerConfig[]
   }
   clawa: ClawaDefaults
 }
@@ -48,7 +66,7 @@ const DEFAULT_CONFIG: ClawEnvironmentConfig = {
   clawas: {
     baseDir: 'clawas',
     tmuxSession: 'clawas',
-    claws: [],
+    workers: [],
   },
   clawa: DEFAULT_CLAWA_DEFAULTS,
 }
@@ -61,29 +79,71 @@ function parseJsonc(text: string): unknown {
   return JSON.parse(stripped)
 }
 
-function clampClaws(input: unknown): ClawaConfig[] {
-  if (!Array.isArray(input)) return []
-  const out: ClawaConfig[] = []
-  for (const item of input) {
-    const claw = clampClaw(item)
-    if (claw) out.push(claw)
-  }
-  return out
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
-function clampClaw(item: unknown): ClawaConfig | null {
+function asBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
+}
+
+function asStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const items = value
+    .map((entry) => asString(entry))
+    .filter((entry): entry is string => Boolean(entry))
+  return items.length > 0 ? items : undefined
+}
+
+function asThinkingLevel(value: unknown): ClawaWorkerThinkingLevel | undefined {
+  if (
+    value === 'off' ||
+    value === 'minimal' ||
+    value === 'low' ||
+    value === 'medium' ||
+    value === 'high' ||
+    value === 'xhigh'
+  ) {
+    return value
+  }
+  return undefined
+}
+
+function asReportMode(value: unknown): ClawaWorkerReportMode | undefined {
+  if (value === 'auto' || value === 'explicit' || value === 'off') return value
+  return undefined
+}
+
+function clampWorker(item: unknown): ClawaWorkerConfig | null {
   if (!item || typeof item !== 'object') return null
   const rec = item as Record<string, unknown>
-  const name = typeof rec['name'] === 'string' ? rec['name'].trim() : ''
-  const path = typeof rec['path'] === 'string' ? rec['path'].trim() : ''
-  if (!(name && path)) return null
+  const id = asString(rec['id'])
+  const cwd = asString(rec['cwd']) ?? asString(rec['workspace'])
+  if (!(id && cwd)) return null
   return {
-    name,
-    emoji: typeof rec['emoji'] === 'string' ? rec['emoji'] : undefined,
-    path,
-    autostart: rec['autostart'] === true,
-    notes: typeof rec['notes'] === 'string' ? rec['notes'] : undefined,
+    id,
+    title: asString(rec['title']) ?? id,
+    emoji: asString(rec['emoji']),
+    cwd,
+    discordEnabled: asBoolean(rec['discordEnabled']),
+    extensions: asStringArray(rec['extensions']),
+    enabled: asBoolean(rec['enabled']),
+    autostart: asBoolean(rec['autostart']),
+    startupPrompt: asString(rec['startupPrompt']) ?? asString(rec['initialPrompt']),
+    model: asString(rec['model']),
+    thinking: asThinkingLevel(rec['thinking']),
+    reportMode: asReportMode(rec['reportMode']),
   }
+}
+
+function clampWorkers(input: unknown): ClawaWorkerConfig[] {
+  if (!Array.isArray(input)) return []
+  const out: ClawaWorkerConfig[] = []
+  for (const item of input) {
+    const worker = clampWorker(item)
+    if (worker) out.push(worker)
+  }
+  return out
 }
 
 function clampClawaDefaults(input: unknown): ClawaDefaults {
@@ -165,7 +225,7 @@ export function loadClawEnvironmentConfig(repoRoot: string): {
             typeof clawas['tmuxSession'] === 'string' && clawas['tmuxSession'].trim()
               ? clawas['tmuxSession']
               : DEFAULT_CONFIG.clawas.tmuxSession,
-          claws: clampClaws(clawas['claws']),
+          workers: clampWorkers(clawas['workers']),
         },
         clawa: clampClawaDefaults(raw['clawa']),
       },
@@ -215,21 +275,21 @@ export function saveClawEnvironmentConfig(repoRoot: string, config: ClawEnvironm
   return path
 }
 
-export function upsertClawConfig(
+export function upsertClawaWorkerConfig(
   repoRoot: string,
-  claw: ClawaConfig,
+  worker: ClawaWorkerConfig,
 ): { path: string; config: ClawEnvironmentConfig } {
   const loaded = loadClawEnvironmentConfig(repoRoot)
-  const claws = [...loaded.config.clawas.claws]
-  const idx = claws.findIndex((item) => item.name === claw.name)
-  if (idx >= 0) claws[idx] = claw
-  else claws.push(claw)
+  const workers = [...loaded.config.clawas.workers]
+  const idx = workers.findIndex((item) => item.id === worker.id)
+  if (idx >= 0) workers[idx] = worker
+  else workers.push(worker)
 
   const next: ClawEnvironmentConfig = {
     ...loaded.config,
     clawas: {
       ...loaded.config.clawas,
-      claws,
+      workers,
     },
   }
   const path = saveClawEnvironmentConfig(repoRoot, next)

@@ -70,7 +70,7 @@ test('Discord adapter first session creates tokenless config and worker without 
       )
 
       const env = await readFile(join(root, '.pi', 'claw-discord', 'config.env'), 'utf8')
-      const workers = await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8')
+      const workers = await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8')
       const agents = await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8')
       const humanLink = await readlink(join(root, 'clawas', 'discord-clawa', 'HUMAN.md'))
       const clawasLink = await readlink(join(root, 'clawas', 'discord-clawa', 'CLAWAS.md'))

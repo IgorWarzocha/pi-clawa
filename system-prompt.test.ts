@@ -65,7 +65,7 @@ test('buildPiDefaultSystemPromptBase matches Pi default structure', () => {
 test('resolveClawaPromptName uses project and worker JSON names', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-prompt-name-'))
   try {
-    await mkdir(join(root, '.pi', 'clawas'), { recursive: true })
+    await mkdir(join(root, '.pi'), { recursive: true })
     await mkdir(join(root, 'clawas', 'gremlin-clawa'), { recursive: true })
     await writeFile(
       join(root, '.pi', 'claw.jsonc'),
@@ -74,16 +74,9 @@ test('resolveClawaPromptName uses project and worker JSON names', async () => {
         clawas: {
           baseDir: 'clawas',
           tmuxSession: 'clawas',
-          claws: [{ name: 'Howaclawa', path: 'clawas/howaclawa' }],
+          workers: [{ id: 'gremlin-clawa', title: 'Gremlin Clawa', cwd: 'clawas/gremlin-clawa' }],
         },
         clawa: { mainClawName: 'Howaclawa' },
-      }),
-      'utf8',
-    )
-    await writeFile(
-      join(root, '.pi', 'clawas', 'config.jsonc'),
-      JSON.stringify({
-        workers: [{ id: 'gremlin-clawa', title: 'Gremlin Clawa', cwd: 'clawas/gremlin-clawa' }],
       }),
       'utf8',
     )

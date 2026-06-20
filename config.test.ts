@@ -19,6 +19,7 @@ test('ensureClawEnvironmentConfig creates project config with bootstrapped false
     assert.equal(created.created, true)
     assert.equal(created.path, getClawEnvironmentConfigPath(dir))
     assert.equal(created.config.bootstrapped, false)
+    assert.deepEqual(created.config.clawas.workers, [])
     assert.equal(isClawEnvironmentBootstrapped(dir), false)
 
     const raw = await readFile(created.path, 'utf8')

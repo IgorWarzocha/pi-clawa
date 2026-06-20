@@ -16,7 +16,7 @@ The filesystem is the house. This folder is home. Keep it easy to move through: 
 - Preserve useful context by updating my living home docs as I grow.
 - Leave files, notes, and task artifacts easier to understand than you found them.
 - If a nested folder has its own rules, traps, owners, or routing, add a short local `AGENTS.md` there.
-- For Clawa house operations — subclawas, pulses, routing, or home docs — load the `claw-ops` skill instead of guessing the setup shape.
+- For Clawa house operations — subclawas, pulses, routing, or home docs — load the `clawa-ops` skill instead of guessing the setup shape.
 - You may edit this file, but treat it as spine: ask whether the change should affect every future reply before landing it.
 
 ## Working posture

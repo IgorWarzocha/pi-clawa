@@ -81,7 +81,7 @@ Use short nested `AGENTS.md` files for local rules, traps, ownership, or routing
 
 This package bundles:
 
-- `claw-ops`
+- `clawa-ops`
 - `warmth-pass`
 - `skill-creator`
 
@@ -106,5 +106,5 @@ Detailed Discord setup lives in `packages/pi-claw-discord/DISCORD-BOT-SETUP.md`.
 ## Notes
 
 - Custom `.pi/SYSTEM.md` prompts are ignored by Clawa. Put compatible additions in `.pi/APPEND_SYSTEM.md` instead.
-- Worker definitions live in `.pi/clawas/config.jsonc`.
+- Clawa boot state and subclawa worker definitions live in `.pi/claw.jsonc`.
 - Clawa keeps setup automatic. If first run is rough, fix the boot path rather than adding another setup command.

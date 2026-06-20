@@ -1,6 +1,7 @@
 import { copyFile, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { getClawasConfigPath } from '@howaboua/pi-claw/clawas/config-loader'
+import { ensureClawEnvironmentConfig } from '@howaboua/pi-claw/config'
 import {
   adapterEntryPath,
   DISCORD_WORKER_CWD,
@@ -49,8 +50,20 @@ async function loadClawasConfig(configPath: string): Promise<Record<string, unkn
   try {
     return JSON.parse(stripJsonc(await readFile(configPath, 'utf8'))) as Record<string, unknown>
   } catch {
-    return { workers: [] }
+    return { clawas: { workers: [] } }
   }
+}
+
+function getWorkers(config: Record<string, unknown>): unknown[] {
+  const clawas = config['clawas']
+  if (!(clawas && typeof clawas === 'object')) return []
+  const workers = (clawas as Record<string, unknown>)['workers']
+  return Array.isArray(workers) ? [...workers] : []
+}
+
+function setWorkers(config: Record<string, unknown>, workers: unknown[]): void {
+  const clawas = config['clawas'] && typeof config['clawas'] === 'object' ? config['clawas'] : {}
+  config['clawas'] = { ...(clawas as Record<string, unknown>), workers }
 }
 
 function isWorkerEntry(entry: unknown): entry is Record<string, unknown> {
@@ -87,9 +100,10 @@ function buildDiscordWorker(current: Record<string, unknown>, adapterExtension: 
 }
 
 export async function ensureDiscordWorker(projectRoot: string): Promise<void> {
+  ensureClawEnvironmentConfig(projectRoot)
   const configPath = getClawasConfigPath(projectRoot)
   const config = await loadClawasConfig(configPath)
-  const workers = Array.isArray(config['workers']) ? [...config['workers']] : []
+  const workers = getWorkers(config)
   const adapterExtension = projectRelativePath(projectRoot, adapterEntryPath)
   const existingIndex = workers.findIndex(
     (entry) => isWorkerEntry(entry) && entry['id'] === DISCORD_WORKER_ID,
@@ -101,7 +115,7 @@ export async function ensureDiscordWorker(projectRoot: string): Promise<void> {
   if (existingIndex >= 0) workers[existingIndex] = worker
   else workers.push(worker)
 
-  config['workers'] = workers
+  setWorkers(config, workers)
   await mkdir(dirname(configPath), { recursive: true })
   await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
   await copyDiscordWorkerTemplates(projectRoot, resolve(projectRoot, worker['cwd']))

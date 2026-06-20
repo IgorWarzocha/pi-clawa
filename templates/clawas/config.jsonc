@@ -1,5 +1,0 @@
-{
-  // Specialized Clawas are added here when the main Clawa or /claw creates them.
-  // Keep templates quiet until a real worker lane exists.
-  "workers": []
-}

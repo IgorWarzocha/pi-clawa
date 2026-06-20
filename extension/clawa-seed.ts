@@ -1,17 +1,10 @@
-import { mkdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
-import { dirname, join, relative, resolve } from 'node:path'
+import { readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
+import { join, relative, resolve } from 'node:path'
 import type { ExtensionAPI, ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 import { bootstrapClawWorkspace } from '../bootstrap.js'
-import { getClawasConfigPath } from '../clawas/config-loader.js'
-import { parseJsonc } from '../clawas/jsonc.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import type { WorkerDefinition } from '../clawas/types.js'
-import {
-  type ClawaConfig,
-  findRepoRoot,
-  loadClawEnvironmentConfig,
-  upsertClawConfig,
-} from '../config.js'
+import { findRepoRoot, loadClawEnvironmentConfig, upsertClawaWorkerConfig } from '../config.js'
 import type { CreateClawRequest } from '../gui.js'
 import { workerTemplatesDir } from './constants.js'
 import { sendDimNote } from './ui-notes.js'
@@ -21,11 +14,6 @@ const EDGE_DASH_REGEX = /^-+|-+$/g
 const MULTI_DASH_REGEX = /-+/g
 const CLAWAS_PLACEHOLDER_LINE_REGEX = /^- \*\*`\[clawa-name\]`\*\* .*$/m
 const MAX_SEED_SLUG_CHARS = 56
-
-type WorkersConfigFile = {
-  workers: unknown[]
-  [key: string]: unknown
-}
 
 export async function createNewClaw(
   pi: ExtensionAPI,
@@ -45,14 +33,10 @@ export async function createNewClaw(
   await symlinkSharedFile(repoRoot, absolutePath, 'CLAWAS.md')
 
   const worker = buildSeedWorker(seedId, relativePath, purpose)
-  const savedWorkersPath = await upsertWorkerConfig(repoRoot, worker)
-  const savedClaw = upsertClawConfig(repoRoot, buildClawConfig(seedId, relativePath, purpose))
+  const saved = upsertClawaWorkerConfig(repoRoot, worker)
   await updateClawasMap(repoRoot, seedId, purpose)
 
-  sendDimNote(
-    pi,
-    buildSeedCreatedNote(seedId, purpose, relativePath, savedWorkersPath, savedClaw.path),
-  )
+  sendDimNote(pi, buildSeedCreatedNote(seedId, purpose, relativePath, saved.path))
   pi.sendUserMessage(buildMainClawaCreatePrompt(seedId, relativePath, purpose), {
     deliverAs: 'followUp',
   })
@@ -60,10 +44,6 @@ export async function createNewClaw(
 
   if (ctx.hasUI) ctx.ui.notify(`Seeded ${seedId} at ${relativePath}`, 'info')
   return { name: seedId, path: relativePath, workerId: worker.id }
-}
-
-function buildClawConfig(name: string, path: string, purpose: string): ClawaConfig {
-  return { name, path, autostart: true, notes: purpose }
 }
 
 function purposeToSlug(purpose: string): string {
@@ -99,11 +79,9 @@ async function nextAvailableSeedId(
   purpose: string,
 ): Promise<string> {
   const slug = purposeToSlug(purpose)
-  const config = await readWorkersConfig(getClawasConfigPath(repoRoot))
+  const config = loadClawEnvironmentConfig(repoRoot).config
   const existingIds = new Set(
-    config.workers
-      .map((worker) => (isWorkerRecord(worker) ? worker.id : undefined))
-      .filter((id): id is string => typeof id === 'string'),
+    config.clawas.workers.map((worker) => worker.id).filter((id): id is string => Boolean(id)),
   )
 
   for (let index = 0; index < 100; index += 1) {
@@ -126,36 +104,6 @@ function buildSeedWorker(id: string, cwd: string, purpose: string): WorkerDefini
     startupPrompt: buildWorkerSeedPrompt(id, cwd, purpose),
     thinking: 'medium',
   }
-}
-
-function isWorkerRecord(value: unknown): value is Record<string, unknown> & { id?: string } {
-  return Boolean(value && typeof value === 'object')
-}
-
-async function readWorkersConfig(configPath: string): Promise<WorkersConfigFile> {
-  try {
-    const parsed = parseJsonc(await readFile(configPath, 'utf8'))
-    if (!parsed || typeof parsed !== 'object') return { workers: [] }
-    const record = parsed as Record<string, unknown>
-    return { ...record, workers: Array.isArray(record['workers']) ? record['workers'] : [] }
-  } catch {
-    return { workers: [] }
-  }
-}
-
-async function upsertWorkerConfig(repoRoot: string, worker: WorkerDefinition): Promise<string> {
-  const configPath = getClawasConfigPath(repoRoot)
-  const config = await readWorkersConfig(configPath)
-  const workers = [...config.workers]
-  const existingIndex = workers.findIndex(
-    (entry) => isWorkerRecord(entry) && entry.id === worker.id,
-  )
-  if (existingIndex >= 0) workers[existingIndex] = worker
-  else workers.push(worker)
-
-  await mkdir(dirname(configPath), { recursive: true })
-  await writeFile(configPath, `${JSON.stringify({ ...config, workers }, null, 2)}\n`, 'utf8')
-  return configPath
 }
 
 async function symlinkSharedFile(
@@ -196,15 +144,13 @@ function buildSeedCreatedNote(
   name: string,
   purpose: string,
   home: string,
-  workerConfig: string,
-  clawConfig: string,
+  configPath: string,
 ): string {
   return [
     `new Clawa seed created: ${name}`,
     `purpose: ${purpose}`,
     `home: ${home}`,
-    `worker config: ${workerConfig}`,
-    `claw config: ${clawConfig}`,
+    `config: ${configPath}`,
   ].join('\n')
 }
 
@@ -218,7 +164,7 @@ function buildMainClawaCreatePrompt(name: string, path: string, purpose: string)
     'Purpose from the human:',
     purpose,
     '',
-    'Shape this Clawa now. Chat with the human if the lane needs clarification, then edit its home docs and the root CLAWAS.md routing map as needed. The seed already exists in .pi/clawas/config.jsonc.',
+    'Shape this Clawa now. Chat with the human if the lane needs clarification, then edit its home docs and the root CLAWAS.md routing map as needed. The seed already exists in .pi/claw.jsonc.',
     'Do not turn this into a big wizard. Make a reasonable first draft and let the Clawa evolve.',
   ].join('\n')
 }
