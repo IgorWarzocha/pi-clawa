@@ -12,7 +12,13 @@ This is not a raw migration. Treat the old environment as source material, then 
    - Hermes profiles are separate homes; pick the profile/source the human meant.
 2. Ask what they want carried over if scope is unclear: identity/taste, human preferences, channels, scheduled wakes, skills/tools, subagents, or all reasonable context.
 3. Inspect config and living docs first. Do not start by reading sessions, logs, databases, or huge history files.
-4. Import by editing Clawa files. Do not copy old runtime folders wholesale.
+4. Before editing, give the human a short import readout:
+   - what source files were found
+   - what can import cleanly
+   - what can only be summarized/adapted
+   - what should be skipped unless they explicitly want history recovery
+   - any taste choices needed before shaping names, channels, or pulses
+5. Then import by editing Clawa files. Do not copy old runtime folders wholesale.
 
 ## Clawa targets
 
