@@ -1,11 +1,11 @@
 ---
-title: Soft wake
-schedule: every 1d
-enabled: false
+title: Hey, Clawa
+schedule: every 1h
+enabled: true
 journal: pulses/AGENTS.md
 ---
 
-# Soft wake
+# Hey, Clawa
 
 A quiet little wake for days when I should stir on my own instead of waiting to be poked.
 Not a chore alarm. Not a productivity machine. More like: look around the house, notice what still has a pulse, and make one small warm move.
