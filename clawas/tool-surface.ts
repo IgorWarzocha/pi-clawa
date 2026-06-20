@@ -126,25 +126,26 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
       }),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      const definition = await resolveClawDefinition(ctx.cwd, params.claw)
-      if (!definition) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Unknown ${runtime.getClawaDefaults().clawasName} claw: ${params.claw}`,
-            },
-          ],
-          details: { workerId: params.claw },
-          isError: true,
-        }
-      }
-
-      if (runtime.isWorkerManual(definition.id)) {
-        return manualSessionError(definition.title, runtime.getClawaDefaults().clawasName)
-      }
-
       try {
+        await runtime.refreshFromConfig()
+        const definition = await resolveClawDefinition(ctx.cwd, params.claw)
+        if (!definition) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Unknown ${runtime.getClawaDefaults().clawasName} claw: ${params.claw}`,
+              },
+            ],
+            details: { workerId: params.claw },
+            isError: true,
+          }
+        }
+
+        if (runtime.isWorkerManual(definition.id)) {
+          return manualSessionError(definition.title, runtime.getClawaDefaults().clawasName)
+        }
+
         await runtime.ensureWorkerRunning(definition.id)
         await sendClawasSessionMessage(getWorkerSocketAlias(definition), {
           message: params.message,
@@ -175,7 +176,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
               text: error instanceof Error ? error.message : String(error),
             },
           ],
-          details: { workerId: definition.id },
+          details: { workerId: params.claw },
           isError: true,
         }
       }

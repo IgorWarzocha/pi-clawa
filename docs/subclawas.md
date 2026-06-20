@@ -22,7 +22,7 @@ The normal creation path is:
 
 If the human has not run it yet, ask them to run that command with the purpose. After creation, wait for the creation follow-up.
 
-Do not hand-edit `.pi/clawas/config.jsonc` or `.pi/claw.jsonc` as the normal creation path. Manual config edits are debugging only.
+Do not hand-edit `.pi/clawas/config.jsonc` or `.pi/claw.jsonc` as the normal creation path. Manual config edits are debugging only. If config changes while Pi is running, `message_clawa` should refresh the Clawas runtime before routing; a manual `/reload` should not be required for a well-formed config edit.
 
 After creation/reload, shape the new home:
 
@@ -71,7 +71,7 @@ Bad:
 - `Unknown Clawas claw` means the worker does not exist in the runtime config yet, or the name does not match.
 - `Clawas config must define a workers array` usually means someone hand-edited the config into the wrong shape.
 - `Clawas worker at index ... is missing a string id` means the config shape is incomplete.
-- `Clawas daemon is not running` usually means the extension/runtime needs to reload after worker creation.
+- `Clawas daemon is not running` means the runtime is not attached or failed to start; report the exact context. A normal well-formed config change should be picked up by `message_clawa` without `/reload`.
 - No response means the worker may still be starting, detached, or stuck; report the exact symptom.
 
 If creation or messaging fails, report the symptom and the file/path involved. Fix clear local config mistakes only when debugging; do not make manual config editing the normal flow.

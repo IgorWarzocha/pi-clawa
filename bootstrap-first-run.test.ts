@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { ClawasRuntime } from './clawas/runtime.js'
 import {
   ensureClawEnvironmentConfig,
   findRepoRoot,
@@ -158,6 +159,53 @@ test('create Clawa seed slugs keep whole useful words near the limit', async () 
       await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8'),
       LONG_SEEDED_WORKER_PATTERN,
     )
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('Clawas runtime refresh picks up worker config changes without full extension reload', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-runtime-refresh-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, '.pi', 'clawas'), { recursive: true })
+    await writeFile(join(root, '.pi', 'clawas', 'config.jsonc'), '{ "workers": [] }\n', 'utf8')
+
+    const runtime = new ClawasRuntime()
+    const ctx = {
+      cwd: root,
+      hasUI: true,
+      ui: {
+        notify: () => {},
+        setWidget: () => {},
+        setStatus: () => {},
+        setHeader: () => {},
+      },
+    }
+
+    runtime.attach(ctx as never)
+    await runtime.refreshFromConfig()
+    assert.deepEqual(runtime.getWorkerIds(), [])
+
+    await mkdir(join(root, 'clawas', 'docs-clawa'), { recursive: true })
+    await writeFile(
+      join(root, '.pi', 'clawas', 'config.jsonc'),
+      JSON.stringify({
+        workers: [
+          {
+            id: 'docs-clawa',
+            title: 'Docs Clawa',
+            cwd: 'clawas/docs-clawa',
+            autostart: false,
+          },
+        ],
+      }),
+      'utf8',
+    )
+
+    await runtime.refreshFromConfig()
+    assert.deepEqual(runtime.getWorkerIds(), ['docs-clawa'])
+    await runtime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
   }

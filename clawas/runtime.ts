@@ -17,6 +17,10 @@ import { openWorkerManualSession } from './runtime-manual.js'
 import { ClawasUiBridge } from './runtime-ui.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition, WorkerState } from './types.js'
 
+function fingerprintConfig(config: ClawasConfig): string {
+  return JSON.stringify(config.workers)
+}
+
 /**
  * Thin UI/runtime shell around the daemon.
  * It keeps widget lifecycle and repaint timing out of the worker orchestration code.
@@ -26,6 +30,7 @@ export class ClawasRuntime {
   private daemon: ClawasDaemon | null = null
   private interval: ReturnType<typeof setInterval> | null = null
   private daemonStarted = false
+  private configFingerprint: string | null = null
   private clawaDefaults: ClawaDefaults = DEFAULT_CLAWA_DEFAULTS
   private monitorState = createClawasMonitorState()
   private readonly ui = new ClawasUiBridge()
@@ -63,6 +68,15 @@ export class ClawasRuntime {
     }
 
     await this.startOrReloadDaemon(this.context, true)
+    this.render()
+  }
+
+  async refreshFromConfig(): Promise<void> {
+    if (!this.context) {
+      return
+    }
+
+    await this.startOrReloadDaemon(this.context, false)
     this.render()
   }
 
@@ -178,19 +192,26 @@ export class ClawasRuntime {
     const config = await this.loadConfigOrNotify(context, configPath)
 
     if (!config) {
+      this.configFingerprint = null
       await this.clearMissingConfig(replaceExisting)
       return
     }
+
+    const nextFingerprint = fingerprintConfig(config)
 
     if (replaceExisting) {
       await this.disposeDaemon(true)
     }
 
     if (this.daemonStarted && this.daemon) {
-      return
+      if (this.configFingerprint === nextFingerprint) {
+        return
+      }
+      await this.disposeDaemon(false)
     }
 
     this.createDaemon(context, config)
+    this.configFingerprint = nextFingerprint
 
     try {
       const daemon = this.requireDaemon()
@@ -278,6 +299,7 @@ export class ClawasRuntime {
       this.daemon = null
     }
     this.daemonStarted = false
+    this.configFingerprint = null
   }
 
   private render(): void {
