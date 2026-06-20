@@ -1,9 +1,12 @@
-import { createConnection } from 'node:net';
-import { resolve } from 'node:path';
-import { readlink } from 'node:fs/promises';
-import type { ClawasExtractedDelivery, ClawasExtractedMessage, ClawasRpcResponse, ClawasSenderInfo } from '@howaboua/pi-claw/clawas/comms/types';
+import type { ClawasExtractedDelivery, ClawasExtractedMessage } from '@howaboua/pi-claw/clawas/comms/types';
 import type { AgentResult } from '../types.js';
 import { config } from '../config.js';
+import {
+  getClawasWorkerOutput,
+  getClawasWorkerStatus,
+  sendClawasSessionMessage,
+  sleep,
+} from './invoke-clawas-rpc.js';
 import { logger } from '../logger.js';
 
 type ClawasWorkerOutput = {
@@ -191,150 +194,5 @@ function sameDelivery(
   return left.timestamp === right.timestamp && left.route === right.route && left.content === right.content;
 }
 
-async function getClawasWorkerOutput(target: string): Promise<ClawasWorkerOutput> {
-  const response = await sendRpcCommand(target, { type: 'get_message' });
-  if (!response.success) {
-    throw new Error(response.error ?? `Failed to read CLAWAS message from ${target}`);
-  }
 
-  const data = response.data as {
-    message?: ClawasExtractedMessage | null;
-    delivery?: ClawasExtractedDelivery | null;
-  } | undefined;
-  return {
-    message: data?.message ?? null,
-    delivery: data?.delivery ?? null,
-  };
-}
-
-export async function getClawasWorkerStatus(target: string): Promise<ClawasWorkerStatus> {
-  const response = await sendRpcCommand(target, { type: 'get_status' });
-  if (!response.success) {
-    throw new Error(response.error ?? `Failed to read CLAWAS worker status from ${target}`);
-  }
-
-  const data = response.data as Partial<ClawasWorkerStatus> | undefined;
-  return {
-    isIdle: Boolean(data?.isIdle),
-    hasPendingMessages: Boolean(data?.hasPendingMessages),
-  };
-}
-
-async function sendClawasSessionMessage(
-  target: string,
-  options: {
-    message: string;
-    mode?: 'steer' | 'followUp';
-    messageType?: 'session' | 'report';
-    discordContext?: { sourceMessageId: string };
-    sender?: ClawasSenderInfo;
-  },
-): Promise<void> {
-  const response = await sendRpcCommand(target, {
-    type: 'send',
-    message: options.message,
-    mode: options.mode,
-    messageType: options.messageType,
-    discordContext: options.discordContext,
-    sender: options.sender,
-  });
-  if (!response.success) {
-    throw new Error(response.error ?? `Failed to send CLAWAS message to ${target}`);
-  }
-}
-
-async function sendRpcCommand(target: string, command: Record<string, unknown>): Promise<ClawasRpcResponse> {
-  const socketPath = await waitForClawasSocketPath(target);
-  if (!socketPath) {
-    throw new Error(`Unknown CLAWAS session target: ${target}. Keep the clawa session alive so the worker socket exists.`);
-  }
-
-  return await new Promise<ClawasRpcResponse>((resolvePromise, reject) => {
-    const socket = createConnection(socketPath);
-    socket.setEncoding('utf8');
-
-    const timeoutHandle = setTimeout(() => {
-      socket.destroy(new Error('timeout'));
-    }, 30_000);
-
-    let buffer = '';
-    const cleanup = () => {
-      clearTimeout(timeoutHandle);
-      socket.removeAllListeners();
-    };
-
-    socket.on('connect', () => {
-      socket.write(`${JSON.stringify(command)}\n`);
-    });
-
-    socket.on('data', (chunk) => {
-      buffer += chunk.toString();
-      let newlineIndex = buffer.indexOf('\n');
-      while (newlineIndex !== -1) {
-        const line = buffer.slice(0, newlineIndex).trim();
-        buffer = buffer.slice(newlineIndex + 1);
-        newlineIndex = buffer.indexOf('\n');
-        if (!line) continue;
-
-        try {
-          const response = JSON.parse(line) as ClawasRpcResponse;
-          if (response.type === 'response') {
-            cleanup();
-            socket.end();
-            resolvePromise(response);
-            return;
-          }
-        } catch {
-          // Keep reading.
-        }
-      }
-    });
-
-    socket.on('error', (error) => {
-      cleanup();
-      reject(error);
-    });
-  });
-}
-
-async function waitForClawasSocketPath(target: string, timeoutMs = 3_000): Promise<string | null> {
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeoutMs) {
-    const socketPath = await resolveClawasSocketPath(target);
-    if (socketPath) {
-      return socketPath;
-    }
-    await sleep(100);
-  }
-
-  return await resolveClawasSocketPath(target);
-}
-
-async function resolveClawasSocketPath(target: string): Promise<string | null> {
-  const controlDir = resolve(config.clawasControlSocketRoot, config.clawasControlSocketDir);
-  const aliasPath = resolve(controlDir, `${target}.alias`);
-
-  try {
-    const symlinkTarget = await readlink(aliasPath);
-    return resolve(controlDir, symlinkTarget);
-  } catch {
-    return null;
-  }
-}
-
-async function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-  return await new Promise((resolvePromise, reject) => {
-    const timeout = setTimeout(() => {
-      signal?.removeEventListener('abort', onAbort);
-      resolvePromise();
-    }, ms);
-
-    const onAbort = () => {
-      clearTimeout(timeout);
-      signal?.removeEventListener('abort', onAbort);
-      reject(new Error('CLAWAS invocation aborted during shutdown'));
-    };
-
-    signal?.addEventListener('abort', onAbort, { once: true });
-  });
-}
+export { getClawasWorkerStatus } from './invoke-clawas-rpc.js';
