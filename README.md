@@ -1,10 +1,33 @@
 # Clawa for Pi
 
-Clawa is a Pi package that turns a project folder into a small agent home.
+Clawa is a warm home layer for Pi.
 
-It keeps Pi's normal tools and system prompt, then adds a warmer Clawa posture, first-run home files, Clawas worker orchestration, nested `AGENTS.md` loading, and a few bundled skills.
+It keeps Pi as the runtime — same models, tools, terminal, sessions — and gives the agent a home to wake up in: living markdown files, memory, subclawas, pulses, and a more personal operating posture.
 
-## Install in a project
+This is for people who want a Clawa that grows with them, not a fresh blank assistant every time.
+
+## What Clawa adds
+
+- **A home**: `AGENTS.md`, `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, `TOOLS.md`, and `pulses/`.
+- **Onboarding**: first run starts a short conversational setup instead of an install wizard.
+- **Memory**: shared SQLite memory plus recall over the current Clawa's own session files.
+- **Subclawas**: specialist Clawas with their own homes and sessions, created when a real lane appears.
+- **Pulses**: scheduled or manual wakes that run inside the owning Clawa session. No ghost chats.
+- **Nested context**: small local `AGENTS.md` files are loaded when a Clawa works in that folder.
+- **Bundled skills**: `clawa-ops`, `warmth-pass`, and `skill-creator`.
+
+## How it operates
+
+Clawa is meant to run as a long-lived Pi home.
+
+- Run it inside herdr, tmux, or another persistent terminal environment.
+- Use an always-on machine if pulses, Discord, or ambient behavior should keep running.
+- After stopping, resume the same home with `pi -c` instead of starting fresh.
+- Start a new session only when the branch is badly wedged or the compacted context has become too bloated.
+
+Main Clawa sessions live in `.pi/sessions`. Subclawa sessions live under their own homes, for example `clawas/researcher/.pi/sessions`.
+
+## Install from git
 
 From the project folder:
 
@@ -15,7 +38,6 @@ curl -fsSL https://raw.githubusercontent.com/howaboua/pi-claw/main/scripts/insta
 Then start Pi from that folder.
 
 The installer only writes `.pi/settings.json`. On first Pi start, Clawa bootstraps the home automatically. There is no `init` step.
-Main Clawa sessions are stored project-locally in `.pi/sessions`.
 
 If you prefer to write the settings file yourself:
 
@@ -27,13 +49,6 @@ If you prefer to write the settings file yourself:
 ```
 
 For now Clawa is expected to be installed from the git repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-claw`.
-
-Clawa works best as a long-lived Pi home:
-
-- run it inside herdr, tmux, or another persistent terminal environment
-- use an always-on machine if pulses, Discord, or ambient behavior should keep running
-- after stopping, resume the same home with `pi -c` instead of starting a fresh session
-- start a new session only when the branch is badly wedged or the compacted context has become too bloated
 
 ## First run
 
@@ -49,19 +64,19 @@ Clawa creates missing home files in the project root:
 | `TOOLS.md` | local tools, services, commands, and gotchas |
 | `pulses/` | scheduled and ambient wake folders plus a pulse index/journal |
 
-The first bootstrap prompt also includes a one-time privacy/security calibration worksheet. The worksheet is read from the installed package and is not copied into the home.
+The first bootstrap prompt includes a one-time privacy/security calibration worksheet. The worksheet is read from the installed package and is not copied into the home.
 
-Clawa expects those core markdown files to be absent before first run. If one is already present, bootstrapping is blocked so the generated home shape stays clean. Move existing files out first, start Clawa, then ask your claw to adapt the generated files.
+Clawa expects those core markdown files to be absent before first run. If one is already present, bootstrapping is blocked so the generated home shape stays clean. Move existing files out first, start Clawa, then ask your Clawa to adapt the generated files.
 
-The boot state lives in `.pi/claw.jsonc`.
+The boot state and subclawa worker definitions live in `.pi/claw.jsonc`.
 
-## Clawas workers
+## Subclawas
 
-Subclaws are specialized helpers, not default generic workers. The main Clawa creates one when a real lane appears: research, Discord, tech support, finance, jobs, or another focused surface.
+Subclawas are specialist Clawas, not default generic workers. The main Clawa creates one when a real lane appears: research, Discord, tech support, finance, jobs, or another focused surface.
 
-Run `/claw`, choose **create clawa**, and describe the purpose. Clawa seeds a visible worker home under `clawas/`, links shared `HUMAN.md` and `CLAWAS.md`, registers the worker, and asks the main Clawa/new Clawa to shape the lane from there.
+Run `/claw`, choose **create clawa**, and describe the purpose. Clawa seeds a visible worker home under `clawas/`, links shared `HUMAN.md` and `CLAWAS.md`, registers the worker, and starts shaping the lane from there.
 
-Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessions`.
+For agent-facing setup details, load the bundled `clawa-ops` skill.
 
 ## Pulses
 
@@ -75,26 +90,10 @@ Use `/pulse` to open the pulse tab, or `/pulse run <id>` to run one directly.
 
 Clawa has shared memory tools:
 
-- `remember` writes short home memories to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclaws.
+- `remember` writes short home memories to project-local SQLite at `.pi/clawa-memory.sqlite`, shared by the main Clawa and all subclawas.
 - `recall` searches that shared memory plus the current Clawa's own Pi session files. Session recall skips tool calls and tool results, and returns file/line/entry anchors when a deeper read is needed.
 
 Use living docs for shaped truth. Use `remember` for small raw memories that should be easy to update or delete later.
-
-## Nested context
-
-Clawa watches navigation tools. When a claw reads or searches inside a folder with local `AGENTS.md` files, those local instructions are appended to the relevant tool result.
-
-Use short nested `AGENTS.md` files for local rules, traps, ownership, or routing. Usually 1–10 lines is enough.
-
-## Bundled skills
-
-This package bundles:
-
-- `clawa-ops`
-- `warmth-pass`
-- `skill-creator`
-
-Pi discovers them from the package `skills/` directory.
 
 ## Optional Discord adapter — WIP
 
@@ -121,5 +120,4 @@ Detailed Discord setup lives in `packages/pi-clawa-discord/DISCORD-BOT-SETUP.md`
 ## Notes
 
 - Custom `.pi/SYSTEM.md` prompts are ignored by Clawa. Put compatible additions in `.pi/APPEND_SYSTEM.md` instead.
-- Clawa boot state and subclawa worker definitions live in `.pi/claw.jsonc`.
 - Clawa keeps setup automatic. If first run is rough, fix the boot path rather than adding another setup command.
