@@ -91,6 +91,7 @@
     "./clawas/comms/message-extract": "./clawas/comms/message-extract.ts",
     "./clawas/comms/outbound": "./clawas/comms/outbound.ts",
     "./clawas/comms/report-back-helpers": "./clawas/comms/report-back-helpers.ts",
+    "./clawas/comms/types": "./clawas/comms/types.ts",
     "./clawas/config-loader": "./clawas/config-loader.ts"
   }
 }

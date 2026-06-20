@@ -53,11 +53,4 @@ export type ClawasCommsCommand =
   | ClawasGetMessageCommand
   | ClawasGetStatusCommand
 
-export interface ClawasRpcResponse {
-  type: 'response'
-  command: string
-  success: boolean
-  data?: unknown
-  error?: string
-  id?: string
-}
+export type { ClawasRpcResponse } from '../rpc-types.js'

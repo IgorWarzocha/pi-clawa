@@ -1,21 +1,10 @@
 import { createConnection } from 'node:net';
 import { resolve } from 'node:path';
 import { readlink } from 'node:fs/promises';
+import type { ClawasExtractedDelivery, ClawasExtractedMessage, ClawasRpcResponse, ClawasSenderInfo } from '@howaboua/pi-claw/clawas/comms/types';
 import type { AgentResult } from '../types.js';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
-
-interface ClawasExtractedMessage {
-  role: 'assistant';
-  content: string;
-  timestamp: number;
-}
-
-interface ClawasExtractedDelivery {
-  route: 'discord' | 'main-claw';
-  content: string;
-  timestamp: number;
-}
 
 type ClawasWorkerOutput = {
   message: ClawasExtractedMessage | null;
@@ -31,19 +20,6 @@ const CLAWAS_MESSAGE_SETTLE_MS = 2_500;
 export interface ClawasWorkerStatus {
   isIdle: boolean;
   hasPendingMessages: boolean;
-}
-
-interface ClawasRpcResponse {
-  type: 'response';
-  command: string;
-  success: boolean;
-  data?: unknown;
-  error?: string;
-}
-
-interface ClawasSenderInfo {
-  workerId?: string;
-  workerTitle?: string;
 }
 
 export async function invokeClawasWorker(
