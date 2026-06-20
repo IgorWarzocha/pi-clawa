@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises'
 import { getClawEnvironmentConfigPath } from '../config'
-import { parseJsonc } from './jsonc.js'
+import { parseJsonc } from '../jsonc.js'
 import type {
   ClawasConfig,
   WorkerDefinition,

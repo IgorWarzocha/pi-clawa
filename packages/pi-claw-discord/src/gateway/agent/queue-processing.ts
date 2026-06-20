@@ -17,6 +17,7 @@ export interface ProcessingState {
 }
 
 function setActiveReplyAnchor(
+	state: ProcessingState,
 	jid: string,
 	sender: string,
 	sourceMessageId: string | null,
@@ -25,7 +26,7 @@ function setActiveReplyAnchor(
 		return;
 	}
 
-	activeReplyAnchors.set(jid, sourceMessageId);
+	state.activeReplyAnchors.set(jid, sourceMessageId);
 }
 
 export async function processQueuedMessage(params: {
@@ -183,4 +184,3 @@ export async function processSteeredClawasMessage(params: {
 		);
 	}
 }
-

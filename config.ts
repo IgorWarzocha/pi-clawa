@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { parseJsonc } from './jsonc.js'
 
 export interface ClawaConfig {
   name: string
@@ -69,14 +70,6 @@ const DEFAULT_CONFIG: ClawEnvironmentConfig = {
     workers: [],
   },
   clawa: DEFAULT_CLAWA_DEFAULTS,
-}
-
-function parseJsonc(text: string): unknown {
-  const stripped = text
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '')
-    .replace(/,\s*([}\]])/g, '$1')
-  return JSON.parse(stripped)
 }
 
 function asString(value: unknown): string | undefined {

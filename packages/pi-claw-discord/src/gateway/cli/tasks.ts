@@ -21,7 +21,7 @@ export async function cliTask(args: string[]): Promise<void> {
       await cliDisableTask(subArgs);
       return;
     default:
-      throw new Error('Usage: piscord task <add|list|remove|enable|disable> [options]');
+      throw new Error('Usage: pi-claw-discord task <add|list|remove|enable|disable> [options]');
   }
 }
 
@@ -70,7 +70,7 @@ async function cliListTasks(): Promise<void> {
 }
 
 async function cliRemoveTask(args: string[]): Promise<void> {
-  const id = parseTaskId(args[0], 'Usage: piscord task remove <id>');
+  const id = parseTaskId(args[0], 'Usage: pi-claw-discord task remove <id>');
 
   await withDb(({ removeScheduledTask }) => {
     const removed = removeScheduledTask(id);
@@ -79,7 +79,7 @@ async function cliRemoveTask(args: string[]): Promise<void> {
 }
 
 async function cliEnableTask(args: string[]): Promise<void> {
-  const id = parseTaskId(args[0], 'Usage: piscord task enable <id>');
+  const id = parseTaskId(args[0], 'Usage: pi-claw-discord task enable <id>');
 
   await withDb(({ enableScheduledTask }) => {
     const enabled = enableScheduledTask(id);
@@ -88,7 +88,7 @@ async function cliEnableTask(args: string[]): Promise<void> {
 }
 
 async function cliDisableTask(args: string[]): Promise<void> {
-  const id = parseTaskId(args[0], 'Usage: piscord task disable <id>');
+  const id = parseTaskId(args[0], 'Usage: pi-claw-discord task disable <id>');
 
   await withDb(({ disableScheduledTask }) => {
     const disabled = disableScheduledTask(id);
@@ -116,30 +116,30 @@ function parseTaskAddOptions(args: string[]): {
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--name':
-        options.name = args[++i];
+        options.name = readOptionValue(args, ++i);
         break;
       case '--schedule':
-        options.schedule = args[++i];
+        options.schedule = readOptionValue(args, ++i);
         break;
       case '--channel':
-        options.channel = args[++i];
+        options.channel = readOptionValue(args, ++i);
         break;
       case '--prompt':
-        options.prompt = args[++i];
+        options.prompt = readOptionValue(args, ++i);
         break;
       case '--once':
         options.type = 'once';
         break;
       default:
         throw new Error(
-          'Usage: piscord task add --name <n> --schedule <cron|iso> --channel <jid> --prompt <text> [--once]',
+          'Usage: pi-claw-discord task add --name <n> --schedule <cron|iso> --channel <jid> --prompt <text> [--once]',
         );
     }
   }
 
   if (!options.name || !options.schedule || !options.channel || !options.prompt) {
     throw new Error(
-      'Usage: piscord task add --name <n> --schedule <cron|iso> --channel <jid> --prompt <text> [--once]',
+      'Usage: pi-claw-discord task add --name <n> --schedule <cron|iso> --channel <jid> --prompt <text> [--once]',
     );
   }
 
@@ -150,6 +150,16 @@ function parseTaskAddOptions(args: string[]): {
     channel: options.channel,
     prompt: options.prompt,
   };
+}
+
+function readOptionValue(args: string[], index: number): string {
+  const value = args[index];
+  if (!value) {
+    throw new Error(
+      'Usage: pi-claw-discord task add --name <n> --schedule <cron|iso> --channel <jid> --prompt <text> [--once]',
+    );
+  }
+  return value;
 }
 
 function parseTaskId(raw: string | undefined, usage: string): number {

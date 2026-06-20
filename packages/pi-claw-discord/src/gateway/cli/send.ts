@@ -1,7 +1,7 @@
 import { toDiscordChannelJid } from './channel-id.js';
 
 export async function cliSend(args: string[]): Promise<void> {
-  const usage = 'Usage: piscord send --channel <jid> [--text <message>] [--reply-to <message-id>] [--file <path> ...]';
+  const usage = 'Usage: pi-claw-discord send --channel <jid> [--text <message>] [--reply-to <message-id>] [--file <path> ...]';
   let channel: string | undefined;
   let text: string | undefined;
   let replyToMessageId: string | undefined;
@@ -19,7 +19,8 @@ export async function cliSend(args: string[]): Promise<void> {
         if (!args[i + 1]) {
           throw new Error(usage);
         }
-        files.push(args[++i]);
+        i += 1;
+        files.push(args[i] ?? '');
         break;
       case '--text':
         if (!args[i + 1]) {

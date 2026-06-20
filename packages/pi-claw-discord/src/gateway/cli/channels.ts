@@ -5,11 +5,14 @@ import { withDb } from './db-context.js';
 
 export async function cliRegister(args: string[]): Promise<void> {
   if (args.length < 2) {
-    throw new Error('Usage: piscord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
+    throw new Error('Usage: pi-claw-discord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
   }
 
   const { validateSessionFolder } = await import('../session/path.js');
   const [channelId, name, ...optionArgs] = args;
+  if (!(channelId && name)) {
+    throw new Error('Usage: pi-claw-discord register <channel-id> <name> [--folder <name>] [--cwd <path>] [--no-trigger] [--main]');
+  }
   const options = parseRegisterOptions(channelId, optionArgs, validateSessionFolder);
 
   await withDb(({ getChannel, registerChannel }) => {
@@ -39,11 +42,15 @@ export async function cliRegister(args: string[]): Promise<void> {
 
 export async function cliUnregister(args: string[]): Promise<void> {
   if (args.length < 1) {
-    throw new Error('Usage: piscord unregister <channel-id>');
+    throw new Error('Usage: pi-claw-discord unregister <channel-id>');
   }
 
   await withDb(({ unregisterChannel }) => {
-    const jid = toDiscordChannelJid(args[0]);
+    const channelId = args[0];
+    if (!channelId) {
+      throw new Error('Usage: pi-claw-discord unregister <channel-id>');
+    }
+    const jid = toDiscordChannelJid(channelId);
     const ok = unregisterChannel(jid);
     if (ok) {
       console.log(`Unregistered channel: ${jid}`);
@@ -82,16 +89,24 @@ function parseRegisterOptions(
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--folder':
-        if (args[i + 1]) {
-          options.folder = validateSessionFolder(args[++i]);
+        {
+          const folder = args[i + 1];
+          if (folder) {
+            i += 1;
+            options.folder = validateSessionFolder(folder);
+          }
         }
         break;
       case '--cwd':
-        if (args[i + 1]) {
-          const cwdOverride = args[++i].trim();
+        {
+          const next = args[i + 1];
+          if (next) {
+            i += 1;
+            const cwdOverride = next.trim();
           if (cwdOverride) {
             options.cwdOverride = cwdOverride;
           }
+        }
         }
         break;
       case '--no-trigger':

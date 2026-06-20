@@ -16,7 +16,13 @@ import type { AgentResult } from '../types.js';
 export async function invokeAgent(
   channelFolder: string,
   userText: string,
-  opts?: { model?: string; thinking?: string; cwd?: string; signal?: AbortSignal; attachments?: string | null },
+	opts?: {
+		model?: string | undefined;
+		thinking?: string | undefined;
+		cwd?: string | undefined;
+		signal?: AbortSignal | undefined;
+		attachments?: string | null | undefined;
+	},
 ): Promise<AgentResult> {
   const sessionDir = resolveChannelSessionDir(channelFolder);
   mkdirSync(sessionDir, { recursive: true });
@@ -115,4 +121,3 @@ export async function invokeAgent(
     });
   });
 }
-

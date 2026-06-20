@@ -14,7 +14,7 @@ type StringState = {
   escaped: boolean
 }
 
-export function stripJsoncComments(input: string): string {
+function stripJsoncComments(input: string): string {
   const state: CommentState = {
     result: '',
     inString: false,
@@ -91,7 +91,7 @@ function startJsonString(char: string, state: StringState): boolean {
   return true
 }
 
-export function stripJsonTrailingCommas(input: string): string {
+function stripJsonTrailingCommas(input: string): string {
   const state: StringState = { result: '', inString: false, escaped: false }
 
   for (let index = 0; index < input.length; index += 1) {

@@ -47,10 +47,10 @@ export async function sendClawasSessionMessage(
   target: string,
   options: {
     message: string;
-    mode?: 'steer' | 'followUp';
-    messageType?: 'session' | 'report';
-    discordContext?: { sourceMessageId: string };
-    sender?: ClawasSenderInfo;
+    mode?: 'steer' | 'followUp' | undefined;
+    messageType?: 'session' | 'report' | undefined;
+    discordContext?: { sourceMessageId: string } | undefined;
+    sender?: ClawasSenderInfo | undefined;
   },
 ): Promise<void> {
   const response = await sendRpcCommand(target, {

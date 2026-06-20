@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
@@ -6,7 +6,7 @@ import { config, resolveConfigPath } from '../config.js';
 import { closeDb, getAllChannels, initDb } from '../db.js';
 
 const AUTH_PATH = resolve(homedir(), '.pi/agent/auth.json');
-const SERVICE_NAME = 'pi-discord-gateway';
+const SERVICE_NAME = 'pi-claw-discord-gateway';
 
 export function runStatus(): void {
   const configPath = resolveConfigPath();
@@ -19,7 +19,7 @@ export function runStatus(): void {
   const sessionFolderCount = countSessionFolders(sessionsPath);
 
   const lines = [
-    'piscord status',
+    'pi-claw-discord status',
     '',
     `Pi binary: ${piPath || 'not found'}`,
     `Pi version: ${piVersion || 'unknown'}`,
@@ -86,14 +86,6 @@ function countSessionFolders(baseDir: string): number {
   }
 
   return count;
-}
-
-function readCommandOutput(command: string): string | undefined {
-  try {
-    return execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim() || undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function readBinaryVersion(piPath: string): string | undefined {

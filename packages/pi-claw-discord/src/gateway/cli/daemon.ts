@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveConfigPath } from '../config.js';
 
-const SERVICE_NAME = 'pi-discord-gateway';
+const SERVICE_NAME = 'pi-claw-discord-gateway';
 const SYSTEMD_USER_DIR = resolve(homedir(), '.config/systemd/user');
 const SERVICE_PATH = resolve(SYSTEMD_USER_DIR, `${SERVICE_NAME}.service`);
 
@@ -78,7 +78,7 @@ function buildServiceFile(options: {
     'RestartSec=10',
     'StandardOutput=journal',
     'StandardError=journal',
-    `Environment=PIDG_CONFIG=${configPath}`,
+    `Environment=PI_CLAW_DISCORD_CONFIG=${configPath}`,
     '',
     '[Install]',
     'WantedBy=default.target',

@@ -11,7 +11,7 @@ export interface DiscordDeliveryOptions {
 	rowid: number;
 	sender: string;
 	sourceMessageId: string | null;
-	mappedWorker?: string;
+	mappedWorker?: string | undefined;
 	result: AgentResult;
 }
 

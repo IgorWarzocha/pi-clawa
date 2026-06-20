@@ -13,7 +13,7 @@ const LEGACY_ENV_PATH = resolve(process.cwd(), '.env');
 const CONFIG_SOURCE = buildConfigSource();
 
 export function resolveConfigPath(): string {
-  const configuredPath = process.env['PIDG_CONFIG']?.trim() ?? '';
+  const configuredPath = process.env['PI_CLAW_DISCORD_CONFIG']?.trim() ?? '';
   if (configuredPath) {
     return resolveUserPath(configuredPath);
   }

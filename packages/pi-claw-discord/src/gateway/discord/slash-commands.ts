@@ -89,7 +89,7 @@ export async function handleChatCommand(interaction: ChatInputCommandInteraction
     if (interaction.replied) {
       await interaction.followUp(payload);
     } else if (interaction.deferred) {
-      await interaction.editReply({ content: payload.content });
+      await interaction.editReply({ content: payload.content ?? '' });
     } else {
       await interaction.reply(payload);
     }

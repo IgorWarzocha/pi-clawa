@@ -28,7 +28,7 @@ function resolveWorkerChannelJid(workerId: string): string | null {
 
 function prepareDiscordToolEnvironment(): void {
   const projectRoot = process.env['PI_CLAW_PROJECT_ROOT'] ?? findRepoRoot(process.cwd())
-  const configuredGatewayPath = process.env['PIDG_CONFIG']?.trim()
+  const configuredGatewayPath = process.env['PI_CLAW_DISCORD_CONFIG']?.trim()
   setGatewayConfigPath(
     configuredGatewayPath
       ? isAbsolute(configuredGatewayPath)
@@ -36,7 +36,7 @@ function prepareDiscordToolEnvironment(): void {
         : resolve(projectRoot, configuredGatewayPath)
       : resolve(projectRoot, DISCORD_CONFIG_RELATIVE),
   )
-  process.env['PIDG_CONFIG'] ??= DISCORD_CONFIG_RELATIVE
+  process.env['PI_CLAW_DISCORD_CONFIG'] ??= DISCORD_CONFIG_RELATIVE
   process.env['PI_CLAW_PROJECT_ROOT'] ??= projectRoot
   process.env['PI_CWD'] ??= projectRoot
 }

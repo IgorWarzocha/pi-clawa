@@ -4,7 +4,6 @@ export function buildReactionLogContent(opts: {
   targetAuthor: string;
   messageContent: string;
 }): string {
-  const verb = opts.action === 'added' ? 'reacted with' : 'removed';
   const snippet = buildMessageSnippet(opts.messageContent);
 
   if (opts.action === 'added') {

@@ -17,8 +17,8 @@ export interface GatewayPromptOptions {
 	sender: string;
 	senderName: string;
 	content: string;
-	mappedWorker?: string;
-	logRowId?: number | null;
+	mappedWorker?: string | undefined;
+	logRowId?: number | null | undefined;
 }
 
 export interface GatewayPrompt {

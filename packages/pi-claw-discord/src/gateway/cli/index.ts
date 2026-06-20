@@ -53,7 +53,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
       return 0;
     case 'daemon': {
       if (!args[0]) {
-        throw new Error('Usage: piscord daemon <install|uninstall|start|stop|status|logs>');
+        throw new Error('Usage: pi-claw-discord daemon <install|uninstall|start|stop|status|logs>');
       }
 
       const { runDaemon } = await import('./daemon.js');

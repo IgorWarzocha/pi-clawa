@@ -18,7 +18,7 @@ export interface EffectiveChannelSettings {
   hasManagedThinking: boolean;
   thinkingSource: 'override' | 'default' | 'pi runtime default';
   thinkingAdjusted: boolean;
-  thinkingAdjustmentMessage?: string;
+  thinkingAdjustmentMessage?: string | undefined;
   effectiveCwd: string;
   cwdSource: 'override' | 'default';
 }

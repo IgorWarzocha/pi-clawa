@@ -22,10 +22,10 @@ export interface SessionContextUsage {
 }
 
 export interface ChannelSessionStatus {
-  sessionFile?: string;
-  createdAt?: string;
-  tokens?: SessionTokenUsage;
-  contextUsage?: SessionContextUsage;
+  sessionFile?: string | undefined;
+  createdAt?: string | undefined;
+  tokens?: SessionTokenUsage | undefined;
+  contextUsage?: SessionContextUsage | undefined;
   statsSource: 'rpc' | 'jsonl' | 'none';
 }
 
@@ -88,7 +88,7 @@ async function getSessionStatsViaRpc(
   cwd: string,
 ): Promise<{ tokens: SessionTokenUsage; contextUsage?: SessionContextUsage }> {
   const args = ['--mode', 'rpc', '--session', sessionFile];
-  const requestId = 'piscord-session-stats';
+  const requestId = 'pi-claw-discord-session-stats';
 
   return new Promise((resolve, reject) => {
     const proc = spawn(config.piBin, args, {
@@ -116,7 +116,7 @@ async function getSessionStatsViaRpc(
         return;
       }
 
-      resolve({
+      const result: { tokens: SessionTokenUsage; contextUsage?: SessionContextUsage } = {
         tokens: {
           input: toNumber(response.data.tokens.input),
           output: toNumber(response.data.tokens.output),
@@ -124,14 +124,15 @@ async function getSessionStatsViaRpc(
           cacheWrite: toNumber(response.data.tokens.cacheWrite),
           total: toNumber(response.data.tokens.total),
         },
-        contextUsage: response.data.contextUsage
-          ? {
-              tokens: toNullableNumber(response.data.contextUsage.tokens),
-              contextWindow: toNullableNumber(response.data.contextUsage.contextWindow),
-              percent: toNullableNumber(response.data.contextUsage.percent),
-            }
-          : undefined,
-      });
+      };
+      if (response.data.contextUsage) {
+        result.contextUsage = {
+          tokens: toNullableNumber(response.data.contextUsage.tokens),
+          contextWindow: toNullableNumber(response.data.contextUsage.contextWindow),
+          percent: toNullableNumber(response.data.contextUsage.percent),
+        };
+      }
+      resolve(result);
     };
 
     const timeout = setTimeout(() => {

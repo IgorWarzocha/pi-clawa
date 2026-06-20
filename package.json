@@ -18,8 +18,8 @@
     "lint:strict": "biome check --error-on-warnings .",
     "knip": "knip",
     "deadcode": "knip",
-    "ai:check": "biome check . && tsgo --noEmit --noCheck && knip && node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-claw-discord/smoke.test.ts",
-    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && knip && node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-claw-discord/smoke.test.ts",
+    "ai:check": "biome check . && tsgo --noEmit --noCheck && (cd packages/pi-claw-discord && bun run typecheck:gateway) && knip && node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-claw-discord/smoke.test.ts",
+    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && (cd packages/pi-claw-discord && bun run typecheck:gateway) && knip && node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-claw-discord/smoke.test.ts",
     "check": "bun run ai:check"
   },
   "pi": {
@@ -41,6 +41,7 @@
     "gui.ts",
     "gui/**/*.ts",
     "hydrate.ts",
+    "jsonc.ts",
     "memory.ts",
     "recall.ts",
     "pulses/**/*.ts",

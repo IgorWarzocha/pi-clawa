@@ -28,7 +28,11 @@ export interface ClawasWorkerStatus {
 export async function invokeClawasWorker(
   workerId: string,
   userText: string,
-  opts?: { signal?: AbortSignal; attachments?: string | null; sourceMessageId?: string | null },
+  opts?: {
+    signal?: AbortSignal | undefined;
+    attachments?: string | null | undefined;
+    sourceMessageId?: string | null | undefined;
+  },
 ): Promise<AgentResult> {
   try {
     const baseline = await getClawasWorkerOutput(workerId);
@@ -82,7 +86,7 @@ export async function invokeClawasWorker(
 export async function steerClawasWorker(
   workerId: string,
   userText: string,
-  opts?: { attachments?: string | null; sourceMessageId?: string | null },
+  opts?: { attachments?: string | null | undefined; sourceMessageId?: string | null | undefined },
 ): Promise<void> {
   await sendClawasSessionMessage(workerId, {
     message: userText,

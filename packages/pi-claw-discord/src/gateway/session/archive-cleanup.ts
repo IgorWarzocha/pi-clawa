@@ -18,6 +18,7 @@ export function parseArchiveTimestamp(dirName: string): Date | undefined {
   if (!match) return undefined;
 
   const [, y, mo, d, h, mi, s] = match;
+  if (!(y && mo && d && h && mi && s)) return undefined;
   if (+mo < 1 || +mo > 12 || +d < 1 || +d > 31 || +h > 23 || +mi > 59 || +s > 59) return undefined;
 
   return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +s));
