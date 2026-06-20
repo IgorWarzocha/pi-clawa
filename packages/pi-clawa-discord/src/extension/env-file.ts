@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-claw/config'
+import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-clawa/config'
 import {
   DISCORD_CONFIG_RELATIVE,
   DISCORD_DATA_RELATIVE,

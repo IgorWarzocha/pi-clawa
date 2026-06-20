@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-claw/config'
+import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-clawa/config'
 import { DISCORD_CONFIG_RELATIVE, GATEWAY_ENTRY } from './constants.js'
 import { ensureDiscordConfig, readEnvFile } from './env-file.js'
 import { getGatewayProcess, setGatewayConfigPath, setGatewayProcess } from './gateway-state.js'

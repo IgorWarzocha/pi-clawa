@@ -59,7 +59,7 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
 export function resolveClawasControlSocketRoot(projectRoot: string): string {
   const runtimeRoot = process.env['XDG_RUNTIME_DIR']?.trim() || tmpdir()
   const hash = createHash('sha256').update(projectRoot).digest('hex').slice(0, 16)
-  return join(runtimeRoot, 'pi-claw', hash)
+  return join(runtimeRoot, 'pi-clawa', hash)
 }
 
 const DEFAULT_CONFIG: ClawEnvironmentConfig = {

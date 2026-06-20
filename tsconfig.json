@@ -30,8 +30,8 @@
     "stableTypeOrdering": true,
     "libReplacement": false,
     "paths": {
-      "@howaboua/pi-claw": ["./index.ts"],
-      "@howaboua/pi-claw/*": ["./*"]
+      "@howaboua/pi-clawa": ["./index.ts"],
+      "@howaboua/pi-clawa/*": ["./*"]
     }
   },
   "include": ["**/*.ts"],

@@ -1,4 +1,4 @@
-import type { ClawasExtractedDelivery, ClawasExtractedMessage } from '@howaboua/pi-claw/clawas/comms/types';
+import type { ClawasExtractedDelivery, ClawasExtractedMessage } from '@howaboua/pi-clawa/clawas/comms/types';
 import type { AgentResult } from '../types.js';
 import { config } from '../config.js';
 import {

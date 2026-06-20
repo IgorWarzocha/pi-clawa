@@ -2,7 +2,7 @@
   "name": "@howaboua/pi-clawa-discord",
   "version": "0.0.0",
   "type": "module",
-  "description": "Discord adapter package for @howaboua/pi-claw.",
+  "description": "Discord adapter package for @howaboua/pi-clawa.",
   "keywords": [
     "pi-package",
     "pi-extension",
@@ -41,7 +41,7 @@
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*",
-    "@howaboua/pi-claw": "*"
+    "@howaboua/pi-clawa": "*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -55,7 +55,7 @@
     "node": ">=24.15.0 <27"
   },
   "peerDependenciesMeta": {
-    "@howaboua/pi-claw": {
+    "@howaboua/pi-clawa": {
       "optional": true
     }
   },

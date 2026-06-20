@@ -32,7 +32,7 @@ A. Package/install shape
 
 Status: mostly settled; final proof is a full clean-room install/package pass.
 
-- [x] root package is `@howaboua/pi-claw`
+- [x] root package is `@howaboua/pi-clawa`
 - [x] local project install config exists at `install/pi-settings.json`
 - [x] install helper script creates project `.pi/settings.json`
 - [x] main Clawa sessions are project-local via `.pi/settings.json` `sessionDir: .pi/sessions`
@@ -133,7 +133,7 @@ Strict release gate:
 Git release checklist:
 
 1. `bun run ai:check`
-2. clean-room install pass from an empty project using `git:github.com/howaboua/pi-claw`
+2. clean-room install pass from an empty project using `git:github.com/howaboua/pi-clawa`
 3. tag/push the repo once the clean-room pass is good
 4. if publishing to npm later, run `npm pack --dry-run --json` for root and Discord adapter first
 

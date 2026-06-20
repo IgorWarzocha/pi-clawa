@@ -1,7 +1,7 @@
 import { readlink } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { resolve } from 'node:path';
-import type { ClawasExtractedDelivery, ClawasExtractedMessage, ClawasRpcResponse, ClawasSenderInfo } from '@howaboua/pi-claw/clawas/comms/types';
+import type { ClawasExtractedDelivery, ClawasExtractedMessage, ClawasRpcResponse, ClawasSenderInfo } from '@howaboua/pi-clawa/clawas/comms/types';
 import { config } from '../config.js';
 
 type ClawasWorkerOutput = {

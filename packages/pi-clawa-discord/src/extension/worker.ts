@@ -1,7 +1,7 @@
 import { copyFile, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
-import { getClawasConfigPath } from '@howaboua/pi-claw/clawas/config-loader'
-import { ensureClawEnvironmentConfig } from '@howaboua/pi-claw/config'
+import { getClawasConfigPath } from '@howaboua/pi-clawa/clawas/config-loader'
+import { ensureClawEnvironmentConfig } from '@howaboua/pi-clawa/config'
 import {
   adapterEntryPath,
   DISCORD_WORKER_CWD,

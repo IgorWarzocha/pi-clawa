@@ -21,6 +21,6 @@
     "pino-pretty",
     "tsx",
     "@types/better-sqlite3",
-    "@howaboua/pi-claw"
+    "@howaboua/pi-clawa"
   ]
 }

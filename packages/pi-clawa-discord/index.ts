@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
-import { findRepoRoot } from '@howaboua/pi-claw/config'
+import { findRepoRoot } from '@howaboua/pi-clawa/config'
 import { ensureDiscordConfig } from './src/extension/env-file.js'
 import { startGateway, stopGateway } from './src/extension/gateway.js'
 import { runDiscordGui } from './src/extension/gui.js'

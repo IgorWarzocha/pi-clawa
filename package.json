@@ -1,5 +1,5 @@
 {
-  "name": "@howaboua/pi-claw",
+  "name": "@howaboua/pi-clawa",
   "version": "0.0.0",
   "type": "module",
   "description": "Redistributable Pi extension package for the Clawa/Clawas runtime.",

@@ -1,6 +1,6 @@
 # @howaboua/pi-clawa-discord
 
-Discord adapter for `@howaboua/pi-claw`.
+Discord adapter for `@howaboua/pi-clawa`.
 
 Status: WIP. The adapter works, but setup polish, lifecycle behavior, DMs, multi-channel support, and autonomy policy are still being shaped.
 
@@ -11,8 +11,8 @@ For git-repo installs, add the core package from git and this adapter from a loc
 ```json
 {
   "packages": [
-    "git:github.com/howaboua/pi-claw",
-    "/absolute/path/to/pi-claw/packages/pi-clawa-discord"
+    "git:github.com/howaboua/pi-clawa",
+    "/absolute/path/to/pi-clawa/packages/pi-clawa-discord"
   ],
   "sessionDir": ".pi/sessions"
 }

@@ -32,15 +32,15 @@ Main Clawa sessions live in `.pi/sessions`. Subclawa sessions live under their o
 Clone the repo first, then run Clawa from the checkout. This makes it easy to tweak obvious rough edges locally and report the ones that should be fixed upstream.
 
 ```sh
-git clone https://github.com/howaboua/pi-claw.git
+git clone https://github.com/howaboua/pi-clawa.git
 cd /path/to/your-clawa-home
-pi -e /absolute/path/to/pi-claw
+pi -e /absolute/path/to/pi-clawa
 ```
 
 When you come back to the same home, resume it with the extension loaded:
 
 ```sh
-pi -c -e /absolute/path/to/pi-claw
+pi -c -e /absolute/path/to/pi-clawa
 ```
 
 If something feels clearly broken or confusing, open an issue on GitHub with what you expected, what happened, and any relevant Clawa home shape. Do not include `.pi/` secrets.
@@ -50,7 +50,7 @@ If something feels clearly broken or confusing, open an issue on GitHub with wha
 From the project folder:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/howaboua/pi-claw/main/scripts/install-project.sh | sh
+curl -fsSL https://raw.githubusercontent.com/howaboua/pi-clawa/main/scripts/install-project.sh | sh
 ```
 
 Then start Pi from that folder.
@@ -61,12 +61,12 @@ If you prefer to write the settings file yourself:
 
 ```json
 {
-  "packages": ["git:github.com/howaboua/pi-claw"],
+  "packages": ["git:github.com/howaboua/pi-clawa"],
   "sessionDir": ".pi/sessions"
 }
 ```
 
-For now Clawa is expected to be installed from the git repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-claw`.
+For now Clawa is expected to be installed from the git repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-clawa`.
 
 ## First run
 
@@ -122,8 +122,8 @@ Until the adapter is published separately, use it from a local checkout:
 ```json
 {
   "packages": [
-    "git:github.com/howaboua/pi-claw",
-    "/absolute/path/to/pi-claw/packages/pi-clawa-discord"
+    "git:github.com/howaboua/pi-clawa",
+    "/absolute/path/to/pi-clawa/packages/pi-clawa-discord"
   ],
   "sessionDir": ".pi/sessions"
 }
