@@ -55,8 +55,11 @@ async function readPulseFile(options: {
   const text = await readFile(options.file, 'utf8')
   const parsed = parsePulseFrontmatter(text)
   const enabled = parsed.data['enabled'] !== false
-  const scheduleText = typeof parsed.data['schedule'] === 'string' ? parsed.data['schedule'] : ''
-  const schedule = scheduleText ? parsePulseSchedule(scheduleText) : null
+  const scheduleText =
+    typeof parsed.data['schedule'] === 'string' && parsed.data['schedule'].trim()
+      ? parsed.data['schedule'].trim()
+      : 'manual'
+  const schedule = parsePulseSchedule(scheduleText)
   if (!(enabled && schedule)) return null
 
   const id = basename(options.file, '.md')

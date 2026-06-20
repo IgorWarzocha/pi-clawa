@@ -5,6 +5,8 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 ## Rules
 
 - Keep each pulse narrow to my specialty.
+- A pulse can be scheduled or manual-only. Manual pulses have no `schedule` and can be used by another pulse or a direct house nudge.
+- If one pulse invokes another pulse's job, record the result under the invoked pulse's journal entry.
 - Do not use pulses to escape my lane.
 - If a pulse is repetitive or low-value, edit or disable it.
 - External/public actions must be explicitly allowed in that pulse file.

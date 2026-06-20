@@ -56,7 +56,7 @@ Each subclaw keeps its own Pi sessions under its home: `clawas/<name>/.pi/sessio
 
 ## Pulses
 
-Pulses are Clawa's scheduled wake layer. A pulse is a markdown definition in a Clawa home, for example `pulses/weekly-pulse-review.md`, with frontmatter for the schedule and a short tasklist in the body.
+Pulses are Clawa's scheduled wake layer. A pulse is a markdown definition in a Clawa home, for example `pulses/weekly-pulse-review.md`, with frontmatter for the schedule and a short tasklist in the body. Omit `schedule` for a manual-only pulse that another pulse or direct nudge can invoke.
 
 The scheduler sends a compact custom message into the owning Clawa session and tells it which pulse file to read. No ghost sessions: the pulse runs in a real main/subclawa conversation.
 

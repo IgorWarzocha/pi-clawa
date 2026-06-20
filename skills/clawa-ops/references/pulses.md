@@ -1,6 +1,7 @@
 # Pulses
 
 Pulses are scheduled Clawa wakes. They can be exact jobs or ambient nudges.
+Some pulses are manual-only: they have no `schedule` and are invoked by another pulse or a direct house nudge.
 
 Every Clawa can have its own pulse folder:
 
@@ -37,6 +38,7 @@ Good result:
 
 Supported schedules:
 
+- no `schedule` — manual-only pulse
 - `every 30m`
 - `every 6h`
 - `every 1d`
@@ -53,6 +55,8 @@ Before adding a pulse:
 3. Consolidate if a similar pulse already exists.
 4. Create the smallest pulse that could work.
 5. Add/update the index and journal notes.
+
+If one pulse performs another pulse's job, journal the result under the pulse whose job was performed. Example: if `hey-clawa.md` chooses to run a manual `curiosity-poke.md`, the journal entry belongs to `curiosity-poke.md`.
 
 Prefer disabling over deleting. A disabled pulse with a short reason preserves the lesson and helps challenge future similar ideas.
 

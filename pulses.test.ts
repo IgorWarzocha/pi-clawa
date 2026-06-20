@@ -10,6 +10,8 @@ import { isPulseDue, parsePulseSchedule } from './pulses/schedule.js'
 
 const TINY_CHECK_FILE_PATTERN = /Definition file: pulses\/tiny-check.md/
 const TINY_CHECK_STATE_PATTERN = /tiny-check/
+const MANUAL_PULSE_FILE_PATTERN = /Definition file: pulses\/manual-note.md/
+const MANUAL_PULSE_STATE_PATTERN = /manual-note/
 
 function stubClawasRuntime() {
   return {
@@ -31,6 +33,12 @@ test('pulse schedules parse and skip first-seen interval runs', () => {
     dueKey: null,
   })
   assert.equal(isPulseDue({ schedule: schedule!, nowMs: 1_810_000, firstSeenAt: 10_000 }).due, true)
+  assert.deepEqual(parsePulseSchedule('manual'), { kind: 'manual' })
+  assert.deepEqual(parsePulseSchedule(''), { kind: 'manual' })
+  assert.deepEqual(isPulseDue({ schedule: { kind: 'manual' }, nowMs: 10_000 }), {
+    due: false,
+    dueKey: null,
+  })
 })
 
 test('pulse runtime dispatches due main-home pulse as custom message', async () => {
@@ -52,10 +60,21 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
       ].join('\n'),
       'utf8',
     )
+    await writeFile(
+      join(root, 'pulses', 'manual-note.md'),
+      ['---', 'title: Manual note', 'enabled: true', '---', '', '# Manual note'].join('\n'),
+      'utf8',
+    )
 
     const definitions = await discoverPulseDefinitions(root)
-    assert.equal(definitions.length, 1)
-    assert.equal(definitions[0]?.key, 'main:tiny-check')
+    assert.equal(definitions.length, 2)
+    assert.equal(
+      definitions.find((definition) => definition.id === 'tiny-check')?.key,
+      'main:tiny-check',
+    )
+    assert.deepEqual(definitions.find((definition) => definition.id === 'manual-note')?.schedule, {
+      kind: 'manual',
+    })
 
     const messages: Array<{ customType?: string; content?: string; details?: unknown }> = []
     const pulseRuntime = new PulseRuntime(
@@ -79,6 +98,14 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
       await readFile(join(root, '.pi', 'pulses', 'state.json'), 'utf8'),
       TINY_CHECK_STATE_PATTERN,
     )
+    assert.doesNotMatch(
+      await readFile(join(root, '.pi', 'pulses', 'state.json'), 'utf8'),
+      MANUAL_PULSE_STATE_PATTERN,
+    )
+
+    await pulseRuntime.runNow('manual-note')
+    assert.equal(messages.length, 2)
+    assert.match(messages[1]?.content ?? '', MANUAL_PULSE_FILE_PATTERN)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })

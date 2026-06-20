@@ -1,4 +1,5 @@
 export type PulseSchedule =
+  | { kind: 'manual' }
   | { kind: 'interval'; everyMs: number }
   | { kind: 'daily'; hour: number; minute: number }
   | { kind: 'weekly'; day: number; hour: number; minute: number }
@@ -53,19 +54,36 @@ function validTime(hour: number, minute: number): boolean {
 
 export function parsePulseSchedule(raw: string): PulseSchedule | null {
   const text = raw.trim()
+  if (text === '' || text.toLowerCase() === 'manual') return { kind: 'manual' }
+
+  return (
+    parseIntervalSchedule(text) ??
+    parseDailySchedule(text) ??
+    parseWeeklySchedule(text) ??
+    parseAtSchedule(text)
+  )
+}
+
+function parseIntervalSchedule(text: string): PulseSchedule | null {
   const every = EVERY_PATTERN.exec(text)
   if (every?.[1]) {
     const everyMs = parseDurationMs(every[1])
     return everyMs ? { kind: 'interval', everyMs } : null
   }
+  return null
+}
 
+function parseDailySchedule(text: string): PulseSchedule | null {
   const daily = DAILY_PATTERN.exec(text)
   if (daily?.[1] && daily[2]) {
     const hour = Number(daily[1])
     const minute = Number(daily[2])
     return validTime(hour, minute) ? { kind: 'daily', hour, minute } : null
   }
+  return null
+}
 
+function parseWeeklySchedule(text: string): PulseSchedule | null {
   const weekly = WEEKLY_PATTERN.exec(text)
   if (weekly?.[1] && weekly[2] && weekly[3]) {
     const day = DAY_INDEX[weekly[1].toLowerCase()]
@@ -75,17 +93,21 @@ export function parsePulseSchedule(raw: string): PulseSchedule | null {
       ? { kind: 'weekly', day, hour, minute }
       : null
   }
+  return null
+}
 
+function parseAtSchedule(text: string): PulseSchedule | null {
   const at = AT_PATTERN.exec(text)
   if (at?.[1]) {
     const atMs = Date.parse(at[1])
     return Number.isFinite(atMs) ? { kind: 'at', atMs } : null
   }
-
   return null
 }
 
 export function pulseDueKey(schedule: PulseSchedule, nowMs: number): string | null {
+  if (schedule.kind === 'manual') return null
+
   const now = new Date(nowMs)
   if (schedule.kind === 'interval') return `interval:${Math.floor(nowMs / schedule.everyMs)}`
   if (schedule.kind === 'at') return nowMs >= schedule.atMs ? `at:${schedule.atMs}` : null
@@ -111,6 +133,7 @@ export function isPulseDue(options: {
   lastRunAt?: number | undefined
   lastDueKey?: string | undefined
 }): { due: boolean; dueKey: string | null } {
+  if (options.schedule.kind === 'manual') return { due: false, dueKey: null }
   if (!options.firstSeenAt) return { due: false, dueKey: null }
 
   if (options.schedule.kind === 'interval') {

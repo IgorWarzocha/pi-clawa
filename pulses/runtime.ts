@@ -71,6 +71,7 @@ export class PulseRuntime {
       let changed = seedNewPulses(state, pulses, nowMs)
 
       for (const pulse of pulses) {
+        if (pulse.schedule.kind === 'manual') continue
         const entry = state.pulses[pulse.key]
         const due = isPulseDue({
           schedule: pulse.schedule,
@@ -174,8 +175,9 @@ function seedNewPulses(
   nowMs: number,
 ): boolean {
   let changed = false
-  const live = new Set(pulses.map((pulse) => pulse.key))
-  for (const pulse of pulses) {
+  const scheduledPulses = pulses.filter((pulse) => pulse.schedule.kind !== 'manual')
+  const live = new Set(scheduledPulses.map((pulse) => pulse.key))
+  for (const pulse of scheduledPulses) {
     if (state.pulses[pulse.key]) continue
     state.pulses[pulse.key] = {
       firstSeenAt: nowMs,
