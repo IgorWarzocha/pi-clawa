@@ -1,6 +1,6 @@
 ---
 title: Hey, Clawa
-schedule: every 1h
+schedule: every 30m
 enabled: true
 journal: pulses/AGENTS.md
 ---

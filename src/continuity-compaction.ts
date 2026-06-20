@@ -1,5 +1,9 @@
 import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai'
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  SessionBeforeCompactEvent,
+} from '@earendil-works/pi-coding-agent'
 import { convertToLlm } from '@earendil-works/pi-coding-agent'
 import { rememberMemory, resolveMemoryDbPath } from './memory.js'
 
@@ -35,7 +39,10 @@ function parseMemoryLines(text: string): MemoryLine[] {
     if (tagged) {
       const content = tagged[2]?.trim() ?? ''
       if (content) {
-        memories.push({ tags: normalizeTags((tagged[1] ?? '').split(',')), content })
+        memories.push({
+          tags: normalizeTags((tagged[1] ?? '').split(',')),
+          content,
+        })
       }
     } else {
       memories.push({ tags: [], content: line })
@@ -74,7 +81,13 @@ function serializeAssistantBlocks(content: Array<{ type: string; text?: string }
     .filter(Boolean)
   const toolCalls = content
     .filter(
-      (block): block is { type: string; name: string; arguments?: Record<string, unknown> } => {
+      (
+        block,
+      ): block is {
+        type: string
+        name: string
+        arguments?: Record<string, unknown>
+      } => {
         return block.type === 'toolCall' && 'name' in block && typeof block.name === 'string'
       },
     )
@@ -158,51 +171,114 @@ ${input.conversationText}
 </conversation>`
 }
 
+type ActiveModel = NonNullable<ExtensionContext['model']>
+type ActiveModelAuth = {
+  apiKey: string
+  headers?: Record<string, string>
+}
+type SimpleCompletionResponse = Awaited<ReturnType<typeof completeSimple>>
+
+type PreparedCompaction = {
+  conversationText: string
+  customInstructions?: string | undefined
+  fileOps?: unknown
+  firstKeptEntryId: SessionBeforeCompactEvent['preparation']['firstKeptEntryId']
+  previousSummary?: string | undefined
+  signal: AbortSignal
+  tokensBefore: SessionBeforeCompactEvent['preparation']['tokensBefore']
+}
+
+function prepareCompactionInput(event: SessionBeforeCompactEvent): PreparedCompaction | undefined {
+  const { preparation, customInstructions, signal } = event
+  const {
+    messagesToSummarize,
+    turnPrefixMessages,
+    previousSummary,
+    firstKeptEntryId,
+    tokensBefore,
+  } = preparation
+  const allMessages = [...messagesToSummarize, ...turnPrefixMessages]
+  if (allMessages.length === 0 && !previousSummary?.trim()) return undefined
+
+  return {
+    conversationText: serializeLeanConversation(convertToLlm(allMessages)),
+    customInstructions,
+    fileOps: (preparation as { fileOps?: unknown }).fileOps,
+    firstKeptEntryId,
+    previousSummary,
+    signal,
+    tokensBefore,
+  }
+}
+
+function requireActiveModel(ctx: ExtensionContext): ActiveModel {
+  if (!ctx.model) throw new Error('Clawa compaction requires the active Pi model')
+  return ctx.model
+}
+
+async function resolveActiveModelAuth(
+  ctx: ExtensionContext,
+  model: ActiveModel,
+): Promise<ActiveModelAuth> {
+  const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model)
+  if (!auth.ok) throw new Error(auth.error)
+  if (!auth.apiKey)
+    throw new Error(`Clawa compaction cannot resolve an API key for ${model.provider}`)
+  return {
+    apiKey: auth.apiKey,
+    ...(auth.headers ? { headers: auth.headers } : {}),
+  }
+}
+
+function extractCompletionText(response: SimpleCompletionResponse): string {
+  if (response.stopReason !== 'stop') {
+    throw new Error(`Clawa compaction stopped early (${response.stopReason})`)
+  }
+
+  return response.content
+    .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+    .map((part) => part.text)
+    .join('\n')
+    .trim()
+}
+
+function extractContinuitySummary(text: string): string {
+  const summary = extractBlock(text, 'continuity')
+  if (!summary) throw new Error('Clawa compaction returned no continuity block')
+  return summary
+}
+
+function writeCompactionMemories(cwd: string, text: string): { path: string; count: number } {
+  let memoryWrite = { path: resolveMemoryDbPath(cwd), count: 0 }
+  for (const memory of parseMemoryLines(extractBlock(text, 'memories'))) {
+    const result = rememberMemory(cwd, { text: memory.content, tags: memory.tags })
+    memoryWrite = { path: result.path, count: memoryWrite.count + 1 }
+  }
+  return memoryWrite
+}
+
+function notifyCompactionFailure(ctx: ExtensionContext, signal: AbortSignal, error: unknown): void {
+  if (signal.aborted || !ctx.hasUI) return
+  const message = error instanceof Error ? error.message : String(error)
+  ctx.ui.notify(`Clawa compaction failed: ${message}`, 'warning')
+}
+
+function notifyMemoryFailure(ctx: ExtensionContext, signal: AbortSignal, error: unknown): void {
+  if (signal.aborted || !ctx.hasUI) return
+  const message = error instanceof Error ? error.message : String(error)
+  ctx.ui.notify(`Clawa memory write failed: ${message}`, 'warning')
+}
+
 export function registerContinuityCompaction(pi: ExtensionAPI): void {
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Linear fallback pipeline for the compaction hook.
   pi.on('session_before_compact', async (event, ctx) => {
-    const { preparation, customInstructions, signal } = event
-    const {
-      messagesToSummarize,
-      turnPrefixMessages,
-      previousSummary,
-      firstKeptEntryId,
-      tokensBefore,
-    } = preparation
-    const allMessages = [...messagesToSummarize, ...turnPrefixMessages]
-    if (allMessages.length === 0 && !previousSummary?.trim()) return
-
-    const model = ctx.model
-    if (!model) {
-      if (ctx.hasUI)
-        ctx.ui.notify('Clawa compaction found no active model; using default compaction', 'warning')
-      return
-    }
-
-    const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model)
-    if (!(auth.ok && auth.apiKey)) {
-      if (ctx.hasUI) {
-        ctx.ui.notify(
-          auth.ok ? `No API key for ${model.provider}; using default compaction` : auth.error,
-          'warning',
-        )
-      }
-      return
-    }
-
-    const conversationText = serializeLeanConversation(convertToLlm(allMessages))
-    const fileOps = (preparation as { fileOps?: unknown }).fileOps
-    const prompt = buildCompactionPrompt({
-      conversationText,
-      previousSummary,
-      customInstructions,
-      fileOps,
-    })
+    const prepared = prepareCompactionInput(event)
+    if (!prepared) return
 
     try {
-      if (ctx.hasUI) {
-        ctx.ui.notify(`Clawa compaction via ${model.provider}/${model.id}`, 'info')
-      }
+      const model = requireActiveModel(ctx)
+      const auth = await resolveActiveModelAuth(ctx, model)
+      const prompt = buildCompactionPrompt(prepared)
+      if (ctx.hasUI) ctx.ui.notify(`Clawa compaction via ${model.provider}/${model.id}`, 'info')
 
       const thinkingLevel = pi.getThinkingLevel() as ThinkingLevel | undefined
       const response = await completeSimple(
@@ -221,70 +297,36 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
         {
           apiKey: auth.apiKey,
           ...(auth.headers ? { headers: auth.headers } : {}),
-          signal,
+          signal: prepared.signal,
           ...(thinkingLevel ? { reasoning: thinkingLevel } : {}),
           maxTokens: 32768,
         },
       )
 
-      if (response.stopReason !== 'stop') {
-        if (!signal.aborted && ctx.hasUI) {
-          ctx.ui.notify(
-            `Clawa compaction stopped early (${response.stopReason}); using default compaction`,
-            'warning',
-          )
-        }
-        return
-      }
-
-      const text = response.content
-        .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
-        .map((part) => part.text)
-        .join('\n')
-        .trim()
-      const summary = extractBlock(text, 'continuity')
-      if (!summary) {
-        if (!signal.aborted && ctx.hasUI) {
-          ctx.ui.notify(
-            'Clawa compaction returned no continuity block; using default compaction',
-            'warning',
-          )
-        }
-        return
-      }
-
-      const memories = parseMemoryLines(extractBlock(text, 'memories'))
+      const text = extractCompletionText(response)
+      const summary = extractContinuitySummary(text)
       let memoryWrite = { path: resolveMemoryDbPath(ctx.cwd), count: 0 }
       try {
-        for (const memory of memories) {
-          const result = rememberMemory(ctx.cwd, { text: memory.content, tags: memory.tags })
-          memoryWrite = { path: result.path, count: memoryWrite.count + 1 }
-        }
+        memoryWrite = writeCompactionMemories(ctx.cwd, text)
       } catch (error) {
-        if (!signal.aborted && ctx.hasUI) {
-          const message = error instanceof Error ? error.message : String(error)
-          ctx.ui.notify(`Clawa memory write failed: ${message}`, 'warning')
-        }
+        notifyMemoryFailure(ctx, prepared.signal, error)
       }
 
       return {
         compaction: {
           summary,
-          firstKeptEntryId,
-          tokensBefore,
+          firstKeptEntryId: prepared.firstKeptEntryId,
+          tokensBefore: prepared.tokensBefore,
           details: {
             kind: COMPACTION_KIND,
             memoryCount: memoryWrite.count,
             memoryPath: memoryWrite.path,
-            fileOps,
+            fileOps: prepared.fileOps,
           },
         },
       }
     } catch (error) {
-      if (!signal.aborted && ctx.hasUI) {
-        const message = error instanceof Error ? error.message : String(error)
-        ctx.ui.notify(`Clawa compaction failed, using default compaction: ${message}`, 'warning')
-      }
+      notifyCompactionFailure(ctx, prepared.signal, error)
       return
     }
   })

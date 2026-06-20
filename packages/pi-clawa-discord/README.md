@@ -22,6 +22,8 @@ Then start Pi and run `/discord`.
 
 ## Attribution
 
-This adapter carries forward earlier Discord gateway groundwork by **patchfx**. It has since been heavily reshaped around Clawa/Clawas, but the original MIT license and credit stay with the package.
+This adapter started from **Crokily/pi-discord-gateway** / **Piscord**. The upstream MIT license names **patchfx** as copyright holder; both the source repo and license credit stay with this package.
+
+It has since been heavily reshaped around Clawa/Clawas.
 
 The gateway architecture also keeps a small nod to NanoClaw for the Discord → queue → agent → Discord relay pattern.

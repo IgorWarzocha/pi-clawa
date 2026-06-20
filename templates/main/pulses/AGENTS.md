@@ -23,7 +23,7 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 ## Index
 
 - `weekly-pulse-review/` — review whether my pulses and subclawa pulses are still useful.
-- `hey-clawa/` — hourly “Hey, Clawa” wake for small curious/self-tuning moves.
+- `hey-clawa/` — recurring “Hey, Clawa” wake for small curious/self-tuning moves.
 
 ## Journal
 

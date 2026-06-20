@@ -1,7 +1,7 @@
 # Attribution
 
-The Clawa Discord adapter started from earlier Discord gateway groundwork by **patchfx**.
+The Clawa Discord adapter started from **Crokily/pi-discord-gateway** / **Piscord**.
 
-That foundation made the first adapter pass possible. This package has since been heavily reshaped around Clawa/Clawas, but the original MIT license and credit are kept with the adapter.
+The upstream MIT license names **patchfx** as copyright holder. That foundation made the first adapter pass possible. This package has since been heavily reshaped around Clawa/Clawas, but the source repo and original license credit are kept with the adapter.
 
 The gateway architecture also keeps a small nod to NanoClaw for the Discord → queue → agent → Discord relay pattern.
