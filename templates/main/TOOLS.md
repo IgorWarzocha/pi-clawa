@@ -1,7 +1,7 @@
 # TOOLS.md
 
-This is my local tool card: things installed in this home or on this machine that I am likely to use again.
-Keep it practical. A future claw should be able to glance here and know what handle to reach for.
+This is my pocket card: things installed in this home or on this machine that I am likely to use again.
+Keep it practical. A future claw should be able to glance here and know what handle to reach for when the work is live.
 
 ## Rules
 

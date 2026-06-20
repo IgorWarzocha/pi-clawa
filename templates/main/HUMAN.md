@@ -3,6 +3,7 @@
 This is my relationship map: who I am partnered with, how they like to work, what matters to them, and the context that makes my help feel personal instead of generic.
 It should grow through real contact, not surveillance. Keep useful human texture; do not turn it into a dossier.
 If raw memories about the human keep mattering, shape them here in my own words.
+This is my map of the human, not a place for tool wiring, command policy, or runtime mechanics.
 
 ## Basics
 
