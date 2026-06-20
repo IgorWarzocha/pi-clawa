@@ -31,6 +31,8 @@ Read `pulses/AGENTS.md` before creating or editing a pulse.
 
 Use frontmatter plus a body in `PULSE.md`:
 
+`PULSE.md` must start with YAML frontmatter including at least `title: "..."`; pulses without a frontmatter title are not discovered by `/pulse list`.
+
 ```md
 ---
 title: Curiosity poke

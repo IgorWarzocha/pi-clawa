@@ -6,6 +6,7 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 
 - Every pulse is a named folder: `pulses/<pulse-name>/`.
 - The runnable definition is `pulses/<pulse-name>/PULSE.md`.
+- `PULSE.md` must start with YAML frontmatter including at least `title: "..."`; pulses without a frontmatter title are not discovered by `/pulse list`.
 - Each pulse folder should have a short local `AGENTS.md` for that pulse only.
 - Put that pulse's notes/results inside its folder, organized however the pulse needs.
 - A pulse can be scheduled or manual-only. Manual pulses have no `schedule` and can be used by another pulse or a direct human nudge.
