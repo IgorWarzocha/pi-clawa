@@ -1,7 +1,7 @@
 export type Intent =
   | { type: 'screen'; screen: string }
   | { type: 'detail'; key: string }
-  | { type: 'action'; name: string }
+  | { type: 'action'; name?: string; run?: () => void; close?: boolean }
   | { type: 'link'; url: string }
 
 type Tier = 'top' | 'nested'

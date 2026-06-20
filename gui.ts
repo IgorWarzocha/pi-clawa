@@ -75,14 +75,17 @@ function buildClawsScreen(
     {
       title: 'claw',
       items: clawItems,
-      shortcuts: 'enter act • v detail • tab cycle • esc close',
+      shortcuts: 'enter actions • v detail • tab cycle • esc close',
       page: 7,
       find: (item, query) => matchesQuery(query, item.name, item.summary),
       intent: (item): Intent | undefined => {
         const worker = item.workers[0]
         if (!worker) return { type: 'detail', key: item.detailKey }
-        void runWorkerAction(ctx, runtime, worker, setStatus)
-        return undefined
+        return {
+          type: 'action',
+          close: true,
+          run: () => void runWorkerAction(ctx, runtime, worker, setStatus),
+        }
       },
       view: (item): Intent => ({ type: 'detail', key: item.detailKey }),
       cols: [
@@ -222,6 +225,7 @@ function buildHelpScreen(getStatus: () => string): Primitive {
     title: 'claw/help',
     content: [
       row('Enter : act on the highlighted claw', 'accent'),
+      row('Claw actions include note, steer, and jump'),
       row('On pulses: Enter runs, V shows the pulse definition'),
       row('Shift+J/K : scroll long detail views'),
       row('V     : toggle detail panel'),

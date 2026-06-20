@@ -55,6 +55,11 @@ async function runWorkerActionPicker(
         value: 'steer',
         searchableText: 'steer follow up',
       },
+      {
+        label: 'Jump into manual panel',
+        value: 'jump',
+        searchableText: 'jump manual panel takeover',
+      },
     ],
     search: false,
     page: 7,
@@ -69,6 +74,15 @@ export async function runWorkerAction(
 ): Promise<void> {
   const action = await runWorkerActionPicker(ctx, worker)
   if (!action) return
+
+  if (action === 'jump') {
+    const handle = await runtime.openWorkerPanel(worker.id)
+    const host = runtime.getManualPanelHostLabel() ?? 'manual'
+    const status = `Jumped into ${worker.title} in a ${host} panel: ${handle}`
+    setStatus(status)
+    ctx.ui.notify(status, 'info')
+    return
+  }
 
   const message = await runComposer(ctx, {
     title: `${worker.title}: ${action === 'prompt' ? 'send note' : 'steer work'}`,

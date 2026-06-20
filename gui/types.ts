@@ -42,7 +42,7 @@ export interface PulseItem {
 }
 
 export type Screen = 'claws' | 'manage' | 'pulses' | 'about' | 'help'
-export type WorkerAction = 'prompt' | 'steer'
+export type WorkerAction = 'prompt' | 'steer' | 'jump'
 
 export interface CreateClawRequest {
   purpose: string

@@ -22,21 +22,19 @@ export function markWorkerDetachedState(
   workerId: string,
   label: string,
   timestamp: number,
+  sessionFile?: string | undefined,
 ): void {
-  patchWorkerState(
-    state,
-    workerId,
-    {
-      status: 'stopped',
-      manualSession: true,
-      pid: undefined,
-      currentTask: label,
-      currentToolName: undefined,
-      lastError: undefined,
-      lastSummary: label,
-    },
-    timestamp,
-  )
+  const patch = {
+    status: 'stopped' as const,
+    manualSession: true,
+    pid: undefined,
+    currentTask: label,
+    currentToolName: undefined,
+    lastError: undefined,
+    lastSummary: label,
+    ...(sessionFile ? { sessionFile } : {}),
+  }
+  patchWorkerState(state, workerId, patch, timestamp)
   pushEvent(state, workerId, `${workerId} opened as ${label}`, timestamp)
 }
 

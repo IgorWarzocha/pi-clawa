@@ -35,6 +35,10 @@ function buildWorkerProcessArgs(options: WorkerProcessOptions): string[] {
   return args
 }
 
+async function wait(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 function buildWorkerEnvironment(options: WorkerProcessOptions): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -159,11 +163,8 @@ export class ClawasRpcWorker {
       return
     }
 
-    try {
-      await this.abort()
-    } catch {
-      // Ignore abort errors during shutdown.
-    }
+    const abortAttempt = this.abort().catch(() => {})
+    await Promise.race([abortAttempt, wait(500)])
 
     const child = this.process
     child.kill('SIGTERM')

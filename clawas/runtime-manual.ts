@@ -17,6 +17,7 @@ export async function openWorkerManualSession(options: {
 
   await options.daemon.stopWorker(options.workerId)
   try {
+    await options.launcher.captureCurrentHostPane()
     const launchOptions = {
       definition,
       cwd,

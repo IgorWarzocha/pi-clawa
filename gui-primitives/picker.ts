@@ -23,8 +23,9 @@ function pick<T>(
   intent: Intent | undefined,
   values: Map<string, T>,
 ): { ok: boolean; value: T | undefined } {
-  if (intent?.type !== 'action' || !values.has(intent.name)) return { ok: false, value: undefined }
-  return { ok: true, value: values.get(intent.name) }
+  const name = intent?.type === 'action' ? intent.name : undefined
+  if (!(name && values.has(name))) return { ok: false, value: undefined }
+  return { ok: true, value: values.get(name) }
 }
 
 function choose<T>(

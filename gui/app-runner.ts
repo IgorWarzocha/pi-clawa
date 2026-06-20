@@ -161,6 +161,15 @@ function buildAppContext<Screen extends string>(
       return
     }
     if (intent.type === 'detail') state.detail = cfg.details[intent.key]
+    if (intent.type === 'action' && intent.run) {
+      const run = intent.run
+      if (intent.close) {
+        done()
+        setTimeout(run, 0)
+        return
+      }
+      run()
+    }
   }
   return { cfg, state, primitive, slot, setScreen, applySearch, route, requestRender, done }
 }

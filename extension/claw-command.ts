@@ -6,6 +6,7 @@ import type { PulseRuntime } from '../pulses/runtime.js'
 import { executeBootstrap } from './bootstrap-actions.js'
 import { createNewClaw } from './clawa-seed.js'
 import { resolveBootstrapRequest, resolveCreateRequest } from './command-args.js'
+import { IS_CLAWAS_WORKER } from './constants.js'
 import { syncClawaEnvironment } from './environment.js'
 import type { ClawaRuntimeState } from './runtime-state.js'
 
@@ -21,6 +22,11 @@ export function registerClawCommand(
   pi.registerCommand('claw', {
     description: 'Open Clawa GUI or create/bootstrap claws',
     handler: async (args, ctx) => {
+      if (IS_CLAWAS_WORKER) {
+        ctx.ui.notify('/claw belongs in the main Clawa session.', 'warning')
+        return
+      }
+
       options.runtime.ensureExtensionConfig(ctx.cwd)
       options.setDefaults(resolveClawaDefaults(ctx.cwd))
       syncClawaEnvironment(ctx.cwd)

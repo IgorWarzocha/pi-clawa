@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import type { ClawaDefaults } from '../config'
+import { getClawasSessionStatus } from './comms/client.js'
 import { sendWorkerPrompt } from './daemon-prompt.js'
 import { stopAllWorkers } from './daemon-shutdown.js'
 import { startWorkerProcess } from './daemon-start-worker.js'
@@ -21,6 +22,7 @@ import { resolveWorkerSessionFile } from './session-registry.js'
 import { createInitialState, getWorkerState } from './state.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 import { ClawasWorkerEventRouter } from './worker-event-router.js'
+import { getWorkerSocketAlias } from './worker-identity.js'
 
 function now(): number {
   return Date.now()
@@ -140,7 +142,14 @@ export class ClawasDaemon {
     this.notifyChanged()
 
     for (const definition of this.config.workers) {
+      await this.adoptLiveManualSession(definition.id)
+    }
+
+    for (const definition of this.config.workers) {
       if (!definition.autostart) {
+        continue
+      }
+      if (getWorkerState(this.state, definition.id).manualSession) {
         continue
       }
       await this.startWorker(definition.id)
@@ -182,9 +191,10 @@ export class ClawasDaemon {
   }
 
   async markWorkerDetached(workerId: string, label = 'manual session'): Promise<void> {
-    // Detached/manual means Clawas deliberately lets go of orchestration.
-    // The worker stays reachable to the human, but not to clawas tools.
-    await this.stopWorker(workerId)
+    // Detached/manual means Clawas deliberately lets go of orchestration after
+    // the managed worker has already been stopped by the takeover path. Do not
+    // stop again here: a second abort can leave the slash command waiting on a
+    // worker that is already exiting while the manual panel is open.
     markWorkerDetachedState(this.state, workerId, label, now())
     this.notifyChanged()
   }
@@ -210,6 +220,24 @@ export class ClawasDaemon {
       ensureStarted: async (id) => await this.startWorker(id),
       notifyChanged: () => this.notifyChanged(),
     })
+  }
+
+  private async adoptLiveManualSession(workerId: string): Promise<boolean> {
+    const definition = this.getWorkerDefinition(workerId)
+    const status = await getClawasSessionStatus(getWorkerSocketAlias(definition))
+    if (status?.kind !== 'manual') {
+      return false
+    }
+
+    const workerState = getWorkerState(this.state, workerId)
+    const sessionFile =
+      workerState.sessionFile ??
+      (await resolveWorkerSessionFile(this.controlPlaneRoot, definition, workerState.cwd).catch(
+        () => undefined,
+      ))
+    markWorkerDetachedState(this.state, workerId, 'manual session', now(), sessionFile)
+    this.notifyChanged()
+    return true
   }
 
   private async startWorker(workerId: string): Promise<void> {

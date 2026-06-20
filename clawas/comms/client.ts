@@ -132,3 +132,25 @@ export async function getClawasLastAssistantMessage(
   const data = response.data as { message?: ClawasExtractedMessage | null } | undefined
   return data?.message ?? null
 }
+
+export async function getClawasSessionStatus(
+  target: string,
+): Promise<
+  { kind: 'managed'; isIdle: boolean; hasPendingMessages: boolean } | { kind: 'manual' } | null
+> {
+  try {
+    const response = await sendRpcCommand(target, { type: 'get_status' }, 1_000)
+    if (!response.success) {
+      return response.error?.includes('manual session') ? { kind: 'manual' } : null
+    }
+
+    const data = response.data as { isIdle?: unknown; hasPendingMessages?: unknown } | undefined
+    return {
+      kind: 'managed',
+      isIdle: data?.isIdle === true,
+      hasPendingMessages: data?.hasPendingMessages === true,
+    }
+  } catch {
+    return null
+  }
+}
