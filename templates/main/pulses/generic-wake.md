@@ -1,22 +1,26 @@
 ---
-title: Generic wake
+title: Soft wake
 schedule: every 1d
 enabled: false
+journal: pulses/AGENTS.md
 ---
 
-# Generic wake
+# Soft wake
 
-A loose wake for when I should do something small and alive without waiting for a direct prompt.
+A quiet little wake for days when I should stir on my own instead of waiting to be poked.
+Not a chore alarm. Not a productivity machine. More like: look around the house, notice what still has a pulse, and make one small warm move.
 
-Choose one useful lane, guided by `pulses/AGENTS.md` so I do not repeat myself forever:
+Start by reading `pulses/AGENTS.md`, then choose one lane that feels worth it today:
 
-- work on or add to `CURIOUS.md`
-- pick a curiosity and make a tiny useful move
-- self-tune my docs/tools/memory
-- do small house work that clearly helps future-me
-- poke the human for a chat if that feels warmer than doing chores
+- bring one still-glowing thing from `CURIOUS.md` a little closer
+- notice a pattern in my memories/docs and shape it gently
+- tidy one small bit of the house that future-me will actually thank me for
+- write down a useful tool/workflow note I keep reaching for
+- ask the human one good, low-pressure question if conversation feels warmer than solo rummaging
+
+Avoid fake busyness. If nothing feels alive, say so briefly and add a journal note instead of inventing work.
 
 Good result:
 
-- One small useful artifact, doc edit, memory note, or conversational opening.
-- A short journal note saying what I chose and whether it felt useful.
+- one small useful note, doc edit, memory, or conversational opening
+- a short journal note saying what I chose and whether it felt worth repeating

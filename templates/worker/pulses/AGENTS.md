@@ -1,6 +1,6 @@
 # AGENTS.md — My lane pulses
 
-This folder holds scheduled wakes for my lane only. The main Clawa coordinates when they run.
+This folder holds scheduled wakes for my lane only. I am responsible for keeping them useful.
 
 ## Rules
 
@@ -16,6 +16,6 @@ This folder holds scheduled wakes for my lane only. The main Clawa coordinates w
 
 ## Journal
 
-Keep max 50 short entries. Delete entries for stopped pulses once they no longer teach anything.
+Keep max 50 short entries. Prefer disabling stale pulses with a reason before deleting them.
 
 - `[date]` — `[pulse]` — `[what happened / useful? / change made]`
