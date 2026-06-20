@@ -10,9 +10,15 @@ pulses/
   AGENTS.md
   hey-clawa.md
   weekly-pulse-review.md
+  manual/
+    curiosity-poke.md
+  2026-06/
+    run-notes.md
 ```
 
-`pulses/AGENTS.md` is the local pulse index and journal. Read it before creating or editing a pulse.
+`pulses/AGENTS.md` is the local pulse index and journal. Keep it short and snappy. Read it before creating or editing a pulse.
+
+Organize supporting notes/results by date, pulse name, or purpose. Do not dump every file loose into `pulses/`.
 
 ## Pulse file shape
 
@@ -35,6 +41,8 @@ Good result:
 - one small useful note, question, or doc edit
 - a short journal entry in `pulses/AGENTS.md`
 ```
+
+Runnable pulse definitions need frontmatter with `title`. Ordinary notes/results without frontmatter can live under `pulses/` without becoming runnable pulses.
 
 Supported schedules:
 
@@ -66,6 +74,8 @@ In `pulses/AGENTS.md`, keep:
 - disabled pulse notes: name + reason
 - short run journal, max ~50 useful entries
 - pruning/consolidation notes
+
+Put bulky run notes in dated or pulse-specific files/folders and link them from the journal.
 
 If a pulse repeatedly produces low-value work, edit it, merge it, or disable it with a reason.
 

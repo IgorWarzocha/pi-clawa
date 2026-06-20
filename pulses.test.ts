@@ -65,9 +65,17 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
       ['---', 'title: Manual note', 'enabled: true', '---', '', '# Manual note'].join('\n'),
       'utf8',
     )
+    await mkdir(join(root, 'pulses', 'manual'), { recursive: true })
+    await writeFile(
+      join(root, 'pulses', 'manual', 'curiosity-poke.md'),
+      ['---', 'title: Curiosity poke', 'enabled: true', '---', '', '# Curiosity poke'].join('\n'),
+      'utf8',
+    )
+    await mkdir(join(root, 'pulses', '2026-06'), { recursive: true })
+    await writeFile(join(root, 'pulses', '2026-06', 'run-note.md'), '# run note\n', 'utf8')
 
     const definitions = await discoverPulseDefinitions(root)
-    assert.equal(definitions.length, 2)
+    assert.equal(definitions.length, 3)
     assert.equal(
       definitions.find((definition) => definition.id === 'tiny-check')?.key,
       'main:tiny-check',
@@ -75,6 +83,14 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     assert.deepEqual(definitions.find((definition) => definition.id === 'manual-note')?.schedule, {
       kind: 'manual',
     })
+    assert.deepEqual(
+      definitions.find((definition) => definition.id === 'manual/curiosity-poke')?.schedule,
+      { kind: 'manual' },
+    )
+    assert.equal(
+      definitions.some((definition) => definition.id === '2026-06/run-note'),
+      false,
+    )
 
     const messages: Array<{ customType?: string; content?: string; details?: unknown }> = []
     const pulseRuntime = new PulseRuntime(

@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { basename, join, relative, resolve } from 'node:path'
+import { basename, join, relative, resolve, sep } from 'node:path'
 import { loadClawasConfig } from '../clawas/config-loader.js'
 import { findRepoRoot } from '../config.js'
 import { parsePulseFrontmatter } from './frontmatter.js'
@@ -22,6 +22,7 @@ export interface PulseDefinition {
 
 const PULSE_FILE_PATTERN = /^[a-z0-9][a-z0-9-]*\.md$/u
 const MARKDOWN_H1_PATTERN = /^#\s+(.+)$/mu
+const MARKDOWN_SUFFIX_PATTERN = /\.md$/u
 
 async function pathExists(path: string): Promise<boolean> {
   try {
@@ -54,6 +55,8 @@ async function readPulseFile(options: {
 
   const text = await readFile(options.file, 'utf8')
   const parsed = parsePulseFrontmatter(text)
+  if (!(typeof parsed.data['title'] === 'string' && parsed.data['title'].trim())) return null
+
   const enabled = parsed.data['enabled'] !== false
   const scheduleText =
     typeof parsed.data['schedule'] === 'string' && parsed.data['schedule'].trim()
@@ -62,11 +65,11 @@ async function readPulseFile(options: {
   const schedule = parsePulseSchedule(scheduleText)
   if (!(enabled && schedule)) return null
 
-  const id = basename(options.file, '.md')
-  const title =
-    typeof parsed.data['title'] === 'string' && parsed.data['title'].trim()
-      ? parsed.data['title'].trim()
-      : titleFromBody(parsed.body, id)
+  const pulsesDir = join(options.ownerHome, 'pulses')
+  const id = relative(pulsesDir, options.file)
+    .replaceAll(sep, '/')
+    .replace(MARKDOWN_SUFFIX_PATTERN, '')
+  const title = parsed.data['title'].trim() || titleFromBody(parsed.body, id)
 
   return {
     key: `${options.ownerId}:${id}`,
@@ -87,13 +90,19 @@ async function readPulseFile(options: {
 async function listPulseFiles(dir: string): Promise<string[]> {
   try {
     const entries = await readdir(dir, { withFileTypes: true })
-    return entries
-      .filter(
-        (entry) =>
-          entry.isFile() && PULSE_FILE_PATTERN.test(entry.name) && entry.name !== 'AGENTS.md',
-      )
-      .map((entry) => join(dir, entry.name))
-      .sort()
+    const files: string[] = []
+    for (const entry of entries) {
+      if (entry.name.startsWith('.')) continue
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        files.push(...(await listPulseFiles(path)))
+        continue
+      }
+      if (entry.isFile() && PULSE_FILE_PATTERN.test(entry.name) && entry.name !== 'AGENTS.md') {
+        files.push(path)
+      }
+    }
+    return files.sort()
   } catch {
     return []
   }
