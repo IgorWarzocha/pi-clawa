@@ -10,6 +10,7 @@ Operate the Clawa house through readable files and real conversation. Do not gue
 Load the needed reference before editing:
 
 - `references/configuration.md` — `.pi/claw.jsonc`, worker fields, model discovery.
+- `references/import-openclaw-hermes.md` — adapt an existing OpenClaw or Hermes home into Clawa shape.
 - `references/subclawas-setup.md` — create, register, name, and onboard a subclawa.
 - `references/pulses.md` — create, edit, disable, or review pulses.
 
