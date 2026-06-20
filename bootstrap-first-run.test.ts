@@ -22,6 +22,7 @@ const BOOTSTRAP_NO_WALLS_PATTERN = /No walls of text/
 const BOOTSTRAP_NO_FIRST_EDIT_PATTERN = /do not edit files yet/
 const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /No giant intake form/
 const BOOTSTRAP_ADAPTIVE_LANGUAGE_PATTERN = /Translate it into whatever language fits me/
+const BOOTSTRAP_NO_RUSH_PRIVACY_PATTERN = /Do not rush to privacy calibration/
 const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
 const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
 const BOOTSTRAP_NO_FIRST_RECALL_PATTERN = /Do not call recall on this first turn/
@@ -63,6 +64,7 @@ test('first-run bootstrap prompt is progressive and points at living docs', () =
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_EDIT_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_INTAKE_FORM_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_ADAPTIVE_LANGUAGE_PATTERN)
+  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_RUSH_PRIVACY_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_RECALL_PATTERN)
   assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_RECALL_PATTERN)
