@@ -1,20 +1,25 @@
 import { join } from 'node:path'
 import type { ClawaDefaults } from '../config'
-import { sendClawasSessionMessage } from './comms/client.js'
 import { sendWorkerPrompt } from './daemon-prompt.js'
 import {
   clearManualSessionState,
   markWorkerDetachedState,
   resetStateForRestart,
 } from './daemon-state.js'
+import {
+  createRpcWorker,
+  handleWorkerStartFailureState,
+  markWorkerReadyState,
+  nameWorkerSession,
+  sendStartupContextMessage,
+} from './daemon-worker-lifecycle.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
-import { ClawasRpcWorker } from './rpc-worker.js'
+import type { ClawasRpcWorker } from './rpc-worker.js'
 import { resolveWorkerSessionFile } from './session-registry.js'
 import { createInitialState, getWorkerState, patchWorkerState, pushEvent } from './state.js'
-import { summarizeAssistantText, summarizeError, summarizePrompt } from './summaries.js'
+import { summarizePrompt } from './summaries.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 import { ClawasWorkerEventRouter } from './worker-event-router.js'
-import { getWorkerSessionName, getWorkerSocketAlias } from './worker-identity.js'
 
 function now(): number {
   return Date.now()
@@ -236,7 +241,7 @@ export class ClawasDaemon {
 
     try {
       await worker.start()
-      await worker.setSessionName(getWorkerSessionName(definition, this.clawaDefaults))
+      await nameWorkerSession(worker, this.clawaDefaults)
       await this.markWorkerReady(workerId, worker, workerState.lastSummary)
 
       if (definition.startupPrompt) {
@@ -253,24 +258,12 @@ export class ClawasDaemon {
       return
     }
 
-    try {
-      // Startup primes worker context only. It must not trigger a model turn or
-      // generate launch/reload status chatter unless a later real task asks for it.
-      await sendClawasSessionMessage(getWorkerSocketAlias(definition), {
-        message,
-        messageType: 'session',
-        mode: 'steer',
-        sender: {
-          workerId: 'main-claw',
-          workerTitle: this.getMainClawName(),
-        },
-        kind: 'instruction',
-        intent: 'for_context',
-        visibility: 'worker',
-      })
-    } catch {
-      await this.sendPrompt(workerId, message, 'prompt')
-    }
+    await sendStartupContextMessage({
+      definition,
+      message,
+      getMainClawName: () => this.getMainClawName(),
+      fallbackPrompt: async () => await this.sendPrompt(workerId, message, 'prompt'),
+    })
   }
 
   private createWorker(
@@ -278,15 +271,10 @@ export class ClawasDaemon {
     definition: WorkerDefinition,
     sessionFile?: string,
   ): ClawasRpcWorker {
-    return new ClawasRpcWorker({
+    return createRpcWorker({
       definition,
       cwd,
       extensionPaths: this.getWorkerExtensionPaths(definition.id),
-      // Report to the stable main-claw alias, not the session id captured when
-      // the daemon first started. Main Pi sessions can switch/compact/reload while
-      // workers keep running; a frozen session id strands later worker reports in
-      // an old transcript.
-      reportSessionId: 'main-claw',
       sessionFile,
     })
   }
@@ -305,24 +293,14 @@ export class ClawasDaemon {
     worker: ClawasRpcWorker,
     fallbackSummary: string,
   ): Promise<void> {
-    const lastAssistantText = await worker.getLastAssistantText()
-    const workerState = await worker.getState()
-    patchWorkerState(
-      this.state,
+    await markWorkerReadyState({
+      state: this.state,
       workerId,
-      {
-        status: 'idle',
-        manualSession: false,
-        pid: worker.pid,
-        sessionFile: workerState.sessionFile,
-        lastSummary: lastAssistantText
-          ? summarizeAssistantText(lastAssistantText)
-          : fallbackSummary,
-        lastError: undefined,
-      },
-      now(),
-    )
-    pushEvent(this.state, workerId, `${worker.definition.title} ready`, now())
+      worker,
+      fallbackSummary,
+      clawaDefaults: this.clawaDefaults,
+      timestamp: now(),
+    })
     this.notifyChanged()
   }
 
@@ -332,31 +310,16 @@ export class ClawasDaemon {
     definition: WorkerDefinition,
     error: unknown,
   ): Promise<void> {
-    try {
-      await worker.stop()
-    } catch {
-      // Ignore cleanup errors after a failed start.
-    }
-
-    this.workers.delete(workerId)
-    this.streamBuffers.delete(workerId)
-    patchWorkerState(
-      this.state,
+    await handleWorkerStartFailureState({
+      state: this.state,
+      workers: this.workers,
+      streamBuffers: this.streamBuffers,
       workerId,
-      {
-        status: 'error',
-        manualSession: false,
-        lastError: summarizeError(error instanceof Error ? error.message : String(error)),
-        currentTask: undefined,
-      },
-      now(),
-    )
-    pushEvent(
-      this.state,
-      workerId,
-      `${definition.title} failed to start: ${error instanceof Error ? error.message : String(error)}`,
-      now(),
-    )
+      worker,
+      definition,
+      error,
+      timestamp: now(),
+    })
     this.notifyChanged()
   }
 
