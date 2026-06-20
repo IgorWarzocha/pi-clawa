@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import type { ClawaDefaults } from '../config'
 import { sendClawasSessionMessage } from './comms/client.js'
+import { sendWorkerPrompt } from './daemon-prompt.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
 import { ClawasRpcWorker } from './rpc-worker.js'
 import { resolveWorkerSessionFile } from './session-registry.js'
@@ -225,72 +226,17 @@ export class ClawasDaemon {
     message: string,
     mode: 'prompt' | 'steer' | 'followUp' = 'prompt',
   ): Promise<void> {
-    const workerState = getWorkerState(this.state, workerId)
-    if (workerState.manualSession) {
-      throw new Error(
-        `Worker ${workerId} is in a manual session and is disconnected from ${this.getClawasName()}`,
-      )
-    }
-
-    let worker = this.workers.get(workerId)
-    if (!worker) {
-      await this.startWorker(workerId)
-      worker = this.workers.get(workerId)
-    }
-    if (!worker) {
-      throw new Error(`Worker ${workerId} is not running`)
-    }
-
-    const previousStatus = workerState.status
-    const previousTask = workerState.currentTask
-    // Patch the feed optimistically so the operator sees the queue immediately,
-    // then roll back if the underlying RPC send actually fails.
-    const effectiveMode =
-      mode === 'prompt' && (workerState.status === 'starting' || workerState.status === 'streaming')
-        ? 'followUp'
-        : mode
-    const promptSummary = summarizePrompt(message)
-    const nextStatus = effectiveMode === 'prompt' ? 'starting' : workerState.status
-
-    patchWorkerState(
-      this.state,
+    await sendWorkerPrompt({
+      state: this.state,
+      workers: this.workers,
       workerId,
-      { status: nextStatus, currentTask: promptSummary, lastError: undefined },
-      now(),
-    )
-    pushEvent(this.state, workerId, `${workerId} queued ${effectiveMode}: ${promptSummary}`, now())
-    this.notifyChanged()
-
-    try {
-      if (effectiveMode === 'prompt') {
-        await worker.prompt(message)
-        return
-      }
-      if (effectiveMode === 'steer') {
-        await worker.steer(message)
-        return
-      }
-      await worker.followUp(message)
-    } catch (error) {
-      patchWorkerState(
-        this.state,
-        workerId,
-        {
-          status: previousStatus,
-          currentTask: previousTask,
-          lastError: summarizeError(error instanceof Error ? error.message : String(error)),
-        },
-        now(),
-      )
-      pushEvent(
-        this.state,
-        workerId,
-        `${workerId} failed to queue ${effectiveMode}: ${error instanceof Error ? error.message : String(error)}`,
-        now(),
-      )
-      this.notifyChanged()
-      throw error
-    }
+      message,
+      mode,
+      getNow: now,
+      getClawasName: () => this.getClawasName(),
+      ensureStarted: async (id) => await this.startWorker(id),
+      notifyChanged: () => this.notifyChanged(),
+    })
   }
 
   private async startWorker(workerId: string): Promise<void> {
