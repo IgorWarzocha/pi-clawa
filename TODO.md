@@ -53,7 +53,7 @@ Status: working and taste-tested; remaining work is template review and full cle
 - [x] first run sends bootstrap instructions programmatically
 - [x] first run then proceeds into normal runtime path
 - [x] finalize first bootstrap prompt around progressive calibration, not a one-shot interrogation (`extension/onboarding.ts` `INITIAL_BOOTSTRAP_PROMPT`; worksheet text in `templates/bootstrap/PRIVACY.md`)
-- [ ] finalize main markdown templates
+- [x] finalize main markdown templates
 - [x] finalize worker seed templates
 - [x] make bootstrap idempotence policy explicit
 - [x] add a focused bootstrap test/smoke script
