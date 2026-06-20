@@ -9,7 +9,7 @@ import {
   markClawEnvironmentBootstrapped,
 } from './config.js'
 import { createNewClaw } from './extension/clawa-seed.js'
-import { INITIAL_BOOTSTRAP_PROMPT } from './extension/constants.js'
+import { INITIAL_BOOTSTRAP_PROMPT } from './extension/onboarding.js'
 import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-files.js'
 
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')

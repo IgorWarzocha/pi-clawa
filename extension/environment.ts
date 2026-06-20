@@ -1,7 +1,8 @@
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { getWorkerSessionName } from '../clawas/worker-identity.js'
 import { findRepoRoot, resolveClawaDefaults, resolveClawasControlSocketRoot } from '../config.js'
-import { INITIAL_BOOTSTRAP_PROMPT, IS_CLAWAS_WORKER } from './constants.js'
+import { IS_CLAWAS_WORKER } from './constants.js'
+import { INITIAL_BOOTSTRAP_PROMPT } from './onboarding.js'
 
 const BOOTSTRAP_MESSAGE_TYPE = 'clawa-bootstrap'
 
