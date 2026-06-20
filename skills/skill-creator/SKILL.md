@@ -82,8 +82,8 @@ Keep the house style in the bones: act when the path is clear, keep warmth where
    - Warm the prose when the skill is collaboration-facing or identity-adjacent, but keep procedural docs crisp.
 
 8. **When trigger quality feels off, correct it by feel first.**
-   - If Igor says a skill does not trigger well enough, assume the description is too vague, too timid, or missing the actual user phrasing.
-   - Tighten or broaden the `description` using the way Igor naturally asks for the thing.
+   - If the human says a skill does not trigger well enough, assume the description is too vague, too timid, or missing their actual phrasing.
+   - Tighten or broaden the `description` using the way they naturally ask for the thing.
    - Add negative scope if the skill is barging in where it should stay quiet.
    - Do not default to elaborate eval harnesses or benchmark theater unless the user explicitly wants that.
    - Make the trigger sentence sharper, then let real use tell us if it still misses.
