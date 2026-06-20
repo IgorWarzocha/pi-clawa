@@ -60,6 +60,8 @@ test('buildPiDefaultSystemPromptBase matches Pi default structure', () => {
   assert.ok(prompt.includes('\nAvailable tools:\n- read: read files'))
   assert.ok(prompt.includes('\nGuidelines:\n- Use read for text files'))
   assert.ok(prompt.includes('- Main documentation: /pi/README.md'))
+  assert.ok(prompt.includes('Clawa documentation'))
+  assert.ok(prompt.includes('docs/subclawas.md'))
 })
 
 test('resolveClawaPromptName uses project and worker JSON names', async () => {

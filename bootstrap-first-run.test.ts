@@ -16,6 +16,7 @@ const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
 const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/
 const SEEDED_WORKER_PATTERN = /"id": "research-odd-local-tools-clawa"/
 const SEEDED_PURPOSE_PATTERN = /Research odd local tools/
+const LONG_SEEDED_WORKER_PATTERN = /"id": "documentation-and-release-notes-polishing-clawa"/
 const BOOTSTRAP_WAKE_PATTERN = /where the hell am I/
 const BOOTSTRAP_ONBOARDING_PATTERN = /feel like onboarding/
 const BOOTSTRAP_NO_WALLS_PATTERN = /No walls of text/
@@ -130,6 +131,33 @@ test('create Clawa seeds a specialized worker home from purpose', async () => {
     assert.match(await readFile(join(root, 'CLAWAS.md'), 'utf8'), SEEDED_PURPOSE_PATTERN)
     assert.ok(userMessages.some((message) => message.includes('new specialized Clawa seed')))
     assert.ok(dimNotes.some((message) => message.includes('new Clawa seed created')))
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('create Clawa seed slugs keep whole useful words near the limit', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-create-seed-long-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await copyTemplateFiles(MAIN_TEMPLATES_DIR, root)
+    markClawEnvironmentBootstrapped(root)
+
+    const pi = {
+      sendMessage: () => {},
+      sendUserMessage: () => {},
+    }
+    const ctx = { cwd: root, hasUI: false }
+
+    const created = await createNewClaw(pi as never, ctx as never, {
+      purpose: 'documentation and release notes polishing',
+    })
+
+    assert.equal(created.name, 'documentation-and-release-notes-polishing-clawa')
+    assert.match(
+      await readFile(join(root, '.pi', 'clawas', 'config.jsonc'), 'utf8'),
+      LONG_SEEDED_WORKER_PATTERN,
+    )
   } finally {
     await rm(root, { recursive: true, force: true })
   }

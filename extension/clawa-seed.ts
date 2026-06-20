@@ -20,7 +20,7 @@ const NON_SLUG_CHARS_REGEX = /[^a-z0-9]+/g
 const EDGE_DASH_REGEX = /^-+|-+$/g
 const MULTI_DASH_REGEX = /-+/g
 const CLAWAS_PLACEHOLDER_LINE_REGEX = /^- \*\*`\[clawa-name\]`\*\* .*$/m
-const MAX_SEED_SLUG_CHARS = 40
+const MAX_SEED_SLUG_CHARS = 56
 
 type WorkersConfigFile = {
   workers: unknown[]
@@ -67,13 +67,18 @@ function buildClawConfig(name: string, path: string, purpose: string): ClawaConf
 }
 
 function purposeToSlug(purpose: string): string {
-  const base = purpose
+  const normalized = purpose
     .toLowerCase()
     .replace(NON_SLUG_CHARS_REGEX, '-')
     .replace(MULTI_DASH_REGEX, '-')
     .replace(EDGE_DASH_REGEX, '')
-    .slice(0, MAX_SEED_SLUG_CHARS)
-    .replace(EDGE_DASH_REGEX, '')
+
+  const sliced = normalized.slice(0, MAX_SEED_SLUG_CHARS).replace(EDGE_DASH_REGEX, '')
+  const lastDash = sliced.lastIndexOf('-')
+  const base =
+    normalized.length > MAX_SEED_SLUG_CHARS && lastDash > 0
+      ? sliced.slice(0, lastDash).replace(EDGE_DASH_REGEX, '')
+      : sliced
 
   const slug = base || 'new-clawa'
   return slug.endsWith('-clawa') ? slug : `${slug}-clawa`
