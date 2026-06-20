@@ -33,6 +33,8 @@ Use frontmatter plus a body in `PULSE.md`:
 
 `PULSE.md` must start with YAML frontmatter including at least `title: "..."`; pulses without a frontmatter title are not discovered by `/pulse list`.
 
+A pulse must be executable from its own definition. If it needs a target, the definition must say how to choose one. Do not create pulses that rely on hidden command parameters.
+
 ```md
 ---
 title: Curiosity poke

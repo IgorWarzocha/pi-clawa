@@ -7,6 +7,7 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 - Every pulse is a named folder: `pulses/<pulse-name>/`.
 - The runnable definition is `pulses/<pulse-name>/PULSE.md`.
 - `PULSE.md` must start with YAML frontmatter including at least `title: "..."`; pulses without a frontmatter title are not discovered by `/pulse list`.
+- A pulse must be executable from its own definition. If it needs a target, define how to choose one; do not rely on hidden parameters.
 - Each pulse folder should have a short local `AGENTS.md` for that pulse only.
 - Put that pulse's notes/results inside its folder, organized however the pulse needs.
 - Keep each pulse narrow to my specialty.
