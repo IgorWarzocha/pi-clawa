@@ -16,7 +16,7 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 - Do not use pulses to escape my lane.
 - If a pulse is repetitive or low-value, edit or disable it.
 - Keep disabled pulse notes with the reason; they are useful lane memory.
-- External/public actions must be explicitly allowed in that pulse file.
+- Follow the pulse's own action boundary. If external/public action is part of the pulse's design, do it; otherwise keep the run local/private.
 - Finish each pulse run with a concise result message for the house.
 - If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 

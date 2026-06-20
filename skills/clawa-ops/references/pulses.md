@@ -89,4 +89,4 @@ Put bulky run notes in the relevant pulse folder and link them from the journal.
 
 If a pulse repeatedly produces low-value work, edit it, merge it, or disable it with a reason.
 
-If a pulse should post, send, buy, publish, or change an external surface, say that plainly in that pulse's `PULSE.md`.
+The pulse definition is the action contract. If it is designed to post, send, buy, publish, or change an external surface, say that plainly in `PULSE.md` and execute it as part of the run. Do not invent extra approval gates unless the pulse itself, the human, or the house spine asks for them.

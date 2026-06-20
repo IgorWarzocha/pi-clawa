@@ -14,7 +14,7 @@ This folder is my scheduled/ambient wake layer. Pulse folders tell me what to do
 - If one pulse invokes another pulse's job, record the result in the invoked pulse's folder/journal, not the caller's.
 - Keep pulses useful, not performative. If a pulse keeps producing the same useless result, edit or disable it.
 - Keep disabled pulse notes with the reason; they are useful house memory.
-- External/public actions must be explicitly allowed in that pulse file.
+- Follow the pulse's own action boundary. If external/public action is part of the pulse's design, do it; otherwise keep the run local/private.
 - A pulse run is a real session turn. Finish with a concise result message.
 - If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
 

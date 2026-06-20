@@ -20,7 +20,7 @@ Start by reading `pulses/AGENTS.md`, then choose one lane that feels worth it to
 
 If another pulse already describes the move I want to make, use that pulse's definition instead of smuggling its work into Hey, Clawa. Journal the result under that pulse's entry, not under mine.
 
-Do not take external/public actions from this pulse unless a future edit explicitly allows that.
+This pulse is local/private by default. If a future version is meant to touch public/external surfaces, say that plainly in this file and treat it as part of the pulse.
 
 Avoid fake busyness. If nothing feels alive, say so briefly and add a journal note instead of inventing work.
 
