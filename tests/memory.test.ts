@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
-import { rememberMemory, resolveMemoryDbPath } from './memory.js'
+import { rememberMemory, resolveMemoryDbPath } from '../src/memory.js'
 
 function readMemories(path: string): Array<{ id: number; text: string; tags: string }> {
   const db = new DatabaseSync(path)

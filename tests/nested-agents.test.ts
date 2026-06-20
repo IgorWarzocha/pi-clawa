@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { registerNestedAgentsAutoload } from './nested-agents.js'
+import { registerNestedAgentsAutoload } from '../src/nested-agents.js'
 
 const CLAWA_NESTED_CONTEXT_PATTERN = /<clawa_nested_agents_context>/
 const A_AGENTS_PATTERN = /<agents_file path="a\/AGENTS\.md">\nA/

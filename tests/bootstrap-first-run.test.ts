@@ -3,14 +3,14 @@ import { mkdir, mkdtemp, readFile, readlink, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { ClawasRuntime } from './clawas/runtime.js'
+import { ClawasRuntime } from '../src/clawas/runtime.js'
 import {
   ensureClawEnvironmentConfig,
   findRepoRoot,
   markClawEnvironmentBootstrapped,
-} from './config.js'
-import { createNewClaw } from './extension/clawa-seed.js'
-import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-files.js'
+} from '../src/config.js'
+import { createNewClaw } from '../src/extension/clawa-seed.js'
+import { copyTemplateFiles, findExistingCoreMarkdownFiles } from '../src/template-files.js'
 
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
 const BOOTSTRAPPED_TRUE_PATTERN = /"bootstrapped": true/

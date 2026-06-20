@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 export const extensionPath = fileURLToPath(new URL('../index.ts', import.meta.url))
 const extensionDir = dirname(extensionPath)
-export const templatesDir = join(extensionDir, 'templates')
+const packageRoot = dirname(extensionDir)
+export const templatesDir = join(packageRoot, 'templates')
 export const mainTemplatesDir = join(templatesDir, 'main')
 export const workerTemplatesDir = join(templatesDir, 'worker')
 export const HYDRATION_MESSAGE_TYPE = 'claw-hydration'

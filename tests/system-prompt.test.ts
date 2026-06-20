@@ -8,7 +8,7 @@ import {
   replacePiDefaultAssistantIntro,
   resolveClawaPromptName,
   resolveClawaSystemPrompt,
-} from './system-prompt.js'
+} from '../src/system-prompt.js'
 
 const options = {
   cwd: '/repo',

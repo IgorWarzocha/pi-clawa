@@ -2,14 +2,14 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["**/*.test.ts"],
-      "project": ["**/*.ts"]
+      "entry": ["tests/*.test.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts", "tests/**/*.ts"]
     }
   },
   "ignoreIssues": {
-    "config.ts": ["exports"],
-    "gui-primitives.ts": ["types"],
-    "clawas/**/*.ts": ["exports", "types"],
+    "src/config.ts": ["exports"],
+    "src/gui-primitives.ts": ["types"],
+    "src/clawas/**/*.ts": ["exports", "types"],
     "packages/pi-clawa-discord/index.ts": ["exports"]
   },
   "ignore": ["packages/pi-clawa-discord/src/gateway/**"],

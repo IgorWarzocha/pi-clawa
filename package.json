@@ -12,19 +12,19 @@
   "scripts": {
     "typecheck": "tsgo --noEmit --noCheck",
     "typecheck:strict": "tsgo --noEmit",
-    "test": "node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
+    "test": "node --import tsx --test tests/*.test.ts src/clawas/session-registry.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "lint:strict": "biome check --error-on-warnings .",
     "knip": "knip",
     "deadcode": "knip",
-    "ai:check": "biome check . && tsgo --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
-    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test system-prompt.test.ts nested-agents.test.ts bootstrap-first-run.test.ts hydrate.test.ts memory.test.ts recall.test.ts pulses.test.ts clawas/session-registry.test.ts clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
+    "ai:check": "biome check . && tsgo --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/session-registry.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
+    "ai:check:strict": "biome check --error-on-warnings . && tsgo --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/session-registry.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
     "check": "bun run ai:check"
   },
   "pi": {
     "extensions": [
-      "./index.ts"
+      "./src/index.ts"
     ],
     "skills": [
       "./skills"
@@ -32,26 +32,8 @@
   },
   "files": [
     "README.md",
-    "index.ts",
-    "bootstrap.ts",
-    "config.ts",
-    "continuity-compaction.ts",
-    "gui-primitives.ts",
-    "gui-primitives/**/*.ts",
-    "gui.ts",
-    "gui/**/*.ts",
-    "hydrate.ts",
-    "jsonc.ts",
-    "memory.ts",
-    "recall.ts",
-    "pulses/**/*.ts",
-    "extension/**/*.ts",
-    "nested-agents.ts",
-    "nested-agents/**/*.ts",
-    "system-prompt.ts",
-    "template-files.ts",
-    "clawas/**/*.ts",
-    "!clawas/**/*.test.ts",
+    "src/**/*.ts",
+    "!src/**/*.test.ts",
     "templates/**",
     "skills/**",
     "install/**",
@@ -88,12 +70,12 @@
     "packages/*"
   ],
   "exports": {
-    ".": "./index.ts",
-    "./config": "./config.ts",
-    "./clawas/comms/message-extract": "./clawas/comms/message-extract.ts",
-    "./clawas/comms/outbound": "./clawas/comms/outbound.ts",
-    "./clawas/comms/report-back-helpers": "./clawas/comms/report-back-helpers.ts",
-    "./clawas/comms/types": "./clawas/comms/types.ts",
-    "./clawas/config-loader": "./clawas/config-loader.ts"
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./clawas/comms/message-extract": "./src/clawas/comms/message-extract.ts",
+    "./clawas/comms/outbound": "./src/clawas/comms/outbound.ts",
+    "./clawas/comms/report-back-helpers": "./src/clawas/comms/report-back-helpers.ts",
+    "./clawas/comms/types": "./src/clawas/comms/types.ts",
+    "./clawas/config-loader": "./src/clawas/config-loader.ts"
   }
 }

@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { rememberMemory } from './memory.js'
-import { searchRecall } from './recall.js'
+import { rememberMemory } from '../src/memory.js'
+import { searchRecall } from '../src/recall.js'
 
 function sessionLine(value: unknown): string {
   return `${JSON.stringify(value)}\n`

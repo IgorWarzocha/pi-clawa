@@ -3,7 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { buildHydrationSystemPrompt, loadHydrationFiles } from './hydrate.js'
+import { buildHydrationSystemPrompt, loadHydrationFiles } from '../src/hydrate.js'
 
 const BEGIN_CLAW_REGEX = /--- BEGIN CLAW\.md ---/
 const BEGIN_HUMAN_REGEX = /--- BEGIN HUMAN\.md ---/

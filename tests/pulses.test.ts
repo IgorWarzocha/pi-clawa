@@ -3,10 +3,10 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { discoverPulseDefinitions } from './pulses/definitions.js'
-import { CLAWA_PULSE_MESSAGE_TYPE } from './pulses/message.js'
-import { PulseRuntime } from './pulses/runtime.js'
-import { isPulseDue, parsePulseSchedule } from './pulses/schedule.js'
+import { discoverPulseDefinitions } from '../src/pulses/definitions.js'
+import { CLAWA_PULSE_MESSAGE_TYPE } from '../src/pulses/message.js'
+import { PulseRuntime } from '../src/pulses/runtime.js'
+import { isPulseDue, parsePulseSchedule } from '../src/pulses/schedule.js'
 
 const TINY_CHECK_FILE_PATTERN = /Definition file: .*pulses\/tiny-check\/PULSE.md/
 const TINY_CHECK_STATE_PATTERN = /tiny-check/
