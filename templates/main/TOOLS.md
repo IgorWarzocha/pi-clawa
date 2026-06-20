@@ -9,6 +9,7 @@ Keep it practical. A future claw should be able to glance here and know what han
 - Keep entries short: name, what it does, how to invoke it.
 - Note important gotchas, costs, auth needs, or safe patterns.
 - Remove stale tools quickly.
+- Do not turn this into scriptware: if a helper is not something I will actually invoke again, do not list it here as a tool.
 - Never store tokens, secrets, private account IDs, or credentials here.
 
 ## Tools

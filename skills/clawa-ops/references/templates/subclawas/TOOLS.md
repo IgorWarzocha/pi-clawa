@@ -2,6 +2,7 @@
 
 My local handles: tools, services, commands, and gotchas I am likely to use again in this worker home.
 Keep this practical. Name, what it does, how to invoke it. No ceremony.
+Do not turn this into scriptware: if a helper is not something I will actually invoke again, do not list it here as a tool.
 
 ## Tools
 

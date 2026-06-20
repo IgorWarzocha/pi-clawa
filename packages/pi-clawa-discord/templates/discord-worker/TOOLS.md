@@ -2,6 +2,7 @@
 
 My Discord delivery and local integration handles.
 Only document what is actually configured in this workspace.
+Do not turn this into scriptware: if a helper is not something I will actually invoke again, do not list it here as a tool.
 
 ## Tools
 
