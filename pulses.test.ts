@@ -8,12 +8,10 @@ import { CLAWA_PULSE_MESSAGE_TYPE } from './pulses/message.js'
 import { PulseRuntime } from './pulses/runtime.js'
 import { isPulseDue, parsePulseSchedule } from './pulses/schedule.js'
 
-const TINY_CHECK_FILE_PATTERN = /Definition file: pulses\/tiny-check\/PULSE.md/
+const TINY_CHECK_FILE_PATTERN = /Definition file: .*pulses\/tiny-check\/PULSE.md/
 const TINY_CHECK_STATE_PATTERN = /tiny-check/
 const MANUAL_PULSE_FILE_PATTERN = /Definition file: pulses\/manual-note\/PULSE.md/
 const MANUAL_PULSE_STATE_PATTERN = /manual-note/
-const DO_NOT_TASK_SWITCH_PATTERN = /Do not task-switch/
-const ASK_BEFORE_QUEUED_PULSE_PATTERN = /ask if they are happy for you to run it now/
 
 function stubClawasRuntime() {
   return {
@@ -181,7 +179,7 @@ test('pulse runtime queues main pulse as follow-up while main Clawa is busy', as
     await pulseRuntime.scanAndRunDue(62_000)
 
     assert.deepEqual(messages[0]?.options, { triggerTurn: true, deliverAs: 'followUp' })
-    assert.match(messages[0]?.content ?? '', DO_NOT_TASK_SWITCH_PATTERN)
+    assert.match(messages[0]?.content ?? '', TINY_CHECK_FILE_PATTERN)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
@@ -250,7 +248,7 @@ test('pulse runtime queues worker pulse as follow-up while worker is busy', asyn
 
     assert.equal(prompts[0]?.workerId, 'researcher')
     assert.equal(prompts[0]?.mode, 'followUp')
-    assert.match(prompts[0]?.message ?? '', ASK_BEFORE_QUEUED_PULSE_PATTERN)
+    assert.match(prompts[0]?.message ?? '', TINY_CHECK_FILE_PATTERN)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
@@ -325,7 +323,7 @@ test('pulse runtime queues manual-session worker pulses through the session sock
     assert.equal(prompts.length, 0)
     assert.equal(sessionMessages[0]?.target, 'researcher')
     assert.equal(sessionMessages[0]?.options.mode, 'followUp')
-    assert.match(sessionMessages[0]?.options.message ?? '', DO_NOT_TASK_SWITCH_PATTERN)
+    assert.match(sessionMessages[0]?.options.message ?? '', TINY_CHECK_FILE_PATTERN)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })

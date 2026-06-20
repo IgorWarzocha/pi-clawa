@@ -32,13 +32,6 @@ export function extractClawaReportText(content: string): string | null {
   return null
 }
 
-export function shouldAutoRelayFinalAssistantToDiscord(_options?: {
-  workerId?: string | undefined
-  discordEnabled?: string | undefined
-}): boolean {
-  return false
-}
-
 export function normalizeDiscordReplyText(content: string | null | undefined): string | null {
   const trimmed = content?.trim()
   if (!trimmed) {

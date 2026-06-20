@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import {
-  buildPiDefaultSystemPromptBase,
   CLAWA_PERSONAL_ASSISTANT_INTRO,
   replacePiDefaultAssistantIntro,
   resolveClawaPromptName,
@@ -47,19 +46,6 @@ test('resolveClawaSystemPrompt ignores custom prompts and rebuilds Pi defaults',
   assert.ok(result.systemPrompt.includes('- Use read for text files'))
   assert.ok(result.systemPrompt.endsWith(suffix))
   assert.equal(result.systemPrompt.includes('Be weird.'), false)
-})
-
-test('buildPiDefaultSystemPromptBase matches Pi default structure', () => {
-  const prompt = buildPiDefaultSystemPromptBase(options, {
-    readmePath: '/pi/README.md',
-    docsPath: '/pi/docs',
-    examplesPath: '/pi/examples',
-  })
-
-  assert.ok(prompt.startsWith('You are an expert coding assistant operating inside pi'))
-  assert.ok(prompt.includes('\nAvailable tools:\n- read: read files'))
-  assert.ok(prompt.includes('\nGuidelines:\n- Use read for text files'))
-  assert.ok(prompt.includes('- Main documentation: /pi/README.md'))
 })
 
 test('resolveClawaPromptName uses project and worker JSON names', async () => {

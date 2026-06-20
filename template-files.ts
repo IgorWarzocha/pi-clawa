@@ -38,22 +38,6 @@ async function templateFileNames(templateDir: string, prefix = ''): Promise<stri
   return files.sort()
 }
 
-export async function findExistingTemplateFiles(
-  templateDir: string,
-  targetDir: string,
-): Promise<string[]> {
-  const files = await templateFileNames(templateDir)
-  return files.filter((file) => existsSync(join(targetDir, file)))
-}
-
-export async function hasAllTemplateFiles(
-  templateDir: string,
-  targetDir: string,
-): Promise<boolean> {
-  const files = await templateFileNames(templateDir)
-  return files.length > 0 && files.every((file) => existsSync(join(targetDir, file)))
-}
-
 export function hasAllCoreMarkdownFiles(targetDir: string): boolean {
   return CORE_MARKDOWN_FILES.every((file) => existsSync(join(targetDir, file)))
 }

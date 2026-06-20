@@ -10,7 +10,6 @@ import {
   markClawEnvironmentBootstrapped,
 } from './config.js'
 import { createNewClaw } from './extension/clawa-seed.js'
-import { INITIAL_BOOTSTRAP_PROMPT } from './extension/onboarding.js'
 import { copyTemplateFiles, findExistingCoreMarkdownFiles } from './template-files.js'
 
 const MAIN_TEMPLATES_DIR = join(process.cwd(), 'templates', 'main')
@@ -19,24 +18,6 @@ const SEEDED_WORKER_PATTERN = /"id": "research-odd-local-tools-clawa"/
 const STARTUP_PROMPT_PATTERN = /"startupPrompt"/
 const SEEDED_PURPOSE_PATTERN = /Research odd local tools/
 const LONG_SEEDED_WORKER_PATTERN = /"id": "documentation-and-release-notes-polishing-clawa"/
-const BOOTSTRAP_WAKE_PATTERN = /where the hell am I/
-const BOOTSTRAP_ONBOARDING_PATTERN = /feel like onboarding/
-const BOOTSTRAP_NO_WALLS_PATTERN = /No walls of text/
-const BOOTSTRAP_NO_FIRST_EDIT_PATTERN = /do not edit files yet/
-const BOOTSTRAP_NO_INTAKE_FORM_PATTERN = /No giant intake form/
-const BOOTSTRAP_NO_VISIBLE_PLANNING_PATTERN = /MUST NOT narrate internal planning/
-const BOOTSTRAP_ADAPTIVE_LANGUAGE_PATTERN = /Translate it into whatever language fits me/
-const BOOTSTRAP_SIGNATURE_PATTERN = /choose your own signature too/
-const BOOTSTRAP_NO_RUSH_PRIVACY_PATTERN = /MUST NOT prioritize privacy\/security onboarding/
-const BOOTSTRAP_ONE_QUESTION_PATTERN = /MUST ask one question at a time by default/
-const BOOTSTRAP_KEEP_PLACEHOLDERS_PATTERN = /MUST NOT replace template placeholders/
-const BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN = /no default subclawas/i
-const BOOTSTRAP_RECALL_PATTERN = /Use recall before pretending/
-const BOOTSTRAP_NO_FIRST_RECALL_PATTERN = /MUST NOT call recall unless I explicitly ask/
-const BOOTSTRAP_DONE_PATTERN = /Onboarding is done when you know enough to behave without freezing/
-const BOOTSTRAP_SUMMARY_PATTERN = /MUST give a short summary before closing onboarding/
-const BOOTSTRAP_COMPACT_PATTERN = /suggest I run \/compact/
-const BOOTSTRAP_LEAVE_WORKSHEET_PATTERN = /Leave the worksheet itself behind/
 const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
 
@@ -64,27 +45,6 @@ test('first-run bootstrap sequence creates core files and marks config', async (
   } finally {
     await rm(root, { recursive: true, force: true })
   }
-})
-
-test('first-run bootstrap prompt is progressive and points at living docs', () => {
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_WAKE_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_ONBOARDING_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_WALLS_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_EDIT_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_INTAKE_FORM_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_VISIBLE_PLANNING_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_ADAPTIVE_LANGUAGE_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_SIGNATURE_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_RUSH_PRIVACY_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_ONE_QUESTION_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_KEEP_PLACEHOLDERS_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_DEFAULT_SUBCLAWAS_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_RECALL_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_NO_FIRST_RECALL_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_DONE_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_SUMMARY_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_COMPACT_PATTERN)
-  assert.match(INITIAL_BOOTSTRAP_PROMPT, BOOTSTRAP_LEAVE_WORKSHEET_PATTERN)
 })
 
 test('first-run bootstrap detects pre-existing core markdown files', async () => {

@@ -5,7 +5,6 @@ import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.ts'
 import {
   extractClawaReportText,
   normalizeDiscordReplyText,
-  shouldAutoRelayFinalAssistantToDiscord,
   shouldReportClawaFinalToMain,
   shouldSkipAutoDiscordRelay,
   shouldSkipAutoMainClawStatusRelay,
@@ -23,30 +22,6 @@ test('extractClawaReportText keeps explicit clawas content only', () => {
   assert.equal(extractClawaReportText('[CLAWAS]\nhello from worker'), 'hello from worker')
   assert.equal(extractClawaReportText('[CLAWAS] hello from worker'), 'hello from worker')
   assert.equal(extractClawaReportText('plain assistant text'), null)
-})
-
-test('shouldAutoRelayFinalAssistantToDiscord is disabled for gateway-delivered final text', () => {
-  assert.equal(
-    shouldAutoRelayFinalAssistantToDiscord({
-      workerId: 'discord-clawa',
-      discordEnabled: '1',
-    }),
-    false,
-  )
-  assert.equal(
-    shouldAutoRelayFinalAssistantToDiscord({
-      workerId: 'job-a-clawa',
-      discordEnabled: '1',
-    }),
-    false,
-  )
-  assert.equal(
-    shouldAutoRelayFinalAssistantToDiscord({
-      workerId: 'discord-clawa',
-      discordEnabled: '0',
-    }),
-    false,
-  )
 })
 
 test('normalizeDiscordReplyText drops any output containing the sentinel and blank output', () => {

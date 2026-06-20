@@ -138,7 +138,7 @@ function buildGuidelines(options: BuildSystemPromptOptions): string {
   return guidelines.map((guideline) => `- ${guideline}`).join('\n')
 }
 
-export function buildPiDefaultSystemPromptBase(
+function buildPiDefaultSystemPromptBase(
   options: BuildSystemPromptOptions,
   docsPaths: PiDocsPaths = DEFAULT_PI_DOCS_PATHS,
 ): string {
