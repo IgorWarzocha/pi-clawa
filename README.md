@@ -27,7 +27,25 @@ Clawa is meant to run as a long-lived Pi home.
 
 Main Clawa sessions live in `.pi/sessions`. Subclawa sessions live under their own homes, for example `clawas/researcher/.pi/sessions`.
 
-## Install from git
+## Recommended install while Clawa is being finetuned
+
+Clone the repo first, then run Clawa from the checkout. This makes it easy to tweak obvious rough edges locally and report the ones that should be fixed upstream.
+
+```sh
+git clone https://github.com/howaboua/pi-claw.git
+cd /path/to/your-clawa-home
+pi -e /absolute/path/to/pi-claw
+```
+
+When you come back to the same home, resume it with the extension loaded:
+
+```sh
+pi -c -e /absolute/path/to/pi-claw
+```
+
+If something feels clearly broken or confusing, open an issue on GitHub with what you expected, what happened, and any relevant Clawa home shape. Do not include `.pi/` secrets.
+
+## Project settings install
 
 From the project folder:
 
