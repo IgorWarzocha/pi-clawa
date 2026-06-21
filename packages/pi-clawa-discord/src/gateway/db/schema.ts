@@ -31,6 +31,7 @@ export function runSchemaMigrations(db: Database.Database): void {
       role          text not null,
       sender_id     text not null default '',
       sender_name   text not null default '',
+      source_message_id text,
       content       text not null,
       timestamp     text not null default (datetime('now'))
     );
@@ -48,6 +49,7 @@ export function runSchemaMigrations(db: Database.Database): void {
 	ensureTableColumn(db, "message_queue", "log_rowid", "integer");
 	ensureTableColumn(db, "message_log", "sender_id", "text not null default ''");
 	ensureTableColumn(db, "message_log", "sender_name", "text not null default ''");
+	ensureTableColumn(db, "message_log", "source_message_id", "text");
 }
 
 function ensureTableColumn(

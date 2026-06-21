@@ -275,3 +275,36 @@ export function getLastDiscordChannelJid(ctx: ExtensionContext): string | undefi
 
   return undefined
 }
+
+export function getLastDiscordMessageHandles(
+  ctx: ExtensionContext,
+): Record<string, { channelJid: string; messageId: string }> | undefined {
+  const branch = ctx.sessionManager.getBranch()
+
+  for (let index = branch.length - 1; index >= 0; index -= 1) {
+    const entry = getRecord(branch[index])
+    if (!entry) continue
+    const details = getClawasMailDetails(entry)
+    if (!details) {
+      continue
+    }
+
+    const handles = getRecord(details['messageHandles'])
+    if (!handles) return undefined
+
+    const out: Record<string, { channelJid: string; messageId: string }> = {}
+    for (const [label, value] of Object.entries(handles)) {
+      const record = getRecord(value)
+      if (typeof record?.['channelJid'] === 'string' && typeof record?.['messageId'] === 'string') {
+        out[label.toLowerCase()] = {
+          channelJid: record['channelJid'],
+          messageId: record['messageId'],
+        }
+      }
+    }
+
+    return out
+  }
+
+  return undefined
+}

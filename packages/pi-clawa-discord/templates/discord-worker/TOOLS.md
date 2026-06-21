@@ -8,6 +8,7 @@ Do not turn this into scriptware: if a helper is not something I will actually i
 
 - **`message_discord`** — explicit Discord sends or reactions outside final routing blocks
   - Invoke: pass `channel` as `dm` or an exact routed `#channel` name
+  - For reactions, pass `react` and `to` with a shown message handle such as `m1`.
   - Do not invent channel names; use the known route tags in `AGENTS.md`.
   - Notes: keep public output safe; no private filesystem/config details
 

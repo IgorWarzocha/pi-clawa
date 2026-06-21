@@ -17,11 +17,13 @@ export interface ParsedFinalRoutes {
 }
 
 const ROUTE_TAG_REGEX = /^\[(#[^\]\s:]+|dm|main_clawa|quiet)\]:?\s*(.*)$/i;
+const REACTION_DIRECTIVE_REGEX = /^\[react\s+m\d+:\s*.+?\]$/i;
 
 export function parseFinalRoutes(text: string): ParsedFinalRoutes {
 	const blocks: FinalRouteBlock[] = [];
 	let current: FinalRouteBlock | undefined;
 	let hasRoutes = false;
+	const pendingLeadingDirectives: string[] = [];
 
 	for (const rawLine of text.split(/\r?\n/u)) {
 		const line = rawLine.trimEnd();
@@ -29,14 +31,23 @@ export function parseFinalRoutes(text: string): ParsedFinalRoutes {
 		if (match) {
 			hasRoutes = true;
 			if (current) blocks.push(trimBlock(current));
+			const initialText = [
+				...pendingLeadingDirectives.splice(0),
+				match[2]?.trim() ?? '',
+			].filter(Boolean).join('\n');
 			current = {
 				target: parseRouteTarget(match[1] ?? ''),
-				text: match[2]?.trim() ?? '',
+				text: initialText,
 			};
 			continue;
 		}
 
-		if (!current) continue;
+		if (!current) {
+			if (REACTION_DIRECTIVE_REGEX.test(line.trim())) {
+				pendingLeadingDirectives.push(line.trim());
+			}
+			continue;
+		}
 		current.text = current.text ? `${current.text}\n${line}` : line;
 	}
 

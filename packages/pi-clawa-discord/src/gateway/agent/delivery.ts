@@ -6,12 +6,14 @@ import type { AgentResult } from "../types.js";
 import { extractDiscordDirectives } from "./discord-directives.js";
 import { parseFinalRoutes, resolveDiscordRouteTarget } from "./final-routes.js";
 import { sendClawasSessionMessage } from "./invoke-clawas-rpc.js";
+import type { DiscordMessageHandle } from "../types.js";
 
 export interface DiscordDeliveryOptions {
 	jid: string;
 	rowid: number;
 	sourceMessageId: string | null;
 	mappedWorker?: string | undefined;
+	messageHandles?: DiscordMessageHandle[] | undefined;
 	result: AgentResult;
 }
 
@@ -20,6 +22,7 @@ export async function settleDiscordDelivery({
 	rowid,
 	sourceMessageId,
 	mappedWorker,
+	messageHandles = [],
 	result,
 }: DiscordDeliveryOptions): Promise<void> {
 	if (!result.ok) {
@@ -72,6 +75,7 @@ export async function settleDiscordDelivery({
 				const delivered = await deliverDiscordText(targetJid, block.text, {
 					defaultReplyToMessageId: targetJid === jid ? sourceMessageId : null,
 					mappedWorker,
+					messageHandles,
 				});
 				if (!delivered) {
 					throw new Error(`Could not send Discord route ${formatRouteTarget(block.target)}`);
@@ -102,7 +106,8 @@ export async function settleDiscordDelivery({
 
 	const delivered = await deliverDiscordText(jid, result.text, {
 		defaultReplyToMessageId: sourceMessageId,
-		mappedWorker,
+	mappedWorker,
+	messageHandles,
 	});
 	if (!delivered) {
 		markMessageFailed(rowid);
@@ -114,17 +119,26 @@ export async function settleDiscordDelivery({
 async function deliverDiscordText(
 	jid: string,
 	text: string,
-	options: { defaultReplyToMessageId: string | null; mappedWorker?: string | undefined },
+	options: {
+		defaultReplyToMessageId: string | null;
+		mappedWorker?: string | undefined;
+		messageHandles: DiscordMessageHandle[];
+	},
 ): Promise<boolean> {
 	const parsed = extractDiscordDirectives(text);
+	const handlesByLabel = new Map(options.messageHandles.map((handle) => [handle.label.toLowerCase(), handle]));
 
-	if (parsed.reaction && options.defaultReplyToMessageId) {
-		await addReaction(jid, options.defaultReplyToMessageId, parsed.reaction);
+	for (const reaction of parsed.reactions) {
+		const handle = handlesByLabel.get(reaction.handle.toLowerCase());
+		if (!handle) {
+			throw new Error(`Unknown reaction handle: ${reaction.handle}`);
+		}
+		await addReaction(handle.channelJid, handle.messageId, reaction.emoji);
 	}
 
 	if (isNothingForDiscord(parsed.text)) {
 		logger.info(
-			{ jid, worker: options.mappedWorker, reaction: parsed.reaction },
+		{ jid, worker: options.mappedWorker, reactions: parsed.reactions.length },
 			"Suppressed [quiet] response text",
 		);
 		return true;
@@ -153,7 +167,7 @@ async function deliverDiscordText(
 		timestamp: new Date().toISOString(),
 	});
 	logger.info(
-		{ jid, responseLen: parsed.text.length, reaction: parsed.reaction },
+		{ jid, responseLen: parsed.text.length, reactions: parsed.reactions.length },
 		"Message processed",
 	);
 	return true;

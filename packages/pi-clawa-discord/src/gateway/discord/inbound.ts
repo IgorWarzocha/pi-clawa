@@ -193,6 +193,7 @@ export function createMessageHandler(
 			role: "user",
 			senderId: sender,
 			senderName,
+			sourceMessageId: message.id,
 			content: observedContent,
 			timestamp,
 		});

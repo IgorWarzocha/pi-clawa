@@ -93,6 +93,7 @@ test('Discord final routing blocks parse explicit destinations', () => {
   const routed = parseFinalRoutes(
     [
       'ignored preface',
+      '[react m1: 🫡]',
       '[#howaclawa]: public note',
       'continued',
       '[dm]: private note',
@@ -103,7 +104,10 @@ test('Discord final routing blocks parse explicit destinations', () => {
 
   assert.equal(routed.hasRoutes, true)
   assert.deepEqual(routed.blocks, [
-    { target: { kind: 'channel', label: '#howaclawa' }, text: 'public note\ncontinued' },
+    {
+      target: { kind: 'channel', label: '#howaclawa' },
+      text: '[react m1: 🫡]\npublic note\ncontinued',
+    },
     { target: { kind: 'dm' }, text: 'private note' },
     { target: { kind: 'main-clawa' }, text: 'ask main' },
     { target: { kind: 'quiet' }, text: '' },

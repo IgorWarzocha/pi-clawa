@@ -52,13 +52,14 @@ export async function processQueuedMessage(params: {
 
 	try {
 		const mappedWorker = resolveClawaWorkerForDiscordChannel(jid);
-		const { prompt, observedThroughRowId } = buildGatewayPrompt({
+		const { prompt, observedThroughRowId, messageHandles } = buildGatewayPrompt({
 			jid,
 			sender,
 			senderName,
 			content,
 			mappedWorker,
 			logRowId,
+			sourceMessageId,
 		});
 
 		if (mappedWorker) {
@@ -79,6 +80,7 @@ export async function processQueuedMessage(params: {
 						sourceMessageId,
 					),
 					sourceChannelJid: jid,
+					messageHandles,
 				});
 
 		if (signal.aborted) {
@@ -96,6 +98,7 @@ export async function processQueuedMessage(params: {
 			rowid,
 			sourceMessageId: state.activeReplyAnchors.get(jid) ?? sourceMessageId,
 			mappedWorker,
+			messageHandles,
 			result,
 		});
 	} catch (err: any) {
@@ -147,6 +150,7 @@ export async function processSteeredClawasMessage(params: {
 			content,
 			mappedWorker: workerId,
 			logRowId,
+			sourceMessageId,
 		});
 
 		await steerClawasWorker(workerId, prompt, {

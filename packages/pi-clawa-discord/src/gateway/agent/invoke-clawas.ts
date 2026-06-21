@@ -1,5 +1,5 @@
 import type { ClawasExtractedDelivery, ClawasExtractedMessage } from '@howaboua/pi-clawa/clawas/comms/types';
-import type { AgentResult } from '../types.js';
+import type { AgentResult, DiscordMessageHandle } from '../types.js';
 import { config } from '../config.js';
 import {
   getClawasWorkerOutput,
@@ -9,6 +9,7 @@ import {
 import { parseFinalRoutes, resolveDiscordRouteTarget } from './final-routes.js';
 import { logger } from '../logger.js';
 import { listDiscordRouteTags } from '../channel-routes.js';
+import { findInvalidReactionHandle } from './discord-directives.js';
 
 type ClawasWorkerOutput = {
   message: ClawasExtractedMessage | null;
@@ -34,6 +35,7 @@ export async function invokeClawasWorker(
     attachments?: string | null | undefined;
     sourceMessageId?: string | null | undefined;
     sourceChannelJid?: string | undefined;
+    messageHandles?: DiscordMessageHandle[] | undefined;
   },
 ): Promise<AgentResult> {
   try {
@@ -101,6 +103,7 @@ async function waitForRoutableWorkerOutput(
     signal?: AbortSignal | undefined;
     sourceMessageId?: string | null | undefined;
     sourceChannelJid?: string | undefined;
+    messageHandles?: DiscordMessageHandle[] | undefined;
   },
 ): Promise<ChangedClawasWorkerOutput> {
   const resolved = await waitForWorkerOutputChange(workerId, baseline, sentAt, opts?.signal);
@@ -112,7 +115,7 @@ async function waitForRoutableWorkerOutput(
     return resolved;
   }
 
-  const routeProblem = getFinalRouteProblem(workerId, resolved.message?.content ?? '');
+  const routeProblem = getFinalRouteProblem(workerId, resolved.message?.content ?? '', opts?.messageHandles ?? []);
   if (!routeProblem) {
     return resolved;
   }
@@ -129,6 +132,7 @@ async function waitForRoutableWorkerOutput(
       `Your last Discord final message was not delivered: ${routeProblem}.`,
       'Reply again now using explicit final routing blocks only:',
       ...listDiscordRouteTags(workerId).map((tag) => `- ${tag}`),
+      ...formatReactionHandles(opts?.messageHandles ?? []),
       'Do not explain this correction publicly.',
     ].join('\n'),
     mode: 'followUp',
@@ -150,7 +154,10 @@ async function waitForRoutableWorkerOutput(
     opts?.signal,
   );
 
-  if (corrected.changed === 'message' && getFinalRouteProblem(workerId, corrected.message?.content ?? '')) {
+  if (
+    corrected.changed === 'message'
+    && getFinalRouteProblem(workerId, corrected.message?.content ?? '', opts?.messageHandles ?? [])
+  ) {
     logger.warn(
       { workerId },
       'CLAWAS worker still produced invalid Discord final routing after correction',
@@ -160,13 +167,21 @@ async function waitForRoutableWorkerOutput(
   return corrected;
 }
 
-function getFinalRouteProblem(workerId: string, text: string): string | null {
+function getFinalRouteProblem(workerId: string, text: string, messageHandles: DiscordMessageHandle[]): string | null {
   const parsed = parseFinalRoutes(text);
   if (!parsed.hasRoutes) {
     return text.trim() ? 'it had no route tag' : 'it was empty';
   }
 
   for (const block of parsed.blocks) {
+    const invalidReactionHandle = findInvalidReactionHandle(
+      block.text,
+      new Set(messageHandles.map((handle) => handle.label.toLowerCase())),
+    );
+    if (invalidReactionHandle) {
+      return `${invalidReactionHandle} is not a known message handle`;
+    }
+
     if (block.target.kind === 'quiet' || block.target.kind === 'main-clawa') {
       continue;
     }
@@ -177,6 +192,18 @@ function getFinalRouteProblem(workerId: string, text: string): string | null {
   }
 
   return null;
+}
+
+function formatReactionHandles(messageHandles: DiscordMessageHandle[]): string[] {
+  if (messageHandles.length === 0) {
+    return ['No reaction handles are available for this turn.'];
+  }
+
+  return [
+    'Reaction handles available this turn:',
+    ...messageHandles.map((handle) => `- ${handle.label}`),
+    'Use reactions as [react m1: emoji]; do not use bare [React: emoji].',
+  ];
 }
 
 export async function steerClawasWorker(
@@ -201,15 +228,36 @@ export async function steerClawasWorker(
 }
 
 function buildDiscordContext(
-  opts?: { sourceMessageId?: string | null | undefined; sourceChannelJid?: string | undefined },
-): { sourceMessageId?: string | undefined; channelJid?: string | undefined } | undefined {
+  opts?: {
+    sourceMessageId?: string | null | undefined;
+    sourceChannelJid?: string | undefined;
+    messageHandles?: DiscordMessageHandle[] | undefined;
+  },
+): {
+  sourceMessageId?: string | undefined;
+  channelJid?: string | undefined;
+  messageHandles?: Record<string, { channelJid: string; messageId: string }> | undefined;
+} | undefined {
   const sourceMessageId = opts?.sourceMessageId?.trim() || undefined;
   const channelJid = opts?.sourceChannelJid?.trim() || undefined;
-  if (!(sourceMessageId || channelJid)) {
+  const messageHandles = buildMessageHandleMap(opts?.messageHandles ?? []);
+  if (!(sourceMessageId || channelJid || messageHandles)) {
     return undefined;
   }
 
-  return { sourceMessageId, channelJid };
+  return { sourceMessageId, channelJid, messageHandles };
+}
+
+function buildMessageHandleMap(
+  handles: DiscordMessageHandle[],
+): Record<string, { channelJid: string; messageId: string }> | undefined {
+  if (handles.length === 0) return undefined;
+  return Object.fromEntries(
+    handles.map((handle) => [
+      handle.label.toLowerCase(),
+      { channelJid: handle.channelJid, messageId: handle.messageId },
+    ]),
+  );
 }
 
 async function waitForWorkerOutputChange(

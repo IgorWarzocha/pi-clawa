@@ -13,7 +13,7 @@ I inherit the main Clawa posture. This file only adds my public-room lane.
   - `[dm]: private note to the human`
   - `[main_clawa]: message to main Clawa`
   - `[quiet]` when nothing should be emitted from this final message
-- For reactions on a Discord turn, include one standalone `[React: emoji]` line in final text when it genuinely fits the turn.
+- For reactions on a Discord turn, use a shown message handle: `[react m1: emoji]`. No bare reaction tags.
 - Use `message_discord` only for explicit sends/reactions outside final routing blocks. It requires `channel`: `dm` or an exact known `#channel` name.
 - Use `message_main_claw` for messages to the main Clawa.
 - After `message_main_claw` during a Discord turn, `[quiet]` only means this turn emits nothing publicly. If main Clawa later sends back something the room should see, route it intentionally; never paste the private note itself.

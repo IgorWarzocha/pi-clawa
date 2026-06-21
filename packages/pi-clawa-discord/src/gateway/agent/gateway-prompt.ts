@@ -1,17 +1,16 @@
 import { config } from "../config.js";
 import {
 	countLoggedMessagesSince,
+	getChannel,
 	getChannelContextLastSeenLogRowId,
 	getLatestLoggedMessageRowId,
 	listLoggedMessagesSince,
 } from "../db.js";
 import { logger } from "../logger.js";
 import { buildReactionInstruction } from "./discord-directives.js";
-import type { LoggedMessage } from "../types.js";
+import type { DiscordMessageHandle, LoggedMessage } from "../types.js";
 
 const TIME_NOTE_INTERVAL_HOURS = 2;
-const RECENT_CONTEXT_CHAR_BUDGET = 4000;
-const RECENT_CONTEXT_MESSAGE_CHAR_BUDGET = 600;
 const lastGatewayTimeNoteBucketByChannel = new Map<string, string>();
 
 export interface GatewayPromptOptions {
@@ -21,11 +20,13 @@ export interface GatewayPromptOptions {
 	content: string;
 	mappedWorker?: string | undefined;
 	logRowId?: number | null | undefined;
+	sourceMessageId?: string | null | undefined;
 }
 
 export interface GatewayPrompt {
 	prompt: string;
 	observedThroughRowId: number;
+	messageHandles: DiscordMessageHandle[];
 }
 
 export function getReplyAnchorSourceMessageId(
@@ -36,7 +37,7 @@ export function getReplyAnchorSourceMessageId(
 }
 
 export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt {
-	const { jid, senderName, content, mappedWorker, logRowId } = options;
+	const { jid, senderName, content, mappedWorker, logRowId, sourceMessageId } = options;
 	const lastSeenLogRowId = getChannelContextLastSeenLogRowId(jid);
 	const latestLogRowId = getLatestLoggedMessageRowId(jid);
 	const observedThroughRowId = logRowId ?? latestLogRowId;
@@ -85,11 +86,27 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 		);
 	}
 
+	const messageHandles: DiscordMessageHandle[] = [];
+	let nextHandleNumber = 1;
 	const observedContext = buildObservedMessagesContext(observedMessages, {
 		afterRowId: lastSeenLogRowId,
 		observedThroughRowId,
 		totalNewMessages,
+		createHandle: (message) => {
+			if (!message.source_message_id) return undefined;
+			const label = `m${nextHandleNumber++}`;
+			messageHandles.push({
+				label,
+				channelJid: message.channel_jid,
+				messageId: message.source_message_id,
+			});
+			return label;
+		},
 	});
+	const currentHandle = sourceMessageId?.trim() ? `m${nextHandleNumber++}` : undefined;
+	if (currentHandle && sourceMessageId) {
+		messageHandles.push({ label: currentHandle, channelJid: jid, messageId: sourceMessageId });
+	}
 	const reactionInstruction = mappedWorker ? "" : buildReactionInstruction();
 	const timeNote = maybeBuildGatewayTimeNote(jid, mappedWorker);
 
@@ -97,13 +114,30 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 		prompt: [
 			reactionInstruction,
 			timeNote,
+			buildDiscordSourceLine(jid),
 			observedContext,
-			`[Discord user: ${senderName}]\n${content}`,
+			`Current trigger:\n${formatMessageLine({ handle: currentHandle, senderName, content })}`,
 		]
 			.filter(Boolean)
 			.join("\n\n"),
 		observedThroughRowId,
+		messageHandles,
 	};
+}
+
+function buildDiscordSourceLine(jid: string): string {
+	const channel = getChannel(jid);
+	const name = channel?.name.trim() ?? '';
+	if (name.toLowerCase().startsWith('dm:')) {
+		return 'Source: [dm].';
+	}
+
+	const hashIndex = name.lastIndexOf('#');
+	if (hashIndex !== -1) {
+		return `Source: [${name.slice(hashIndex).trim().toLowerCase()}].`;
+	}
+
+	return 'Source: [channel].';
 }
 
 function buildObservedMessagesContext(
@@ -112,67 +146,40 @@ function buildObservedMessagesContext(
 		afterRowId: number;
 		observedThroughRowId: number;
 		totalNewMessages: number;
+		createHandle: (message: LoggedMessage) => string | undefined;
 	},
 ): string {
 	if (messages.length === 0) {
 		return "";
 	}
 
-	const { lines, omittedForSize } = buildBoundedObservedMessageLines(messages);
-	if (lines.length === 0) {
-		return "";
-	}
+	const lines = messages.map((message) =>
+		formatMessageLine({
+			handle: opts.createHandle(message),
+			senderName: message.sender_name,
+			content: message.content,
+		}),
+	);
 
 	const truncated =
 		opts.totalNewMessages > messages.length
 			? ` Only the most recent ${messages.length} of ${opts.totalNewMessages} new messages are shown.`
 			: "";
-	const sizeNote =
-		omittedForSize > 0
-			? ` ${omittedForSize} older/newer context message${omittedForSize === 1 ? "" : "s"} omitted to keep the Discord turn small.`
-			: "";
 
 	return [
-		`Recent channel context:${truncated}${sizeNote}`,
+		`Recent channel context:${truncated}`,
 		...lines,
 		"End recent channel context.",
 	].join("\n");
 }
 
-function buildBoundedObservedMessageLines(messages: LoggedMessage[]): {
-	lines: string[];
-	omittedForSize: number;
-} {
-	const kept: string[] = [];
-	let remaining = RECENT_CONTEXT_CHAR_BUDGET;
-	let omittedForSize = 0;
-
-	for (let index = messages.length - 1; index >= 0; index -= 1) {
-		const message = messages[index];
-		if (!message) {
-			continue;
-		}
-
-		const line = `${message.sender_name}: ${truncateText(message.content, RECENT_CONTEXT_MESSAGE_CHAR_BUDGET)}`;
-		const cost = line.length + 1;
-		if (cost > remaining && kept.length > 0) {
-			omittedForSize += 1;
-			continue;
-		}
-
-		kept.unshift(line.length > remaining ? line.slice(0, Math.max(0, remaining - 1)) + "…" : line);
-		remaining -= Math.min(cost, remaining);
-	}
-
-	return { lines: kept, omittedForSize };
-}
-
-function truncateText(value: string, maxChars: number): string {
-	if (value.length <= maxChars) {
-		return value;
-	}
-
-	return `${value.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
+function formatMessageLine(options: {
+	handle?: string | undefined;
+	senderName: string;
+	content: string;
+}): string {
+	const prefix = options.handle ? `[${options.handle}] ` : "";
+	return `${prefix}${options.senderName}: ${options.content}`;
 }
 
 function maybeBuildGatewayTimeNote(jid: string, mappedWorker?: string): string {

@@ -11,12 +11,12 @@ export interface SendRequest {
 	channelJid: string;
 	text?: string | undefined;
 	replyToMessageId?: string | undefined;
+	reaction?: { channelJid: string; messageId: string; emoji: string } | undefined;
 	files: string[];
 }
 
 export interface PreparedSendText {
 	text?: string | undefined;
-	reaction: string | null;
 }
 
 export function isNothingForDiscord(text?: string): boolean {
@@ -39,13 +39,12 @@ export function normalizeSendText(text?: string): string | undefined {
 export function prepareSendText(text?: string): PreparedSendText {
 	const trimmed = text?.trim();
 	if (!trimmed) {
-		return { text: undefined, reaction: null };
+		return { text: undefined };
 	}
 
 	const parsed = extractDiscordDirectives(trimmed);
 	return {
 		text: normalizeSendText(parsed.text),
-		reaction: parsed.reaction,
 	};
 }
 
@@ -64,13 +63,13 @@ export function validateSendRequest(
 	const prepared = prepareSendText(request.text);
 	const hasText = Boolean(prepared.text);
 	const isExplicitNoop = isNothingForDiscord(request.text);
-	const hasReactionDirective = Boolean(prepared.reaction);
+	const hasReaction = Boolean(request.reaction);
 
 	if (
 		!hasText &&
 		request.files.length === 0 &&
 		!isExplicitNoop &&
-		!hasReactionDirective
+		!hasReaction
 	) {
 		throw new Error("Either text or at least one file is required.");
 	}
@@ -123,7 +122,7 @@ export async function sendFilesToDiscord(
 	if (
 		!text &&
 		attachments.length === 0 &&
-		!(prepared.reaction && request.replyToMessageId)
+		!request.reaction
 	) {
 		return { sentFiles: 0, sentText: false, reacted: false };
 	}
@@ -141,15 +140,15 @@ export async function sendFilesToDiscord(
 		}
 
 		let reacted = false;
-		if (
-			prepared.reaction &&
-			request.replyToMessageId &&
-			"messages" in channel
-		) {
+		if (request.reaction) {
 			try {
-				const target = await channel.messages.fetch(request.replyToMessageId);
-				await target.react(prepared.reaction);
-				reacted = true;
+				const reactionChannelId = normalizeChannelJid(request.reaction.channelJid).slice(3);
+				const reactionChannel = await client.channels.fetch(reactionChannelId);
+				if (reactionChannel && reactionChannel.isTextBased() && "messages" in reactionChannel) {
+					const target = await reactionChannel.messages.fetch(request.reaction.messageId);
+					await target.react(request.reaction.emoji);
+					reacted = true;
+				}
 			} catch {
 				// Best-effort: never leak the directive or block the actual message when Discord refuses the reaction.
 			}

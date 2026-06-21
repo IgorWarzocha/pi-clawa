@@ -11,19 +11,21 @@ export function logMessage(message: {
 	role: "user" | "assistant" | "reaction";
 	senderId: string;
 	senderName: string;
+	sourceMessageId?: string | null;
 	content: string;
 	timestamp: string;
 }): number {
 	const result = getDb()
 		.prepare(`
-    insert into message_log (channel_jid, role, sender_id, sender_name, content, timestamp)
-    values (?, ?, ?, ?, ?, ?)
+    insert into message_log (channel_jid, role, sender_id, sender_name, source_message_id, content, timestamp)
+    values (?, ?, ?, ?, ?, ?, ?)
   `)
 		.run(
 			message.channelJid,
 			message.role,
 			message.senderId,
 			message.senderName,
+			message.sourceMessageId ?? null,
 			message.content,
 			normalizeTimestamp(message.timestamp) ?? message.timestamp,
 		);
@@ -71,7 +73,7 @@ export function listLoggedMessagesSince(
 		limit > 0
 			? (getDb()
 					.prepare(`
-      select rowid, channel_jid, role, sender_id, sender_name, content, timestamp
+      select rowid, channel_jid, role, sender_id, sender_name, source_message_id, content, timestamp
       from message_log
       where channel_jid = ?
         and role = 'user'
@@ -83,7 +85,7 @@ export function listLoggedMessagesSince(
 					.all(channelJid, afterRowId, throughRowId, limit) as LoggedMessage[])
 			: (getDb()
 					.prepare(`
-      select rowid, channel_jid, role, sender_id, sender_name, content, timestamp
+      select rowid, channel_jid, role, sender_id, sender_name, source_message_id, content, timestamp
       from message_log
       where channel_jid = ?
         and role = 'user'

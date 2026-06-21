@@ -26,8 +26,15 @@ export interface LoggedMessage {
 	role: "user" | "assistant" | "reaction";
 	sender_id: string;
 	sender_name: string;
+	source_message_id: string | null;
 	content: string;
 	timestamp: string;
+}
+
+export interface DiscordMessageHandle {
+	label: string;
+	channelJid: string;
+	messageId: string;
 }
 
 /** Agent invocation result */
