@@ -62,6 +62,16 @@ export function resolveRoutedDiscordChannel(label: string, workerId?: string | u
   return resolveRegisteredChannel(routes[0]?.channel ?? '');
 }
 
+export function listDiscordRouteTags(workerId?: string | undefined): string[] {
+  const tags = readDiscordRoutes()
+    .filter((route) => !workerId || route.worker === workerId)
+    .map((route) => normalizeRouteLabel(route.channel))
+    .filter(Boolean)
+    .map((route) => (route === 'dm' ? '[dm]' : `[${route}]`));
+
+  return Array.from(new Set([...tags, '[main_clawa]', '[quiet]']));
+}
+
 function parseDiscordRoute(value: unknown, index: number): DiscordRoute {
   const route = asRecord(value, `Discord route ${index + 1}`);
   const channel = asString(route['channel'], `Discord route ${index + 1} channel`);

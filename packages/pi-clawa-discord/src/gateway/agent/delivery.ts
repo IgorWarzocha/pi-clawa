@@ -83,6 +83,9 @@ export async function settleDiscordDelivery({
 		} catch (err: any) {
 			markMessageFailed(rowid);
 			logger.warn({ jid, worker: mappedWorker, err: err.message }, "Failed to deliver routed Discord final message");
+			if (mappedWorker) {
+				return;
+			}
 			await sendResponse(jid, `⚠️ Could not route Clawa reply: ${err.message?.slice(0, 200)}`);
 			return;
 		}

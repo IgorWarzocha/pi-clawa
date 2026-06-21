@@ -6,8 +6,9 @@ import {
   sendClawasSessionMessage,
   sleep,
 } from './invoke-clawas-rpc.js';
-import { parseFinalRoutes } from './final-routes.js';
+import { parseFinalRoutes, resolveDiscordRouteTarget } from './final-routes.js';
 import { logger } from '../logger.js';
+import { listDiscordRouteTags } from '../channel-routes.js';
 
 type ClawasWorkerOutput = {
   message: ClawasExtractedMessage | null;
@@ -111,24 +112,22 @@ async function waitForRoutableWorkerOutput(
     return resolved;
   }
 
-  if (parseFinalRoutes(resolved.message?.content ?? '').hasRoutes) {
+  const routeProblem = getFinalRouteProblem(workerId, resolved.message?.content ?? '');
+  if (!routeProblem) {
     return resolved;
   }
 
   logger.warn(
-    { workerId, empty: !(resolved.message?.content ?? '').trim() },
-    'CLAWAS worker produced unrouted Discord final text; asking for routed final output',
+    { workerId, problem: routeProblem },
+    'CLAWAS worker produced invalid Discord final routing; asking for routed final output',
   );
 
   const correctionSentAt = Date.now();
   await sendClawasSessionMessage(workerId, {
     message: [
-      'Your last Discord final message was not delivered because it was empty or had no route tag.',
+      `Your last Discord final message was not delivered: ${routeProblem}.`,
       'Reply again now using explicit final routing blocks only:',
-      '- [#channel]: public room text',
-      '- [dm]: private note to the human',
-      '- [main_clawa]: message to main Clawa',
-      '- [quiet]',
+      ...listDiscordRouteTags(workerId).map((tag) => `- ${tag}`),
       'Do not explain this correction publicly.',
     ].join('\n'),
     mode: 'followUp',
@@ -147,14 +146,33 @@ async function waitForRoutableWorkerOutput(
     opts?.signal,
   );
 
-  if (corrected.changed === 'message' && !parseFinalRoutes(corrected.message?.content ?? '').hasRoutes) {
+  if (corrected.changed === 'message' && getFinalRouteProblem(workerId, corrected.message?.content ?? '')) {
     logger.warn(
       { workerId },
-      'CLAWAS worker still produced untagged Discord final text after correction',
+      'CLAWAS worker still produced invalid Discord final routing after correction',
     );
   }
 
   return corrected;
+}
+
+function getFinalRouteProblem(workerId: string, text: string): string | null {
+  const parsed = parseFinalRoutes(text);
+  if (!parsed.hasRoutes) {
+    return text.trim() ? 'it had no route tag' : 'it was empty';
+  }
+
+  for (const block of parsed.blocks) {
+    if (block.target.kind === 'quiet' || block.target.kind === 'main-clawa') {
+      continue;
+    }
+    if (!resolveDiscordRouteTarget(block.target, workerId)) {
+      const target = block.target.kind === 'dm' ? '[dm]' : `[${block.target.label}]`;
+      return `${target} is not a known route`;
+    }
+  }
+
+  return null;
 }
 
 export async function steerClawasWorker(
