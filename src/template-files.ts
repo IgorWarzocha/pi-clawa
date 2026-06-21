@@ -15,8 +15,6 @@ const CORE_MARKDOWN_FILES = [
   'TOOLS.md',
   'CURIOUS.md',
 ] as const
-const LEGACY_CORE_MARKDOWN_FILES = ['IDENTITY.md', 'SOUL.md', 'USER.md'] as const
-
 async function templateFileNames(templateDir: string, prefix = ''): Promise<string[]> {
   const dir = join(templateDir, prefix)
   const entries = await readdir(dir, { withFileTypes: true })
@@ -37,9 +35,7 @@ export function hasAllCoreMarkdownFiles(targetDir: string): boolean {
 }
 
 export function findExistingCoreMarkdownFiles(targetDir: string): string[] {
-  return [...CORE_MARKDOWN_FILES, ...LEGACY_CORE_MARKDOWN_FILES].filter((file) =>
-    existsSync(join(targetDir, file)),
-  )
+  return CORE_MARKDOWN_FILES.filter((file) => existsSync(join(targetDir, file)))
 }
 
 export async function copyTemplateFiles(
