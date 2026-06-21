@@ -20,7 +20,6 @@
     "pino",
     "pino-pretty",
     "tsx",
-    "@types/better-sqlite3",
-    "@howaboua/pi-clawa"
+    "@types/better-sqlite3"
   ]
 }
