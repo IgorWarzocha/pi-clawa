@@ -17,7 +17,7 @@ type ClawasWorkerOutput = {
 };
 
 type ChangedClawasWorkerOutput = ClawasWorkerOutput & {
-  changed: 'message' | 'discord-delivery' | 'private-delivery';
+	changed: 'message' | 'discord-delivery';
 };
 
 const CLAWAS_MESSAGE_SETTLE_MS = 2_500;
@@ -62,7 +62,7 @@ export async function invokeClawasWorker(
       };
     }
 
-    if (resolved.changed === 'discord-delivery' || resolved.changed === 'private-delivery') {
+    if (resolved.changed === 'discord-delivery') {
       return { ok: true, text: '', route: 'handled' };
     }
 
@@ -251,6 +251,7 @@ async function waitForWorkerOutputChange(
   let nextLogAt = startedAt + logIntervalMs;
   let messageCandidate: ChangedClawasWorkerOutput | null = null;
   let messageCandidateReadyAt = 0;
+  let observedDelivery = baseline.delivery;
 
   while (Date.now() - startedAt < timeoutMs) {
     if (signal?.aborted) {
@@ -258,16 +259,16 @@ async function waitForWorkerOutputChange(
     }
 
     const next = await getClawasWorkerOutput(workerId);
-    if (isNewDelivery(next.delivery, baseline.delivery, sentAt)) {
+    if (isNewDelivery(next.delivery, observedDelivery, sentAt)) {
       if (next.delivery?.route === 'discord') {
         return { ...next, changed: 'discord-delivery' };
       }
 
+      observedDelivery = next.delivery;
       logger.info(
         { workerId },
-        'Observed CLAWAS private delivery; treating Discord event as handled asynchronously',
+        'Observed CLAWAS private delivery; waiting for explicit Discord final routing',
       );
-      return { ...next, changed: 'private-delivery' };
     }
 
     if (
