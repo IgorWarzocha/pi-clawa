@@ -1,4 +1,3 @@
-import { isAbsolute, resolve } from 'node:path'
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import {
   getLastDiscordChannelJid,
@@ -9,41 +8,9 @@ import { normalizeDiscordReplyText } from '@howaboua/pi-clawa/clawas/comms/repor
 import { findRepoRoot } from '@howaboua/pi-clawa/config'
 import { Type } from 'typebox'
 import { DISCORD_CONFIG_RELATIVE } from './constants.js'
-import { readEnvFile } from './env-file.js'
-import { getGatewayConfigPath, setGatewayConfigPath } from './gateway-state.js'
-
-function normalizeChannelJid(channel: string): string {
-  return channel.startsWith('dc:') ? channel : `dc:${channel}`
-}
-
-function resolveWorkerChannelJid(workerId: string): string | null {
-  const configPath = getGatewayConfigPath()
-  if (!configPath) return null
-  const map = readEnvFile(configPath)['CLAWAS_CHANNEL_WORKERS'] ?? ''
-  const matches: string[] = []
-  for (const entry of map
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean)) {
-    const equals = entry.indexOf('=')
-    if (equals === -1) continue
-    const channel = entry.slice(0, equals).trim()
-    const worker = entry.slice(equals + 1).trim()
-    if (worker === workerId) matches.push(normalizeChannelJid(channel))
-  }
-  return matches.length === 1 ? (matches[0] ?? null) : null
-}
 
 function prepareDiscordToolEnvironment(): void {
   const projectRoot = process.env['PI_CLAW_PROJECT_ROOT'] ?? findRepoRoot(process.cwd())
-  const configuredGatewayPath = process.env['PI_CLAWA_DISCORD_CONFIG']?.trim()
-  setGatewayConfigPath(
-    configuredGatewayPath
-      ? isAbsolute(configuredGatewayPath)
-        ? configuredGatewayPath
-        : resolve(projectRoot, configuredGatewayPath)
-      : resolve(projectRoot, DISCORD_CONFIG_RELATIVE),
-  )
   process.env['PI_CLAWA_DISCORD_CONFIG'] ??= DISCORD_CONFIG_RELATIVE
   process.env['PI_CLAW_PROJECT_ROOT'] ??= projectRoot
   process.env['PI_CWD'] ??= projectRoot
@@ -57,46 +24,48 @@ export function registerDiscordTool(pi: ExtensionAPI): void {
     name: 'message_discord',
     label: 'Message Discord',
     description:
-      'Public Discord send lane. Use for explicit public sends, native replies, reactions, attachments, multi-send delivery, or public sends from private/control turns.',
+      'Explicit Discord send lane. Requires a destination: dm or #channel. Use for sends/reactions outside final routing blocks.',
     parameters: Type.Object({
-      message: Type.String({ description: 'Public Discord message to send.' }),
-      replyToMessageId: Type.Optional(
-        Type.String({ description: 'Optional Discord message id to reply to.' }),
-      ),
-      channelId: Type.Optional(
-        Type.String({
-          description:
-            'Optional Discord channel id or dc:<id>. Usually omit during Discord turns; the current source channel is used.',
-        }),
+      channel: Type.String({
+        description: 'Destination: dm or #channel.',
+      }),
+      message: Type.Optional(Type.String({ description: 'Discord message to send.' })),
+      react: Type.Optional(
+        Type.String({ description: 'Emoji reaction for the current source Discord message.' }),
       ),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       const workerId = process.env['PI_CLAWAS_WORKER_ID']?.trim()
       const workerTitle = process.env['PI_CLAWAS_WORKER_TITLE']?.trim() || workerId || 'worker'
       const message = normalizeDiscordReplyText(params.message)
+      const react = params.react?.trim()
       if (!workerId) throw new Error('PI_CLAWAS_WORKER_ID is missing')
-      if (!message)
+      if (!(message || react))
         return {
           content: [{ type: 'text', text: 'No public Discord beat sent.' }],
           details: { workerId },
         }
 
-      const explicitChannel = params.channelId?.trim()
-      const channelJid = explicitChannel
-        ? normalizeChannelJid(explicitChannel)
-        : (getLastDiscordChannelJid(ctx) ?? resolveWorkerChannelJid(workerId))
+      const { initDb } = await import('../gateway/db.js')
+      initDb()
+      const { resolveDiscordChannelLabel } = await import('../gateway/agent/final-routes.js')
+      const channelJid = resolveDiscordChannelLabel(params.channel, workerId)
       if (!channelJid)
         throw new Error(
-          `No unambiguous Discord channel found for Clawas worker ${workerId}. Use normal final text during gateway turns, or pass channelId for explicit private/control sends.`,
+          `Unknown Discord channel: ${params.channel}. Use dm or a routed #channel name.`,
         )
 
+      const sourceChannelJid = getLastDiscordChannelJid(ctx)
       const replyToMessageId =
-        typeof params.replyToMessageId === 'string' && params.replyToMessageId.trim()
-          ? params.replyToMessageId.trim()
-          : getLastDiscordSourceMessageId(ctx)
+        channelJid === sourceChannelJid ? getLastDiscordSourceMessageId(ctx) : undefined
+      if (react && !replyToMessageId) {
+        throw new Error('Cannot react: no source Discord message is attached for that channel.')
+      }
+
       const { sendFilesToDiscord } = await import('../gateway/discord/send.js')
-      await sendFilesToDiscord({ channelJid, text: message, replyToMessageId, files: [] })
-      publishClawasDeliveryMessage(pi, message, { route: 'discord', workerId, workerTitle })
+      const text = [react ? `[React: ${react}]` : undefined, message].filter(Boolean).join('\n')
+      await sendFilesToDiscord({ channelJid, text, replyToMessageId, files: [] })
+      publishClawasDeliveryMessage(pi, text, { route: 'discord', workerId, workerTitle })
       return {
         content: [{ type: 'text', text: 'Sent public Discord beat.' }],
         details: { workerId },

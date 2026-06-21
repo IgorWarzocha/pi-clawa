@@ -124,8 +124,8 @@ export function buildWorkerUserMessage(
     const ambient = currentTrigger.includes(AMBIENT_TRIGGER_PREFIX)
     const trigger = currentTrigger.trim()
     const responseRule = ambient
-      ? 'Ambient check: speak only if a brief public note adds real value. If not, output exactly [nothing_for_discord]. A single reaction-only output like [React: emoji] is allowed when it truly fits.'
-      : 'Direct Discord turn. If you answer, final assistant text is posted publicly to this same Discord surface. Write only the channel-facing answer/result. Use tools silently; do not publish progress narration, tool-step narration, delivery markers, footers, or backstage notes. For reactions, include one standalone line like [React: emoji] in final text when it genuinely fits the turn. Use message_discord only for multiple sends, native replies, attachments, or explicit send-control needs.'
+      ? 'Ambient check: speak only if a brief public note adds real value. If not, output exactly [quiet]. A single reaction-only output like [React: emoji] is allowed when it truly fits.'
+      : 'Direct Discord turn. Final assistant text MUST use routing blocks; untagged final text is not delivered. Use one or more blocks like [#channel]: public text, [dm]: private note, [main_clawa]: message to main Clawa, or [quiet]. Use tools silently; do not publish progress narration, tool-step narration, delivery markers, footers, or backstage notes. For reactions, include one standalone line like [React: emoji] when it genuinely fits the same Discord message.'
     return [
       ambient ? '[Discord room update — ambient]' : '[Discord room update]',
       'This is recent activity from the mapped Discord channel. It is not all from Igor, and not every line is an instruction for you.',

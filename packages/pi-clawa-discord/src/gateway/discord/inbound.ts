@@ -3,14 +3,12 @@ import type { RegisteredChannel } from "../types.js";
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import {
-	noteAmbientObservedMessage,
 	createDmChannel,
 	getChannel,
 	registerChannel as dbRegisterChannel,
 	enqueueMessage,
 	logMessage,
 } from "../db.js";
-import { AMBIENT_SENDER, buildAmbientPrompt } from "../agent/ambient.js";
 import {
 	appendAttachmentReferences,
 	buildAttachmentOnlyPrompt,
@@ -173,12 +171,7 @@ export function createMessageHandler(
 		const reg: RegisteredChannel = {
 			jid,
 			name,
-			folder: `ch_${channelId}`,
 			requiresTrigger: config.channelPolicy === "open-trigger",
-			isMain: false,
-			modelOverride: "",
-			thinkingOverride: "",
-			cwdOverride: "",
 		};
 		dbRegisterChannel(reg);
 		channel = reg;
@@ -214,32 +207,6 @@ export function createMessageHandler(
 
 	// ── Trigger check ──
 	if (!isDirected) {
-		if (!isDM && shouldUseAmbientJitter(channelId) && observedContent) {
-			const shouldChime = noteAmbientObservedMessage(jid, {
-				now: timestamp,
-				minMessages: config.ambientJitterMinMessages,
-				maxMessages: Math.max(
-					config.ambientJitterMinMessages,
-					config.ambientJitterMaxMessages,
-				),
-				cooldownSeconds: config.ambientJitterCooldownSeconds,
-				random: Math.random,
-			});
-
-			if (shouldChime) {
-				enqueueMessage({
-					channelJid: jid,
-					sender: AMBIENT_SENDER,
-					senderName: "Ambient",
-					sourceMessageId: message.id,
-					logRowId: observedLogRowId,
-					content: buildAmbientPrompt(),
-					timestamp,
-				});
-				logger.info({ jid }, "Ambient jitter prompt enqueued");
-			}
-		}
-
 		logger.debug({ jid }, "Message does not match trigger, ignoring");
 		return;
 	}
@@ -273,10 +240,4 @@ export function createMessageHandler(
 		"Message enqueued",
 	);
 }
-
-
-}
-
-function shouldUseAmbientJitter(channelId: string): boolean {
-	return config.ambientJitterChannels.has(channelId);
 }

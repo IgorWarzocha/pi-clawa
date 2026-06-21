@@ -1,13 +1,13 @@
 import { config } from "../config.js";
 import {
 	countLoggedMessagesSince,
-	getAmbientLastSeenLogRowId,
+	getChannelContextLastSeenLogRowId,
 	getLatestLoggedMessageRowId,
 	listLoggedMessagesSince,
 } from "../db.js";
 import { logger } from "../logger.js";
-import { AMBIENT_SENDER, buildObservedMessagesContext } from "./ambient.js";
 import { buildReactionInstruction } from "./discord-directives.js";
+import type { LoggedMessage } from "../types.js";
 
 const TIME_NOTE_INTERVAL_HOURS = 2;
 const lastGatewayTimeNoteBucketByChannel = new Map<string, string>();
@@ -27,15 +27,15 @@ export interface GatewayPrompt {
 }
 
 export function getReplyAnchorSourceMessageId(
-	sender: string,
+	_sender: string,
 	sourceMessageId: string | null,
 ): string | null {
-	return sender === AMBIENT_SENDER ? null : sourceMessageId;
+	return sourceMessageId;
 }
 
 export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt {
-	const { jid, sender, senderName, content, mappedWorker, logRowId } = options;
-	const lastSeenLogRowId = getAmbientLastSeenLogRowId(jid);
+	const { jid, senderName, content, mappedWorker, logRowId } = options;
+	const lastSeenLogRowId = getChannelContextLastSeenLogRowId(jid);
 	const latestLogRowId = getLatestLoggedMessageRowId(jid);
 	const observedThroughRowId = logRowId ?? latestLogRowId;
 	let observedMessages =
@@ -44,7 +44,7 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 					jid,
 					lastSeenLogRowId,
 					observedThroughRowId,
-					config.ambientContextMessages,
+					config.recentContextMessages,
 				)
 			: [];
 	let totalNewMessages =
@@ -52,29 +52,27 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 			? countLoggedMessagesSince(jid, lastSeenLogRowId, observedThroughRowId)
 			: 0;
 
-	if (sender !== AMBIENT_SENDER) {
-		if (logRowId) {
-			const before = observedMessages.length;
-			observedMessages = observedMessages.filter(
-				(message) => message.rowid !== logRowId,
-			);
-			if (
-				before !== observedMessages.length &&
-				logRowId > lastSeenLogRowId &&
-				logRowId <= observedThroughRowId
-			) {
-				totalNewMessages = Math.max(0, totalNewMessages - 1);
-			}
-		} else {
-			const lastObserved = observedMessages.at(-1);
-			if (
-				lastObserved &&
-				lastObserved.sender_name === senderName &&
-				lastObserved.content === content
-			) {
-				observedMessages = observedMessages.slice(0, -1);
-				totalNewMessages = Math.max(0, totalNewMessages - 1);
-			}
+	if (logRowId) {
+		const before = observedMessages.length;
+		observedMessages = observedMessages.filter(
+			(message) => message.rowid !== logRowId,
+		);
+		if (
+			before !== observedMessages.length &&
+			logRowId > lastSeenLogRowId &&
+			logRowId <= observedThroughRowId
+		) {
+			totalNewMessages = Math.max(0, totalNewMessages - 1);
+		}
+	} else {
+		const lastObserved = observedMessages.at(-1);
+		if (
+			lastObserved &&
+			lastObserved.sender_name === senderName &&
+			lastObserved.content === content
+		) {
+			observedMessages = observedMessages.slice(0, -1);
+			totalNewMessages = Math.max(0, totalNewMessages - 1);
 		}
 	}
 
@@ -98,14 +96,39 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 			reactionInstruction,
 			timeNote,
 			observedContext,
-			sender === AMBIENT_SENDER
-				? content
-				: `[Discord user: ${senderName}]\n${content}`,
+			`[Discord user: ${senderName}]\n${content}`,
 		]
 			.filter(Boolean)
 			.join("\n\n"),
 		observedThroughRowId,
 	};
+}
+
+function buildObservedMessagesContext(
+	messages: LoggedMessage[],
+	opts: {
+		afterRowId: number;
+		observedThroughRowId: number;
+		totalNewMessages: number;
+	},
+): string {
+	if (messages.length === 0) {
+		return "";
+	}
+
+	const lines = messages.map(
+		(message) => `${message.sender_name}: ${message.content}`,
+	);
+	const truncated =
+		opts.totalNewMessages > messages.length
+			? ` Only the most recent ${messages.length} of ${opts.totalNewMessages} new messages are shown.`
+			: "";
+
+	return [
+		`Recent channel context:${truncated}`,
+		...lines,
+		"End recent channel context.",
+	].join("\n");
 }
 
 function maybeBuildGatewayTimeNote(jid: string, mappedWorker?: string): string {

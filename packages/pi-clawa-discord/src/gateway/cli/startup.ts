@@ -6,18 +6,9 @@ import { resolveConfigPath } from '../config.js';
 export async function maybeRunFirstTimeSetup(): Promise<boolean> {
   const configPath = resolveConfigPath();
   if (existsSync(configPath)) return false;
-
-  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY);
-  if (!interactive) {
-    throw new Error(
-      `No config found at ${configPath}. Run "pi-clawa-discord setup" first, or set PI_CLAWA_DISCORD_CONFIG to point to your config file.`,
-    );
-  }
-
-  console.log(`No config found at ${configPath}. Starting first-time setup...\n`);
-  const { runSetup } = await import('./setup.js');
-  await runSetup([]);
-  return true;
+  throw new Error(
+    `No Discord config found at ${configPath}. Start Pi with the adapter and use /discord to create it.`,
+  );
 }
 
 export function isDirectExecution(metaUrl: string, argv = process.argv): boolean {

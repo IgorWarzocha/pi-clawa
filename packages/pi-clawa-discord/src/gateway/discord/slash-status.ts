@@ -2,74 +2,27 @@ import type {
   ChannelSessionStatus,
   SessionContextUsage,
   SessionTokenUsage,
-} from '../agent/invoke.js'
-import type { EffectiveChannelSettings } from '../agent/channel-settings.js'
+} from '../agent/session-status.js'
+import type { ClawaMappedStatus } from '../agent/clawa-status.js'
 
-export function buildStatusMessage(
-  effective: EffectiveChannelSettings,
-  sessionStatus: ChannelSessionStatus,
-): string {
+export function buildClawaStatusMessage(status: ClawaMappedStatus): string {
   const rows: Array<[string, string]> = [
-    ['Model', formatModelValue(effective)],
-    ['Thinking', formatThinkingValue(effective)],
-    ['Working dir', formatWorkingDirValue(effective)],
+    ['Route', status.workerId],
+    ['Worker', `${status.title} (${status.runtime})`],
+    ['Model', status.model],
+    ['Thinking', status.thinking],
+    ['Working dir', status.cwd],
+    [
+      'Session',
+      status.sessionStatus.createdAt
+        ? formatSessionCreatedAt(status.sessionStatus.createdAt)
+        : 'not started',
+    ],
+    ['Tokens', formatTokenUsage(status.sessionStatus.tokens, status.sessionStatus.statsSource)],
+    ['Context', formatContextUsage(status.sessionStatus.contextUsage)],
   ]
 
-  if (effective.thinkingAdjusted) {
-    rows.push(['Fallback', formatThinkingFallback(effective)])
-  }
-
-  rows.push(
-    ['Reasoning', effective.modelInfo ? (effective.modelInfo.reasoning ? 'yes' : 'no') : 'unknown'],
-    ['Session', sessionStatus.createdAt ? formatSessionCreatedAt(sessionStatus.createdAt) : 'not started'],
-    ['Tokens', formatTokenUsage(sessionStatus.tokens, sessionStatus.statsSource)],
-    ['Context', formatContextUsage(sessionStatus.contextUsage)],
-  )
-
   return `\`\`\`text\n${formatTwoColumnRows(rows)}\n\`\`\``
-}
-
-function formatModelValue(effective: EffectiveChannelSettings): string {
-  if (effective.modelSource === 'pi runtime default') {
-    return 'pi runtime default'
-  }
-
-  return `${effective.displayModel} (${formatSettingSource(effective.modelSource)})`
-}
-
-function formatThinkingValue(effective: EffectiveChannelSettings): string {
-  if (!effective.hasManagedThinking || effective.thinkingSource === 'pi runtime default') {
-    return 'pi runtime default'
-  }
-
-  return `${effective.effectiveThinking} (${formatSettingSource(effective.thinkingSource)})`
-}
-
-function formatThinkingFallback(effective: EffectiveChannelSettings): string {
-  if (effective.modelInfo && !effective.modelInfo.reasoning && effective.requestedThinking !== 'off') {
-    return `${effective.requestedThinking} -> off (no reasoning)`
-  }
-
-  if (effective.requestedThinking === 'xhigh' && effective.effectiveThinking === 'high') {
-    return 'xhigh -> high (unsupported)'
-  }
-
-  return `${effective.requestedThinking} -> ${effective.effectiveThinking}`
-}
-
-function formatWorkingDirValue(effective: EffectiveChannelSettings): string {
-  return `${effective.effectiveCwd} (${effective.cwdSource === 'override' ? 'channel' : 'gateway'})`
-}
-
-function formatSettingSource(source: EffectiveChannelSettings['modelSource']): string {
-  switch (source) {
-    case 'override':
-      return 'channel'
-    case 'default':
-      return 'gateway'
-    case 'pi runtime default':
-      return 'pi'
-  }
 }
 
 function formatSessionCreatedAt(timestamp: string): string {

@@ -6,12 +6,12 @@ Do not turn this into scriptware: if a helper is not something I will actually i
 
 ## Tools
 
-- **`message_discord`** — public sends, replies, reactions, or multi-message delivery
-  - Invoke: use when the reply must actually go to Discord
+- **`message_discord`** — explicit Discord sends or reactions outside final routing blocks
+  - Invoke: pass `channel` as `dm` or a routed `#channel` name
   - Notes: keep public output safe; no private filesystem/config details
 
-- **`message_main_claw`** — private coordination with the main claw
-  - Invoke: use when a Discord turn needs private help or escalation
+- **`message_main_claw`** — message the main Clawa
+  - Invoke: use when a Discord turn needs main Clawa help or escalation
   - Notes: main-chat-only replies do not reach Discord
 
 Never store tokens here.

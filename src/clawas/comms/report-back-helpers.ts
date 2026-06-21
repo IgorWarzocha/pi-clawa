@@ -1,4 +1,4 @@
-export const NOTHING_FOR_DISCORD_SENTINEL = '[nothing_for_discord]'
+export const NOTHING_FOR_DISCORD_SENTINEL = '[quiet]'
 const STANDALONE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s*(?:\n+([\s\S]*))?$/i
 const INLINE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s+([\s\S]+)$/i
 

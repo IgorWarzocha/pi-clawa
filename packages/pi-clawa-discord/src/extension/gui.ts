@@ -46,12 +46,12 @@ export async function runDiscordGui(
         return
       }
       saveDiscordInput({ mode, value, configPath: snapshot.configPath })
-      message = mode === 'token' ? 'token saved' : 'channel mapped to discord-clawa'
+      message = 'token saved'
       mode = 'menu'
       refresh()
     }
 
-    const openInputMode = (nextMode: 'token' | 'channel') => {
+    const openInputMode = (nextMode: 'token') => {
       mode = nextMode
       input = ''
       message = ''
@@ -77,7 +77,6 @@ export async function runDiscordGui(
       },
       close: done,
       token: () => openInputMode('token'),
-      channel: () => openInputMode('channel'),
       restart: () => runGatewayAction('restart'),
       stop: () => runGatewayAction('stop'),
     }

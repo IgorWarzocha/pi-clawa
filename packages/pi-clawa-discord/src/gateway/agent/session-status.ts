@@ -1,11 +1,7 @@
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { config } from '../config.js';
 import { logger } from '../logger.js';
-import {
-  readSessionCreatedAt,
-  resolveLatestChannelSessionFile,
-} from '../session/path.js';
 
 export interface SessionTokenUsage {
   input: number;
@@ -29,12 +25,7 @@ export interface ChannelSessionStatus {
   statsSource: 'rpc' | 'jsonl' | 'none';
 }
 
-export async function getChannelSessionStatus(channelFolder: string, cwd = config.piCwd): Promise<ChannelSessionStatus> {
-  const sessionFile = resolveLatestChannelSessionFile(channelFolder);
-  if (!sessionFile) {
-    return { statsSource: 'none' };
-  }
-
+export async function getSessionFileStatus(sessionFile: string, cwd = config.piCwd): Promise<ChannelSessionStatus> {
   const createdAt = readSessionCreatedAt(sessionFile);
 
   try {
@@ -58,6 +49,14 @@ export async function getChannelSessionStatus(channelFolder: string, cwd = confi
       tokens: readSessionTokensFromJsonl(sessionFile),
       statsSource: 'jsonl',
     };
+  }
+}
+
+function readSessionCreatedAt(sessionFile: string): string | undefined {
+  try {
+    return statSync(sessionFile).birthtime.toISOString();
+  } catch {
+    return undefined;
   }
 }
 

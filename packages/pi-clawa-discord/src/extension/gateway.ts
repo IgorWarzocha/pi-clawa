@@ -3,7 +3,7 @@ import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-clawa/config'
 import { extensionDir, GATEWAY_ENTRY } from './constants.js'
 import { ensureDiscordConfig, readEnvFile } from './env-file.js'
-import { getGatewayProcess, setGatewayConfigPath, setGatewayProcess } from './gateway-state.js'
+import { getGatewayProcess, setGatewayProcess } from './gateway-state.js'
 
 function hasGatewayToken(configPath: string): boolean {
   return Boolean(readEnvFile(configPath)['DISCORD_BOT_TOKEN'] || process.env['DISCORD_BOT_TOKEN'])
@@ -11,7 +11,6 @@ function hasGatewayToken(configPath: string): boolean {
 
 export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
   const configPath = ensureDiscordConfig(projectRoot)
-  setGatewayConfigPath(configPath)
 
   if (!hasGatewayToken(configPath)) {
     if (ctx.hasUI)

@@ -1,9 +1,4 @@
-import {
-  CHANNEL_PREFIX_REGEX,
-  DISCORD_WORKER_ID,
-  GATEWAY_SOURCE_DIR,
-  SETUP_DOC_PATH,
-} from './constants.js'
+import { DISCORD_DATA_RELATIVE, GATEWAY_SOURCE_DIR, SETUP_DOC_PATH } from './constants.js'
 import { ensureDiscordConfig, maskSecret, readEnvFile, writeEnvValue } from './env-file.js'
 import { isGatewayRunning } from './gateway-state.js'
 import type { DiscordGuiItem, DiscordGuiMode, DiscordGuiSnapshot } from './gui-types.js'
@@ -17,7 +12,7 @@ export function buildDiscordSnapshot(projectRoot: string): DiscordGuiSnapshot {
     configPath,
     tokenSet: Boolean(token?.trim()),
     maskedToken: maskSecret(token),
-    channelMap: config['CLAWAS_CHANNEL_WORKERS']?.trim() || 'missing',
+    routesPath: config['ROUTES_PATH']?.trim() || `${DISCORD_DATA_RELATIVE}/routes.jsonc`,
     gatewayRunning: isGatewayRunning(),
   }
 }
@@ -33,11 +28,6 @@ export function buildDiscordGuiItems(snapshot: DiscordGuiSnapshot): DiscordGuiIt
       action: 'token',
       label: snapshot.tokenSet ? 'replace bot token' : 'set bot token',
       detail: snapshot.maskedToken,
-    },
-    {
-      action: 'channel',
-      label: 'set Discord channel',
-      detail: snapshot.channelMap,
     },
     {
       action: 'restart',
@@ -75,12 +65,4 @@ export function saveDiscordInput(options: {
     writeEnvValue(configPath, 'DISCORD_BOT_TOKEN', value)
     return
   }
-  if (mode === 'channel') {
-    const channelId = sanitizeChannelId(value)
-    writeEnvValue(configPath, 'CLAWAS_CHANNEL_WORKERS', `${channelId}=${DISCORD_WORKER_ID}`)
-  }
-}
-
-function sanitizeChannelId(input: string): string {
-  return input.trim().replace(CHANNEL_PREFIX_REGEX, '')
 }

@@ -1,5 +1,5 @@
-export type DiscordGuiAction = 'guide' | 'token' | 'channel' | 'restart' | 'stop' | 'close'
-export type DiscordGuiMode = 'menu' | 'token' | 'channel'
+export type DiscordGuiAction = 'guide' | 'token' | 'restart' | 'stop' | 'close'
+export type DiscordGuiMode = 'menu' | 'token'
 export type DiscordGuiItem = {
   action: DiscordGuiAction
   label: string
@@ -10,7 +10,7 @@ export type DiscordGuiSnapshot = {
   configPath: string
   tokenSet: boolean
   maskedToken: string
-  channelMap: string
+  routesPath: string
   gatewayRunning: boolean
 }
 export type CustomView = {

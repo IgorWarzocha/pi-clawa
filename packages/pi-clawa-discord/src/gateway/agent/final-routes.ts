@@ -1,0 +1,77 @@
+import { resolveRoutedDiscordChannel } from '../channel-routes.js';
+
+export type FinalRouteTarget =
+	| { kind: 'channel'; label: string }
+	| { kind: 'dm' }
+	| { kind: 'main-clawa' }
+	| { kind: 'quiet' };
+
+export interface FinalRouteBlock {
+	target: FinalRouteTarget;
+	text: string;
+}
+
+export interface ParsedFinalRoutes {
+	hasRoutes: boolean;
+	blocks: FinalRouteBlock[];
+}
+
+const ROUTE_TAG_REGEX = /^\[(#[^\]\s:]+|dm|main_clawa|quiet)\]:?\s*(.*)$/i;
+
+export function parseFinalRoutes(text: string): ParsedFinalRoutes {
+	const blocks: FinalRouteBlock[] = [];
+	let current: FinalRouteBlock | undefined;
+	let hasRoutes = false;
+
+	for (const rawLine of text.split(/\r?\n/u)) {
+		const line = rawLine.trimEnd();
+		const match = line.trimStart().match(ROUTE_TAG_REGEX);
+		if (match) {
+			hasRoutes = true;
+			if (current) blocks.push(trimBlock(current));
+			current = {
+				target: parseRouteTarget(match[1] ?? ''),
+				text: match[2]?.trim() ?? '',
+			};
+			continue;
+		}
+
+		if (!current) continue;
+		current.text = current.text ? `${current.text}\n${line}` : line;
+	}
+
+	if (current) blocks.push(trimBlock(current));
+
+	return {
+		hasRoutes,
+		blocks: blocks.filter((block) => block.target.kind === 'quiet' || block.text.trim()),
+	};
+}
+
+export function resolveDiscordRouteTarget(target: FinalRouteTarget, workerId?: string | undefined): string | undefined {
+	if (target.kind === 'channel') {
+		return resolveRoutedDiscordChannel(target.label, workerId);
+	}
+	if (target.kind === 'dm') {
+		return resolveRoutedDiscordChannel('dm', workerId);
+	}
+	return undefined;
+}
+
+export function resolveDiscordChannelLabel(input: string, workerId?: string | undefined): string | undefined {
+	const value = input.trim();
+	if (!value) return undefined;
+	return resolveRoutedDiscordChannel(value, workerId);
+}
+
+function parseRouteTarget(raw: string): FinalRouteTarget {
+	const value = raw.trim().toLowerCase();
+	if (value === 'dm') return { kind: 'dm' };
+	if (value === 'main_clawa') return { kind: 'main-clawa' };
+	if (value === 'quiet') return { kind: 'quiet' };
+	return { kind: 'channel', label: value };
+}
+
+function trimBlock(block: FinalRouteBlock): FinalRouteBlock {
+	return { ...block, text: block.text.trim() };
+}

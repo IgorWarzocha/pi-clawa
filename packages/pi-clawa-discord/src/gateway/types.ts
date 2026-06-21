@@ -1,24 +1,8 @@
-/** Supported pi thinking levels */
-export const THINKING_LEVELS = [
-	"off",
-	"minimal",
-	"low",
-	"medium",
-	"high",
-	"xhigh",
-] as const;
-export type ThinkingLevel = (typeof THINKING_LEVELS)[number];
-
-/** A registered channel the gateway will respond in */
+/** A Discord channel or DM the gateway has seen */
 export interface RegisteredChannel {
 	jid: string;
 	name: string;
-	folder: string;
 	requiresTrigger: boolean;
-	isMain: boolean;
-	modelOverride: string;
-	thinkingOverride: ThinkingLevel | "";
-	cwdOverride: string;
 }
 
 /** Queued message row from SQLite */

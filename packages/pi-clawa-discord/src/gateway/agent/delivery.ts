@@ -3,13 +3,13 @@ import { isNothingForDiscord } from "../discord/send.js";
 import { logMessage, markMessageDone, markMessageFailed } from "../db.js";
 import { logger } from "../logger.js";
 import type { AgentResult } from "../types.js";
-import { AMBIENT_SENDER } from "./ambient.js";
 import { extractDiscordDirectives } from "./discord-directives.js";
+import { parseFinalRoutes, resolveDiscordRouteTarget } from "./final-routes.js";
+import { sendClawasSessionMessage } from "./invoke-clawas-rpc.js";
 
 export interface DiscordDeliveryOptions {
 	jid: string;
 	rowid: number;
-	sender: string;
 	sourceMessageId: string | null;
 	mappedWorker?: string | undefined;
 	result: AgentResult;
@@ -18,7 +18,6 @@ export interface DiscordDeliveryOptions {
 export async function settleDiscordDelivery({
 	jid,
 	rowid,
-	sender,
 	sourceMessageId,
 	mappedWorker,
 	result,
@@ -49,36 +48,97 @@ export async function settleDiscordDelivery({
 		return;
 	}
 
-	const parsed = extractDiscordDirectives(result.text);
+	const routed = parseFinalRoutes(result.text);
+	if (routed.hasRoutes) {
+		try {
+			for (const block of routed.blocks) {
+				if (block.target.kind === "quiet") continue;
+				if (block.target.kind === "main-clawa") {
+					await sendClawasSessionMessage("main-claw", {
+						message: block.text,
+						messageType: "session",
+						sender: {
+							workerId: mappedWorker,
+							workerTitle: mappedWorker,
+						},
+					});
+					continue;
+				}
 
-	if (parsed.reaction && sourceMessageId) {
-		await addReaction(jid, sourceMessageId, parsed.reaction);
+				const targetJid = resolveDiscordRouteTarget(block.target, mappedWorker);
+				if (!targetJid) {
+					throw new Error(`Could not resolve Discord route ${formatRouteTarget(block.target)}`);
+				}
+				const delivered = await deliverDiscordText(targetJid, block.text, {
+					defaultReplyToMessageId: targetJid === jid ? sourceMessageId : null,
+					mappedWorker,
+				});
+				if (!delivered) {
+					throw new Error(`Could not send Discord route ${formatRouteTarget(block.target)}`);
+				}
+			}
+			markMessageDone(rowid);
+			logger.info({ jid, worker: mappedWorker, routes: routed.blocks.length }, "Delivered routed Discord final message");
+			return;
+		} catch (err: any) {
+			markMessageFailed(rowid);
+			logger.warn({ jid, worker: mappedWorker, err: err.message }, "Failed to deliver routed Discord final message");
+			await sendResponse(jid, `⚠️ Could not route Clawa reply: ${err.message?.slice(0, 200)}`);
+			return;
+		}
 	}
 
-	if (isNothingForDiscord(parsed.text)) {
-		markMessageDone(rowid);
-		logger.info(
-			{ jid, sender, worker: mappedWorker, reaction: parsed.reaction },
-			"Suppressed [nothing_for_discord] response text",
+	if (mappedWorker) {
+		markMessageFailed(rowid);
+		logger.warn(
+			{ jid, worker: mappedWorker },
+			"Mapped Discord Clawa produced untagged final text; not delivering",
 		);
 		return;
 	}
 
-	if (!parsed.text) {
-		markMessageDone(rowid);
-		logger.info({ jid }, "Message handled with reaction only");
+	const delivered = await deliverDiscordText(jid, result.text, {
+		defaultReplyToMessageId: sourceMessageId,
+		mappedWorker,
+	});
+	if (!delivered) {
+		markMessageFailed(rowid);
 		return;
 	}
+	markMessageDone(rowid);
+}
 
-	const replyToMessageId = sender === AMBIENT_SENDER ? null : sourceMessageId;
-	const sent = await sendResponse(jid, parsed.text, { replyToMessageId });
+async function deliverDiscordText(
+	jid: string,
+	text: string,
+	options: { defaultReplyToMessageId: string | null; mappedWorker?: string | undefined },
+): Promise<boolean> {
+	const parsed = extractDiscordDirectives(text);
+
+	if (parsed.reaction && options.defaultReplyToMessageId) {
+		await addReaction(jid, options.defaultReplyToMessageId, parsed.reaction);
+	}
+
+	if (isNothingForDiscord(parsed.text)) {
+		logger.info(
+			{ jid, worker: options.mappedWorker, reaction: parsed.reaction },
+			"Suppressed [quiet] response text",
+		);
+		return true;
+	}
+
+	if (!parsed.text) {
+		logger.info({ jid }, "Message handled with reaction only");
+		return true;
+	}
+
+	const sent = await sendResponse(jid, parsed.text, { replyToMessageId: options.defaultReplyToMessageId });
 	if (!sent) {
-		markMessageFailed(rowid);
 		logger.warn(
 			{ jid },
 			"Agent response generated but could not be delivered to Discord",
 		);
-		return;
+		return false;
 	}
 
 	logMessage({
@@ -89,9 +149,13 @@ export async function settleDiscordDelivery({
 		content: parsed.text,
 		timestamp: new Date().toISOString(),
 	});
-	markMessageDone(rowid);
 	logger.info(
 		{ jid, responseLen: parsed.text.length, reaction: parsed.reaction },
 		"Message processed",
 	);
+	return true;
+}
+
+function formatRouteTarget(target: { kind: string; label?: string }): string {
+	return target.kind === "channel" ? target.label ?? "#channel" : target.kind;
 }

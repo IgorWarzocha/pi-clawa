@@ -14,7 +14,6 @@ export const GATEWAY_SOURCE_DIR = join(extensionDir, 'src', 'gateway')
 
 export const LINE_SPLIT_REGEX = /\r?\n/
 export const TRAILING_NEWLINES_REGEX = /\n*$/
-export const CHANNEL_PREFIX_REGEX = /^dc:/
 export const INPUT_NEWLINE_REGEX = /[\r\n]/
 export const INPUT_CLEAN_NEWLINES_REGEX = /[\r\n]/g
 export const TOKEN_VISIBLE_PREFIX = 6

@@ -72,6 +72,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
+    "./jsonc": "./src/jsonc.ts",
     "./clawas/comms/message-extract": "./src/clawas/comms/message-extract.ts",
     "./clawas/comms/outbound": "./src/clawas/comms/outbound.ts",
     "./clawas/comms/report-back-helpers": "./src/clawas/comms/report-back-helpers.ts",

@@ -5,7 +5,7 @@ import { AttachmentBuilder, Client, GatewayIntentBits, type MessageCreateOptions
 import { config } from "../config.js";
 import { extractDiscordDirectives } from "../agent/discord-directives.js";
 
-export const NOTHING_FOR_DISCORD_SENTINEL = "[nothing_for_discord]";
+export const NOTHING_FOR_DISCORD_SENTINEL = "[quiet]";
 
 export interface SendRequest {
 	channelJid: string;

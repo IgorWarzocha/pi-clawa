@@ -40,22 +40,34 @@ In the Discord developer portal:
 4. Open the generated URL.
 5. Choose your server and authorize the bot.
 
-## 5. Get the Discord channel id
+## 5. Let the gateway learn the channel
 
-In Discord:
+DMs route to `discord-clawa` by default. For a public channel:
 
-1. Enable Developer Mode if needed:
-   - User Settings → Advanced → Developer Mode
-2. Right-click the channel Clawa should use.
-3. Click **Copy Channel ID**.
-4. Paste that id into the Clawa `/discord` setup screen.
+1. Invite the bot to the server.
+2. Say the trigger once in the channel, for example `@clawa hello`.
+3. The gateway records known channels in `.pi/clawa-discord/channels.json`.
+4. Ask the main Clawa to route the channel by editing `.pi/clawa-discord/routes.jsonc`.
+
+Example route:
+
+```jsonc
+{
+  "routes": [
+    { "channel": "dm", "worker": "discord-clawa" },
+    { "channel": "#howaclawa", "worker": "discord-clawa" }
+  ]
+}
+```
+
+Clawas should edit channel names, not Discord ids. The gateway resolves names to ids.
 
 ## 6. Start the gateway
 
 Back in `/discord`:
 
 1. Save the bot token.
-2. Save the channel id.
-3. Choose **start gateway**.
+2. Choose **start gateway**.
 
 The setup writes project-local config to `.pi/clawa-discord/config.env`.
+Routes live in `.pi/clawa-discord/routes.jsonc`.

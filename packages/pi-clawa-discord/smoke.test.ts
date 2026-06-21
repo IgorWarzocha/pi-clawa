@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import clawDiscord from './index.js'
+import { parseFinalRoutes } from './src/gateway/agent/final-routes.js'
 
 const TOKEN_ENV_PATTERN = /DISCORD_BOT_TOKEN=/
+const DEFAULT_DM_ROUTE_PATTERN = /"channel": "dm"/
 const DISCORD_WORKER_PATTERN = /"id": "discord-clawa"/
 const DISCORD_AGENTS_PATTERN = /Discord/
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
@@ -18,7 +20,6 @@ function withCleanDiscordEnv<T>(run: () => Promise<T>): Promise<T> {
     PI_CLAWAS_DISCORD_ENABLED: process.env['PI_CLAWAS_DISCORD_ENABLED'],
     PI_CLAWAS_ROLE: process.env['PI_CLAWAS_ROLE'],
     DISCORD_BOT_TOKEN: process.env['DISCORD_BOT_TOKEN'],
-    CLAWAS_CHANNEL_WORKERS: process.env['CLAWAS_CHANNEL_WORKERS'],
     PI_CLAWA_DISCORD_CONFIG: process.env['PI_CLAWA_DISCORD_CONFIG'],
     PI_CLAW_PROJECT_ROOT: process.env['PI_CLAW_PROJECT_ROOT'],
     PI_CWD: process.env['PI_CWD'],
@@ -27,7 +28,6 @@ function withCleanDiscordEnv<T>(run: () => Promise<T>): Promise<T> {
   delete process.env['PI_CLAWAS_DISCORD_ENABLED']
   delete process.env['PI_CLAWAS_ROLE']
   delete process.env['DISCORD_BOT_TOKEN']
-  delete process.env['CLAWAS_CHANNEL_WORKERS']
   delete process.env['PI_CLAWA_DISCORD_CONFIG']
   delete process.env['PI_CLAW_PROJECT_ROOT']
   delete process.env['PI_CWD']
@@ -70,12 +70,14 @@ test('Discord adapter first session creates tokenless config and worker without 
       )
 
       const env = await readFile(join(root, '.pi', 'clawa-discord', 'config.env'), 'utf8')
+      const routes = await readFile(join(root, '.pi', 'clawa-discord', 'routes.jsonc'), 'utf8')
       const workers = await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8')
       const agents = await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8')
       const humanLink = await readlink(join(root, 'clawas', 'discord-clawa', 'HUMAN.md'))
       const clawasLink = await readlink(join(root, 'clawas', 'discord-clawa', 'CLAWAS.md'))
 
       assert.match(env, TOKEN_ENV_PATTERN)
+      assert.match(routes, DEFAULT_DM_ROUTE_PATTERN)
       assert.match(workers, DISCORD_WORKER_PATTERN)
       assert.match(agents, DISCORD_AGENTS_PATTERN)
       assert.equal(humanLink, SHARED_HUMAN_LINK_TARGET)
@@ -85,4 +87,25 @@ test('Discord adapter first session creates tokenless config and worker without 
       await rm(root, { recursive: true, force: true })
     }
   })
+})
+
+test('Discord final routing blocks parse explicit destinations', () => {
+  const routed = parseFinalRoutes(
+    [
+      'ignored preface',
+      '[#howaclawa]: public note',
+      'continued',
+      '[dm]: private note',
+      '[main_clawa]: ask main',
+      '[quiet]',
+    ].join('\n'),
+  )
+
+  assert.equal(routed.hasRoutes, true)
+  assert.deepEqual(routed.blocks, [
+    { target: { kind: 'channel', label: '#howaclawa' }, text: 'public note\ncontinued' },
+    { target: { kind: 'dm' }, text: 'private note' },
+    { target: { kind: 'main-clawa' }, text: 'ask main' },
+    { target: { kind: 'quiet' }, text: '' },
+  ])
 })

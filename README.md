@@ -155,7 +155,7 @@ These are not a giant skill library. They are the minimum needed for Clawa to op
 
 ## Optional Discord adapter — WIP
 
-The Discord adapter lives in this repo at `packages/pi-clawa-discord/`. It should be working, but still WIP: I did NOT test it after porting it over from my original forked version to this repo. You might want to use a more standard adapter of your choice until further notice.
+The Discord adapter lives in this repo at `packages/pi-clawa-discord/`. It works, but it is still WIP: setup polish, lifecycle behavior, and multi-channel taste are still being shaped.
 
 Until the adapter is published separately, use it from a local checkout:
 
@@ -171,7 +171,7 @@ Until the adapter is published separately, use it from a local checkout:
 
 Then start Pi and run `/discord`.
 
-The adapter creates project-local config at `.pi/clawa-discord/config.env`. Bot tokens stay local; do not commit `.pi/` secrets.
+The adapter creates project-local config at `.pi/clawa-discord/config.env`. Discord routes live in `.pi/clawa-discord/routes.jsonc`, using names like `dm` and `#howaclawa`; the gateway resolves those names to Discord ids. Bot tokens stay local; do not commit `.pi/` secrets.
 
 Detailed Discord setup lives in `packages/pi-clawa-discord/DISCORD-BOT-SETUP.md`.
 

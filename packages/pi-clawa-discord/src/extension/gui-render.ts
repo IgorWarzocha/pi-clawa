@@ -10,7 +10,6 @@ export function renderDiscordGui(options: {
 }): string[] {
   const { snapshot, items, selected, mode, input, message } = options
   if (mode === 'token') return renderTokenMode(input)
-  if (mode === 'channel') return renderChannelMode(input)
   return renderMenuMode({ snapshot, items, selected, message })
 }
 
@@ -19,15 +18,6 @@ function renderTokenMode(input: string): string[] {
     '╭─ Clawa Discord setup',
     '│ paste bot token, then Enter',
     `│ ${input ? '•'.repeat(Math.min(input.length, 48)) : 'token: '}`,
-    '╰─ Enter save · Esc cancel',
-  ]
-}
-
-function renderChannelMode(input: string): string[] {
-  return [
-    '╭─ Clawa Discord setup',
-    '│ paste Discord channel id, then Enter',
-    `│ ${input || 'channel id: '}`,
     '╰─ Enter save · Esc cancel',
   ]
 }
@@ -42,7 +32,7 @@ function renderMenuMode(options: {
   const lines = [
     '╭─ Clawa Discord',
     `│ gateway ${snapshot.gatewayRunning ? 'running' : 'stopped'} · token ${snapshot.maskedToken}`,
-    `│ channel ${snapshot.channelMap}`,
+    `│ routes ${snapshot.routesPath}`,
     `│ config ${snapshot.configPath}`,
   ]
   if (message) lines.push(`│ ${message}`)

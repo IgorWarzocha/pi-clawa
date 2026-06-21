@@ -9,7 +9,6 @@ import {
   TOKEN_VISIBLE_SUFFIX,
   TRAILING_NEWLINES_REGEX,
 } from './constants.js'
-import { setGatewayConfigPath } from './gateway-state.js'
 
 export function maskSecret(value: string | undefined): string {
   const token = value?.trim() ?? ''
@@ -54,20 +53,18 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
   const clawa = resolveClawaDefaults(projectRoot)
   const content = [
     '# Clawa Discord gateway config.',
-    '# Fill DISCORD_BOT_TOKEN and CLAWAS_CHANNEL_WORKERS, then restart Pi.',
+    '# Fill DISCORD_BOT_TOKEN, then restart Pi.',
     `DISCORD_BOT_TOKEN=${process.env['DISCORD_BOT_TOKEN'] ?? ''}`,
-    'CHANNEL_POLICY=allowlist',
+    'CHANNEL_POLICY=open-trigger',
     'TRIGGER_NAME=clawa',
     'TRIGGER_ALIASES=claw,clawa',
     'PI_CWD=.',
     `DB_PATH=${join(DISCORD_DATA_RELATIVE, 'gateway.db')}`,
-    `SESSIONS_DIR=${join(DISCORD_DATA_RELATIVE, 'sessions')}`,
     `PI_CLAWAS_CONTROL_SOCKET_ROOT=${resolveClawasControlSocketRoot(projectRoot)}`,
     `PI_CLAWAS_CONTROL_SOCKET_DIR=${clawa.controlSocketDir}`,
-    '# Example: CLAWAS_CHANNEL_WORKERS=123456789012345678=discord-clawa',
-    `CLAWAS_CHANNEL_WORKERS=${process.env['CLAWAS_CHANNEL_WORKERS'] ?? ''}`,
+    'ROUTES_PATH=.pi/clawa-discord/routes.jsonc',
+    'CHANNELS_PATH=.pi/clawa-discord/channels.json',
     'MAX_CONCURRENCY=3',
-    'ENABLE_SCHEDULER=false',
     '',
   ].join('\n')
 
@@ -75,9 +72,29 @@ function writeDefaultDiscordConfig(projectRoot: string, configPath: string): voi
   writeFileSync(configPath, content, 'utf8')
 }
 
+function ensureDefaultDiscordRoutes(projectRoot: string): void {
+  const routesPath = resolve(projectRoot, DISCORD_DATA_RELATIVE, 'routes.jsonc')
+  if (existsSync(routesPath)) return
+  mkdirSync(dirname(routesPath), { recursive: true })
+  writeFileSync(
+    routesPath,
+    [
+      '{',
+      '  // Route Discord channels/DMs to Clawa workers.',
+      '  // The gateway resolves names to Discord ids; Clawas should edit names, not ids.',
+      '  "routes": [',
+      '    { "channel": "dm", "worker": "discord-clawa" }',
+      '  ]',
+      '}',
+      '',
+    ].join('\n'),
+    'utf8',
+  )
+}
+
 export function ensureDiscordConfig(projectRoot: string): string {
   const configPath = resolve(projectRoot, DISCORD_CONFIG_RELATIVE)
   if (!existsSync(configPath)) writeDefaultDiscordConfig(projectRoot, configPath)
-  setGatewayConfigPath(configPath)
+  ensureDefaultDiscordRoutes(projectRoot)
   return configPath
 }

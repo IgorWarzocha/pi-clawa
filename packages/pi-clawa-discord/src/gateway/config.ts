@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { isAbsolute, resolve } from 'node:path';
 
 export const DEFAULT_PI_BIN = 'pi';
-export const DEFAULT_CHANNEL_POLICY = 'allowlist' as const;
+export const DEFAULT_CHANNEL_POLICY = 'open-trigger' as const;
 
 const DEFAULT_PROJECT_ROOT = process.env['PI_CWD']?.trim() || process.cwd();
 const DEFAULT_CONFIG_PATH = resolve(DEFAULT_PROJECT_ROOT, '.pi/clawa-discord/config.env');
@@ -98,25 +98,6 @@ function envBool(key: string, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(v);
 }
 
-function parseWorkerMap(value: string): Map<string, string> {
-  const entries = value
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .map((entry) => {
-      const equalsIndex = entry.indexOf('=');
-      if (equalsIndex === -1) return null;
-      const rawKey = entry.slice(0, equalsIndex).trim();
-      const rawValue = entry.slice(equalsIndex + 1).trim();
-      if (!rawKey || !rawValue) return null;
-      const key = rawKey.startsWith('dc:') ? rawKey : `dc:${rawKey}`;
-      return [key, rawValue] as const;
-    })
-    .filter((entry): entry is readonly [string, string] => Boolean(entry));
-
-  return new Map(entries);
-}
-
 const VALID_CHANNEL_POLICIES = ['open', 'open-trigger', 'allowlist'] as const;
 type ChannelPolicy = typeof VALID_CHANNEL_POLICIES[number];
 
@@ -124,7 +105,7 @@ function parseChannelPolicy(value: string): ChannelPolicy {
   if ((VALID_CHANNEL_POLICIES as readonly string[]).includes(value)) {
     return value as ChannelPolicy;
   }
-  return 'allowlist';
+  return DEFAULT_CHANNEL_POLICY;
 }
 
 export const config = {
@@ -134,20 +115,14 @@ export const config = {
   /** Pi binary path */
   piBin: env('PI_BIN', DEFAULT_PI_BIN),
 
-  /** Default model for pi */
-  piModel: env('PI_MODEL'),
-
-  /** Thinking level for pi */
-  piThinking: env('PI_THINKING'),
-
-  /** Base directory for per-channel session folders */
-  sessionsDir: env('SESSIONS_DIR', resolve(DEFAULT_DATA_DIR, 'sessions')),
-
-  /** Days to retain archived sessions (0 = never clean) */
-  archiveRetentionDays: envInt('ARCHIVE_RETENTION_DAYS', 30, { min: 0 }),
-
   /** SQLite database path */
-  dbPath: env('DB_PATH', resolve(DEFAULT_DATA_DIR, 'gateway.db')),
+  dbPath: resolveUserPath(env('DB_PATH', resolve(DEFAULT_DATA_DIR, 'gateway.db'))),
+
+  /** Agent-editable Discord channel -> Clawa worker routes */
+  routesPath: resolveUserPath(env('ROUTES_PATH', resolve(DEFAULT_DATA_DIR, 'routes.jsonc'))),
+
+  /** Agent-readable snapshot of Discord channels the gateway has seen */
+  channelsPath: resolveUserPath(env('CHANNELS_PATH', resolve(DEFAULT_DATA_DIR, 'channels.json'))),
 
   /** Bot trigger name (default: bot's own display name) */
   triggerName: env('TRIGGER_NAME', 'pi'),
@@ -157,12 +132,6 @@ export const config = {
 
   /** Max concurrent agent invocations */
   maxConcurrency: envInt('MAX_CONCURRENCY', 3, { min: 1 }),
-
-  /** Max scheduled tasks enqueued per scheduler tick */
-  maxScheduledConcurrency: envInt('MAX_SCHEDULED_CONCURRENCY', 1, { min: 1 }),
-
-  /** Whether the local scheduled-task loop should run */
-  schedulerEnabled: envBool('ENABLE_SCHEDULER', false),
 
   /** Poll interval for message queue (ms) */
   pollInterval: envInt('POLL_INTERVAL_MS', 1000, { min: 1 }),
@@ -185,17 +154,11 @@ export const config = {
   /** Working directory for pi agent */
   piCwd: env('PI_CWD', DEFAULT_PROJECT_ROOT),
 
-  /** Extra pi flags (space-separated) */
-  piExtraFlags: env('PI_EXTRA_FLAGS'),
-
   /** CLAWAS control socket root */
   clawasControlSocketRoot: env('PI_CLAWAS_CONTROL_SOCKET_ROOT', resolve(env('PI_CWD', DEFAULT_PROJECT_ROOT), '.pi')),
 
   /** CLAWAS control socket dir under the socket root */
   clawasControlSocketDir: env('PI_CLAWAS_CONTROL_SOCKET_DIR', 'clawas-control'),
-
-  /** Optional Discord channel -> CLAWAS worker mapping */
-  clawasChannelWorkers: parseWorkerMap(env('CLAWAS_CHANNEL_WORKERS')),
 
   /** Auto-register DM channels */
   autoRegisterDMs: envBool('AUTO_REGISTER_DMS', true),
@@ -209,22 +172,8 @@ export const config = {
   /** Inject guild presence context into prompts for guild channels */
   includeGuildPresenceContext: envBool('INCLUDE_GUILD_PRESENCE_CONTEXT', false),
 
-  /** Channel IDs where ambient jitter mode is allowed */
-  ambientJitterChannels: new Set(
-    env('AMBIENT_JITTER_CHANNELS').split(',').map((s) => s.trim()).filter(Boolean),
-  ),
-
-  /** Minimum human messages before an ambient jitter attempt */
-  ambientJitterMinMessages: envInt('AMBIENT_JITTER_MIN_MESSAGES', 5, { min: 1 }),
-
-  /** Maximum human messages before an ambient jitter attempt */
-  ambientJitterMaxMessages: envInt('AMBIENT_JITTER_MAX_MESSAGES', 10, { min: 1 }),
-
-  /** Minimum cooldown between ambient jitter attempts in seconds */
-  ambientJitterCooldownSeconds: envInt('AMBIENT_JITTER_COOLDOWN_SECONDS', 600, { min: 0 }),
-
-  /** Maximum observed human messages to include when catching pi up (0 = uncapped delta) */
-  ambientContextMessages: envInt('AMBIENT_CONTEXT_MESSAGES', 0, { min: 0 }),
+  /** Maximum recent Discord messages to include when catching Clawa up (0 = uncapped delta) */
+  recentContextMessages: envInt('RECENT_CONTEXT_MESSAGES', 0, { min: 0 }),
 
   /** Channel access policy: open, open-trigger, or allowlist */
   channelPolicy: parseChannelPolicy(env('CHANNEL_POLICY', DEFAULT_CHANNEL_POLICY)),

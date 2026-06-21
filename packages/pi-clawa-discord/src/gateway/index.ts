@@ -1,11 +1,9 @@
 import { config } from './config.js';
 import { logger } from './logger.js';
-import { initDb, closeDb } from './db.js';
+import { initDb, closeDb, writeChannelsSnapshot } from './db.js';
 import { startDiscord, stopDiscord, getBotTag } from './discord/client.js';
-import { startArchiveCleanup } from './session/archive-cleanup.js';
-import { startMediaCleanup } from './session/media.js';
 import { startProcessingLoop, stopProcessingLoop } from './agent/queue.js';
-import { startScheduler } from './agent/scheduler.js';
+import { ensureDiscordRoutesFile } from './channel-routes.js';
 
 /**
  * pi-clawa-discord-gateway - Lightweight Discord gateway for pi coding agent.
@@ -19,10 +17,9 @@ export async function startGateway(): Promise<void> {
   }
 
   initDb();
+  ensureDiscordRoutesFile();
+  writeChannelsSnapshot();
 
-  let stopArchiveCleanup = () => {};
-  let stopMediaCleanup = () => {};
-  let stopScheduler = () => {};
   let processingStarted = false;
   let shutdownPromise: Promise<void> | null = null;
 
@@ -43,10 +40,6 @@ export async function startGateway(): Promise<void> {
       process.off('SIGTERM', onSignal);
 
       logger.info({ reason }, 'Shutting down gateway');
-
-      stopScheduler();
-      stopArchiveCleanup();
-      stopMediaCleanup();
 
       if (processingStarted) {
         await stopProcessingLoop({ timeoutMs: config.shutdownTimeoutMs });
@@ -71,19 +64,10 @@ export async function startGateway(): Promise<void> {
 
     startProcessingLoop();
     processingStarted = true;
-    if (config.schedulerEnabled) {
-      stopScheduler = startScheduler();
-    }
-    stopArchiveCleanup = startArchiveCleanup();
-    stopMediaCleanup = startMediaCleanup();
-
     logger.info({
       bot: getBotTag(),
       trigger: `@${config.triggerName}`,
       concurrency: config.maxConcurrency,
-      schedulerEnabled: config.schedulerEnabled,
-      scheduledConcurrency: config.maxScheduledConcurrency,
-      sessionsDir: config.sessionsDir,
     }, 'Gateway running');
 
     await signalWait;

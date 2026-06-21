@@ -6,6 +6,7 @@ import {
   sendClawasSessionMessage,
   sleep,
 } from './invoke-clawas-rpc.js';
+import { parseFinalRoutes } from './final-routes.js';
 import { logger } from '../logger.js';
 
 type ClawasWorkerOutput = {
@@ -48,7 +49,7 @@ export async function invokeClawasWorker(
       },
     });
 
-    const resolved = await waitForWorkerOutputChange(workerId, baseline, sentAt, opts?.signal);
+    const resolved = await waitForRoutableWorkerOutput(workerId, baseline, sentAt, opts);
 
     if (resolved.changed === 'discord-delivery' || resolved.changed === 'private-delivery') {
       return { ok: true, text: '', route: 'handled' };
@@ -81,6 +82,67 @@ export async function invokeClawasWorker(
       error: err.message || String(err),
     };
   }
+}
+
+async function waitForRoutableWorkerOutput(
+  workerId: string,
+  baseline: ClawasWorkerOutput,
+  sentAt: number,
+  opts?: {
+    signal?: AbortSignal | undefined;
+    sourceMessageId?: string | null | undefined;
+    sourceChannelJid?: string | undefined;
+  },
+): Promise<ChangedClawasWorkerOutput> {
+  const resolved = await waitForWorkerOutputChange(workerId, baseline, sentAt, opts?.signal);
+  if (resolved.changed !== 'message') {
+    return resolved;
+  }
+
+  if (parseFinalRoutes(resolved.message?.content ?? '').hasRoutes) {
+    return resolved;
+  }
+
+  logger.warn(
+    { workerId },
+    'CLAWAS worker produced untagged Discord final text; asking for routed final output',
+  );
+
+  const correctionSentAt = Date.now();
+  await sendClawasSessionMessage(workerId, {
+    message: [
+      'Your last Discord final message was not delivered because it had no route tag.',
+      'Reply again now using explicit final routing blocks only:',
+      '- [#channel]: public room text',
+      '- [dm]: private note to the human',
+      '- [main_clawa]: message to main Clawa',
+      '- [quiet]',
+      'Do not explain this correction publicly.',
+    ].join('\n'),
+    mode: 'followUp',
+    messageType: 'session',
+    discordContext: buildDiscordContext(opts),
+    sender: {
+      workerId: 'discord-gateway',
+      workerTitle: 'Discord',
+    },
+  });
+
+  const corrected = await waitForWorkerOutputChange(
+    workerId,
+    { message: resolved.message, delivery: resolved.delivery },
+    correctionSentAt,
+    opts?.signal,
+  );
+
+  if (corrected.changed === 'message' && !parseFinalRoutes(corrected.message?.content ?? '').hasRoutes) {
+    logger.warn(
+      { workerId },
+      'CLAWAS worker still produced untagged Discord final text after correction',
+    );
+  }
+
+  return corrected;
 }
 
 export async function steerClawasWorker(

@@ -1,14 +1,11 @@
-import { config } from "../config.js";
 import { logger } from "../logger.js";
-import { getChannel, markAmbientSeen, markMessageDone, markMessageFailed } from "../db.js";
+import { getChannel, markChannelContextSeen, markMessageDone, markMessageFailed } from "../db.js";
 import { sendResponse } from "../discord/client.js";
-import { AMBIENT_SENDER } from "./ambient.js";
-import { computeEffectiveChannelSettings } from "./channel-settings.js";
 import { settleDiscordDelivery } from "./delivery.js";
 import { buildGatewayPrompt, getReplyAnchorSourceMessageId } from "./gateway-prompt.js";
-import { invokeAgent } from "./invoke.js";
 import { getClawasWorkerStatus, invokeClawasWorker, steerClawasWorker } from "./invoke-clawas.js";
-import { createNoopTypingLoop, createTypingLoop, ensureWorkerTypingMonitor } from "./typing.js";
+import { resolveClawaWorkerForDiscordChannel } from "../channel-routes.js";
+import { createTypingLoop, ensureWorkerTypingMonitor } from "./typing.js";
 
 export interface ProcessingState {
 	activeClawasWorkers: Map<string, string>;
@@ -19,10 +16,10 @@ export interface ProcessingState {
 function setActiveReplyAnchor(
 	state: ProcessingState,
 	jid: string,
-	sender: string,
+	_sender: string,
 	sourceMessageId: string | null,
 ): void {
-	if (sender === AMBIENT_SENDER || !sourceMessageId) {
+	if (!sourceMessageId) {
 		return;
 	}
 
@@ -50,12 +47,11 @@ export async function processQueuedMessage(params: {
 
 	logger.info({ jid, senderName, len: content.length }, "Processing message");
 
-	const typingLoop =
-		sender === AMBIENT_SENDER ? createNoopTypingLoop() : createTypingLoop(jid);
+	const typingLoop = createTypingLoop(jid);
 	setActiveReplyAnchor(state, jid, sender, sourceMessageId);
 
 	try {
-		const mappedWorker = config.clawasChannelWorkers.get(jid);
+		const mappedWorker = resolveClawaWorkerForDiscordChannel(jid);
 		const { prompt, observedThroughRowId } = buildGatewayPrompt({
 			jid,
 			sender,
@@ -65,13 +61,17 @@ export async function processQueuedMessage(params: {
 			logRowId,
 		});
 
-		const effective = computeEffectiveChannelSettings(channel);
 		if (mappedWorker) {
 			state.activeClawasWorkers.set(jid, mappedWorker);
 		}
+		if (!mappedWorker) {
+			markMessageFailed(rowid);
+			await sendResponse(jid, 'This Discord channel is known, but it is not routed to a Clawa yet.');
+			logger.warn({ jid, rowid }, 'Discord message had no Clawa route');
+			return;
+		}
 
-		const result = mappedWorker
-			? await invokeClawasWorker(mappedWorker, prompt, {
+		const result = await invokeClawasWorker(mappedWorker, prompt, {
 					signal,
 					attachments,
 					sourceMessageId: getReplyAnchorSourceMessageId(
@@ -79,15 +79,6 @@ export async function processQueuedMessage(params: {
 						sourceMessageId,
 					),
 					sourceChannelJid: jid,
-				})
-			: await invokeAgent(channel.folder, prompt, {
-					model: effective.rawModelRef || undefined,
-					thinking: effective.hasManagedThinking
-						? effective.effectiveThinking
-						: undefined,
-					cwd: effective.effectiveCwd,
-					signal,
-					attachments,
 				});
 
 		if (signal.aborted) {
@@ -99,11 +90,10 @@ export async function processQueuedMessage(params: {
 			return;
 		}
 
-		markAmbientSeen(jid, observedThroughRowId);
+		markChannelContextSeen(jid, observedThroughRowId);
 		await settleDiscordDelivery({
 			jid,
 			rowid,
-			sender,
 			sourceMessageId: state.activeReplyAnchors.get(jid) ?? sourceMessageId,
 			mappedWorker,
 			result,
@@ -164,14 +154,12 @@ export async function processSteeredClawasMessage(params: {
 			sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),
 		});
 
-		if (sender !== AMBIENT_SENDER) {
-			ensureWorkerTypingMonitor(jid, workerId, {
-				isRunning: state.isRunning,
-				getStatus: getClawasWorkerStatus,
-			});
-		}
+		ensureWorkerTypingMonitor(jid, workerId, {
+			isRunning: state.isRunning,
+			getStatus: getClawasWorkerStatus,
+		});
 
-		markAmbientSeen(jid, observedThroughRowId);
+		markChannelContextSeen(jid, observedThroughRowId);
 		markMessageDone(rowid);
 		logger.info(
 			{ jid, worker: workerId, rowid },
