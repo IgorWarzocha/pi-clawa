@@ -104,14 +104,14 @@ async function waitForRoutableWorkerOutput(
   }
 
   logger.warn(
-    { workerId },
-    'CLAWAS worker produced untagged Discord final text; asking for routed final output',
+    { workerId, empty: !(resolved.message?.content ?? '').trim() },
+    'CLAWAS worker produced unrouted Discord final text; asking for routed final output',
   );
 
   const correctionSentAt = Date.now();
   await sendClawasSessionMessage(workerId, {
     message: [
-      'Your last Discord final message was not delivered because it had no route tag.',
+      'Your last Discord final message was not delivered because it was empty or had no route tag.',
       'Reply again now using explicit final routing blocks only:',
       '- [#channel]: public room text',
       '- [dm]: private note to the human',
@@ -213,14 +213,13 @@ async function waitForWorkerOutputChange(
       next.message
       && next.message.timestamp >= sentAt
       && !sameMessage(next.message, baseline.message)
-      && next.message.content.trim()
     ) {
       if (!messageCandidate || !sameMessage(next.message, messageCandidate.message)) {
         messageCandidate = { ...next, changed: 'message' };
         messageCandidateReadyAt = Date.now() + CLAWAS_MESSAGE_SETTLE_MS;
         logger.info(
           { workerId, settleMs: CLAWAS_MESSAGE_SETTLE_MS },
-          'Observed CLAWAS assistant text; waiting briefly for tool delivery/finalization',
+          'Observed CLAWAS assistant message; waiting briefly for tool delivery/finalization',
         );
       }
     }
@@ -258,8 +257,7 @@ function isNewDelivery(
   return Boolean(
     next
       && next.timestamp >= sentAt
-      && !sameDelivery(next, baseline)
-      && next.content.trim(),
+      && !sameDelivery(next, baseline),
   );
 }
 
