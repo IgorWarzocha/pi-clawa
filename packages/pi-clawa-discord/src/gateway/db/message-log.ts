@@ -67,12 +67,9 @@ export function listLoggedMessagesSince(
 	throughRowId: number,
 	limit: number,
 ): LoggedMessage[] {
-	if (limit <= 0) {
-		return [];
-	}
-
 	const rows =
-		(getDb()
+		limit > 0
+			? (getDb()
 					.prepare(`
       select rowid, channel_jid, role, sender_id, sender_name, content, timestamp
       from message_log
@@ -83,7 +80,18 @@ export function listLoggedMessagesSince(
       order by rowid desc
       limit ?
     `)
-					.all(channelJid, afterRowId, throughRowId, limit) as LoggedMessage[]);
+					.all(channelJid, afterRowId, throughRowId, limit) as LoggedMessage[])
+			: (getDb()
+					.prepare(`
+      select rowid, channel_jid, role, sender_id, sender_name, content, timestamp
+      from message_log
+      where channel_jid = ?
+        and role = 'user'
+        and rowid > ?
+        and rowid <= ?
+      order by rowid asc
+    `)
+					.all(channelJid, afterRowId, throughRowId) as LoggedMessage[]);
 
-	return rows.reverse();
+	return limit > 0 ? rows.reverse() : rows;
 }
