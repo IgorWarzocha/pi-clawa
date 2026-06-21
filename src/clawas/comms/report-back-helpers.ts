@@ -81,12 +81,19 @@ export function isHydrationPreloadText(content: string | null | undefined): bool
 export function shouldReportClawaFinalToMain(options: {
   messageContent: string
   lastMailDetails?: Record<string, unknown> | undefined
+  messageTimestamp?: number | undefined
+  lastMailTimestamp?: number | undefined
 }): boolean {
   if (isHydrationPreloadText(options.messageContent)) {
     return false
   }
 
-  if (options.lastMailDetails?.['intent'] === 'for_context') {
+  if (
+    options.lastMailDetails?.['intent'] === 'for_context' &&
+    options.messageTimestamp !== undefined &&
+    options.lastMailTimestamp !== undefined &&
+    options.lastMailTimestamp >= options.messageTimestamp
+  ) {
     return false
   }
 

@@ -250,8 +250,20 @@ test('main-claw auto report ignores startup context and hydration preload text',
     shouldReportClawaFinalToMain({
       messageContent: 'real worker status',
       lastMailDetails: { intent: 'for_context' },
+      messageTimestamp: 10,
+      lastMailTimestamp: 10,
     }),
     false,
+  )
+
+  assert.equal(
+    shouldReportClawaFinalToMain({
+      messageContent: 'real worker status',
+      lastMailDetails: { intent: 'for_context' },
+      messageTimestamp: 20,
+      lastMailTimestamp: 10,
+    }),
+    true,
   )
 
   assert.equal(

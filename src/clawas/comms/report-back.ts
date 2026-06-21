@@ -111,6 +111,8 @@ export async function reportFinalAssistantMessageToMain(
     !shouldReportClawaFinalToMain({
       messageContent: message.content,
       lastMailDetails,
+      messageTimestamp: message.timestamp,
+      lastMailTimestamp: getLastMailMessageTimestamp(ctx),
     })
   ) {
     return
