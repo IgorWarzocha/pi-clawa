@@ -38,7 +38,7 @@ export function normalizeDiscordReplyText(content: string | null | undefined): s
     return null
   }
 
-  if (trimmed.toLowerCase().includes(NOTHING_FOR_DISCORD_SENTINEL)) {
+  if (trimmed.toLowerCase() === NOTHING_FOR_DISCORD_SENTINEL) {
     return null
   }
 

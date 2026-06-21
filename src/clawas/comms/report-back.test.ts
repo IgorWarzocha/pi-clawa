@@ -28,13 +28,13 @@ test('extractClawaReportText keeps explicit clawas content only', () => {
   assert.equal(extractClawaReportText('plain assistant text'), null)
 })
 
-test('normalizeDiscordReplyText drops any output containing the sentinel and blank output', () => {
+test('normalizeDiscordReplyText drops standalone quiet sentinel and blank output', () => {
   assert.equal(normalizeDiscordReplyText('hello'), 'hello')
   assert.equal(normalizeDiscordReplyText('  [quiet]  '), null)
-  assert.equal(normalizeDiscordReplyText('prefix [quiet] suffix'), null)
+  assert.equal(normalizeDiscordReplyText('prefix [quiet] suffix'), 'prefix [quiet] suffix')
   assert.equal(
     normalizeDiscordReplyText('I finish with [quiet] so the gateway does not echo.'),
-    null,
+    'I finish with [quiet] so the gateway does not echo.',
   )
   assert.equal(normalizeDiscordReplyText('   \n  '), null)
 })

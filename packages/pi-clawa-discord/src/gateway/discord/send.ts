@@ -20,7 +20,7 @@ export interface PreparedSendText {
 }
 
 export function isNothingForDiscord(text?: string): boolean {
-	return text?.toLowerCase().includes(NOTHING_FOR_DISCORD_SENTINEL) ?? false;
+	return text?.trim().toLowerCase() === NOTHING_FOR_DISCORD_SENTINEL;
 }
 
 export function normalizeSendText(text?: string): string | undefined {
