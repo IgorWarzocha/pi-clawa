@@ -2,6 +2,11 @@ import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { CLAWAS_DELIVERY_MESSAGE_TYPE, CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.js'
 import type { ClawasExtractedDelivery, ClawasExtractedMessage } from './types.js'
 
+export interface ClawasExtractedUserMessage {
+  content: string
+  timestamp: number
+}
+
 function getTextFromMessageContent(content: unknown): string {
   if (typeof content === 'string') {
     return content
@@ -124,6 +129,34 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
 
     return {
       role: 'assistant',
+      content: text,
+      timestamp: getEntryTimestamp(message['timestamp']),
+    }
+  }
+
+  return undefined
+}
+
+export function getLastUserMessage(ctx: ExtensionContext): ClawasExtractedUserMessage | undefined {
+  const branch = ctx.sessionManager.getBranch()
+
+  for (let index = branch.length - 1; index >= 0; index -= 1) {
+    const entry = getRecord(branch[index])
+    if (entry?.['type'] !== 'message') {
+      continue
+    }
+
+    const message = getRecord(entry['message'])
+    if (message?.['role'] !== 'user') {
+      continue
+    }
+
+    const text = getTextFromMessageContent(message['content']).trim()
+    if (!text) {
+      continue
+    }
+
+    return {
       content: text,
       timestamp: getEntryTimestamp(message['timestamp']),
     }

@@ -5,6 +5,7 @@ import {
   getLastDeliveryMessage,
   getLastMailMessageDetails,
   getLastMailMessageTimestamp,
+  getLastUserMessage,
 } from './message-extract.js'
 import {
   extractClawaReportText,
@@ -91,6 +92,8 @@ export async function reportFinalAssistantMessageToMain(
   }
 
   const lastMailDetails = getLastMailMessageDetails(ctx)
+  const lastMailTimestamp = getLastMailMessageTimestamp(ctx)
+  const lastUserMessage = getLastUserMessage(ctx)
 
   const lastDelivery = getLastDeliveryMessage(ctx)
   if (
@@ -102,7 +105,13 @@ export async function reportFinalAssistantMessageToMain(
     return
   }
 
-  const reportMode = process.env['PI_CLAWAS_REPORT_MODE']?.trim() || 'auto'
+  const configuredReportMode = process.env['PI_CLAWAS_REPORT_MODE']?.trim() || 'auto'
+  const directMainPromptAfterMail = isDirectMainPromptAfterMail({
+    lastUserMessage,
+    lastMailTimestamp,
+  })
+  const reportMode =
+    configuredReportMode === 'explicit' && directMainPromptAfterMail ? 'auto' : configuredReportMode
   if (reportMode === 'off') {
     return
   }
@@ -112,7 +121,7 @@ export async function reportFinalAssistantMessageToMain(
       messageContent: message.content,
       lastMailDetails,
       messageTimestamp: message.timestamp,
-      lastMailTimestamp: getLastMailMessageTimestamp(ctx),
+      lastMailTimestamp,
     })
   ) {
     return
@@ -144,4 +153,18 @@ export async function reportFinalAssistantMessageToMain(
     intent: 'status',
     visibility: 'private',
   })
+}
+
+function isDirectMainPromptAfterMail(options: {
+  lastUserMessage?: { content: string; timestamp?: number | undefined } | undefined
+  lastMailTimestamp?: number | undefined
+}): boolean {
+  const messageTimestamp = options.lastUserMessage?.timestamp
+  if (messageTimestamp === undefined) {
+    return false
+  }
+  if (options.lastUserMessage?.content.startsWith('[Discord room update]')) {
+    return false
+  }
+  return options.lastMailTimestamp === undefined || messageTimestamp > options.lastMailTimestamp
 }
