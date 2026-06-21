@@ -55,7 +55,14 @@ export async function settleDiscordDelivery({
 	if (routed.hasRoutes) {
 		try {
 			for (const block of routed.blocks) {
-				if (block.target.kind === "quiet") continue;
+				if (block.target.kind === "quiet") {
+					await deliverDiscordText(jid, block.text, {
+						defaultReplyToMessageId: null,
+						mappedWorker,
+						messageHandles,
+					});
+					continue;
+				}
 				if (block.target.kind === "main-clawa") {
 					await sendClawasSessionMessage("main-claw", {
 						message: block.text,
