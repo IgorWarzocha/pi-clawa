@@ -214,3 +214,28 @@ export function getLastDiscordSourceMessageId(ctx: ExtensionContext): string | u
 
   return undefined
 }
+
+export function getLastDiscordChannelJid(ctx: ExtensionContext): string | undefined {
+  const branch = ctx.sessionManager.getBranch()
+
+  for (let index = branch.length - 1; index >= 0; index -= 1) {
+    const entry = getRecord(branch[index])
+    if (!entry) continue
+    const details = getClawasMailDetails(entry)
+    if (!details) {
+      continue
+    }
+
+    if (details?.['workerId'] !== 'discord-gateway') {
+      return undefined
+    }
+
+    if (typeof details?.['channelJid'] === 'string' && details['channelJid'].trim()) {
+      return details['channelJid']
+    }
+
+    return undefined
+  }
+
+  return undefined
+}

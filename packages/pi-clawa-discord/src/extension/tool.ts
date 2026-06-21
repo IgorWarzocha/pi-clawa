@@ -1,6 +1,9 @@
 import { isAbsolute, resolve } from 'node:path'
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
-import { getLastDiscordSourceMessageId } from '@howaboua/pi-clawa/clawas/comms/message-extract'
+import {
+  getLastDiscordChannelJid,
+  getLastDiscordSourceMessageId,
+} from '@howaboua/pi-clawa/clawas/comms/message-extract'
 import { publishClawasDeliveryMessage } from '@howaboua/pi-clawa/clawas/comms/outbound'
 import { normalizeDiscordReplyText } from '@howaboua/pi-clawa/clawas/comms/report-back-helpers'
 import { findRepoRoot } from '@howaboua/pi-clawa/config'
@@ -9,10 +12,15 @@ import { DISCORD_CONFIG_RELATIVE } from './constants.js'
 import { readEnvFile } from './env-file.js'
 import { getGatewayConfigPath, setGatewayConfigPath } from './gateway-state.js'
 
+function normalizeChannelJid(channel: string): string {
+  return channel.startsWith('dc:') ? channel : `dc:${channel}`
+}
+
 function resolveWorkerChannelJid(workerId: string): string | null {
   const configPath = getGatewayConfigPath()
   if (!configPath) return null
   const map = readEnvFile(configPath)['CLAWAS_CHANNEL_WORKERS'] ?? ''
+  const matches: string[] = []
   for (const entry of map
     .split(',')
     .map((part) => part.trim())
@@ -21,9 +29,9 @@ function resolveWorkerChannelJid(workerId: string): string | null {
     if (equals === -1) continue
     const channel = entry.slice(0, equals).trim()
     const worker = entry.slice(equals + 1).trim()
-    if (worker === workerId) return channel.startsWith('dc:') ? channel : `dc:${channel}`
+    if (worker === workerId) matches.push(normalizeChannelJid(channel))
   }
-  return null
+  return matches.length === 1 ? (matches[0] ?? null) : null
 }
 
 function prepareDiscordToolEnvironment(): void {
@@ -55,6 +63,12 @@ export function registerDiscordTool(pi: ExtensionAPI): void {
       replyToMessageId: Type.Optional(
         Type.String({ description: 'Optional Discord message id to reply to.' }),
       ),
+      channelId: Type.Optional(
+        Type.String({
+          description:
+            'Optional Discord channel id or dc:<id>. Usually omit during Discord turns; the current source channel is used.',
+        }),
+      ),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       const workerId = process.env['PI_CLAWAS_WORKER_ID']?.trim()
@@ -67,9 +81,14 @@ export function registerDiscordTool(pi: ExtensionAPI): void {
           details: { workerId },
         }
 
-      const channelJid = resolveWorkerChannelJid(workerId)
+      const explicitChannel = params.channelId?.trim()
+      const channelJid = explicitChannel
+        ? normalizeChannelJid(explicitChannel)
+        : (getLastDiscordChannelJid(ctx) ?? resolveWorkerChannelJid(workerId))
       if (!channelJid)
-        throw new Error(`No Discord channel mapping found for Clawas worker ${workerId}`)
+        throw new Error(
+          `No unambiguous Discord channel found for Clawas worker ${workerId}. Use normal final text during gateway turns, or pass channelId for explicit private/control sends.`,
+        )
 
       const replyToMessageId =
         typeof params.replyToMessageId === 'string' && params.replyToMessageId.trim()

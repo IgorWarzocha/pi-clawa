@@ -78,6 +78,7 @@ export async function processQueuedMessage(params: {
 						sender,
 						sourceMessageId,
 					),
+					sourceChannelJid: jid,
 				})
 			: await invokeAgent(channel.folder, prompt, {
 					model: effective.rawModelRef || undefined,

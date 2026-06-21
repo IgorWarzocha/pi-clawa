@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getLastDiscordSourceMessageId, getLastMailMessageTimestamp } from './message-extract.ts'
+import {
+  getLastDiscordChannelJid,
+  getLastDiscordSourceMessageId,
+  getLastMailMessageTimestamp,
+} from './message-extract.ts'
 import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.ts'
 import {
   extractClawaReportText,
@@ -114,6 +118,27 @@ test('getLastDiscordSourceMessageId only uses the current gateway mail turn', ()
     getLastDiscordSourceMessageId(ctxWithBranch([oldGatewayMail, ambientGatewayMail])),
     undefined,
   )
+})
+
+test('getLastDiscordChannelJid only uses the current gateway mail turn', () => {
+  const gatewayMail = {
+    type: 'custom_message',
+    customType: CLAWAS_MAIL_MESSAGE_TYPE,
+    details: {
+      workerId: 'discord-gateway',
+      channelJid: 'dc:channel-1',
+    },
+  }
+  const mainClawHandoff = {
+    type: 'custom_message',
+    customType: CLAWAS_MAIL_MESSAGE_TYPE,
+    details: {
+      workerId: 'main-claw',
+    },
+  }
+
+  assert.equal(getLastDiscordChannelJid(ctxWithBranch([gatewayMail])), 'dc:channel-1')
+  assert.equal(getLastDiscordChannelJid(ctxWithBranch([gatewayMail, mainClawHandoff])), undefined)
 })
 
 test('shouldSkipAutoMainClawStatusRelay suppresses auto status after same-turn handoff', () => {

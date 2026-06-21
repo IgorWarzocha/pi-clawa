@@ -49,7 +49,7 @@ export async function sendClawasSessionMessage(
     message: string;
     mode?: 'steer' | 'followUp' | undefined;
     messageType?: 'session' | 'report' | undefined;
-    discordContext?: { sourceMessageId: string } | undefined;
+    discordContext?: { sourceMessageId?: string | undefined; channelJid?: string | undefined } | undefined;
     sender?: ClawasSenderInfo | undefined;
   },
 ): Promise<void> {

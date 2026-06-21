@@ -23,6 +23,7 @@ export interface ClawasSenderInfo {
 
 export interface ClawasDiscordContext {
   sourceMessageId?: string | undefined
+  channelJid?: string | undefined
 }
 
 export interface ClawasSendCommand {

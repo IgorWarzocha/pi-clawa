@@ -33,6 +33,7 @@ export async function invokeClawasWorker(
     signal?: AbortSignal | undefined;
     attachments?: string | null | undefined;
     sourceMessageId?: string | null | undefined;
+    sourceChannelJid?: string | undefined;
   },
 ): Promise<AgentResult> {
   try {
@@ -42,7 +43,7 @@ export async function invokeClawasWorker(
       message: userText,
       mode: 'steer',
       messageType: 'session',
-      discordContext: opts?.sourceMessageId ? { sourceMessageId: opts.sourceMessageId } : undefined,
+      discordContext: buildDiscordContext(opts),
       sender: {
         workerId: 'discord-gateway',
         workerTitle: 'Discord',
@@ -87,18 +88,34 @@ export async function invokeClawasWorker(
 export async function steerClawasWorker(
   workerId: string,
   userText: string,
-  opts?: { attachments?: string | null | undefined; sourceMessageId?: string | null | undefined },
+  opts?: {
+    attachments?: string | null | undefined;
+    sourceMessageId?: string | null | undefined;
+    sourceChannelJid?: string | undefined;
+  },
 ): Promise<void> {
   await sendClawasSessionMessage(workerId, {
     message: userText,
     mode: 'steer',
     messageType: 'session',
-    discordContext: opts?.sourceMessageId ? { sourceMessageId: opts.sourceMessageId } : undefined,
+    discordContext: buildDiscordContext(opts),
     sender: {
       workerId: 'discord-gateway',
       workerTitle: 'Discord',
     },
   });
+}
+
+function buildDiscordContext(
+  opts?: { sourceMessageId?: string | null | undefined; sourceChannelJid?: string | undefined },
+): { sourceMessageId?: string | undefined; channelJid?: string | undefined } | undefined {
+  const sourceMessageId = opts?.sourceMessageId?.trim() || undefined;
+  const channelJid = opts?.sourceChannelJid?.trim() || undefined;
+  if (!(sourceMessageId || channelJid)) {
+    return undefined;
+  }
+
+  return { sourceMessageId, channelJid };
 }
 
 async function waitForWorkerOutputChange(
