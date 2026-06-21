@@ -19,7 +19,7 @@ type ChangedClawasWorkerOutput = ClawasWorkerOutput & {
 };
 
 const CLAWAS_MESSAGE_SETTLE_MS = 2_500;
-const CLAWAS_PRIVATE_DELIVERY_SETTLE_MS = 5_000;
+const CLAWAS_PRIVATE_DELIVERY_SETTLE_MS = 30_000;
 
 export interface ClawasWorkerStatus {
   isIdle: boolean;
