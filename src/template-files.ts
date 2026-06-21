@@ -15,13 +15,7 @@ const CORE_MARKDOWN_FILES = [
   'TOOLS.md',
   'CURIOUS.md',
 ] as const
-const LEGACY_CORE_MARKDOWN_FILES = [
-  'IDENTITY.md',
-  'SOUL.md',
-  'USER.md',
-  'MEMORY.md',
-  'TECHNICAL.md',
-] as const
+const LEGACY_CORE_MARKDOWN_FILES = ['IDENTITY.md', 'SOUL.md', 'USER.md', 'MEMORY.md'] as const
 
 async function templateFileNames(templateDir: string, prefix = ''): Promise<string[]> {
   const dir = join(templateDir, prefix)
