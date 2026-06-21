@@ -53,6 +53,23 @@ export function ensureWorkerOutputMonitor(workerId: string): void {
   schedule(workerId, state, 0);
 }
 
+export async function primeWorkerOutputMonitor(workerId: string): Promise<void> {
+  ensureWorkerOutputMonitor(workerId);
+  const state = workers.get(workerId);
+  if (!state || state.isProcessing) return;
+
+  state.isProcessing = true;
+  try {
+    const output = await getClawasWorkerOutput(workerId);
+    state.lastMessage = output.message;
+    state.lastDelivery = output.delivery;
+  } catch (err: any) {
+    logger.debug({ workerId, err: err.message }, 'Could not prime Discord worker output monitor yet');
+  } finally {
+    state.isProcessing = false;
+  }
+}
+
 function schedule(workerId: string, state: WorkerOutputState, delayMs = POLL_MS): void {
   if (!running) return;
   state.timer = setTimeout(() => {
