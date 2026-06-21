@@ -13,8 +13,7 @@ For git-repo installs, add the core package from git and this adapter from a loc
   "packages": [
     "/absolute/path/to/pi-clawa",
     "/absolute/path/to/pi-clawa/packages/pi-clawa-discord"
-  ],
-  "sessionDir": ".pi/sessions"
+  ]
 }
 ```
 

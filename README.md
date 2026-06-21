@@ -98,7 +98,7 @@ Clawa is meant to run as a long-lived Pi home.
 - After stopping, resume the same home with `pi -c` instead of starting fresh.
 - Start a new session only when the branch is badly wedged or the compacted context has become too bloated.
 
-Main Clawa sessions live in `.pi/sessions`. Subclawa sessions live under their own homes, for example `clawas/researcher/.pi/sessions`.
+Main Clawa sessions use Pi's normal session store, so `pi -c` and `pi -r` behave like standard Pi. Subclawa sessions live under their own homes, for example `clawas/researcher/.pi/sessions`.
 
 If you have global Pi extensions you do not want in this Clawa home, adjust project `.pi/settings.json` instead of changing global settings. Pi package filters can disable package resources for this project only; Clawa's `clawa-ops` skill has notes for helping with that.
 
@@ -112,10 +112,10 @@ cd /path/to/your-clawa-home
 pi -e /absolute/path/to/pi-clawa
 ```
 
-When you come back to the same home, resume it with the extension loaded:
+Once `.pi/settings.json` points at the checkout, come back to the same home with plain Pi:
 
 ```sh
-pi -c -e /absolute/path/to/pi-clawa
+pi -c
 ```
 
 If something feels clearly broken or confusing, open an issue on GitHub with what you expected, what happened, and any relevant Clawa home shape. Do not include `.pi/` secrets.
@@ -136,8 +136,7 @@ If you prefer to write the settings file yourself:
 
 ```json
 {
-  "packages": ["/absolute/path/to/pi-clawa"],
-  "sessionDir": ".pi/sessions"
+  "packages": ["/absolute/path/to/pi-clawa"]
 }
 ```
 
@@ -164,8 +163,7 @@ Until the adapter is published separately, use it from a local checkout:
   "packages": [
     "/absolute/path/to/pi-clawa",
     "/absolute/path/to/pi-clawa/packages/pi-clawa-discord"
-  ],
-  "sessionDir": ".pi/sessions"
+  ]
 }
 ```
 

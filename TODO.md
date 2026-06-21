@@ -35,7 +35,7 @@ Status: mostly settled; final proof is a full clean-room install/package pass.
 - [x] root package is `@howaboua/pi-clawa`
 - [x] local project install config exists at `install/pi-settings.json`
 - [x] install helper script creates project `.pi/settings.json`
-- [x] main Clawa sessions are project-local via `.pi/settings.json` `sessionDir: .pi/sessions`
+- [x] main Clawa sessions use Pi's normal session store; project settings only wire packages
 - [x] workspace package exists for Discord adapter
 - [x] decide final core config filename for this pass: `.pi/claw.jsonc`
 - [x] keep setup automatic; refine first-run behavior from real clean-room failures

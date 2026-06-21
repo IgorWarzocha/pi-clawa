@@ -18,8 +18,7 @@ fi
 
 cat >"$TARGET_FILE" <<JSON
 {
-  "packages": ["$PACKAGE_SOURCE"],
-  "sessionDir": ".pi/sessions"
+  "packages": ["$PACKAGE_SOURCE"]
 }
 JSON
 

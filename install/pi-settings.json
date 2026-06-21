@@ -1,4 +1,3 @@
 {
-  "packages": ["/absolute/path/to/pi-clawa"],
-  "sessionDir": ".pi/sessions"
+  "packages": ["/absolute/path/to/pi-clawa"]
 }

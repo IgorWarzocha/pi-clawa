@@ -88,14 +88,13 @@ Project Pi settings live at:
 .pi/settings.json
 ```
 
-Use them for project-local Pi package loading and session storage. Do not edit the human's global `~/.pi/agent/settings.json` when tuning this Clawa home.
+Use them for project-local Pi package loading. Keep main Clawa on Pi's normal session store unless the human explicitly wants a custom session directory; do not edit the human's global `~/.pi/agent/settings.json` when tuning this Clawa home.
 
 Common Clawa shape:
 
 ```json
 {
-  "packages": ["/absolute/path/to/pi-clawa"],
-  "sessionDir": ".pi/sessions"
+  "packages": ["/absolute/path/to/pi-clawa"]
 }
 ```
 
@@ -109,8 +108,7 @@ If the human wants a globally installed package extension disabled only for this
       "source": "npm:some-global-package",
       "extensions": []
     }
-  ],
-  "sessionDir": ".pi/sessions"
+  ]
 }
 ```
 
