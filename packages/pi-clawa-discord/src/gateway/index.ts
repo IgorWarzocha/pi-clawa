@@ -5,6 +5,7 @@ import { logger } from './logger.js';
 import { initDb, closeDb, writeChannelsSnapshot } from './db.js';
 import { startDiscord, stopDiscord, getBotTag } from './discord/client.js';
 import { startProcessingLoop, stopProcessingLoop } from './agent/queue.js';
+import { clearAllTypingLeases } from './agent/typing.js';
 import { ensureDiscordRoutesFile } from './channel-routes.js';
 
 /**
@@ -48,6 +49,7 @@ export async function startGateway(): Promise<void> {
         await stopProcessingLoop({ timeoutMs: config.shutdownTimeoutMs });
       }
 
+      clearAllTypingLeases();
       stopDiscord();
       closeDb();
       await releaseInstanceLock();

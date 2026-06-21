@@ -5,6 +5,7 @@ import { resolveClawaWorkerForDiscordChannel } from '../channel-routes.js';
 import { buildGatewayPrompt, getReplyAnchorSourceMessageId } from './gateway-prompt.js';
 import { buildClawasDiscordContext } from './invoke-clawas.js';
 import { sendClawasSessionMessage } from './invoke-clawas-rpc.js';
+import { startTypingLease } from './typing.js';
 import { primeWorkerOutputMonitor } from './worker-output-monitor.js';
 
 export async function processQueuedMessage(params: {
@@ -47,6 +48,7 @@ export async function processQueuedMessage(params: {
       return;
     }
 
+    startTypingLease(jid, { reason: `discord-input:${mappedWorker}` });
     await primeWorkerOutputMonitor(mappedWorker);
     await sendClawasSessionMessage(mappedWorker, {
       message: prompt,

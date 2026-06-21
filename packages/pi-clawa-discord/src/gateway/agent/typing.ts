@@ -1,119 +1,69 @@
-import { config } from "../config.js";
-import { setTyping } from "../discord/client.js";
-import { logger } from "../logger.js";
-import type { ClawasWorkerStatus } from "./invoke-clawas-rpc.js";
+import { config } from '../config.js';
+import { setTyping } from '../discord/client.js';
+import { logger } from '../logger.js';
 
-export interface TypingLoop {
-	stop: () => Promise<void>;
+interface TypingLease {
+  jid: string;
+  expiresAt: number;
+  timer?: NodeJS.Timeout | undefined;
 }
 
-const activeWorkerTypingMonitors = new Map<string, Promise<void>>();
+const activeTypingLeases = new Map<string, TypingLease>();
 
-export function createTypingLoop(jid: string): TypingLoop {
-	let typingAlive = true;
-	let cancelTypingDelay = () => {};
+export function startTypingLease(jid: string, options: { ttlMs?: number; reason?: string } = {}): void {
+  if (!jid || jid === 'dc:unknown') return;
 
-	const loop = (async () => {
-		while (typingAlive) {
-			await setTyping(jid);
-			if (!typingAlive) break;
+  const ttlMs = options.ttlMs ?? config.discordTypingLeaseMs;
+  const expiresAt = Date.now() + ttlMs;
+  const existing = activeTypingLeases.get(jid);
+  if (existing) {
+    existing.expiresAt = Math.max(existing.expiresAt, expiresAt);
+    logger.debug({ jid, reason: options.reason, ttlMs }, 'Extended Discord typing lease');
+    return;
+  }
 
-			const delay = cancellableSleep(config.discordTypingRefreshMs);
-			cancelTypingDelay = delay.cancel;
-			await delay.promise;
-			cancelTypingDelay = () => {};
-		}
-	})();
-
-	return {
-		stop: async () => {
-			typingAlive = false;
-			cancelTypingDelay();
-			await loop;
-		},
-	};
+  const lease: TypingLease = { jid, expiresAt };
+  activeTypingLeases.set(jid, lease);
+  logger.debug({ jid, reason: options.reason, ttlMs }, 'Started Discord typing lease');
+  void refreshTypingLease(jid);
 }
 
-export function createNoopTypingLoop(): TypingLoop {
-	return { stop: async () => {} };
+export function clearTypingLease(jid: string | null | undefined): void {
+  if (!jid) return;
+  const lease = activeTypingLeases.get(jid);
+  if (!lease) return;
+  if (lease.timer) clearTimeout(lease.timer);
+  activeTypingLeases.delete(jid);
+  logger.debug({ jid }, 'Cleared Discord typing lease');
 }
 
-export function ensureWorkerTypingMonitor(
-	jid: string,
-	workerId: string,
-	options: {
-		isRunning: () => boolean;
-		getStatus: (workerId: string) => Promise<ClawasWorkerStatus>;
-	},
-): void {
-	if (activeWorkerTypingMonitors.has(jid)) {
-		return;
-	}
-
-	const monitorPromise = (async () => {
-		const startedAt = Date.now();
-		logger.info(
-			{ jid, worker: workerId },
-			"Started Discord typing keepalive for active CLAWAS worker",
-		);
-
-		while (
-			options.isRunning() &&
-			Date.now() - startedAt < config.clawasReplyTimeoutMs
-		) {
-			await setTyping(jid);
-
-			try {
-				const status = await options.getStatus(workerId);
-				if (status.isIdle && !status.hasPendingMessages) {
-					logger.info(
-						{ jid, worker: workerId },
-						"Stopped Discord typing keepalive: CLAWAS worker is idle",
-					);
-					return;
-				}
-			} catch (err: any) {
-				logger.warn(
-					{ jid, worker: workerId, err: err.message },
-					"Discord typing keepalive could not read CLAWAS worker status",
-				);
-			}
-
-			await cancellableSleep(config.discordTypingRefreshMs).promise;
-		}
-
-		logger.info(
-			{ jid, worker: workerId, timeoutMs: config.clawasReplyTimeoutMs },
-			"Stopped Discord typing keepalive after timeout",
-		);
-	})().finally(() => {
-		activeWorkerTypingMonitors.delete(jid);
-	});
-
-	activeWorkerTypingMonitors.set(jid, monitorPromise);
+export function clearAllTypingLeases(): void {
+  for (const lease of activeTypingLeases.values()) {
+    if (lease.timer) clearTimeout(lease.timer);
+  }
+  activeTypingLeases.clear();
 }
 
-function cancellableSleep(ms: number): {
-	promise: Promise<void>;
-	cancel: () => void;
-} {
-	let finished = false;
-	let timer: NodeJS.Timeout | undefined;
-	let resolvePromise: () => void = () => {};
+async function refreshTypingLease(jid: string): Promise<void> {
+  const lease = activeTypingLeases.get(jid);
+  if (!lease) return;
+  if (Date.now() >= lease.expiresAt) {
+    clearTypingLease(jid);
+    return;
+  }
 
-	const promise = new Promise<void>((resolve) => {
-		resolvePromise = () => {
-			if (finished) return;
-			finished = true;
-			if (timer) clearTimeout(timer);
-			resolve();
-		};
+  try {
+    await setTyping(jid);
+  } catch (err: any) {
+    logger.warn({ jid, err: err.message }, 'Discord typing refresh failed');
+  }
 
-		timer = setTimeout(resolvePromise, ms);
-	});
-
-	return {
-		promise,
-		cancel: resolvePromise,
-	};
+  const latest = activeTypingLeases.get(jid);
+  if (!latest) return;
+  latest.timer = setTimeout(() => {
+    const current = activeTypingLeases.get(jid);
+    if (current) current.timer = undefined;
+    void refreshTypingLease(jid);
+  }, config.discordTypingRefreshMs);
+  latest.timer.unref?.();
 }

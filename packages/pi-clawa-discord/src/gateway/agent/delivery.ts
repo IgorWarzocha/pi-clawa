@@ -7,6 +7,7 @@ import type { DiscordMessageHandle } from '../types.js';
 import { extractDiscordDirectives } from './discord-directives.js';
 import { parseFinalRoutes, resolveDiscordRouteTarget } from './final-routes.js';
 import { sendClawasSessionMessage } from './invoke-clawas-rpc.js';
+import { clearTypingLease } from './typing.js';
 
 export async function deliverClawaFinalText(options: {
   workerId: string;
@@ -21,14 +22,18 @@ export async function deliverClawaFinalText(options: {
   const sourceJid = options.discordContext?.channelJid ?? null;
   const sourceMessageId = options.discordContext?.sourceMessageId ?? null;
   const messageHandles = discordContextHandles(options.discordContext);
+  const completedTypingJids = new Set<string>();
+  if (sourceJid) completedTypingJids.add(sourceJid);
 
   for (const block of routed.blocks) {
     if (block.target.kind === 'quiet') {
-      await deliverDiscordText(sourceJid ?? firstHandleJid(messageHandles) ?? 'dc:unknown', block.text, {
+      const quietJid = sourceJid ?? firstHandleJid(messageHandles) ?? 'dc:unknown';
+      await deliverDiscordText(quietJid, block.text, {
         defaultReplyToMessageId: null,
         workerId: options.workerId,
         messageHandles,
       });
+      completedTypingJids.add(quietJid);
       continue;
     }
 
@@ -58,7 +63,10 @@ export async function deliverClawaFinalText(options: {
     if (!delivered) {
       throw new Error(`Could not send Discord route ${formatRouteTarget(block.target)}`);
     }
+    completedTypingJids.add(targetJid);
   }
+
+  for (const jid of completedTypingJids) clearTypingLease(jid);
 
   logger.info({ worker: options.workerId, routes: routed.blocks.length }, 'Delivered routed Discord final message');
 }

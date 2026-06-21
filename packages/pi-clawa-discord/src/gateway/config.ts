@@ -148,6 +148,9 @@ export const config = {
   /** How often to refresh Discord typing indicators while work is in flight (ms) */
   discordTypingRefreshMs: envInt('DISCORD_TYPING_REFRESH_MS', 4_000, { min: 1_000 }),
 
+  /** How long a routed Discord input keeps typing alive without a routed output (ms) */
+  discordTypingLeaseMs: envInt('DISCORD_TYPING_LEASE_MS', 120_000, { min: 1_000 }),
+
   /** Log level */
   logLevel: env('LOG_LEVEL', 'info'),
 
@@ -172,7 +175,7 @@ export const config = {
   /** Inject guild presence context into prompts for guild channels */
   includeGuildPresenceContext: envBool('INCLUDE_GUILD_PRESENCE_CONTEXT', false),
 
-  /** Maximum recent Discord messages to include when catching Clawa up (0 = all unseen, bounded by char budget) */
+  /** Maximum recent Discord messages to include when catching Clawa up (0 = all unseen) */
   recentContextMessages: envInt('RECENT_CONTEXT_MESSAGES', 8, { min: 0 }),
 
   /** Channel access policy: open, open-trigger, or allowlist */
