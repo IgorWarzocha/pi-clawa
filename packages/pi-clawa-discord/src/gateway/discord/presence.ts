@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, type GatewayIntentsString, type Guild, type Message } from 'discord.js';
 import { config, type Config } from '../config.js';
 import { logger } from '../logger.js';
+import { sanitizeDiscordLabel } from './sanitize.js';
 
 const ONLINE_STATUSES = new Set(['online', 'idle', 'dnd']);
 const MAX_LISTED_MEMBERS = 12;
@@ -70,7 +71,7 @@ export async function buildGuildPresenceContext(message: Message): Promise<strin
       if (!message.channel.permissionsFor(member).has(PermissionFlagsBits.ViewChannel)) continue;
 
       visibleMembers.push({
-        name: member.displayName,
+        name: sanitizeDiscordLabel(member.displayName) || member.id,
         status: presence.status,
       });
     }

@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import test from 'node:test'
 import clawDiscord from './index.js'
 import { parseFinalRoutes } from './src/gateway/agent/final-routes.js'
+import { sanitizeDiscordLabel, sanitizeDiscordText } from './src/gateway/discord/sanitize.js'
 
 const TOKEN_ENV_PATTERN = /DISCORD_BOT_TOKEN=/
 const DEFAULT_DM_ROUTE_PATTERN = /"channel": "dm"/
@@ -112,4 +113,12 @@ test('Discord final routing blocks parse explicit destinations', () => {
     { target: { kind: 'main-clawa' }, text: 'ask main' },
     { target: { kind: 'quiet' }, text: '' },
   ])
+})
+
+test('Discord input sanitizer strips hidden controls without mangling normal text', () => {
+  assert.equal(
+    sanitizeDiscordText('hej\u200b clawa\u202e\nemoji 👨‍💻 café\r\n\u0000done'),
+    'hej clawa\nemoji 👨‍💻 café\ndone',
+  )
+  assert.equal(sanitizeDiscordLabel('Igor\n\u202eWarzocha'), 'Igor Warzocha')
 })

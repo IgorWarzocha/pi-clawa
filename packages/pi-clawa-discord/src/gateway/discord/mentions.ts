@@ -1,7 +1,9 @@
 export interface MentionCandidate {
-  id: string;
-  names: string[];
+	id: string;
+	names: string[];
 }
+
+import { sanitizeDiscordLabel } from './sanitize.js';
 
 const PLAIN_USER_MENTION = /(^|[\s([{"'`])@([A-Za-z0-9._-]{2,32})\b/g;
 
@@ -39,5 +41,5 @@ function buildLookup(candidates: MentionCandidate[]): Map<string, string[]> {
 }
 
 function normalizeName(value: string): string {
-  return value.trim().toLowerCase();
+	return sanitizeDiscordLabel(value).toLowerCase();
 }

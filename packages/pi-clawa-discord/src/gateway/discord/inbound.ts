@@ -20,6 +20,7 @@ import {
 	shouldAcceptTriggeredMessage,
 	shouldIgnoreExcludedGuildChannel,
 } from "./policy.js";
+import { sanitizeDiscordLabel, sanitizeDiscordText } from "./sanitize.js";
 
 export interface MessageHandlerState {
 	getClient(): Client | null;
@@ -53,11 +54,13 @@ export function createMessageHandler(
 	}
 
 	// ── Build content ──
-	let content = message.content;
+	let content = sanitizeDiscordText(message.content);
 	const senderName =
-		message.member?.displayName ||
-		message.author.displayName ||
-		message.author.username;
+		sanitizeDiscordLabel(
+			message.member?.displayName ||
+				message.author.displayName ||
+				message.author.username,
+		) || message.author.id;
 	const sender = message.author.id;
 	const timestamp = message.createdAt.toISOString();
 
@@ -87,8 +90,8 @@ export function createMessageHandler(
 		const metas: AttachmentMeta[] = [...message.attachments.values()].map(
 			(att) => ({
 				url: att.url,
-				name: att.name || "file",
-				contentType: att.contentType || "",
+				name: sanitizeDiscordLabel(att.name || "file") || "file",
+				contentType: sanitizeDiscordLabel(att.contentType || ""),
 				size: att.size || 0,
 			}),
 		);
@@ -130,9 +133,11 @@ export function createMessageHandler(
 			);
 			isReplyToBot = ref.author.id === botId;
 			const refAuthor =
-				ref.member?.displayName ||
-				ref.author.displayName ||
-				ref.author.username;
+				sanitizeDiscordLabel(
+					ref.member?.displayName ||
+						ref.author.displayName ||
+						ref.author.username,
+				) || ref.author.id;
 			content = `[Reply to ${refAuthor}] ${content}`;
 		} catch {
 			// deleted message
