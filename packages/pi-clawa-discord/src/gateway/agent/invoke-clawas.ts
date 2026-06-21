@@ -206,28 +206,6 @@ function formatReactionHandles(messageHandles: DiscordMessageHandle[]): string[]
   ];
 }
 
-export async function steerClawasWorker(
-  workerId: string,
-  userText: string,
-  opts?: {
-    attachments?: string | null | undefined;
-    sourceMessageId?: string | null | undefined;
-    sourceChannelJid?: string | undefined;
-    messageHandles?: DiscordMessageHandle[] | undefined;
-  },
-): Promise<void> {
-  await sendClawasSessionMessage(workerId, {
-    message: userText,
-    mode: 'steer',
-      messageType: 'session',
-      discordContext: buildDiscordContext(opts),
-    sender: {
-      workerId: 'discord-gateway',
-      workerTitle: 'Discord',
-    },
-  });
-}
-
 function buildDiscordContext(
   opts?: {
     sourceMessageId?: string | null | undefined;

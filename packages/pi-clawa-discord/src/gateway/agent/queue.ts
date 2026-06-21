@@ -14,7 +14,7 @@ import {
 	clearPendingMessages,
 	recoverStuckMessages,
 } from "../db.js";
-import { processQueuedMessage, processSteeredClawasMessage } from "./queue-processing.js";
+import { processQueuedMessage } from "./queue-processing.js";
 
 /** Channels currently being processed (per-channel serial lock) */
 const activeChannels = new Set<string>();
@@ -106,35 +106,6 @@ function dispatch(): void {
 
 	for (const jid of channelsWithPending()) {
 		if (activeChannels.has(jid)) {
-			const mappedWorker = activeClawasWorkers.get(jid);
-			if (!mappedWorker || activeTaskPromises.size >= config.maxConcurrency)
-				continue;
-
-			const msg = claimNextMessage(jid);
-			if (!msg) continue;
-
-			const taskPromise = processSteeredClawasMessage(
-				{
-					workerId: mappedWorker,
-					jid,
-					rowid: msg.rowid,
-					sender: msg.sender,
-					senderName: msg.sender_name,
-					sourceMessageId: msg.source_message_id,
-					content: msg.content,
-					attachments: msg.attachments,
-					logRowId: msg.log_rowid,
-				},
-				processingState(),
-			).finally(() => {
-				activeTaskPromises.delete(taskPromise);
-
-				if (running) {
-					schedulePoll(0);
-				}
-			});
-
-			activeTaskPromises.add(taskPromise);
 			continue;
 		}
 		if (activeTaskPromises.size >= config.maxConcurrency) break;
@@ -234,5 +205,4 @@ async function waitForPromise(
 
 	return activeTaskPromises.size === 0;
 }
-
 

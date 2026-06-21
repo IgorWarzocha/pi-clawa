@@ -1,11 +1,11 @@
 import { logger } from "../logger.js";
-import { getChannel, markChannelContextSeen, markMessageDone, markMessageFailed } from "../db.js";
+import { getChannel, markChannelContextSeen, markMessageFailed } from "../db.js";
 import { sendResponse } from "../discord/client.js";
 import { settleDiscordDelivery } from "./delivery.js";
 import { buildGatewayPrompt, getReplyAnchorSourceMessageId } from "./gateway-prompt.js";
-import { getClawasWorkerStatus, invokeClawasWorker, steerClawasWorker } from "./invoke-clawas.js";
+import { invokeClawasWorker } from "./invoke-clawas.js";
 import { resolveClawaWorkerForDiscordChannel } from "../channel-routes.js";
-import { createTypingLoop, ensureWorkerTypingMonitor } from "./typing.js";
+import { createTypingLoop } from "./typing.js";
 
 export interface ProcessingState {
 	activeClawasWorkers: Map<string, string>;
@@ -125,57 +125,5 @@ export async function processQueuedMessage(params: {
 		state.activeClawasWorkers.delete(jid);
 		state.activeReplyAnchors.delete(jid);
 		await typingLoop.stop();
-	}
-}
-
-export async function processSteeredClawasMessage(params: {
-	workerId: string;
-	jid: string;
-	rowid: number;
-	sender: string;
-	senderName: string;
-	sourceMessageId: string | null;
-	content: string;
-	attachments?: string | null;
-	logRowId?: number | null;
-}, state: ProcessingState): Promise<void> {
-	const { workerId, jid, rowid, sender, senderName, sourceMessageId, content, attachments, logRowId } = params;
-	try {
-		setActiveReplyAnchor(state, jid, sender, sourceMessageId);
-
-		const { prompt, observedThroughRowId, messageHandles } = buildGatewayPrompt({
-			jid,
-			sender,
-			senderName,
-			content,
-			mappedWorker: workerId,
-			logRowId,
-			sourceMessageId,
-		});
-
-		await steerClawasWorker(workerId, prompt, {
-			attachments,
-			sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),
-			sourceChannelJid: jid,
-			messageHandles,
-		});
-
-		ensureWorkerTypingMonitor(jid, workerId, {
-			isRunning: state.isRunning,
-			getStatus: getClawasWorkerStatus,
-		});
-
-		markChannelContextSeen(jid, observedThroughRowId);
-		markMessageDone(rowid);
-		logger.info(
-			{ jid, worker: workerId, rowid },
-			"Steered queued Discord message into active CLAWAS worker",
-		);
-	} catch (err: any) {
-		markMessageFailed(rowid);
-		logger.warn(
-			{ jid, worker: workerId, rowid, err: err.message },
-			"Failed to steer queued Discord message into CLAWAS worker",
-		);
 	}
 }
