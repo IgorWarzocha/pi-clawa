@@ -213,13 +213,14 @@ export async function steerClawasWorker(
     attachments?: string | null | undefined;
     sourceMessageId?: string | null | undefined;
     sourceChannelJid?: string | undefined;
+    messageHandles?: DiscordMessageHandle[] | undefined;
   },
 ): Promise<void> {
   await sendClawasSessionMessage(workerId, {
     message: userText,
     mode: 'steer',
-    messageType: 'session',
-    discordContext: buildDiscordContext(opts),
+      messageType: 'session',
+      discordContext: buildDiscordContext(opts),
     sender: {
       workerId: 'discord-gateway',
       workerTitle: 'Discord',

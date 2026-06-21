@@ -143,7 +143,7 @@ export async function processSteeredClawasMessage(params: {
 	try {
 		setActiveReplyAnchor(state, jid, sender, sourceMessageId);
 
-		const { prompt, observedThroughRowId } = buildGatewayPrompt({
+		const { prompt, observedThroughRowId, messageHandles } = buildGatewayPrompt({
 			jid,
 			sender,
 			senderName,
@@ -156,6 +156,8 @@ export async function processSteeredClawasMessage(params: {
 		await steerClawasWorker(workerId, prompt, {
 			attachments,
 			sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),
+			sourceChannelJid: jid,
+			messageHandles,
 		});
 
 		ensureWorkerTypingMonitor(jid, workerId, {
