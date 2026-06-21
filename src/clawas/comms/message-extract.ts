@@ -196,15 +196,6 @@ export function getLastDiscordSourceMessageId(ctx: ExtensionContext): string | u
       continue
     }
 
-    // Reply anchoring is only safe for the current Clawas mail turn.
-    // A main-claw -> discord-clawa handoff has no fresh Discord source
-    // message; walking past it would reuse an older gateway source id and
-    // incorrectly thread the new public reply under an unrelated Discord
-    // conversation.
-    if (details?.['workerId'] !== 'discord-gateway') {
-      return undefined
-    }
-
     if (typeof details?.['sourceMessageId'] === 'string' && details['sourceMessageId'].trim()) {
       return details['sourceMessageId']
     }
@@ -224,10 +215,6 @@ export function getLastDiscordChannelJid(ctx: ExtensionContext): string | undefi
     const details = getClawasMailDetails(entry)
     if (!details) {
       continue
-    }
-
-    if (details?.['workerId'] !== 'discord-gateway') {
-      return undefined
     }
 
     if (typeof details?.['channelJid'] === 'string' && details['channelJid'].trim()) {

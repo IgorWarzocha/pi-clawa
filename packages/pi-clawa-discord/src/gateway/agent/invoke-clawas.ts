@@ -3,7 +3,6 @@ import type { AgentResult } from '../types.js';
 import { config } from '../config.js';
 import {
   getClawasWorkerOutput,
-  getClawasWorkerStatus,
   sendClawasSessionMessage,
   sleep,
 } from './invoke-clawas-rpc.js';
@@ -19,7 +18,6 @@ type ChangedClawasWorkerOutput = ClawasWorkerOutput & {
 };
 
 const CLAWAS_MESSAGE_SETTLE_MS = 2_500;
-const CLAWAS_PRIVATE_DELIVERY_SETTLE_MS = 30_000;
 
 export interface ClawasWorkerStatus {
   isIdle: boolean;
@@ -128,11 +126,8 @@ async function waitForWorkerOutputChange(
   const timeoutMs = config.clawasReplyTimeoutMs;
   const logIntervalMs = config.clawasWaitLogIntervalMs;
   let nextLogAt = startedAt + logIntervalMs;
-  let lastStatus: ClawasWorkerStatus | null = null;
   let messageCandidate: ChangedClawasWorkerOutput | null = null;
   let messageCandidateReadyAt = 0;
-  let privateDeliveryCandidate: ChangedClawasWorkerOutput | null = null;
-  let privateDeliveryReadyAt = 0;
 
   while (Date.now() - startedAt < timeoutMs) {
     if (signal?.aborted) {
@@ -145,14 +140,11 @@ async function waitForWorkerOutputChange(
         return { ...next, changed: 'discord-delivery' };
       }
 
-      if (!privateDeliveryCandidate || !sameDelivery(next.delivery, privateDeliveryCandidate.delivery)) {
-        privateDeliveryCandidate = { ...next, changed: 'private-delivery' };
-        privateDeliveryReadyAt = Date.now() + CLAWAS_PRIVATE_DELIVERY_SETTLE_MS;
-        logger.info(
-          { workerId, settleMs: CLAWAS_PRIVATE_DELIVERY_SETTLE_MS },
-          'Observed CLAWAS private delivery; waiting briefly for public final text',
-        );
-      }
+      logger.info(
+        { workerId },
+        'Observed CLAWAS private delivery; treating Discord event as handled asynchronously',
+      );
+      return { ...next, changed: 'private-delivery' };
     }
 
     if (
@@ -172,47 +164,17 @@ async function waitForWorkerOutputChange(
     }
 
     if (messageCandidate && Date.now() >= messageCandidateReadyAt) {
-      if (privateDeliveryCandidate && Date.now() < privateDeliveryReadyAt) {
-        await sleep(250, signal);
-        continue;
-      }
-
-      const status = await getSettledWorkerStatus(workerId);
-      if (status?.isIdle === false || status?.hasPendingMessages === true) {
-        await sleep(250, signal);
-        continue;
-      }
-
       return messageCandidate;
-    }
-
-    if (
-      privateDeliveryCandidate
-      && !messageCandidate
-      && Date.now() >= privateDeliveryReadyAt
-    ) {
-      return privateDeliveryCandidate;
     }
 
     const now = Date.now();
     if (now >= nextLogAt) {
       nextLogAt = now + logIntervalMs;
-      try {
-        lastStatus = await getClawasWorkerStatus(workerId);
-      } catch (error: any) {
-        logger.warn(
-          { workerId, elapsedMs: now - startedAt, err: error?.message ?? String(error) },
-          'Failed to read CLAWAS worker status while waiting for reply',
-        );
-      }
-
       logger.info(
         {
           workerId,
           elapsedMs: now - startedAt,
           timeoutMs,
-          isIdle: lastStatus?.isIdle,
-          hasPendingMessages: lastStatus?.hasPendingMessages,
         },
         'Still waiting for CLAWAS worker output',
       );
@@ -223,22 +185,7 @@ async function waitForWorkerOutputChange(
 
   throw new Error(
     `Timed out waiting for CLAWAS worker ${workerId} to reply after ${timeoutMs}ms`
-    + (lastStatus
-      ? ` (isIdle=${String(lastStatus.isIdle)}, hasPendingMessages=${String(lastStatus.hasPendingMessages)})`
-      : ''),
   );
-}
-
-async function getSettledWorkerStatus(workerId: string): Promise<ClawasWorkerStatus | null> {
-  try {
-    return await getClawasWorkerStatus(workerId);
-  } catch (error: any) {
-    logger.warn(
-      { workerId, err: error?.message ?? String(error) },
-      'Failed to read CLAWAS worker status before settling output',
-    );
-    return null;
-  }
 }
 
 function isNewDelivery(

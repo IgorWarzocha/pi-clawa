@@ -65,7 +65,7 @@ test('shouldSkipAutoDiscordRelay suppresses stale discord replays after an expli
   )
 })
 
-test('getLastDiscordSourceMessageId only uses the current gateway mail turn', () => {
+test('getLastDiscordSourceMessageId uses nearest carried Discord context only', () => {
   const oldGatewayMail = {
     type: 'custom_message',
     customType: CLAWAS_MAIL_MESSAGE_TYPE,
@@ -118,9 +118,25 @@ test('getLastDiscordSourceMessageId only uses the current gateway mail turn', ()
     getLastDiscordSourceMessageId(ctxWithBranch([oldGatewayMail, ambientGatewayMail])),
     undefined,
   )
+
+  assert.equal(
+    getLastDiscordSourceMessageId(
+      ctxWithBranch([
+        oldGatewayMail,
+        {
+          ...mainClawHandoff,
+          details: {
+            workerId: 'main-claw',
+            sourceMessageId: 'carried-discord-message',
+          },
+        },
+      ]),
+    ),
+    'carried-discord-message',
+  )
 })
 
-test('getLastDiscordChannelJid only uses the current gateway mail turn', () => {
+test('getLastDiscordChannelJid uses nearest carried Discord context only', () => {
   const gatewayMail = {
     type: 'custom_message',
     customType: CLAWAS_MAIL_MESSAGE_TYPE,
@@ -139,6 +155,21 @@ test('getLastDiscordChannelJid only uses the current gateway mail turn', () => {
 
   assert.equal(getLastDiscordChannelJid(ctxWithBranch([gatewayMail])), 'dc:channel-1')
   assert.equal(getLastDiscordChannelJid(ctxWithBranch([gatewayMail, mainClawHandoff])), undefined)
+  assert.equal(
+    getLastDiscordChannelJid(
+      ctxWithBranch([
+        gatewayMail,
+        {
+          ...mainClawHandoff,
+          details: {
+            workerId: 'main-claw',
+            channelJid: 'dc:carried-channel',
+          },
+        },
+      ]),
+    ),
+    'dc:carried-channel',
+  )
 })
 
 test('shouldSkipAutoMainClawStatusRelay suppresses auto status after same-turn handoff', () => {
