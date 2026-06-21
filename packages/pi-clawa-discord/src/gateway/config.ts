@@ -172,8 +172,8 @@ export const config = {
   /** Inject guild presence context into prompts for guild channels */
   includeGuildPresenceContext: envBool('INCLUDE_GUILD_PRESENCE_CONTEXT', false),
 
-  /** Maximum recent Discord messages to include when catching Clawa up (0 = uncapped delta) */
-  recentContextMessages: envInt('RECENT_CONTEXT_MESSAGES', 0, { min: 0 }),
+  /** Maximum recent Discord messages to include when catching Clawa up (0 = no recent context) */
+  recentContextMessages: envInt('RECENT_CONTEXT_MESSAGES', 8, { min: 0 }),
 
   /** Channel access policy: open, open-trigger, or allowlist */
   channelPolicy: parseChannelPolicy(env('CHANNEL_POLICY', DEFAULT_CHANNEL_POLICY)),

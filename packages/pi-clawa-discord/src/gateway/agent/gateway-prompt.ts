@@ -10,6 +10,8 @@ import { buildReactionInstruction } from "./discord-directives.js";
 import type { LoggedMessage } from "../types.js";
 
 const TIME_NOTE_INTERVAL_HOURS = 2;
+const RECENT_CONTEXT_CHAR_BUDGET = 4000;
+const RECENT_CONTEXT_MESSAGE_CHAR_BUDGET = 600;
 const lastGatewayTimeNoteBucketByChannel = new Map<string, string>();
 
 export interface GatewayPromptOptions {
@@ -116,19 +118,61 @@ function buildObservedMessagesContext(
 		return "";
 	}
 
-	const lines = messages.map(
-		(message) => `${message.sender_name}: ${message.content}`,
-	);
+	const { lines, omittedForSize } = buildBoundedObservedMessageLines(messages);
+	if (lines.length === 0) {
+		return "";
+	}
+
 	const truncated =
 		opts.totalNewMessages > messages.length
 			? ` Only the most recent ${messages.length} of ${opts.totalNewMessages} new messages are shown.`
 			: "";
+	const sizeNote =
+		omittedForSize > 0
+			? ` ${omittedForSize} older/newer context message${omittedForSize === 1 ? "" : "s"} omitted to keep the Discord turn small.`
+			: "";
 
 	return [
-		`Recent channel context:${truncated}`,
+		`Recent channel context:${truncated}${sizeNote}`,
 		...lines,
 		"End recent channel context.",
 	].join("\n");
+}
+
+function buildBoundedObservedMessageLines(messages: LoggedMessage[]): {
+	lines: string[];
+	omittedForSize: number;
+} {
+	const kept: string[] = [];
+	let remaining = RECENT_CONTEXT_CHAR_BUDGET;
+	let omittedForSize = 0;
+
+	for (let index = messages.length - 1; index >= 0; index -= 1) {
+		const message = messages[index];
+		if (!message) {
+			continue;
+		}
+
+		const line = `${message.sender_name}: ${truncateText(message.content, RECENT_CONTEXT_MESSAGE_CHAR_BUDGET)}`;
+		const cost = line.length + 1;
+		if (cost > remaining && kept.length > 0) {
+			omittedForSize += 1;
+			continue;
+		}
+
+		kept.unshift(line.length > remaining ? line.slice(0, Math.max(0, remaining - 1)) + "…" : line);
+		remaining -= Math.min(cost, remaining);
+	}
+
+	return { lines: kept, omittedForSize };
+}
+
+function truncateText(value: string, maxChars: number): string {
+	if (value.length <= maxChars) {
+		return value;
+	}
+
+	return `${value.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
 }
 
 function maybeBuildGatewayTimeNote(jid: string, mappedWorker?: string): string {
