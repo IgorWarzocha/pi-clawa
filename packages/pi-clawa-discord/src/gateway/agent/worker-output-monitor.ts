@@ -20,6 +20,7 @@ interface WorkerOutputState {
   timer?: NodeJS.Timeout | undefined;
   lastMessage: ClawasExtractedMessage | null;
   lastDelivery: ClawasExtractedDelivery | null;
+  initialized: boolean;
   isProcessing: boolean;
 }
 
@@ -47,6 +48,7 @@ export function ensureWorkerOutputMonitor(workerId: string): void {
   const state: WorkerOutputState = {
     lastMessage: null,
     lastDelivery: null,
+    initialized: false,
     isProcessing: false,
   };
   workers.set(workerId, state);
@@ -63,6 +65,7 @@ export async function primeWorkerOutputMonitor(workerId: string): Promise<void> 
     const output = await getClawasWorkerOutput(workerId);
     state.lastMessage = output.message;
     state.lastDelivery = output.delivery;
+    state.initialized = true;
   } catch (err: any) {
     logger.debug({ workerId, err: err.message }, 'Could not prime Discord worker output monitor yet');
   } finally {
@@ -84,9 +87,10 @@ async function pollWorker(workerId: string, state: WorkerOutputState): Promise<v
   state.isProcessing = true;
   try {
     const output = await getClawasWorkerOutput(workerId);
-    if (!state.lastMessage && !state.lastDelivery) {
+    if (!state.initialized) {
       state.lastMessage = output.message;
       state.lastDelivery = output.delivery;
+      state.initialized = true;
       return;
     }
 
