@@ -7,7 +7,8 @@ Do not turn this into scriptware: if a helper is not something I will actually i
 ## Tools
 
 - **`message_discord`** — explicit Discord sends or reactions outside final routing blocks
-  - Invoke: pass `channel` as `dm` or a routed `#channel` name
+  - Invoke: pass `channel` as `dm` or an exact routed `#channel` name
+  - Do not invent channel names; use the routes shown in the Discord turn or route config.
   - Notes: keep public output safe; no private filesystem/config details
 
 - **`message_main_claw`** — message the main Clawa
