@@ -46,6 +46,18 @@ function getMailDetail(
   return undefined
 }
 
+function getOutboundMessage(details: unknown): string | undefined {
+  if (!details || typeof details !== 'object') {
+    return undefined
+  }
+
+  if ('message' in details && typeof details.message === 'string') {
+    return details.message
+  }
+
+  return undefined
+}
+
 function getSourceTitle(details: unknown, clawaDefaults: ClawaDefaults): string {
   if (
     details &&
@@ -101,7 +113,11 @@ function renderLabel(
 export function createClawasCommsRenderer(getClawaDefaults: () => ClawaDefaults): MessageRenderer {
   return (message, _options, theme) => {
     const rawText = typeof message.content === 'string' ? message.content : ''
-    const text = stripClawasMessageEnvelope(rawText)
+    const outboundText =
+      message.customType === CLAWAS_OUTBOUND_MESSAGE_TYPE
+        ? getOutboundMessage(message.details)
+        : undefined
+    const text = stripClawasMessageEnvelope(outboundText ?? rawText)
     const clawaDefaults = getClawaDefaults()
     const box = new Box(1, 1, (value) => theme.bg('customMessageBg', value))
     box.addChild(

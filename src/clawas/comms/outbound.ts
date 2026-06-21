@@ -13,7 +13,11 @@ export interface ClawasOutboundDetails {
   workerTitle: string
   mode: ClawasOutboundMode
   sourceTitle: string
+  message: string
 }
+
+const OUTBOUND_CONTEXT_MARKER =
+  'Display-only Clawa routing marker. The main Clawa sent a private note to another Clawa; do not answer this marker in the main chat.'
 
 export interface ClawasDeliveryDetails {
   route: ClawasDeliveryRoute
@@ -30,13 +34,14 @@ export function publishClawasOutboundMessage(
 ): void {
   pi.sendMessage<ClawasOutboundDetails>({
     customType: CLAWAS_OUTBOUND_MESSAGE_TYPE,
-    content: message,
+    content: OUTBOUND_CONTEXT_MARKER,
     display: true,
     details: {
       workerId: worker.id,
       workerTitle: worker.title,
       mode,
       sourceTitle: clawaDefaults.mainClawName,
+      message,
     },
   })
 }
