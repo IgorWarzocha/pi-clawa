@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { resolveClawaDefaults, resolveClawasControlSocketRoot } from '@howaboua/pi-clawa/config'
 import { extensionDir, GATEWAY_ENTRY } from './constants.js'
@@ -7,6 +9,26 @@ import { getGatewayProcess, setGatewayProcess } from './gateway-state.js'
 
 function hasGatewayToken(configPath: string): boolean {
   return Boolean(readEnvFile(configPath)['DISCORD_BOT_TOKEN'] || process.env['DISCORD_BOT_TOKEN'])
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function hasLiveGatewayPid(configPath: string): boolean {
+  const dbPath = readEnvFile(configPath)['DB_PATH']
+  const stateDir = dbPath ? dirname(dbPath) : join(dirname(configPath))
+  try {
+    const pid = Number.parseInt(readFileSync(join(stateDir, 'gateway.pid'), 'utf8').trim(), 10)
+    return Number.isFinite(pid) && pid > 0 && isProcessAlive(pid)
+  } catch {
+    return false
+  }
 }
 
 export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
@@ -23,6 +45,7 @@ export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
 
   const existing = getGatewayProcess()
   if (existing && !existing.killed) return
+  if (hasLiveGatewayPid(configPath)) return
 
   const clawa = resolveClawaDefaults(projectRoot)
   const gatewayProcess = spawn(process.execPath, ['--import', 'tsx', GATEWAY_ENTRY, 'start'], {
