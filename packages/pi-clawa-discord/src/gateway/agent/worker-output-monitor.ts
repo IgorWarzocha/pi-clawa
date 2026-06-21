@@ -4,6 +4,7 @@ import type {
   ClawasExtractedMessage,
 } from '@howaboua/pi-clawa/clawas/comms/types';
 import { listDiscordRouteTags, listDiscordRouteWorkers } from '../channel-routes.js';
+import { hasProcessedWorkerOutput, markWorkerOutputProcessed } from '../db.js';
 import { logger } from '../logger.js';
 import type { DiscordMessageHandle } from '../types.js';
 import { findInvalidReactionHandle } from './discord-directives.js';
@@ -63,9 +64,10 @@ export async function primeWorkerOutputMonitor(workerId: string): Promise<void> 
   state.isProcessing = true;
   try {
     const output = await getClawasWorkerOutput(workerId);
-    state.lastMessage = output.message;
     state.lastDelivery = output.delivery;
     state.initialized = true;
+    await processAssistantMessage(workerId, output.message, output.discordContext);
+    state.lastMessage = output.message;
   } catch (err: any) {
     logger.debug({ workerId, err: err.message }, 'Could not prime Discord worker output monitor yet');
   } finally {
@@ -88,10 +90,8 @@ async function pollWorker(workerId: string, state: WorkerOutputState): Promise<v
   try {
     const output = await getClawasWorkerOutput(workerId);
     if (!state.initialized) {
-      state.lastMessage = output.message;
       state.lastDelivery = output.delivery;
       state.initialized = true;
-      return;
     }
 
     if (isNewDelivery(output.delivery, state.lastDelivery)) {
@@ -99,11 +99,11 @@ async function pollWorker(workerId: string, state: WorkerOutputState): Promise<v
     }
 
     if (isNewMessage(output.message, state.lastMessage)) {
-      state.lastMessage = output.message;
       await processAssistantMessage(workerId, output.message, output.discordContext);
+      state.lastMessage = output.message;
     }
   } catch (err: any) {
-    logger.debug({ workerId, err: err.message }, 'Discord worker output monitor waiting for worker socket');
+    logger.warn({ workerId, err: err.message }, 'Discord worker output monitor failed to process worker output');
   } finally {
     state.isProcessing = false;
     const latest = workers.get(workerId);
@@ -117,8 +117,13 @@ async function processAssistantMessage(
   context: ClawasDiscordContext | null,
 ): Promise<void> {
   if (!message) return;
+  if (hasProcessedWorkerOutput({ workerId, timestamp: message.timestamp, content: message.content })) {
+    return;
+  }
+
   if (message.error) {
     logger.warn({ workerId, err: message.error }, 'Discord Clawa assistant turn failed');
+    markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
     return;
   }
 
@@ -127,10 +132,12 @@ async function processAssistantMessage(
   if (problem) {
     logger.warn({ workerId, problem }, 'Discord Clawa produced invalid final routing; asking for retry');
     await sendRoutingCorrection(workerId, problem, context);
+    markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
     return;
   }
 
   await deliverClawaFinalText({ workerId, text, discordContext: context });
+  markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
 }
 
 function getFinalRouteProblem(workerId: string, text: string, messageHandles: DiscordMessageHandle[]): string | null {

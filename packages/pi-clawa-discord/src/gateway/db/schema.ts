@@ -42,6 +42,14 @@ export function runSchemaMigrations(db: Database.Database): void {
       channel_jid         text primary key,
       last_seen_log_rowid integer not null default 0
     );
+
+    create table if not exists clawa_worker_outputs (
+      worker_id         text not null,
+      message_timestamp integer not null,
+      content_hash      text not null,
+      processed_at      text not null default (datetime('now')),
+      primary key (worker_id, message_timestamp, content_hash)
+    );
   `);
 
 	ensureTableColumn(db, "message_queue", "attachments", "text");
