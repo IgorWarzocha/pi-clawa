@@ -129,7 +129,7 @@ export function buildWorkerUserMessage(
         : '[Discord room update]',
       'This is recent activity from the mapped Discord channel. It is not all from Igor, and not every line is an instruction for you.',
       recentContext ? `Recent channel context:\n${recentContext}` : null,
-      `Current trigger:\n${trigger || message}`,
+      trigger || message,
     ]
       .filter((part): part is string => Boolean(part))
       .join('\n\n')

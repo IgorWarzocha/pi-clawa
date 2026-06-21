@@ -15,11 +15,10 @@ import {
 	recoverStuckMessages,
 } from "../db.js";
 import { processQueuedMessage } from "./queue-processing.js";
+import { startWorkerOutputMonitors, stopWorkerOutputMonitors } from "./worker-output-monitor.js";
 
 /** Channels currently being processed (per-channel serial lock) */
 const activeChannels = new Set<string>();
-const activeClawasWorkers = new Map<string, string>();
-const activeReplyAnchors = new Map<string, string>();
 const activeTaskPromises = new Set<Promise<void>>();
 const activeTaskControllers = new Map<number, AbortController>();
 const activeChannelControllers = new Map<string, AbortController>();
@@ -58,6 +57,7 @@ export function startProcessingLoop(): void {
 	}
 
 	schedulePoll(0);
+	startWorkerOutputMonitors();
 }
 
 export function stopProcessingLoop(
@@ -69,6 +69,7 @@ export function stopProcessingLoop(
 
 	running = false;
 	clearPollTimer();
+	stopWorkerOutputMonitors();
 
 	stopPromise = drainActiveTasks(opts.timeoutMs ?? config.shutdownTimeoutMs);
 	return stopPromise;
@@ -129,8 +130,7 @@ function dispatch(): void {
 				signal: controller.signal,
 				attachments: msg.attachments,
 				logRowId: msg.log_rowid,
-			},
-			processingState(),
+			}
 		).finally(() => {
 			activeChannels.delete(jid);
 			activeTaskControllers.delete(msg.rowid);
@@ -144,14 +144,6 @@ function dispatch(): void {
 
 		activeTaskPromises.add(taskPromise);
 	}
-}
-
-function processingState() {
-	return {
-		activeClawasWorkers,
-		activeReplyAnchors,
-		isRunning: () => running,
-	};
 }
 
 async function drainActiveTasks(timeoutMs: number): Promise<void> {
@@ -205,4 +197,3 @@ async function waitForPromise(
 
 	return activeTaskPromises.size === 0;
 }
-

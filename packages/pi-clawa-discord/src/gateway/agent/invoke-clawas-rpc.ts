@@ -2,6 +2,7 @@ import { readlink } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { resolve } from 'node:path';
 import type {
+  ClawasDiscordContext,
   ClawasExtractedDelivery,
   ClawasExtractedMessage,
   ClawasMessageIntent,
@@ -15,6 +16,7 @@ import { config } from '../config.js';
 type ClawasWorkerOutput = {
   message: ClawasExtractedMessage | null;
   delivery: ClawasExtractedDelivery | null;
+  discordContext: ClawasDiscordContext | null;
 };
 
 export interface ClawasWorkerStatus {
@@ -31,10 +33,12 @@ export async function getClawasWorkerOutput(target: string): Promise<ClawasWorke
   const data = response.data as {
     message?: ClawasExtractedMessage | null;
     delivery?: ClawasExtractedDelivery | null;
+    discordContext?: ClawasDiscordContext | null;
   } | undefined;
   return {
     message: data?.message ?? null,
     delivery: data?.delivery ?? null,
+    discordContext: data?.discordContext ?? null,
   };
 }
 

@@ -9,7 +9,7 @@ import {
 
 const DISCORD_ROOM_UPDATE_REGEX = /^\[Discord room update\]/
 const RECENT_CONTEXT_REGEX = /Recent channel context:\nIgor: hey/
-const CURRENT_TRIGGER_REGEX = /Current trigger:\nJosXa: ping/
+const CURRENT_TRIGGER_REGEX = /\n\nJosXa: ping$/
 const CLAWAS_WORKER_UPDATE_REGEX = /^\[Clawas worker update\]/
 const DISCORD_ROOM_UPDATE_OPEN_REGEX = /^\[Discord room update/
 

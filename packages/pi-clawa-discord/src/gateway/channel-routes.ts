@@ -72,6 +72,10 @@ export function listDiscordRouteTags(workerId?: string | undefined): string[] {
   return Array.from(new Set([...tags, '[main_clawa]', '[quiet]']));
 }
 
+export function listDiscordRouteWorkers(): string[] {
+  return Array.from(new Set(readDiscordRoutes().map((route) => route.worker).filter(Boolean)));
+}
+
 function parseDiscordRoute(value: unknown, index: number): DiscordRoute {
   const route = asRecord(value, `Discord route ${index + 1}`);
   const channel = asString(route['channel'], `Discord route ${index + 1} channel`);

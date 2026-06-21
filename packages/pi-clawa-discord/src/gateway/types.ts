@@ -36,11 +36,3 @@ export interface DiscordMessageHandle {
 	channelJid: string;
 	messageId: string;
 }
-
-/** Agent invocation result */
-export interface AgentResult {
-	ok: boolean;
-	text: string;
-	route?: "discord" | "handled" | "silent";
-	error?: string;
-}

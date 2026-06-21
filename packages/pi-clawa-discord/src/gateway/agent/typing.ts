@@ -1,7 +1,7 @@
 import { config } from "../config.js";
 import { setTyping } from "../discord/client.js";
 import { logger } from "../logger.js";
-import type { ClawasWorkerStatus } from "./invoke-clawas.js";
+import type { ClawasWorkerStatus } from "./invoke-clawas-rpc.js";
 
 export interface TypingLoop {
 	stop: () => Promise<void>;
