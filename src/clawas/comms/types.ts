@@ -2,6 +2,7 @@ export interface ClawasExtractedMessage {
   role: 'assistant'
   content: string
   timestamp: number
+  error?: string | undefined
 }
 
 export interface ClawasExtractedDelivery {

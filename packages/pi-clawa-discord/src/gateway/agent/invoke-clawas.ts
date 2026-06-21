@@ -51,6 +51,14 @@ export async function invokeClawasWorker(
 
     const resolved = await waitForRoutableWorkerOutput(workerId, baseline, sentAt, opts);
 
+    if (resolved.message?.error) {
+      return {
+        ok: false,
+        text: '',
+        error: `CLAWAS worker ${workerId} failed: ${resolved.message.error}`,
+      };
+    }
+
     if (resolved.changed === 'discord-delivery' || resolved.changed === 'private-delivery') {
       return { ok: true, text: '', route: 'handled' };
     }
@@ -96,6 +104,10 @@ async function waitForRoutableWorkerOutput(
 ): Promise<ChangedClawasWorkerOutput> {
   const resolved = await waitForWorkerOutputChange(workerId, baseline, sentAt, opts?.signal);
   if (resolved.changed !== 'message') {
+    return resolved;
+  }
+
+  if (resolved.message?.error) {
     return resolved;
   }
 

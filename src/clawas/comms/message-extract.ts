@@ -116,6 +116,22 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
 
     const text = getTextFromMessageContent(message['content']).trim()
 
+    const stopReason = message['stopReason']
+    const errorMessage = message['errorMessage']
+    if (
+      !text &&
+      stopReason === 'error' &&
+      typeof errorMessage === 'string' &&
+      errorMessage.trim()
+    ) {
+      return {
+        role: 'assistant',
+        content: '',
+        timestamp: getEntryTimestamp(message['timestamp']),
+        error: errorMessage.trim(),
+      }
+    }
+
     if (!text) {
       continue
     }
