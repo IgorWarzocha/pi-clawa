@@ -1,3 +1,5 @@
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { initDb, closeDb, writeChannelsSnapshot } from './db.js';
@@ -16,6 +18,7 @@ export async function startGateway(): Promise<void> {
     throw new Error('DISCORD_BOT_TOKEN is required. Set it in config.env, .env, or the environment.');
   }
 
+  const releaseInstanceLock = await acquireGatewayInstanceLock();
   initDb();
   ensureDiscordRoutesFile();
   writeChannelsSnapshot();
@@ -47,6 +50,7 @@ export async function startGateway(): Promise<void> {
 
       stopDiscord();
       closeDb();
+      await releaseInstanceLock();
       logger.info('Gateway stopped');
     })();
 
@@ -74,5 +78,41 @@ export async function startGateway(): Promise<void> {
   } catch (err) {
     await shutdown('startup failure');
     throw err;
+  }
+}
+
+async function acquireGatewayInstanceLock(): Promise<() => Promise<void>> {
+  const pidPath = join(dirname(config.dbPath), 'gateway.pid');
+  await mkdir(dirname(pidPath), { recursive: true });
+
+  const existingPid = await readGatewayPid(pidPath);
+  if (existingPid && isProcessAlive(existingPid)) {
+    throw new Error(`pi-clawa-discord gateway is already running as pid ${existingPid}`);
+  }
+
+  await writeFile(pidPath, `${process.pid}\n`, 'utf8');
+  return async () => {
+    const currentPid = await readGatewayPid(pidPath);
+    if (currentPid === process.pid) {
+      await rm(pidPath, { force: true });
+    }
+  };
+}
+
+async function readGatewayPid(pidPath: string): Promise<number | null> {
+  try {
+    const value = Number.parseInt((await readFile(pidPath, 'utf8')).trim(), 10);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
   }
 }
