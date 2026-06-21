@@ -1,7 +1,15 @@
 import { readlink } from 'node:fs/promises';
 import { createConnection } from 'node:net';
 import { resolve } from 'node:path';
-import type { ClawasExtractedDelivery, ClawasExtractedMessage, ClawasRpcResponse, ClawasSenderInfo } from '@howaboua/pi-clawa/clawas/comms/types';
+import type {
+  ClawasExtractedDelivery,
+  ClawasExtractedMessage,
+  ClawasMessageIntent,
+  ClawasMessageKind,
+  ClawasMessageVisibility,
+  ClawasRpcResponse,
+  ClawasSenderInfo,
+} from '@howaboua/pi-clawa/clawas/comms/types';
 import { config } from '../config.js';
 
 type ClawasWorkerOutput = {
@@ -51,6 +59,9 @@ export async function sendClawasSessionMessage(
     messageType?: 'session' | 'report' | undefined;
     discordContext?: { sourceMessageId?: string | undefined; channelJid?: string | undefined } | undefined;
     sender?: ClawasSenderInfo | undefined;
+    kind?: ClawasMessageKind | undefined;
+    intent?: ClawasMessageIntent | undefined;
+    visibility?: ClawasMessageVisibility | undefined;
   },
 ): Promise<void> {
   const response = await sendRpcCommand(target, {
@@ -60,6 +71,9 @@ export async function sendClawasSessionMessage(
     messageType: options.messageType,
     discordContext: options.discordContext,
     sender: options.sender,
+    kind: options.kind,
+    intent: options.intent,
+    visibility: options.visibility,
   });
   if (!response.success) {
     throw new Error(response.error ?? `Failed to send CLAWAS message to ${target}`);

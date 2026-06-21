@@ -125,6 +125,7 @@ async function waitForRoutableWorkerOutput(
   const correctionSentAt = Date.now();
   await sendClawasSessionMessage(workerId, {
     message: [
+      '[Discord gateway routing correction]',
       `Your last Discord final message was not delivered: ${routeProblem}.`,
       'Reply again now using explicit final routing blocks only:',
       ...listDiscordRouteTags(workerId).map((tag) => `- ${tag}`),
@@ -132,6 +133,9 @@ async function waitForRoutableWorkerOutput(
     ].join('\n'),
     mode: 'followUp',
     messageType: 'session',
+    kind: 'instruction',
+    intent: 'reply_requested',
+    visibility: 'worker',
     discordContext: buildDiscordContext(opts),
     sender: {
       workerId: 'discord-gateway',

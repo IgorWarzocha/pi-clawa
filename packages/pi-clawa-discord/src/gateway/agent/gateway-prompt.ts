@@ -6,7 +6,6 @@ import {
 	listLoggedMessagesSince,
 } from "../db.js";
 import { logger } from "../logger.js";
-import { listDiscordRouteTags } from "../channel-routes.js";
 import { buildReactionInstruction } from "./discord-directives.js";
 import type { LoggedMessage } from "../types.js";
 
@@ -92,13 +91,11 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 		totalNewMessages,
 	});
 	const reactionInstruction = mappedWorker ? "" : buildReactionInstruction();
-	const routeInstruction = mappedWorker ? buildDiscordRouteInstruction(mappedWorker) : "";
 	const timeNote = maybeBuildGatewayTimeNote(jid, mappedWorker);
 
 	return {
 		prompt: [
 			reactionInstruction,
-			routeInstruction,
 			timeNote,
 			observedContext,
 			`[Discord user: ${senderName}]\n${content}`,
@@ -107,14 +104,6 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 			.join("\n\n"),
 		observedThroughRowId,
 	};
-}
-
-function buildDiscordRouteInstruction(workerId: string): string {
-	const routes = listDiscordRouteTags(workerId).join(", ");
-	return [
-		`Available final routes for this Discord turn: ${routes}.`,
-		"Use those route tags exactly. Do not invent channels like [#general].",
-	].join("\n");
 }
 
 function buildObservedMessagesContext(

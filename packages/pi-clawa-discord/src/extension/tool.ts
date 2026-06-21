@@ -16,6 +16,23 @@ function prepareDiscordToolEnvironment(): void {
   process.env['PI_CWD'] ??= projectRoot
 }
 
+function formatAvailableDiscordChannels(routeTags: string[]): string {
+  const channels = routeTags.filter((tag) => tag === '[dm]' || tag.startsWith('[#'))
+  return channels.join(', ') || 'none configured'
+}
+
+async function resolveRequiredDiscordChannel(channel: string, workerId: string): Promise<string> {
+  const { initDb } = await import('../gateway/db.js')
+  initDb()
+  const { resolveDiscordChannelLabel } = await import('../gateway/agent/final-routes.js')
+  const { listDiscordRouteTags } = await import('../gateway/channel-routes.js')
+  const channelJid = resolveDiscordChannelLabel(channel, workerId)
+  if (channelJid) return channelJid
+
+  const available = formatAvailableDiscordChannels(listDiscordRouteTags(workerId))
+  throw new Error(`Unknown Discord channel: ${channel}. Available Discord channels: ${available}.`)
+}
+
 export function registerDiscordTool(pi: ExtensionAPI): void {
   if (process.env['PI_CLAWAS_DISCORD_ENABLED'] !== '1') return
   prepareDiscordToolEnvironment()
@@ -46,14 +63,7 @@ export function registerDiscordTool(pi: ExtensionAPI): void {
           details: { workerId },
         }
 
-      const { initDb } = await import('../gateway/db.js')
-      initDb()
-      const { resolveDiscordChannelLabel } = await import('../gateway/agent/final-routes.js')
-      const channelJid = resolveDiscordChannelLabel(params.channel, workerId)
-      if (!channelJid)
-        throw new Error(
-          `Unknown Discord channel: ${params.channel}. Use dm or a routed #channel name.`,
-        )
+      const channelJid = await resolveRequiredDiscordChannel(params.channel, workerId)
 
       const sourceChannelJid = getLastDiscordChannelJid(ctx)
       const replyToMessageId =
