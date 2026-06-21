@@ -168,9 +168,22 @@ async function waitForWorkerOutputChange(
           { workerId, settleMs: CLAWAS_MESSAGE_SETTLE_MS },
           'Observed CLAWAS assistant text; waiting briefly for tool delivery/finalization',
         );
-      } else if (Date.now() >= messageCandidateReadyAt) {
-        return messageCandidate;
       }
+    }
+
+    if (messageCandidate && Date.now() >= messageCandidateReadyAt) {
+      if (privateDeliveryCandidate && Date.now() < privateDeliveryReadyAt) {
+        await sleep(250, signal);
+        continue;
+      }
+
+      const status = await getSettledWorkerStatus(workerId);
+      if (status?.isIdle === false || status?.hasPendingMessages === true) {
+        await sleep(250, signal);
+        continue;
+      }
+
+      return messageCandidate;
     }
 
     if (
@@ -214,6 +227,18 @@ async function waitForWorkerOutputChange(
       ? ` (isIdle=${String(lastStatus.isIdle)}, hasPendingMessages=${String(lastStatus.hasPendingMessages)})`
       : ''),
   );
+}
+
+async function getSettledWorkerStatus(workerId: string): Promise<ClawasWorkerStatus | null> {
+  try {
+    return await getClawasWorkerStatus(workerId);
+  } catch (error: any) {
+    logger.warn(
+      { workerId, err: error?.message ?? String(error) },
+      'Failed to read CLAWAS worker status before settling output',
+    );
+    return null;
+  }
 }
 
 function isNewDelivery(
