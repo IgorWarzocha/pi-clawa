@@ -15,10 +15,11 @@ type ClawasWorkerOutput = {
 };
 
 type ChangedClawasWorkerOutput = ClawasWorkerOutput & {
-  changed: 'message' | 'delivery';
+  changed: 'message' | 'discord-delivery' | 'private-delivery';
 };
 
 const CLAWAS_MESSAGE_SETTLE_MS = 2_500;
+const CLAWAS_PRIVATE_DELIVERY_SETTLE_MS = 5_000;
 
 export interface ClawasWorkerStatus {
   isIdle: boolean;
@@ -50,7 +51,7 @@ export async function invokeClawasWorker(
 
     const resolved = await waitForWorkerOutputChange(workerId, baseline, sentAt, opts?.signal);
 
-    if (resolved.changed === 'delivery') {
+    if (resolved.changed === 'discord-delivery' || resolved.changed === 'private-delivery') {
       return { ok: true, text: '', route: 'handled' };
     }
 
@@ -113,6 +114,8 @@ async function waitForWorkerOutputChange(
   let lastStatus: ClawasWorkerStatus | null = null;
   let messageCandidate: ChangedClawasWorkerOutput | null = null;
   let messageCandidateReadyAt = 0;
+  let privateDeliveryCandidate: ChangedClawasWorkerOutput | null = null;
+  let privateDeliveryReadyAt = 0;
 
   while (Date.now() - startedAt < timeoutMs) {
     if (signal?.aborted) {
@@ -120,13 +123,19 @@ async function waitForWorkerOutputChange(
     }
 
     const next = await getClawasWorkerOutput(workerId);
-    if (
-      next.delivery
-      && next.delivery.timestamp >= sentAt
-      && !sameDelivery(next.delivery, baseline.delivery)
-      && next.delivery.content.trim()
-    ) {
-      return { ...next, changed: 'delivery' };
+    if (isNewDelivery(next.delivery, baseline.delivery, sentAt)) {
+      if (next.delivery?.route === 'discord') {
+        return { ...next, changed: 'discord-delivery' };
+      }
+
+      if (!privateDeliveryCandidate || !sameDelivery(next.delivery, privateDeliveryCandidate.delivery)) {
+        privateDeliveryCandidate = { ...next, changed: 'private-delivery' };
+        privateDeliveryReadyAt = Date.now() + CLAWAS_PRIVATE_DELIVERY_SETTLE_MS;
+        logger.info(
+          { workerId, settleMs: CLAWAS_PRIVATE_DELIVERY_SETTLE_MS },
+          'Observed CLAWAS private delivery; waiting briefly for public final text',
+        );
+      }
     }
 
     if (
@@ -145,6 +154,14 @@ async function waitForWorkerOutputChange(
       } else if (Date.now() >= messageCandidateReadyAt) {
         return messageCandidate;
       }
+    }
+
+    if (
+      privateDeliveryCandidate
+      && !messageCandidate
+      && Date.now() >= privateDeliveryReadyAt
+    ) {
+      return privateDeliveryCandidate;
     }
 
     const now = Date.now();
@@ -179,6 +196,19 @@ async function waitForWorkerOutputChange(
     + (lastStatus
       ? ` (isIdle=${String(lastStatus.isIdle)}, hasPendingMessages=${String(lastStatus.hasPendingMessages)})`
       : ''),
+  );
+}
+
+function isNewDelivery(
+  next: ClawasExtractedDelivery | null,
+  baseline: ClawasExtractedDelivery | null,
+  sentAt: number,
+): boolean {
+  return Boolean(
+    next
+      && next.timestamp >= sentAt
+      && !sameDelivery(next, baseline)
+      && next.content.trim(),
   );
 }
 
