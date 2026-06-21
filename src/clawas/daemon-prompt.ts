@@ -3,12 +3,29 @@ import { getWorkerState, patchWorkerState, pushEvent } from './state.js'
 import { summarizeError, summarizePrompt } from './summaries.js'
 import type { ClawasState } from './types.js'
 
+type PromptMode = 'prompt' | 'steer' | 'followUp'
+
+function resolveEffectivePromptMode(options: {
+  requested: PromptMode
+  workerIsActive: boolean
+}): PromptMode {
+  if (options.workerIsActive && options.requested === 'prompt') {
+    return 'followUp'
+  }
+
+  if (!options.workerIsActive && options.requested !== 'prompt') {
+    return 'prompt'
+  }
+
+  return options.requested
+}
+
 export async function sendWorkerPrompt(options: {
   state: ClawasState
   workers: Map<string, ClawasRpcWorker>
   workerId: string
   message: string
-  mode: 'prompt' | 'steer' | 'followUp'
+  mode: PromptMode
   getNow: () => number
   getClawasName: () => string
   ensureStarted: (workerId: string) => Promise<void>
@@ -32,11 +49,8 @@ export async function sendWorkerPrompt(options: {
 
   const previousStatus = workerState.status
   const previousTask = workerState.currentTask
-  const effectiveMode =
-    options.mode === 'prompt' &&
-    (workerState.status === 'starting' || workerState.status === 'streaming')
-      ? 'followUp'
-      : options.mode
+  const workerIsActive = workerState.status === 'starting' || workerState.status === 'streaming'
+  const effectiveMode = resolveEffectivePromptMode({ requested: options.mode, workerIsActive })
   const promptSummary = summarizePrompt(options.message)
   const nextStatus = effectiveMode === 'prompt' ? 'starting' : workerState.status
 
