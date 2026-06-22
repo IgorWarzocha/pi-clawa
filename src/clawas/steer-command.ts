@@ -83,6 +83,7 @@ export function registerSteerCommand(pi: ExtensionAPI, runtime: ClawasRuntime): 
           target.worker.definition,
           target.message,
           'steer',
+          runtime.getClawaDefaults().humanName,
         )
         ctx.ui.notify(`Steered ${target.worker.definition.title}.`, 'info')
       } catch (error) {

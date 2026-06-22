@@ -31,6 +31,7 @@ export interface ClawaWorkerConfig {
 }
 
 export interface ClawaDefaults {
+  humanName: string
   mainClawName: string
   clawasName: string
   workerSessionPrefix: string
@@ -49,6 +50,7 @@ export interface ClawEnvironmentConfig {
 }
 
 export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
+  humanName: 'human',
   mainClawName: 'Clawa',
   clawasName: 'Clawas',
   workerSessionPrefix: 'Clawas',
@@ -152,6 +154,10 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
       ? rec['clawasName'].trim()
       : DEFAULT_CLAWA_DEFAULTS.clawasName
   return {
+    humanName:
+      typeof rec['humanName'] === 'string' && rec['humanName'].trim()
+        ? rec['humanName'].trim()
+        : DEFAULT_CLAWA_DEFAULTS.humanName,
     mainClawName:
       typeof rec['mainClawName'] === 'string' && rec['mainClawName'].trim()
         ? rec['mainClawName'].trim()

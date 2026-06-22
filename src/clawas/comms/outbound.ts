@@ -31,6 +31,7 @@ export function publishClawasOutboundMessage(
   worker: { id: string; title: string },
   message: string,
   mode: ClawasOutboundMode,
+  sourceTitle = clawaDefaults.mainClawName,
 ): void {
   pi.sendMessage<ClawasOutboundDetails>({
     customType: CLAWAS_OUTBOUND_MESSAGE_TYPE,
@@ -40,7 +41,7 @@ export function publishClawasOutboundMessage(
       workerId: worker.id,
       workerTitle: worker.title,
       mode,
-      sourceTitle: clawaDefaults.mainClawName,
+      sourceTitle,
       message,
     },
   })
