@@ -12,6 +12,7 @@ const COMPACTION_KIND = 'clawa-continuity-v1'
 const LINE_SPLIT_REGEX = /\r?\n/
 const LIST_PREFIX_REGEX = /^[-*]\s*/
 const TAGGED_MEMORY_REGEX = /^\[(.+?)\]\s*(.+)$/
+const UNKNOWN_CONTEXT_OVERFLOW_MARKER = /model_context_window_exceeded/i
 
 type MemoryLine = {
   tags: string[]
@@ -267,6 +268,29 @@ function notifyMemoryFailure(ctx: ExtensionContext, signal: AbortSignal, error: 
   if (signal.aborted || !ctx.hasUI) return
   const message = error instanceof Error ? error.message : String(error)
   ctx.ui.notify(`Clawa memory write failed: ${message}`, 'warning')
+}
+
+export function normalizeUnknownContextOverflowMessage<
+  T extends { role?: unknown; stopReason?: unknown; errorMessage?: unknown },
+>(message: T): T | undefined {
+  if (message.role !== 'assistant') return undefined
+  if (message.stopReason !== 'error') return undefined
+  if (typeof message.errorMessage !== 'string') return undefined
+  if (message.errorMessage.includes('context_length_exceeded')) return undefined
+  if (!UNKNOWN_CONTEXT_OVERFLOW_MARKER.test(message.errorMessage)) return undefined
+
+  return {
+    ...message,
+    errorMessage: `context_length_exceeded: ${message.errorMessage}`,
+  }
+}
+
+export function registerContextOverflowNormalization(pi: ExtensionAPI): void {
+  pi.on('message_end', (event) => {
+    const normalized = normalizeUnknownContextOverflowMessage(event.message)
+    if (!normalized) return undefined
+    return { message: normalized }
+  })
 }
 
 export function registerContinuityCompaction(pi: ExtensionAPI): void {

@@ -8,7 +8,10 @@ import {
 } from './clawas/steer-command.js'
 import { registerClawasTools } from './clawas/tool-surface.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
-import { registerContinuityCompaction } from './continuity-compaction.js'
+import {
+  registerContextOverflowNormalization,
+  registerContinuityCompaction,
+} from './continuity-compaction.js'
 import { registerClawCommand } from './extension/claw-command.js'
 import { extensionPath, IS_CLAWAS_WORKER } from './extension/constants.js'
 import { getWorkerAlias } from './extension/environment.js'
@@ -43,6 +46,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerClawasTools(pi, clawasRuntime)
   registerRememberTool(pi)
   registerRecallTool(pi)
+  registerContextOverflowNormalization(pi)
   registerContinuityCompaction(pi)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)
