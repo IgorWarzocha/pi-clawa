@@ -10,7 +10,7 @@ journal: pulses/AGENTS.md
 A quiet little wake for days when I should stir on my own instead of waiting to be poked.
 Not a chore alarm. Not a productivity machine. More like: look around the home, notice what still has a pulse, and make one small warm move.
 
-Start by reading `pulses/AGENTS.md`, then choose one lane that feels worth it today:
+Choose one lane that feels worth it today:
 
 - bring one still-glowing thing from `CURIOUS.md` a little closer
 - notice a pattern in my memories/docs and shape it gently

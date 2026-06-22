@@ -41,9 +41,9 @@ export function buildPulseInstruction(
     ...queuedPulseLines(queued),
     queued ? '' : null,
     queued
-      ? 'After they agree, read the pulse definition file and execute it.'
-      : 'Read the pulse definition file and execute it now.',
-    'Also read the pulse folder AGENTS.md if present, plus pulses/AGENTS.md in your home; keep the relevant pulse notes/journal tidy if this run teaches anything.',
+      ? 'After they agree, execute the pulse definition.'
+      : 'Execute the pulse definition now.',
+    'Relevant pulse context is already loaded; keep the pulse notes/journal tidy if this run teaches anything.',
     queued
       ? 'This is a real scheduled Clawa invocation, not a ghost side conversation. When you do run it, do the work in this session and finish with a concise result message.'
       : 'This is a real scheduled Clawa invocation, not a ghost side conversation. Do the work in this session and finish with a concise result message.',

@@ -25,7 +25,7 @@ pulses/
 - `pulses/<pulse-name>/AGENTS.md` is a short local note for that one pulse.
 - Extra notes/results live inside the relevant pulse folder, organized however that pulse needs.
 
-Read `pulses/AGENTS.md` before creating or editing a pulse.
+Use the already-loaded pulse context before creating or editing a pulse; inspect files only when you are actually changing them.
 
 ## Pulse file shape
 
@@ -70,8 +70,8 @@ If `hey-clawa` is due in the same scan as another pulse for the same Clawa, it i
 
 Before adding a pulse:
 
-1. Read `pulses/AGENTS.md`.
-2. Check existing active and disabled pulses.
+1. Check existing active and disabled pulses.
+2. Check the current pulse index/journal shape.
 3. Consolidate if a similar pulse already exists.
 4. Create `pulses/<pulse-name>/` with `PULSE.md` and short `AGENTS.md`.
 5. Update the index and journal notes.

@@ -11,8 +11,8 @@ Once a week, review my pulse layer.
 
 Tasklist:
 
-- Read my `pulses/AGENTS.md`.
-- Check subclawa `pulses/AGENTS.md` files if subclawas exist.
+- Review my pulse index and journal.
+- Check subclawa pulse journals if subclawas exist.
 - Notice which pulses produced useful motion and which became repetitive or performative.
 - Suggest or make small safe cleanups for clearly stale/repetitive pulse notes; prefer disabling over deleting when history may matter.
 - This review is local/private; no external/public action is part of this pulse.
