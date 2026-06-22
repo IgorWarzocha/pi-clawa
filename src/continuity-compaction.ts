@@ -185,8 +185,15 @@ type PreparedCompaction = {
   fileOps?: unknown
   firstKeptEntryId: SessionBeforeCompactEvent['preparation']['firstKeptEntryId']
   previousSummary?: string | undefined
+  reserveTokens: number
   signal: AbortSignal
   tokensBefore: SessionBeforeCompactEvent['preparation']['tokensBefore']
+}
+
+function resolveCompactionMaxTokens(model: ActiveModel, reserveTokens: number): number {
+  const reserveBudget = Math.floor(0.8 * reserveTokens)
+  const modelBudget = model.maxTokens > 0 ? model.maxTokens : Number.POSITIVE_INFINITY
+  return Math.min(reserveBudget, modelBudget)
 }
 
 function prepareCompactionInput(event: SessionBeforeCompactEvent): PreparedCompaction | undefined {
@@ -207,6 +214,7 @@ function prepareCompactionInput(event: SessionBeforeCompactEvent): PreparedCompa
     fileOps: (preparation as { fileOps?: unknown }).fileOps,
     firstKeptEntryId,
     previousSummary,
+    reserveTokens: preparation.settings.reserveTokens,
     signal,
     tokensBefore,
   }
@@ -305,6 +313,7 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
       const model = requireActiveModel(ctx)
       const auth = await resolveActiveModelAuth(ctx, model)
       const prompt = buildCompactionPrompt(prepared)
+      const maxTokens = resolveCompactionMaxTokens(model, prepared.reserveTokens)
       if (ctx.hasUI) ctx.ui.notify(`Clawa compaction via ${model.provider}/${model.id}`, 'info')
 
       const thinkingLevel = pi.getThinkingLevel() as ThinkingLevel | undefined
@@ -326,7 +335,7 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
           ...(auth.headers ? { headers: auth.headers } : {}),
           signal: prepared.signal,
           ...(thinkingLevel ? { reasoning: thinkingLevel } : {}),
-          maxTokens: 32768,
+          maxTokens,
         },
       )
 
@@ -354,7 +363,7 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
       }
     } catch (error) {
       notifyCompactionFailure(ctx, prepared.signal, error)
-      return { cancel: true }
+      return undefined
     }
   })
 }
