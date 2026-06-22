@@ -5,7 +5,6 @@ import type {
 } from '@howaboua/pi-clawa/clawas/comms/types';
 import { listDiscordRouteTags, listDiscordRouteWorkers } from '../channel-routes.js';
 import { hasProcessedWorkerOutput, markWorkerOutputProcessed } from '../db.js';
-import { sendResponse } from '../discord/client.js';
 import { logger } from '../logger.js';
 import type { DiscordMessageHandle } from '../types.js';
 import { findInvalidReactionHandle } from './discord-directives.js';
@@ -15,7 +14,6 @@ import {
   getClawasWorkerOutput,
   sendClawasSessionMessage,
 } from './invoke-clawas-rpc.js';
-import { clearTypingLease } from './typing.js';
 
 const POLL_MS = 500;
 
@@ -125,7 +123,6 @@ async function processAssistantMessage(
 
   if (message.error) {
     logger.warn({ workerId, err: message.error }, 'Discord Clawa assistant turn failed');
-    await reportWorkerErrorToDiscord(workerId, message.error, context);
     markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
     return;
   }
@@ -141,32 +138,6 @@ async function processAssistantMessage(
 
   await deliverClawaFinalText({ workerId, text, discordContext: context });
   markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
-}
-
-async function reportWorkerErrorToDiscord(
-  workerId: string,
-  error: string,
-  context: ClawasDiscordContext | null,
-): Promise<void> {
-  const jid = context?.channelJid;
-  if (!jid) return;
-
-  const message = formatWorkerError(error);
-  try {
-    await sendResponse(jid, message, {
-      replyToMessageId: context.sourceMessageId ?? null,
-    });
-    clearTypingLease(jid);
-  } catch (err: any) {
-    logger.warn({ workerId, jid, err: err.message }, 'Could not report Discord Clawa worker error');
-  }
-}
-
-function formatWorkerError(error: string): string {
-  if (error.includes('model_context_window_exceeded')) {
-    return 'I hit my context limit before I could answer. Igor needs to reload or rotate my Discord Clawa session.';
-  }
-  return 'I hit a model error before I could answer. Igor needs to check my Discord Clawa session.';
 }
 
 function getFinalRouteProblem(workerId: string, text: string, messageHandles: DiscordMessageHandle[]): string | null {
