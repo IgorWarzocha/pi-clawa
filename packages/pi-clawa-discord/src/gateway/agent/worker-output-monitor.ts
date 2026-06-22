@@ -85,7 +85,11 @@ function schedule(workerId: string, state: WorkerOutputState, delayMs = POLL_MS)
 }
 
 async function pollWorker(workerId: string, state: WorkerOutputState): Promise<void> {
-  if (!running || state.isProcessing) return;
+  if (!running) return;
+  if (state.isProcessing) {
+    schedule(workerId, state);
+    return;
+  }
   state.isProcessing = true;
   try {
     const output = await getClawasWorkerOutput(workerId);

@@ -202,6 +202,11 @@ export class ClawasDaemon {
   clearManualSession(workerId: string, label = 'manual session closed'): void {
     clearManualSessionState(this.state, workerId, label, now())
     this.notifyChanged()
+
+    const definition = this.getWorkerDefinition(workerId)
+    if (definition.enabled && definition.autostart) {
+      void this.startWorker(workerId)
+    }
   }
 
   async sendPrompt(
@@ -358,8 +363,13 @@ export class ClawasDaemon {
     const worker = this.workers.get(workerId)
     const stderr = worker?.getStderr() ?? ''
     const intentional = this.intentionalStops.delete(workerId)
+    const definition = getWorkerState(this.state, workerId).definition
     this.workers.delete(workerId)
     this.eventRouter.handleClose(workerId, code, signal, stderr, this.stopping || intentional)
+
+    if (!(this.stopping || intentional) && definition.enabled && definition.autostart) {
+      void this.startWorker(workerId)
+    }
   }
 
   private getClawasName(): string {
