@@ -31,6 +31,8 @@ test('extractClawaReportText keeps explicit clawas content only', () => {
 test('normalizeDiscordReplyText drops standalone quiet sentinel and blank output', () => {
   assert.equal(normalizeDiscordReplyText('hello'), 'hello')
   assert.equal(normalizeDiscordReplyText('  [quiet]  '), null)
+  assert.equal(normalizeDiscordReplyText('  [quiet]:  '), null)
+  assert.equal(normalizeDiscordReplyText('[react m1: 😄]\n[quiet]'), null)
   assert.equal(normalizeDiscordReplyText('prefix [quiet] suffix'), 'prefix [quiet] suffix')
   assert.equal(
     normalizeDiscordReplyText('I finish with [quiet] so the gateway does not echo.'),
@@ -269,6 +271,22 @@ test('main-claw auto report ignores startup context and hydration preload text',
   assert.equal(
     shouldReportClawaFinalToMain({
       messageContent: '## Claw Continuity Refresh (auto-loaded)\n\nThis is for you, the claw.',
+      lastMailDetails: { intent: 'reply_requested' },
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldReportClawaFinalToMain({
+      messageContent: '[quiet]',
+      lastMailDetails: { intent: 'reply_requested' },
+    }),
+    false,
+  )
+
+  assert.equal(
+    shouldReportClawaFinalToMain({
+      messageContent: '[react m1: 😄]\n[quiet]',
       lastMailDetails: { intent: 'reply_requested' },
     }),
     false,

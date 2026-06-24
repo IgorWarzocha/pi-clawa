@@ -1,6 +1,9 @@
 export const NOTHING_FOR_DISCORD_SENTINEL = '[quiet]'
 const STANDALONE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s*(?:\n+([\s\S]*))?$/i
 const INLINE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s+([\s\S]+)$/i
+const QUIET_DIRECTIVE_REGEX = /^\[quiet\]:?$/i
+const REACTION_DIRECTIVE_REGEX = /^\[react\s+m\d+:\s*.+?\]$/i
+const LINE_SPLIT_REGEX = /\r?\n/u
 
 export interface DiscordRelayCandidate {
   content: string
@@ -38,11 +41,20 @@ export function normalizeDiscordReplyText(content: string | null | undefined): s
     return null
   }
 
-  if (trimmed.toLowerCase() === NOTHING_FOR_DISCORD_SENTINEL) {
+  if (isQuietOnlyDiscordFinal(trimmed)) {
     return null
   }
 
   return trimmed
+}
+
+function isQuietOnlyDiscordFinal(content: string): boolean {
+  const meaningfulLines = content
+    .split(LINE_SPLIT_REGEX)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !REACTION_DIRECTIVE_REGEX.test(line))
+  return meaningfulLines.length === 1 && QUIET_DIRECTIVE_REGEX.test(meaningfulLines[0] ?? '')
 }
 
 export function shouldSkipAutoDiscordRelay(options: {
@@ -84,6 +96,10 @@ export function shouldReportClawaFinalToMain(options: {
   messageTimestamp?: number | undefined
   lastMailTimestamp?: number | undefined
 }): boolean {
+  if (normalizeDiscordReplyText(options.messageContent) === null) {
+    return false
+  }
+
   if (isHydrationPreloadText(options.messageContent)) {
     return false
   }
