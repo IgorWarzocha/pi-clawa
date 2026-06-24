@@ -179,7 +179,10 @@ function formatMessageLine(options: {
 	content: string;
 }): string {
 	const prefix = options.handle ? `[${options.handle}] ` : "";
-	return `${prefix}${options.senderName}: ${options.content}`;
+	const lines = options.content.split(/\r?\n/u);
+	const first = lines.shift() ?? "";
+	const head = `${prefix}${options.senderName}:${first ? ` ${first}` : ""}`;
+	return [head, ...lines.map((line) => `    ${line}`)].join("\n");
 }
 
 function maybeBuildGatewayTimeNote(jid: string, mappedWorker?: string): string {

@@ -10,10 +10,14 @@ import {
 	logMessage,
 } from "../db.js";
 import {
-	appendAttachmentReferences,
+	appendDiscordReferences,
+	appendDiscordLinksIndex,
 	buildAttachmentOnlyPrompt,
+	buildLinkMetas,
+	cacheDiscordAttachments,
 	selectAttachmentsWithinLimits,
 	type AttachmentMeta,
+	type LinkMeta,
 } from "./attachments.js";
 import { buildGuildPresenceContext } from "./presence.js";
 import {
@@ -101,7 +105,7 @@ export function createMessageHandler(
 			maxTotalBytes: config.maxTotalAttachmentBytes,
 		});
 
-		acceptedAttachments = selection.accepted;
+		acceptedAttachments = await cacheDiscordAttachments(message.id, message.createdAt, selection.accepted);
 		if (selection.rejected.length > 0) {
 			logger.info(
 				{
@@ -148,9 +152,11 @@ export function createMessageHandler(
 	if (!observedContent && acceptedAttachments.length > 0) {
 		observedContent = buildAttachmentOnlyPrompt(acceptedAttachments.length);
 	}
-	observedContent = appendAttachmentReferences(
+	const observedLinks: LinkMeta[] = buildLinkMetas(observedContent, message.embeds);
+	observedContent = appendDiscordReferences(
 		observedContent,
 		acceptedAttachments,
+		observedLinks,
 	);
 
 	// ── Channel registration check ──
@@ -191,6 +197,13 @@ export function createMessageHandler(
 		return;
 	}
 
+	await appendDiscordLinksIndex({
+		createdAt: message.createdAt,
+		senderName,
+		channelName: channel.name,
+		links: observedLinks,
+	});
+
 	let observedLogRowId: number | null = null;
 	if (observedContent) {
 		observedLogRowId = logMessage({
@@ -222,7 +235,8 @@ export function createMessageHandler(
 	if (!content && acceptedAttachments.length > 0) {
 		content = buildAttachmentOnlyPrompt(acceptedAttachments.length);
 	}
-	content = appendAttachmentReferences(content, acceptedAttachments);
+	const promptLinks = buildLinkMetas(content, message.embeds);
+	content = appendDiscordReferences(content, acceptedAttachments, promptLinks);
 	if (!content) return;
 
 	const presenceContext = await buildGuildPresenceContext(message);

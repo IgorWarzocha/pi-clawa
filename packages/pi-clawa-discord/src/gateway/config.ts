@@ -124,6 +124,12 @@ export const config = {
   /** Agent-readable snapshot of Discord channels the gateway has seen */
   channelsPath: resolveUserPath(env('CHANNELS_PATH', resolve(DEFAULT_DATA_DIR, 'channels.json'))),
 
+  /** Local cache for Discord attachments so normal Pi tools can inspect them */
+  assetsDir: resolveUserPath(env('ASSETS_DIR', resolve(DEFAULT_DATA_DIR, 'assets'))),
+
+  /** Days of local media assets to keep; links.md indexes are never culled */
+  attachmentsRetentionDays: envInt('ATTACHMENTS_RETENTION_DAYS', 7, { min: 1 }),
+
   /** Bot trigger name (default: bot's own display name) */
   triggerName: env('TRIGGER_NAME', 'pi'),
 

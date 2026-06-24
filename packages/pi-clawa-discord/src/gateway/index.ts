@@ -7,6 +7,7 @@ import { startDiscord, stopDiscord, getBotTag } from './discord/client.js';
 import { startProcessingLoop, stopProcessingLoop } from './agent/queue.js';
 import { clearAllTypingLeases } from './agent/typing.js';
 import { ensureDiscordRoutesFile } from './channel-routes.js';
+import { cleanupOldDiscordMediaAssets } from './discord/attachments.js';
 
 /**
  * pi-clawa-discord-gateway - Lightweight Discord gateway for pi coding agent.
@@ -23,6 +24,7 @@ export async function startGateway(): Promise<void> {
   initDb();
   ensureDiscordRoutesFile();
   writeChannelsSnapshot();
+  cleanupOldDiscordMediaAssets();
 
   let processingStarted = false;
   let shutdownPromise: Promise<void> | null = null;

@@ -16,4 +16,6 @@ Do not turn this into scriptware: if a helper is not something I will actually i
   - Invoke: use when a Discord turn needs main Clawa help or escalation
   - Notes: main-chat-only replies do not reach Discord
 
+Discord turns may show attachments as `[a1]` with local `path:`, and links as `[l1]` with the full URL plus any embed title/about text. Use normal Pi tools: image viewing for local image paths, web tools for links, or shell when that is the simplest route.
+
 Never store tokens here.
