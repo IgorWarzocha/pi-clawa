@@ -41,20 +41,20 @@ export function normalizeDiscordReplyText(content: string | null | undefined): s
     return null
   }
 
-  if (isQuietOnlyDiscordFinal(trimmed)) {
+  if (hasStandaloneQuietDiscordDirective(trimmed)) {
     return null
   }
 
   return trimmed
 }
 
-function isQuietOnlyDiscordFinal(content: string): boolean {
+function hasStandaloneQuietDiscordDirective(content: string): boolean {
   const meaningfulLines = content
     .split(LINE_SPLIT_REGEX)
     .map((line) => line.trim())
     .filter(Boolean)
     .filter((line) => !REACTION_DIRECTIVE_REGEX.test(line))
-  return meaningfulLines.length === 1 && QUIET_DIRECTIVE_REGEX.test(meaningfulLines[0] ?? '')
+  return meaningfulLines.some((line) => QUIET_DIRECTIVE_REGEX.test(line))
 }
 
 export function shouldSkipAutoDiscordRelay(options: {
