@@ -83,8 +83,8 @@ function renderSlot(index: number, active: boolean, theme: Theme): string {
 function renderMonitorFooter(workerCount: number, folded: boolean, theme: Theme): string {
   const targetHint = workerCount > 1 ? '/steer [n] message' : '/steer message'
   const jumpHint = workerCount > 1 ? '/jump [n]' : '/jump'
-  const foldHint = folded ? 'alt+w open' : 'alt+w fold'
-  const cycleHint = workerCount > 1 ? 'alt+q/e cycle · ' : ''
+  const foldHint = folded ? 'alt+shift+w open' : 'alt+shift+w fold'
+  const cycleHint = workerCount > 1 ? 'alt+shift+q/e cycle · ' : ''
   return `${theme.fg('muted', '╰─')} ${theme.fg('dim', `${targetHint} · ${jumpHint} · ${cycleHint}${foldHint} · /claw manage`)}`
 }
 

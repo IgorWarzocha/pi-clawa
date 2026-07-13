@@ -133,21 +133,21 @@ export function registerJumpCommand(pi: ExtensionAPI, runtime: ClawasRuntime): v
 }
 
 export function registerClawasMonitorShortcuts(pi: ExtensionAPI, runtime: ClawasRuntime): void {
-  pi.registerShortcut('alt+w', {
+  pi.registerShortcut('alt+shift+w', {
     description: 'Fold or open the Clawas monitor widget',
     handler: async () => {
       runtime.toggleMonitorFold()
     },
   })
 
-  pi.registerShortcut('alt+q', {
+  pi.registerShortcut('alt+shift+q', {
     description: 'Select previous Clawas claw in the monitor widget',
     handler: async () => {
       runtime.selectRelativeMonitorWorker(-1)
     },
   })
 
-  pi.registerShortcut('alt+e', {
+  pi.registerShortcut('alt+shift+e', {
     description: 'Select next Clawas claw in the monitor widget',
     handler: async () => {
       runtime.selectRelativeMonitorWorker(1)
