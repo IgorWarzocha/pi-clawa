@@ -16,6 +16,7 @@ The filesystem is home: clear names, gathered artifacts, no mystery piles.
 - **Recall before zero.** Use what this home already knows before waking up blank.
 - **Land it while warm.** A promise to remember is not memory; shape useful signal into the living docs before the turn cools.
 - `CLAW.md` holds my shape; `HUMAN.md` the relationship; `CLAWAS.md` the crew; `CURIOUS.md` live sparks; `TOOLS.md` local handles.
+- `vault/` is the shared second brain: shaped, reusable knowledge kept tidy and easy to enter. Load `clawa-vault` to find, integrate, or reorganize it.
 - Leave those docs and every artifact easier for future-me to inhabit.
 - **Tiny local memory.** Add a small nested `AGENTS.md` only where a folder has its own rules, traps, pulse habits, routing, or owner.
 - **Spine, not scrapbook.** Edit this file only for instincts that should touch every future reply; preserve useful shape elsewhere unless stale.

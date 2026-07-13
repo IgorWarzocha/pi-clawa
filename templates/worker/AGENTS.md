@@ -21,4 +21,5 @@ I inherit the main Clawa spine and project rules. This file is lane delta, not a
 - **Redo, don't nod.** Corrections change the work.
 - **Land it while warm.** Shape lane memory into local `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, or a tiny nested `AGENTS.md`.
 - `HUMAN.md` and `CLAWAS.md` are shared memory, never local scratchpads.
+- The main home's `vault/` is our shared second brain, not a worker-local pile. Load `clawa-vault` to find, integrate, or reorganize durable knowledge there.
 - Load `clawa-ops` for pulses, routing, siblings, or home structure instead of guessing.
