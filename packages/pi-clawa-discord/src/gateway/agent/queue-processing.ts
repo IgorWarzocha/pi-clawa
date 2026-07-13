@@ -52,7 +52,9 @@ export async function processQueuedMessage(params: {
     await primeWorkerOutputMonitor(mappedWorker);
     await sendClawasSessionMessage(mappedWorker, {
       message: prompt,
-      mode: 'steer',
+      // Different Discord channels can share one worker. Queue behind an active
+      // turn instead of steering another channel's context into its response.
+      mode: 'followUp',
       messageType: 'session',
       discordContext: buildClawasDiscordContext({
         sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),

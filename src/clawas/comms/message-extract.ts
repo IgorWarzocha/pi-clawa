@@ -101,6 +101,15 @@ export function getLastMailMessageDetails(
 }
 
 export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedMessage | undefined {
+  return getLastAssistantTurn(ctx)?.message
+}
+
+export function getLastAssistantTurn(ctx: ExtensionContext):
+  | {
+      message: ClawasExtractedMessage
+      mailDetails?: Record<string, unknown> | undefined
+    }
+  | undefined {
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
@@ -125,10 +134,13 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
       errorMessage.trim()
     ) {
       return {
-        role: 'assistant',
-        content: '',
-        timestamp: getEntryTimestamp(message['timestamp']),
-        error: errorMessage.trim(),
+        message: {
+          role: 'assistant',
+          content: '',
+          timestamp: getEntryTimestamp(message['timestamp']),
+          error: errorMessage.trim(),
+        },
+        mailDetails: findPrecedingMailDetails(branch, index),
       }
     }
 
@@ -144,12 +156,73 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
     }
 
     return {
-      role: 'assistant',
-      content: text,
-      timestamp: getEntryTimestamp(message['timestamp']),
+      message: {
+        role: 'assistant',
+        content: text,
+        timestamp: getEntryTimestamp(message['timestamp']),
+      },
+      mailDetails: findPrecedingMailDetails(branch, index),
     }
   }
 
+  return undefined
+}
+
+function findPrecedingMailDetails(
+  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
+  assistantIndex: number,
+): Record<string, unknown> | undefined {
+  const userIndex = findPrecedingUserIndex(branch, assistantIndex)
+  if (userIndex === undefined) return findMailBefore(branch, assistantIndex)
+
+  const turnMail = findMailBefore(branch, userIndex)
+  if (turnMail) return turnMail
+
+  // Follow-up mail can be queued while the current turn is still finishing.
+  // Ignore it unless it is an instruction that intentionally caused this turn.
+  return findInstructionMailBetween(branch, userIndex, assistantIndex)
+}
+
+function findPrecedingUserIndex(
+  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
+  assistantIndex: number,
+): number | undefined {
+  for (let index = assistantIndex - 1; index >= 0; index -= 1) {
+    const entry = getRecord(branch[index])
+    if (!entry) continue
+    if (entry['type'] !== 'message') continue
+    const role = getRecord(entry['message'])?.['role']
+    if (role === 'user') return index
+    if (role === 'assistant') return undefined
+  }
+  return undefined
+}
+
+function findMailBefore(
+  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
+  boundaryIndex: number,
+): Record<string, unknown> | undefined {
+  for (let index = boundaryIndex - 1; index >= 0; index -= 1) {
+    const entry = getRecord(branch[index])
+    if (!entry) continue
+    const details = getClawasMailDetails(entry)
+    if (details) return details
+    if (entry['type'] === 'message') break
+  }
+  return undefined
+}
+
+function findInstructionMailBetween(
+  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
+  userIndex: number,
+  assistantIndex: number,
+): Record<string, unknown> | undefined {
+  for (let index = assistantIndex - 1; index > userIndex; index -= 1) {
+    const entry = getRecord(branch[index])
+    if (!entry) continue
+    const details = getClawasMailDetails(entry)
+    if (details?.['kind'] === 'instruction') return details
+  }
   return undefined
 }
 

@@ -17,7 +17,7 @@ export function logMessage(message: {
 }): number {
 	const result = getDb()
 		.prepare(`
-    insert into message_log (channel_jid, role, sender_id, sender_name, source_message_id, content, timestamp)
+    insert or ignore into message_log (channel_jid, role, sender_id, sender_name, source_message_id, content, timestamp)
     values (?, ?, ?, ?, ?, ?, ?)
   `)
 		.run(
@@ -30,7 +30,35 @@ export function logMessage(message: {
 			normalizeTimestamp(message.timestamp) ?? message.timestamp,
 		);
 
-	return Number(result.lastInsertRowid);
+	if (result.changes > 0) return Number(result.lastInsertRowid);
+	if (message.sourceMessageId) {
+		const existing = getDb()
+			.prepare(`
+      select rowid
+      from message_log
+      where channel_jid = ? and role = ? and source_message_id = ?
+      limit 1
+    `)
+			.get(message.channelJid, message.role, message.sourceMessageId) as NumericRow | undefined;
+		if (existing?.rowid) return existing.rowid;
+	}
+	throw new Error("Discord message log insert was ignored without an existing source message");
+}
+
+export function getLoggedSourceMessageRowId(
+	channelJid: string,
+	role: "user" | "assistant" | "reaction",
+	sourceMessageId: string,
+): number | undefined {
+	const row = getDb()
+		.prepare(`
+      select rowid
+      from message_log
+      where channel_jid = ? and role = ? and source_message_id = ?
+      limit 1
+    `)
+		.get(channelJid, role, sourceMessageId) as NumericRow | undefined;
+	return row?.rowid;
 }
 
 export function getLatestLoggedMessageRowId(channelJid: string): number {

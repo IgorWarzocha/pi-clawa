@@ -1,4 +1,8 @@
-import { resolveRoutedDiscordChannel } from '../channel-routes.js';
+import {
+	isRegisteredDiscordDm,
+	resolveClawaWorkerForDiscordChannel,
+	resolveRoutedDiscordChannel,
+} from '../channel-routes.js';
 
 export type FinalRouteTarget =
 	| { kind: 'channel'; label: string }
@@ -59,12 +63,22 @@ export function parseFinalRoutes(text: string): ParsedFinalRoutes {
 	};
 }
 
-export function resolveDiscordRouteTarget(target: FinalRouteTarget, workerId?: string | undefined): string | undefined {
+export function resolveDiscordRouteTarget(
+	target: FinalRouteTarget,
+	context: { workerId?: string | undefined; sourceJid?: string | null | undefined } = {},
+): string | undefined {
 	if (target.kind === 'channel') {
-		return resolveRoutedDiscordChannel(target.label, workerId);
+		return resolveRoutedDiscordChannel(target.label, context.workerId);
 	}
 	if (target.kind === 'dm') {
-		return resolveRoutedDiscordChannel('dm', workerId);
+		if (
+			context.sourceJid &&
+			isRegisteredDiscordDm(context.sourceJid) &&
+			resolveClawaWorkerForDiscordChannel(context.sourceJid) === context.workerId
+		) {
+			return context.sourceJid;
+		}
+		return resolveRoutedDiscordChannel('dm', context.workerId);
 	}
 	return undefined;
 }

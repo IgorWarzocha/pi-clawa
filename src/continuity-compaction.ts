@@ -1,4 +1,5 @@
-import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai'
+import type { ThinkingLevel } from '@earendil-works/pi-ai'
+import { completeSimple } from '@earendil-works/pi-ai/compat'
 import type {
   ExtensionAPI,
   ExtensionContext,

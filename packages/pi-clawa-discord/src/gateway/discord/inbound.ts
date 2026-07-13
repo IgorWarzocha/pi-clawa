@@ -5,6 +5,7 @@ import { logger } from "../logger.js";
 import {
 	createDmChannel,
 	getChannel,
+	getLoggedSourceMessageRowId,
 	registerChannel as dbRegisterChannel,
 	enqueueMessage,
 	logMessage,
@@ -23,6 +24,7 @@ import { buildGuildPresenceContext } from "./presence.js";
 import {
 	shouldAcceptTriggeredMessage,
 	shouldIgnoreExcludedGuildChannel,
+	stripAcceptedTrigger,
 } from "./policy.js";
 import { sanitizeDiscordLabel, sanitizeDiscordText } from "./sanitize.js";
 
@@ -197,24 +199,31 @@ export function createMessageHandler(
 		return;
 	}
 
-	await appendDiscordLinksIndex({
-		createdAt: message.createdAt,
-		senderName,
-		channelName: channel.name,
-		links: observedLinks,
-	});
-
-	let observedLogRowId: number | null = null;
-	if (observedContent) {
-		observedLogRowId = logMessage({
-			channelJid: jid,
-			role: "user",
-			senderId: sender,
+	let observedLogRowId = getLoggedSourceMessageRowId(jid, "user", message.id) ?? null;
+	if (observedLogRowId) {
+		logger.debug(
+			{ jid, sourceMessageId: message.id },
+			"Replayed Discord message found in observation log",
+		);
+	} else {
+		await appendDiscordLinksIndex({
+			createdAt: message.createdAt,
 			senderName,
-			sourceMessageId: message.id,
-			content: observedContent,
-			timestamp,
+			channelName: channel.name,
+			links: observedLinks,
 		});
+
+		if (observedContent) {
+			observedLogRowId = logMessage({
+				channelJid: jid,
+				role: "user",
+				senderId: sender,
+				senderName,
+				sourceMessageId: message.id,
+				content: observedContent,
+				timestamp,
+			});
+		}
 	}
 
 	const isDirected = shouldAcceptTriggeredMessage(content, {
@@ -231,7 +240,11 @@ export function createMessageHandler(
 	}
 
 	// Strip trigger prefix from content sent to agent
-	content = content.replace(triggerPattern, "").trim();
+	content = stripAcceptedTrigger(content, {
+		triggerPattern,
+		triggerAliasPattern,
+		stripAlias: channel.requiresTrigger,
+	});
 	if (!content && acceptedAttachments.length > 0) {
 		content = buildAttachmentOnlyPrompt(acceptedAttachments.length);
 	}
@@ -245,7 +258,7 @@ export function createMessageHandler(
 	}
 
 	// ── Enqueue ──
-	enqueueMessage({
+	const enqueued = enqueueMessage({
 		channelJid: jid,
 		sender,
 		senderName,
@@ -255,6 +268,13 @@ export function createMessageHandler(
 		timestamp,
 		attachments: attachmentsJson,
 	});
+	if (!enqueued) {
+		logger.debug(
+			{ jid, sourceMessageId: message.id },
+			"Duplicate Discord message ignored at queue boundary",
+		);
+		return;
+	}
 	logger.info(
 		{ jid, sender: senderName, len: content.length },
 		"Message enqueued",

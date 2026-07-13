@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  getLastAssistantTurn,
   getLastDiscordChannelJid,
   getLastDiscordSourceMessageId,
   getLastMailMessageTimestamp,
@@ -141,6 +142,33 @@ test('getLastDiscordSourceMessageId uses nearest carried Discord context only', 
     ),
     'carried-discord-message',
   )
+})
+
+test('assistant output stays paired with the Discord mail that preceded its turn', () => {
+  const mail = (channelJid: string) => ({
+    type: 'custom_message',
+    customType: CLAWAS_MAIL_MESSAGE_TYPE,
+    details: { workerId: 'discord-gateway', channelJid },
+  })
+  const user = (content: string) => ({
+    type: 'message',
+    message: { role: 'user', content, timestamp: 1 },
+  })
+  const assistant = (content: string) => ({
+    type: 'message',
+    message: { role: 'assistant', content, timestamp: 2, stopReason: 'stop' },
+  })
+  const turn = getLastAssistantTurn(
+    ctxWithBranch([
+      mail('dc:dm-a'),
+      user('message from A'),
+      mail('dc:dm-b'),
+      assistant('[dm] reply to A while B is queued'),
+    ]),
+  )
+
+  assert.equal(turn?.message.content, '[dm] reply to A while B is queued')
+  assert.equal(turn?.mailDetails?.['channelJid'], 'dc:dm-a')
 })
 
 test('getLastDiscordChannelJid uses nearest carried Discord context only', () => {

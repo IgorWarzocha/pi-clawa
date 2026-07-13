@@ -1,10 +1,6 @@
 import { createServer, type Server, type Socket } from 'node:net'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
-import {
-  getLastAssistantMessage,
-  getLastDeliveryMessage,
-  getLastMailMessageDetails,
-} from './message-extract.js'
+import { getLastAssistantTurn, getLastDeliveryMessage } from './message-extract.js'
 import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.js'
 import {
   ensureControlDir,
@@ -214,10 +210,11 @@ export class ClawasCommsServer {
       respond(false, 'get_message', undefined, 'Worker is in a manual session')
       return
     }
+    const turn = getLastAssistantTurn(ctx)
     respond(true, 'get_message', {
-      message: getLastAssistantMessage(ctx) ?? null,
+      message: turn?.message ?? null,
       delivery: getLastDeliveryMessage(ctx) ?? null,
-      discordContext: getLastMailMessageDetails(ctx) ?? null,
+      discordContext: turn?.mailDetails ?? null,
     })
   }
 

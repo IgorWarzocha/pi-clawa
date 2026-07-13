@@ -7,6 +7,9 @@ import { extensionDir, GATEWAY_ENTRY } from './constants.js'
 import { ensureDiscordConfig, readEnvFile } from './env-file.js'
 import { getGatewayProcess, setGatewayProcess } from './gateway-state.js'
 
+const GRACEFUL_STOP_TIMEOUT_MS = 20_000
+const FORCE_STOP_TIMEOUT_MS = 2_000
+
 function hasGatewayToken(configPath: string): boolean {
   return Boolean(readEnvFile(configPath)['DISCORD_BOT_TOKEN'] || process.env['DISCORD_BOT_TOKEN'])
 }
@@ -44,7 +47,7 @@ export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
   }
 
   const existing = getGatewayProcess()
-  if (existing && !existing.killed) return
+  if (existing && isChildProcessRunning(existing)) return
   if (hasLiveGatewayPid(configPath)) return
 
   const clawa = resolveClawaDefaults(projectRoot)
@@ -68,7 +71,7 @@ export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
   })
 
   gatewayProcess.once('exit', (code, signal) => {
-    setGatewayProcess(null)
+    if (getGatewayProcess() === gatewayProcess) setGatewayProcess(null)
     if (ctx.hasUI && code !== 0 && signal !== 'SIGTERM') {
       ctx.ui.notify(`Discord gateway stopped (${signal ?? code ?? 'unknown'})`, 'warning')
     }
@@ -77,12 +80,73 @@ export function startGateway(projectRoot: string, ctx: ExtensionContext): void {
   if (ctx.hasUI) ctx.ui.notify('Discord gateway started for this Clawa workspace.', 'info')
 }
 
-export function stopGateway(): void {
-  getGatewayProcess()?.kill('SIGTERM')
-  setGatewayProcess(null)
+export async function stopGateway(): Promise<void> {
+  const gatewayProcess = getGatewayProcess()
+  if (!gatewayProcess) return
+  if (!isChildProcessRunning(gatewayProcess)) {
+    if (getGatewayProcess() === gatewayProcess) setGatewayProcess(null)
+    return
+  }
+
+  const exit = observeProcessExit(gatewayProcess)
+  gatewayProcess.kill('SIGTERM')
+  const stopped = await waitForExit(exit.promise, GRACEFUL_STOP_TIMEOUT_MS)
+  if (!stopped && isChildProcessRunning(gatewayProcess)) {
+    gatewayProcess.kill('SIGKILL')
+    const forceStopped = await waitForExit(exit.promise, FORCE_STOP_TIMEOUT_MS)
+    if (!forceStopped && isChildProcessRunning(gatewayProcess)) {
+      exit.dispose()
+      throw new Error(`Discord gateway process ${gatewayProcess.pid ?? 'unknown'} did not stop`)
+    }
+  }
+  exit.dispose()
+  if (getGatewayProcess() === gatewayProcess) setGatewayProcess(null)
 }
 
-export function restartGateway(projectRoot: string, ctx: ExtensionContext): void {
-  stopGateway()
+export async function restartGateway(projectRoot: string, ctx: ExtensionContext): Promise<void> {
+  await stopGateway()
   startGateway(projectRoot, ctx)
+}
+
+function isChildProcessRunning(child: import('node:child_process').ChildProcess): boolean {
+  return child.exitCode === null && child.signalCode === null
+}
+
+function observeProcessExit(child: import('node:child_process').ChildProcess): {
+  promise: Promise<void>
+  dispose: () => void
+} {
+  let resolveExit!: () => void
+  const promise = new Promise<void>((resolve) => {
+    resolveExit = resolve
+  })
+  const finish = () => {
+    child.off('exit', finish)
+    child.off('error', finish)
+    resolveExit()
+  }
+  child.once('exit', finish)
+  child.once('error', finish)
+  return {
+    promise,
+    dispose: () => {
+      child.off('exit', finish)
+      child.off('error', finish)
+    },
+  }
+}
+
+async function waitForExit(exit: Promise<void>, timeoutMs: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      exit.then(() => true),
+      new Promise<false>((resolve) => {
+        timer = setTimeout(() => resolve(false), timeoutMs)
+        timer.unref?.()
+      }),
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
 }

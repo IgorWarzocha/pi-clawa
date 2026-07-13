@@ -50,7 +50,10 @@ export async function deliverClawaFinalText(options: {
       continue;
     }
 
-    const targetJid = resolveDiscordRouteTarget(block.target, options.workerId);
+    const targetJid = resolveDiscordRouteTarget(block.target, {
+      workerId: options.workerId,
+      sourceJid,
+    });
     if (!targetJid) {
       throw new Error(`Could not resolve Discord route ${formatRouteTarget(block.target)}`);
     }
@@ -90,7 +93,13 @@ async function deliverDiscordText(
     if (!handle) {
       throw new Error(`Unknown reaction handle: ${reaction.handle}`);
     }
-    await addReaction(handle.channelJid, handle.messageId, reaction.emoji);
+    const reacted = await addReaction(handle.channelJid, handle.messageId, reaction.emoji);
+    if (!reacted) {
+      logger.warn(
+        { jid: handle.channelJid, handle: reaction.handle, emoji: reaction.emoji },
+        'Discord reaction could not be delivered; not retrying routed text',
+      );
+    }
   }
 
   if (isNothingForDiscord(parsed.text)) {

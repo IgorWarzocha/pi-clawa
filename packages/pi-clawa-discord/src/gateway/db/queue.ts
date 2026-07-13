@@ -14,9 +14,9 @@ export function enqueueMessage(msg: {
 	content: string;
 	timestamp: string;
 	attachments?: string | null;
-}): void {
-	getDb().prepare(`
-    insert into message_queue (channel_jid, sender, sender_name, source_message_id, log_rowid, content, timestamp, attachments)
+}): boolean {
+	const result = getDb().prepare(`
+    insert or ignore into message_queue (channel_jid, sender, sender_name, source_message_id, log_rowid, content, timestamp, attachments)
     values (?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
 		msg.channelJid,
@@ -28,6 +28,7 @@ export function enqueueMessage(msg: {
 		msg.timestamp,
 		msg.attachments ?? null,
 	);
+	return result.changes > 0;
 }
 
 export function claimNextMessage(

@@ -51,6 +51,10 @@ export function resolveClawaWorkerForDiscordChannel(jid: string): string | undef
   return undefined;
 }
 
+export function isRegisteredDiscordDm(jid: string): boolean {
+  return getChannel(jid)?.name.toLowerCase().startsWith('dm:') === true;
+}
+
 export function resolveRoutedDiscordChannel(label: string, workerId?: string | undefined): string | undefined {
   const normalized = normalizeRouteLabel(label);
   if (!normalized) return undefined;

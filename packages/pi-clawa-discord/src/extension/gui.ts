@@ -28,6 +28,7 @@ export async function runDiscordGui(
     let mode: DiscordGuiMode = 'menu'
     let input = ''
     let message = ''
+    let gatewayActionRunning = false
 
     const refresh = () => {
       snapshot = buildDiscordSnapshot(projectRoot)
@@ -58,15 +59,34 @@ export async function runDiscordGui(
       tui.requestRender()
     }
 
-    const runGatewayAction = (action: 'restart' | 'stop') => {
-      if (action === 'restart') {
-        restartGateway(projectRoot, ctx)
+    const gatewayActions: Record<'restart' | 'stop', () => Promise<void>> = {
+      restart: async () => {
+        message = snapshot.tokenSet
+          ? 'gateway restarting…'
+          : 'token needed before gateway can start'
+        refresh()
+        await restartGateway(projectRoot, ctx)
         message = snapshot.tokenSet ? 'gateway started' : 'token needed before gateway can start'
-      } else {
-        stopGateway()
+      },
+      stop: async () => {
+        message = 'gateway stopping…'
+        refresh()
+        await stopGateway()
         message = 'gateway stopped'
+      },
+    }
+
+    const runGatewayAction = async (action: 'restart' | 'stop') => {
+      if (gatewayActionRunning) return
+      gatewayActionRunning = true
+      try {
+        await gatewayActions[action]()
+      } catch (error) {
+        message = error instanceof Error ? error.message : String(error)
+      } finally {
+        gatewayActionRunning = false
+        refresh()
       }
-      refresh()
     }
 
     const actionHandlers: Record<DiscordGuiAction, () => void> = {
@@ -77,8 +97,12 @@ export async function runDiscordGui(
       },
       close: done,
       token: () => openInputMode('token'),
-      restart: () => runGatewayAction('restart'),
-      stop: () => runGatewayAction('stop'),
+      restart: () => {
+        void runGatewayAction('restart')
+      },
+      stop: () => {
+        void runGatewayAction('stop')
+      },
     }
 
     const activate = () => {

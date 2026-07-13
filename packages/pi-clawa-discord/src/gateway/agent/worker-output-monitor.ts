@@ -132,7 +132,12 @@ async function processAssistantMessage(
   }
 
   const text = message.content.trim();
-  const problem = getFinalRouteProblem(workerId, text, discordContextHandles(context));
+  const problem = getFinalRouteProblem(
+    workerId,
+    text,
+    discordContextHandles(context),
+    context?.channelJid,
+  );
   if (problem) {
     logger.warn({ workerId, problem }, 'Discord Clawa produced invalid final routing; asking for retry');
     await sendRoutingCorrection(workerId, problem, context);
@@ -144,7 +149,12 @@ async function processAssistantMessage(
   markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
 }
 
-function getFinalRouteProblem(workerId: string, text: string, messageHandles: DiscordMessageHandle[]): string | null {
+function getFinalRouteProblem(
+  workerId: string,
+  text: string,
+  messageHandles: DiscordMessageHandle[],
+  sourceJid?: string,
+): string | null {
   const parsed = parseFinalRoutes(text);
   if (!parsed.hasRoutes) {
     return text.trim() ? 'it had no route tag' : 'it was empty';
@@ -158,7 +168,7 @@ function getFinalRouteProblem(workerId: string, text: string, messageHandles: Di
     if (invalidReactionHandle) return `${invalidReactionHandle} is not a known message handle`;
 
     if (block.target.kind === 'quiet' || block.target.kind === 'main-clawa') continue;
-    if (!resolveDiscordRouteTarget(block.target, workerId)) {
+    if (!resolveDiscordRouteTarget(block.target, { workerId, sourceJid })) {
       const target = block.target.kind === 'dm' ? '[dm]' : `[${block.target.label}]`;
       return `${target} is not a known route`;
     }
