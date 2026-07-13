@@ -278,7 +278,12 @@ export class ClawasRuntime {
   private ensureStarted(): void {
     if (!this.interval) {
       this.interval = setInterval(() => {
-        this.render()
+        const workers = this.daemon?.getState().workers ?? []
+        if (
+          workers.some((worker) => worker.status === 'starting' || worker.status === 'streaming')
+        ) {
+          this.render()
+        }
       }, CLAWAS_SPINNER_TICK_MS)
       this.interval.unref?.()
     }
