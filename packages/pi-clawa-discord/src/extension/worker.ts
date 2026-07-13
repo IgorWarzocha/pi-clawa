@@ -1,4 +1,5 @@
-import { copyFile, mkdir, rm, symlink } from 'node:fs/promises'
+import { constants, realpathSync } from 'node:fs'
+import { copyFile, mkdir, symlink } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import {
   type ClawaWorkerConfig,
@@ -27,27 +28,56 @@ async function symlinkSharedFile(
   const linkPath = join(targetDir, filename)
   const targetPath = join(projectRoot, filename)
   const relativeTarget = relative(targetDir, targetPath) || filename
-  await rm(linkPath, { force: true })
-  await symlink(relativeTarget, linkPath)
+  try {
+    await symlink(relativeTarget, linkPath)
+  } catch (error) {
+    if (!isAlreadyExistsError(error)) throw error
+  }
+}
+
+function isAlreadyExistsError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error && error.code === 'EEXIST'
 }
 
 async function copyDiscordWorkerTemplates(projectRoot: string, targetDir: string): Promise<void> {
   const templateDir = join(extensionDir, 'templates', 'discord-worker')
   await mkdir(targetDir, { recursive: true })
   for (const file of ['AGENTS.md', 'CLAW.md', 'TOOLS.md', 'CURIOUS.md']) {
-    await copyFile(join(templateDir, file), join(targetDir, file))
+    const targetPath = join(targetDir, file)
+    try {
+      await copyFile(join(templateDir, file), targetPath, constants.COPYFILE_EXCL)
+    } catch (error) {
+      if (!isAlreadyExistsError(error)) throw error
+    }
   }
   await symlinkSharedFile(projectRoot, targetDir, 'HUMAN.md')
   await symlinkSharedFile(projectRoot, targetDir, 'CLAWAS.md')
 }
 
-function readExtensions(current: Partial<ClawaWorkerConfig>, adapterExtension: string): string[] {
-  const extensions = new Set(current.extensions ?? [])
-  extensions.add(adapterExtension)
-  return [...extensions]
+function readExtensions(
+  projectRoot: string,
+  current: Partial<ClawaWorkerConfig>,
+  adapterExtension: string,
+): string[] {
+  const extensions: string[] = []
+  const resolved = new Set<string>()
+  for (const extension of [...(current.extensions ?? []), adapterExtension]) {
+    const absolutePath = resolve(projectRoot, extension)
+    let identity = absolutePath
+    try {
+      identity = realpathSync(absolutePath)
+    } catch {
+      // Preserve configured missing paths; they may become available later.
+    }
+    if (resolved.has(identity)) continue
+    resolved.add(identity)
+    extensions.push(extension)
+  }
+  return extensions
 }
 
 function buildDiscordWorker(
+  projectRoot: string,
   current: Partial<ClawaWorkerConfig>,
   adapterExtension: string,
 ): ClawaWorkerConfig {
@@ -61,7 +91,7 @@ function buildDiscordWorker(
     autostart: current.autostart !== false,
     discordEnabled: true,
     reportMode: current.reportMode ?? 'explicit',
-    extensions: readExtensions(current, adapterExtension),
+    extensions: readExtensions(projectRoot, current, adapterExtension),
     startupPrompt:
       current.startupPrompt ??
       'Wake up in the Discord lane. Your home context is already loaded; stay public-safe, warm, and ready for Discord turns.',
@@ -74,7 +104,7 @@ export async function ensureDiscordWorker(projectRoot: string): Promise<void> {
   const workers = loadClawEnvironmentConfig(projectRoot).config.clawas.workers
   const adapterExtension = projectRelativePath(projectRoot, adapterEntryPath)
   const current = workers.find((entry) => entry.id === DISCORD_WORKER_ID) ?? {}
-  const worker = buildDiscordWorker(current, adapterExtension)
+  const worker = buildDiscordWorker(projectRoot, current, adapterExtension)
 
   upsertClawaWorkerConfig(projectRoot, worker)
   await mkdir(dirname(configPath), { recursive: true })

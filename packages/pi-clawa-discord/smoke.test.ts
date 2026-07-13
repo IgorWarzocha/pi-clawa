@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { mkdir, mkdtemp, readFile, readlink, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import Database from 'better-sqlite3'
 import clawDiscord from './index.js'
+import { adapterEntryPath } from './src/extension/constants.js'
 import { stopGateway } from './src/extension/gateway.js'
 import { getGatewayProcess, setGatewayProcess } from './src/extension/gateway-state.js'
 import { parseFinalRoutes } from './src/gateway/agent/final-routes.js'
@@ -92,6 +93,36 @@ test('Discord adapter first session creates tokenless config and worker without 
       assert.equal(humanLink, SHARED_HUMAN_LINK_TARGET)
       assert.equal(clawasLink, SHARED_CLAWAS_LINK_TARGET)
       assert.ok(notifications.some((message) => message.includes('add DISCORD_BOT_TOKEN')))
+
+      const configPath = join(root, '.pi', 'claw.jsonc')
+      const config = JSON.parse(workers)
+      const discordWorker = config.clawas.workers.find(
+        (worker: { id: string }) => worker.id === 'discord-clawa',
+      )
+      const adapterLink = join(root, '.pi', 'adapter-link.ts')
+      await symlink(adapterEntryPath, adapterLink)
+      discordWorker.extensions = [adapterLink]
+      await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`)
+      await writeFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'custom lane\n')
+
+      await handlers.get('session_start')?.(
+        {},
+        {
+          cwd: root,
+          hasUI: true,
+          ui: { notify: (message: string) => notifications.push(message) },
+        },
+      )
+
+      const restartedConfig = JSON.parse(await readFile(configPath, 'utf8'))
+      const restartedWorker = restartedConfig.clawas.workers.find(
+        (worker: { id: string }) => worker.id === 'discord-clawa',
+      )
+      assert.deepEqual(restartedWorker.extensions, [adapterLink])
+      assert.equal(
+        await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8'),
+        'custom lane\n',
+      )
     } finally {
       await rm(root, { recursive: true, force: true })
     }
