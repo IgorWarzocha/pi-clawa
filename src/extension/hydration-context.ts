@@ -73,27 +73,34 @@ export function registerHydrationContext(
   pi.on('context', async (event, ctx) => {
     if (!runtime.extensionBootstrapped) return undefined
     runtime.ensureBootstrapped(ctx.cwd)
-    if (!runtime.needsHydrate) return undefined
 
     const baseMessages = Array.isArray(event.messages) ? event.messages : []
-    const hydrated = await buildHydrationText(ctx.cwd, runtime)
-    runtime.needsHydrate = false
-    if (!hydrated) return undefined
-
     const messages = baseMessages.filter((message) => !isHydrationMessage(message))
+    let refreshed = false
+    if (runtime.hydrationStale) {
+      const hydrated = await buildHydrationText(ctx.cwd, runtime)
+      runtime.hydrationText = hydrated?.text
+      runtime.hydrationStale = false
+      refreshed = true
+    }
+    if (!runtime.hydrationText) {
+      return messages.length === baseMessages.length ? undefined : { messages }
+    }
     const injected = {
       role: 'custom' as const,
       customType: HYDRATION_MESSAGE_TYPE,
-      content: hydrated.text,
+      content: runtime.hydrationText,
       display: false,
-      details: { kind: hydrated.kind },
+      details: { kind: 'continuity' as const },
       timestamp: Date.now(),
     }
 
-    if (options.debugProbe && ctx.hasUI) {
-      ctx.ui.notify(buildHydrationProbeNote(hydrated.text), 'info')
+    if (options.debugProbe && ctx.hasUI && refreshed) {
+      ctx.ui.notify(buildHydrationProbeNote(runtime.hydrationText), 'info')
     }
 
-    return { messages: [...messages, injected] }
+    // Context transforms are non-persistent. Reapply one cached hydration block to every
+    // provider call so tool loops keep their continuity without accumulating copies.
+    return { messages: [injected, ...messages] }
   })
 }

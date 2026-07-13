@@ -12,11 +12,12 @@ export class ClawaRuntimeState {
   extensionBootstrapped = true
   bootstrappedKnown = false
   bootstrapped = false
-  needsHydrate = false
+  hydrationStale = false
+  hydrationText: string | undefined = undefined
 
   async armHydration(cwd: string): Promise<boolean> {
     await this.ensureBootstrapped(cwd)
-    this.needsHydrate = true
+    this.hydrationStale = true
     return this.bootstrapped
   }
 
@@ -25,7 +26,8 @@ export class ClawaRuntimeState {
       this.cwd = cwd
       this.bootstrappedKnown = false
       this.bootstrapped = false
-      this.needsHydrate = false
+      this.hydrationStale = false
+      this.hydrationText = undefined
     }
     if (!this.bootstrappedKnown) {
       this.bootstrapped = loadClawEnvironmentConfig(findRepoRoot(cwd)).config.bootstrapped === true
@@ -54,7 +56,7 @@ export class ClawaRuntimeState {
     this.cwd = cwd
     this.bootstrappedKnown = true
     this.bootstrapped = true
-    this.needsHydrate = true
+    this.hydrationStale = true
     this.extensionBootstrapped = true
   }
 }
