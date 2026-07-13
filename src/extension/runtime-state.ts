@@ -1,4 +1,5 @@
 import { ensureClawEnvironmentConfig, findRepoRoot, loadClawEnvironmentConfig } from '../config.js'
+import type { HydratedClawaImage } from '../hydration-image.js'
 import { IS_CLAWAS_WORKER } from './constants.js'
 
 export type ExtensionConfigStatus = {
@@ -14,6 +15,7 @@ export class ClawaRuntimeState {
   bootstrapped = false
   hydrationStale = false
   hydrationText: string | undefined = undefined
+  hydrationImage: HydratedClawaImage | undefined = undefined
 
   async armHydration(cwd: string): Promise<boolean> {
     await this.ensureBootstrapped(cwd)
@@ -28,6 +30,7 @@ export class ClawaRuntimeState {
       this.bootstrapped = false
       this.hydrationStale = false
       this.hydrationText = undefined
+      this.hydrationImage = undefined
     }
     if (!this.bootstrappedKnown) {
       this.bootstrapped = loadClawEnvironmentConfig(findRepoRoot(cwd)).config.bootstrapped === true

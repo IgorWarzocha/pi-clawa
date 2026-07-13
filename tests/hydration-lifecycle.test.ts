@@ -14,6 +14,7 @@ type TestContext = {
   cwd: string
   hasUI: false
   isIdle: () => boolean
+  model: { input: Array<'image' | 'text'> }
   ui: Record<string, never>
 }
 
@@ -23,6 +24,8 @@ const RESUMED_SHAPE_PATTERN = /resumed shape/
 const STALE_COPY_PATTERN = /stale copy/
 const AFTER_COMPACT_PATTERN = /after compact/
 const MID_SESSION_EDIT_PATTERN = /mid-session edit/
+const TINY_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
 
 function registerTestRuntime(): {
   handlers: Map<string, EventHandler[]>
@@ -82,14 +85,39 @@ async function transformContext(
   return current
 }
 
-function hydrationMessages(messages: unknown[]): Array<{ content: string }> {
-  return messages.filter((message): message is { content: string } & Record<string, unknown> =>
+function hydrationMessages(messages: unknown[]): Array<{ content: unknown }> {
+  return messages.filter((message): message is { content: unknown } & Record<string, unknown> =>
     Boolean(
       message &&
         typeof message === 'object' &&
         'customType' in message &&
         message.customType === HYDRATION_MESSAGE_TYPE,
     ),
+  )
+}
+
+function hydrationText(message: { content: unknown } | undefined): string {
+  if (typeof message?.content === 'string') return message.content
+  if (!Array.isArray(message?.content)) return ''
+  return message.content
+    .filter((block): block is { type: 'text'; text: string } =>
+      Boolean(
+        block &&
+          typeof block === 'object' &&
+          'type' in block &&
+          block.type === 'text' &&
+          'text' in block &&
+          typeof block.text === 'string',
+      ),
+    )
+    .map((block) => block.text)
+    .join('\n')
+}
+
+function hydrationImages(message: { content: unknown } | undefined): unknown[] {
+  if (!Array.isArray(message?.content)) return []
+  return message.content.filter(
+    (block) => block && typeof block === 'object' && 'type' in block && block.type === 'image',
   )
 }
 
@@ -107,7 +135,13 @@ test('hydration stays singular across provider calls and refreshes on resume and
     }
 
     const { handlers } = registerTestRuntime()
-    const ctx: TestContext = { cwd: root, hasUI: false, isIdle: () => true, ui: {} }
+    const ctx: TestContext = {
+      cwd: root,
+      hasUI: false,
+      isIdle: () => true,
+      model: { input: ['text', 'image'] },
+      ui: {},
+    }
     await emit(handlers, 'session_start', { type: 'session_start', reason: 'startup' }, ctx)
 
     const firstCall = await transformContext(handlers, [{ role: 'user', content: 'hello' }], ctx)
@@ -123,8 +157,8 @@ test('hydration stays singular across provider calls and refreshes on resume and
     assert.equal(hydrationMessages(firstCall).length, 1)
     assert.equal((firstCall[0] as { customType?: string }).customType, HYDRATION_MESSAGE_TYPE)
     assert.equal(hydrationMessages(secondCall).length, 1)
-    assert.match(hydrationMessages(secondCall)[0]?.content ?? '', INITIAL_CLAW_PATTERN)
-    assert.doesNotMatch(hydrationMessages(secondCall)[0]?.content ?? '', MID_SESSION_EDIT_PATTERN)
+    assert.match(hydrationText(hydrationMessages(secondCall)[0]), INITIAL_CLAW_PATTERN)
+    assert.doesNotMatch(hydrationText(hydrationMessages(secondCall)[0]), MID_SESSION_EDIT_PATTERN)
 
     await writeFile(join(root, 'CLAW.md'), '# CLAW.md\n\nresumed shape\n', 'utf8')
     await emit(handlers, 'session_start', { type: 'session_start', reason: 'resume' }, ctx)
@@ -137,10 +171,11 @@ test('hydration stays singular across provider calls and refreshes on resume and
       ctx,
     )
     assert.equal(hydrationMessages(resumed).length, 1)
-    assert.match(hydrationMessages(resumed)[0]?.content ?? '', RESUMED_SHAPE_PATTERN)
-    assert.doesNotMatch(hydrationMessages(resumed)[0]?.content ?? '', STALE_COPY_PATTERN)
+    assert.match(hydrationText(hydrationMessages(resumed)[0]), RESUMED_SHAPE_PATTERN)
+    assert.doesNotMatch(hydrationText(hydrationMessages(resumed)[0]), STALE_COPY_PATTERN)
 
     await writeFile(join(root, 'HUMAN.md'), '# HUMAN.md\n\nafter compact\n', 'utf8')
+    await writeFile(join(root, 'CLAWA.PNG'), Buffer.from(TINY_PNG_BASE64, 'base64'))
     await emit(
       handlers,
       'session_compact',
@@ -151,7 +186,14 @@ test('hydration stays singular across provider calls and refreshes on resume and
     const compactFollowUp = await transformContext(handlers, compacted, ctx)
     assert.equal(hydrationMessages(compacted).length, 1)
     assert.equal(hydrationMessages(compactFollowUp).length, 1)
-    assert.match(hydrationMessages(compactFollowUp)[0]?.content ?? '', AFTER_COMPACT_PATTERN)
+    assert.match(hydrationText(hydrationMessages(compactFollowUp)[0]), AFTER_COMPACT_PATTERN)
+    assert.equal(hydrationImages(hydrationMessages(compactFollowUp)[0]).length, 1)
+
+    const textOnly = await transformContext(handlers, compactFollowUp, {
+      ...ctx,
+      model: { input: ['text'] },
+    })
+    assert.equal(hydrationImages(hydrationMessages(textOnly)[0]).length, 0)
 
     const emptyRoot = join(root, 'empty-home')
     await mkdir(join(emptyRoot, '.pi'), { recursive: true })
