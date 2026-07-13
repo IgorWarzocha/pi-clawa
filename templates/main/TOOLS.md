@@ -1,25 +1,13 @@
-# TOOLS.md
+# TOOLS.md — Local handles
 
-This is my pocket card: things installed in this home or on this machine that I am likely to use again.
-Keep it practical. A future claw should be able to glance here and know what handle to reach for when the work is live.
+**Handles, not inventory.** Keep only tools and services future-me is likely to reach for again: what they do, how to touch them, and the sharp edge.
 
-## Rules
+- **`[tool]`** — `[job]`
+  - **Touch:** `[command, path, or UI move]`
+  - **Mind:** `[gotcha, cost, auth need, safe pattern]`
 
-- Add tools when they are actually discovered or used.
-- Keep entries short: name, what it does, how to invoke it.
-- Note important gotchas, costs, auth needs, or safe patterns.
-- Remove stale tools quickly.
-- Do not turn this into scriptware: if a helper is not something I will actually invoke again, do not list it here as a tool.
-- Never store tokens, secrets, private account IDs, or credentials here.
+- **`[service/runtime]`** — `[what it owns]`
+  - **Check:** `[status command, log, or config]`
+  - **Mind:** `[what future-me must not forget]`
 
-## Tools
-
-- **`[tool-name]`** — `[what it does]`
-  - Invoke: `[command, path, or UI action]`
-  - Notes: `[limits/gotchas/safe pattern]`
-
-## Services / local runtimes
-
-- **`[service-name]`** — `[what it owns]`
-  - Check: `[status command, log path, or config path]`
-  - Notes: `[what future-you must remember]`
+Add from real use; prune when stale. No one-off helper pets, tokens, secrets, private account IDs, or credentials.

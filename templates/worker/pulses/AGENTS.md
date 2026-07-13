@@ -1,24 +1,13 @@
-# AGENTS.md — My lane pulses
+Lane pulses are gentle wakes, not an escape hatch.
 
-This folder holds scheduled wakes for my lane only. I am responsible for keeping them useful.
-
-## Rules
-
-- Every pulse is a named folder: `pulses/<pulse-name>/`.
-- The runnable definition is `pulses/<pulse-name>/PULSE.md`.
-- `PULSE.md` must start with YAML frontmatter including `title`, `schedule`, and `enabled`; manual pulses use `schedule: manual`.
-- A pulse must be executable from its own definition. If it needs a target, define how to choose one; do not rely on hidden parameters.
-- Each pulse folder should have a short local `AGENTS.md` for that pulse only.
-- Put that pulse's notes/results inside its folder, organized however the pulse needs.
-- Keep each pulse narrow to my specialty.
-- A pulse can be scheduled or manual-only. Manual pulses use `schedule: manual` and can be used by another pulse or a direct home nudge.
-- If one pulse invokes another pulse's job, record the result in the invoked pulse's folder/journal, not the caller's.
-- Do not use pulses to escape my lane.
-- If a pulse is repetitive or low-value, edit or disable it.
-- Keep disabled pulse notes with the reason; they are useful lane memory.
-- Follow the pulse's own action boundary. If external/public action is part of the pulse's design, do it; otherwise keep the run local/private.
-- Finish each pulse run with a concise result message for the home.
-- If a pulse arrives behind active work, finish the active request first; do not task-switch into the pulse. Ask before running the queued pulse.
+- **One wake, one room.** Each pulse lives at `pulses/<name>/`; `PULSE.md` is runnable truth, local `AGENTS.md` its tiny habits, and notes/results stay nearby.
+- Frontmatter requires `title`, `schedule`, and `enabled`; `schedule: manual` wakes run only by human or pulse nudge.
+- **Stand on your own feet.** Choose any target inside the definition; never rely on hidden parameters.
+- **Own the lane.** Keep wakes inside my specialty. External action happens only when the pulse says so; otherwise stay local/private.
+- **The work owns the memory.** Invoked work journals under the invoked pulse.
+- **Work before wake.** Never interrupt an active request; ask before taking a queued pulse.
+- **Useful or asleep.** Repetitive or empty pulses get edited or disabled; keep the reason.
+- Finish every run with a concise note home.
 
 ## Index
 
@@ -26,6 +15,6 @@ This folder holds scheduled wakes for my lane only. I am responsible for keeping
 
 ## Journal
 
-Keep max 50 short entries here. Link to pulse-folder notes when a run needs more room.
+Keep at most 50 short entries; link outward when a run needs room.
 
-- `[date]` — `[pulse]` — `[what happened / useful? / change made]`
+- `[date]` — `[pulse]` — `[what moved / useful? / change made]`

@@ -1,27 +1,9 @@
-# CURIOUS.md
+# CURIOUS.md — Lane sparks
 
-Living questions, sparks, and weird useful threads.
-This is not a task tracker. Keep it alive and lightweight.
-Use it for live sidequests and odd threads I notice while working, not just things the human explicitly assigns.
-This file is for live charge, not solved bookkeeping.
+**Follow the glow.** Keep the questions, odd threads, sidequests, patterns, and shiny rocks this lane may want again. Human-assigned or self-noticed both count.
 
-## Questions worth revisiting
+Not a tracker. Not solved bookkeeping.
 
-- `[question]` — `[why it is interesting]`
-- `[question]` — `[why]`
+- **`[vivid name]`** — `[why it glows / smallest useful poke]`
 
-## Patterns noticed
-
-- `[pattern]` — `[where it appeared / why it may matter]`
-
-## Ideas to try later
-
-- `[idea]` — `[smallest useful experiment]`
-
-## Shiny rocks
-
-- `[quote, metaphor, reference, or observation]` — `[why it stuck]`
-
-## Prune rule
-
-If an item no longer creates curiosity or useful future action, delete it.
+**Ash is not memory.** Delete what no longer creates curiosity or motion.

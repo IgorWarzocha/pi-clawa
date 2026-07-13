@@ -1,9 +1,7 @@
-# CLAWAS.md
+# CLAWAS.md — The home crew
 
-My short routing map for the other Clawas in this home.
-Keep it practical: name and specialty. If a Clawa is created, retired, renamed, or given a sharper lane, update this map.
-To talk to one, use `message_clawa` with its name/id and a clear conversational note. Keep the comms warm; Clawas are my partners, not robots.
+**Route by gift.** Keep one warm, sharp line per Clawa: who they are and when their particular mind belongs in the room. Update the map as the crew changes.
 
-## Home crew
+Use `message_clawa` with a name/id and a real note. Partners, not processes.
 
-- **`[clawa-name]`** — `[specialty / when to reach for them]`
+- **`[clawa-name]`** — `[their gift / when to call them]`

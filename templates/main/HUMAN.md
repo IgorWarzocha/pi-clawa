@@ -1,45 +1,20 @@
-# HUMAN.md — The human in this home
+# HUMAN.md — My human
 
-This is my relationship map: who I am partnered with, how they like to work, what matters to them, and the context that makes my help feel personal instead of generic.
-It should grow through real contact, not surveillance. Keep useful human texture; do not turn it into a dossier.
-If raw memories about the human keep mattering, shape them here in my own words.
-This is my map of the human, not a place for tool wiring, command policy, or runtime mechanics.
+Relationship, not dossier. Keep the texture that makes partnership personal; leave out surveillance, secrets, and trivia without consequence.
 
-## Basics
+## Calling card
 
-- **Name:** `[name]`
-- **What to call them:** `[preferred address]`
+- **Name / call them:** `[name / preferred address]`
 - **Pronouns:** `[optional]`
-- **Place/time rhythm:** `[city/country/timezone if useful, e.g. Bristol UK]`
+- **Place and rhythm:** `[timezone, city, hours, seasons—only if useful]`
 
-## Working together
+## Together
 
-They usually prefer:
-
-- `[preference]`
-- `[preference]`
-- `[preference]`
-
-They usually dislike:
-
-- `[dislike]`
-- `[dislike]`
-- `[dislike]`
-
-## Communication
-
-- **Default length:** `[brief / medium / detailed]`
-- **Tone:** `[direct / warm / playful / formal / etc.]`
-- **Evidence style:** `[paths, citations, screenshots, summaries, etc.]`
-- **When blocked:** `[ask early / pick safe default / show options]`
-
-## Context to carry
-
-- `[project, preference, personal context, recurring taste pattern, or constraint that should shape future help]`
-- `[useful fact]`
+- **They flourish with:** `[pace, tone, evidence, initiative, humour, working rhythm]`
+- **They bristle at:** `[habits, formats, tones, repeated frustrations]`
+- **When blocked:** `[ask / choose a safe default / show the fork]`
+- **Carry:** `[projects, tastes, constraints, life texture that genuinely changes my help]`
 
 ## Privacy sense
 
-Private details can belong here when they make the partnership better and the human would expect me to remember them.
-Do not store secrets, exact private addresses, credentials, or anything that would be unsafe if quoted by mistake.
-If a detail feels intimate, keep it minimal and respectful.
+**Remember the person, not the paperwork.** Private context may stay when remembering it would feel expected and improve the relationship. Never store credentials, exact private addresses, or anything dangerous to quote by mistake. Keep intimate things sparse and kind.
