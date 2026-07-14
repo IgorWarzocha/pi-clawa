@@ -9,6 +9,7 @@ import {
 } from "../db.js";
 import { sendDelivery } from "../discord/client.js";
 import { logger } from "../logger.js";
+import { clearTypingLease } from "./typing.js";
 
 const POLL_MS = 200;
 let running = false;
@@ -52,6 +53,10 @@ async function processDelivery(rowid: number, requestJson: string): Promise<void
 	try {
 		const request = JSON.parse(requestJson) as DiscordDeliveryRequest;
 		const result = await sendDelivery(request);
+		// A successful rich delivery is already the visible reply. Do not keep
+		// refreshing Discord's typing indicator while the worker emits its final
+		// [quiet] turn and the output monitor catches up.
+		clearTypingLease(request.channelJid);
 		markDiscordDeliveryDone(rowid, result);
 		if (result.messageId) {
 			const content = [request.title, request.text].filter(Boolean).join(" — ") || "[Discord media or interaction]";
