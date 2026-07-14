@@ -44,6 +44,8 @@ Use relative Markdown links. A concept is one coherent subject, not necessarily 
 
 2. **Decide whether the vault is the right home.**
    - Decline raw dumps, transient tasks, session diaries, generated summaries with no future reader, and facts already owned clearly elsewhere.
+   - Decline generic definitions, common procedures, and public facts already carried by the model or recoverable with one reliable search. If the source is cheap to recover, keep only the house's judgment, connection, caveat, or decision—when one exists.
+   - Do not apply that shortcut to local, volatile, contested, safety-critical, or provenance-sensitive truth. Those may be worth preserving even when they look simple.
    - Promote material that is reusable beyond the current turn, combines scattered understanding, records a durable decision, or gives future work a trustworthy starting point.
 
 3. **Recall before writing.**
