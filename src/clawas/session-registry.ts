@@ -15,17 +15,6 @@ interface SessionRegistry {
   workers: Record<string, WorkerSessionRecord | string>
 }
 
-function isThinkingLevel(value: unknown): value is ThinkingLevel {
-  return (
-    value === 'off' ||
-    value === 'minimal' ||
-    value === 'low' ||
-    value === 'medium' ||
-    value === 'high' ||
-    value === 'xhigh'
-  )
-}
-
 function normalizeWorkerRecord(
   entry: WorkerSessionRecord | string | undefined,
   workerId: string,
@@ -59,34 +48,20 @@ function buildWorkerRecord(
   }
 }
 
-async function readSessionIdentity(sessionFile: string): Promise<{
-  model?: string
-  thinking?: ThinkingLevel
-}> {
+async function readSessionCwd(sessionFile: string): Promise<string | undefined> {
   try {
     const content = await fs.readFile(sessionFile, 'utf8')
-    const lines = content.split('\n').filter(Boolean)
-    const identity: { model?: string; thinking?: ThinkingLevel } = {}
-
-    for (const line of lines) {
-      Object.assign(identity, readSessionIdentityLine(line))
-    }
-
-    return identity
+    const firstLine = content.split('\n', 1)[0]
+    if (!firstLine) return undefined
+    const entry = parseSessionEntry(firstLine)
+    return entry?.['type'] === 'session' && typeof entry['cwd'] === 'string'
+      ? entry['cwd']
+      : undefined
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code
-    if (code === 'ENOENT') return {}
+    if (code === 'ENOENT') return undefined
     throw error
   }
-}
-
-function readSessionIdentityLine(line: string): { model?: string; thinking?: ThinkingLevel } {
-  const entry = parseSessionEntry(line)
-  if (!entry) return {}
-  if (entry['type'] === 'model_change') return modelChangeIdentity(entry)
-  if (entry['type'] === 'thinking_level_change') return thinkingChangeIdentity(entry)
-  if (entry['type'] === 'message') return assistantMessageIdentity(entry)
-  return {}
 }
 
 function parseSessionEntry(line: string): Record<string, unknown> | null {
@@ -98,47 +73,12 @@ function parseSessionEntry(line: string): Record<string, unknown> | null {
   }
 }
 
-function modelChangeIdentity(entry: Record<string, unknown>): { model?: string } {
-  if (typeof entry['provider'] === 'string' && typeof entry['modelId'] === 'string') {
-    return { model: `${entry['provider']}/${entry['modelId']}` }
-  }
-  return {}
-}
-
-function thinkingChangeIdentity(entry: Record<string, unknown>): { thinking?: ThinkingLevel } {
-  const value = entry['thinkingLevel']
-  return isThinkingLevel(value) ? { thinking: value } : {}
-}
-
-function assistantMessageIdentity(entry: Record<string, unknown>): { model?: string } {
-  const message = entry['message']
-  if (!message || typeof message !== 'object') return {}
-  const record = message as Record<string, unknown>
-  if (
-    record['role'] === 'assistant' &&
-    typeof record['provider'] === 'string' &&
-    typeof record['model'] === 'string'
-  ) {
-    return { model: `${record['provider']}/${record['model']}` }
-  }
-  return {}
-}
-
-async function sessionMatchesDefinition(
-  record: WorkerSessionRecord,
-  definition: WorkerDefinition,
-  cwd: string,
-): Promise<boolean> {
+async function sessionBelongsToWorker(record: WorkerSessionRecord, cwd: string): Promise<boolean> {
   if (record.cwd && record.cwd !== cwd) {
     return false
   }
-
-  if (record.model === definition.model && record.thinking === definition.thinking) {
-    return true
-  }
-
-  const identity = await readSessionIdentity(record.path)
-  return identity.model === definition.model && identity.thinking === definition.thinking
+  const sessionCwd = await readSessionCwd(record.path)
+  return !sessionCwd || sessionCwd === cwd
 }
 
 function getRegistryPath(rootDir: string): string {
@@ -188,7 +128,10 @@ export async function resolveWorkerSessionFile(
   if (knownRecord) {
     try {
       await fs.access(knownRecord.path)
-      if (await sessionMatchesDefinition(knownRecord, definition, cwd)) {
+      // Model and thinking are runtime choices, not worker identity. Pi can
+      // change both while resuming the same session; rotating the file here
+      // silently amputates the worker's continuity.
+      if (await sessionBelongsToWorker(knownRecord, cwd)) {
         registry.workers[workerId] = buildWorkerRecord(definition, knownRecord.path, cwd)
         await writeRegistry(rootDir, registry)
         return knownRecord.path

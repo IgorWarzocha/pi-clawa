@@ -48,6 +48,42 @@ test('worker sessions live under worker homes while the registry stays in the ro
   }
 })
 
+test('worker session continuity survives model and thinking changes', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-worker-model-change-'))
+  try {
+    const workerHome = join(root, 'clawas', 'discord-clawa')
+    const controlPlaneRoot = join(root, '.pi', 'clawas')
+    await mkdir(workerHome, { recursive: true })
+
+    const original = workerDefinition('discord-clawa')
+    const sessionFile = await resolveWorkerSessionFile(controlPlaneRoot, original, workerHome)
+    await writeFile(
+      sessionFile,
+      `${JSON.stringify({ type: 'session', version: 3, cwd: workerHome })}\n`,
+      'utf8',
+    )
+    const changed = {
+      ...original,
+      model: 'another-provider/new-model',
+      thinking: 'low' as const,
+    }
+    const resumedFile = await resolveWorkerSessionFile(controlPlaneRoot, changed, workerHome)
+
+    assert.equal(resumedFile, sessionFile)
+    const registry = JSON.parse(
+      await readFile(join(controlPlaneRoot, SESSION_REGISTRY_NAME), 'utf8'),
+    ) as { workers: Record<string, { path: string; model?: string; thinking?: string }> }
+    assert.deepEqual(registry.workers['discord-clawa'], {
+      path: sessionFile,
+      model: changed.model,
+      thinking: changed.thinking,
+      cwd: workerHome,
+    })
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test('corrupt worker session registry fails instead of creating a fresh session', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-worker-sessions-corrupt-'))
   try {
