@@ -135,11 +135,14 @@ test('Clawas runtime refresh picks up worker config changes without full extensi
     assert.equal(initialConfig.config.clawas.workers.length, 0)
 
     const runtime = new ClawasRuntime()
+    let loadedNotifications = 0
     const ctx = {
       cwd: root,
       hasUI: true,
       ui: {
-        notify: () => {},
+        notify: (message: string) => {
+          if (message.includes('loaded 0 workers')) loadedNotifications += 1
+        },
         setWidget: () => {},
         setStatus: () => {},
         setHeader: () => {},
@@ -147,8 +150,9 @@ test('Clawas runtime refresh picks up worker config changes without full extensi
     }
 
     runtime.attach(ctx as never)
-    await runtime.refreshFromConfig()
+    await Promise.all([runtime.refreshFromConfig(), runtime.refreshFromConfig()])
     assert.deepEqual(runtime.getWorkerIds(), [])
+    assert.equal(loadedNotifications, 1)
 
     await mkdir(join(root, 'clawas', 'docs-clawa'), { recursive: true })
     await writeFile(

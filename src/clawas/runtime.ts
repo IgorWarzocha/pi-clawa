@@ -31,6 +31,7 @@ export class ClawasRuntime {
   private interval: ReturnType<typeof setInterval> | null = null
   private daemonStarted = false
   private configFingerprint: string | null = null
+  private lifecycle: Promise<void> = Promise.resolve()
   private clawaDefaults: ClawaDefaults = DEFAULT_CLAWA_DEFAULTS
   private monitorState = createClawasMonitorState()
   private readonly ui = new ClawasUiBridge()
@@ -52,9 +53,11 @@ export class ClawasRuntime {
       // Manual takeover stays unavailable until Herdr/tmux context is captured.
     })
     this.ui.clear(context)
-    void this.startOrReloadDaemon(context, false).catch(() => {
-      // User-facing error notification is emitted inside startOrReloadDaemon.
-    })
+    void this.queueLifecycle(async () => await this.startOrReloadDaemon(context, false)).catch(
+      () => {
+        // User-facing error notification is emitted inside startOrReloadDaemon.
+      },
+    )
     this.render()
   }
 
@@ -63,20 +66,22 @@ export class ClawasRuntime {
   }
 
   async restart(): Promise<void> {
-    if (!this.context) {
+    const context = this.context
+    if (!context) {
       return
     }
 
-    await this.startOrReloadDaemon(this.context, true)
+    await this.queueLifecycle(async () => await this.startOrReloadDaemon(context, true))
     this.render()
   }
 
   async refreshFromConfig(): Promise<void> {
-    if (!this.context) {
+    const context = this.context
+    if (!context) {
       return
     }
 
-    await this.startOrReloadDaemon(this.context, false)
+    await this.queueLifecycle(async () => await this.startOrReloadDaemon(context, false))
     this.render()
   }
 
@@ -167,6 +172,10 @@ export class ClawasRuntime {
   }
 
   async dispose(): Promise<void> {
+    await this.queueLifecycle(async () => await this.disposeNow())
+  }
+
+  private async disposeNow(): Promise<void> {
     if (this.interval) {
       clearInterval(this.interval)
     }
@@ -181,6 +190,12 @@ export class ClawasRuntime {
       this.ui.clear(this.context)
     }
     this.context = null
+  }
+
+  private queueLifecycle(operation: () => Promise<void>): Promise<void> {
+    const queued = this.lifecycle.catch(() => {}).then(operation)
+    this.lifecycle = queued
+    return queued
   }
 
   private async startOrReloadDaemon(
