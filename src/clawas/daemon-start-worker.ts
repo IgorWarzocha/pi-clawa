@@ -4,6 +4,31 @@ import { getWorkerState, patchWorkerState, pushEvent } from './state.js'
 import { summarizePrompt } from './summaries.js'
 import type { ClawasState, WorkerDefinition } from './types.js'
 
+export async function coalesceWorkerStart(
+  starts: Map<string, Promise<void>>,
+  workerId: string,
+  start: () => Promise<void>,
+): Promise<void> {
+  const pending = starts.get(workerId)
+  if (pending) {
+    await pending
+    return
+  }
+
+  // Defer the operation by one microtask so the reservation is visible before
+  // any session lookup can yield. Autostart and an incoming prompt can arrive
+  // together; without this gate both used to launch the same worker session.
+  const operation = Promise.resolve().then(start)
+  starts.set(workerId, operation)
+  try {
+    await operation
+  } finally {
+    if (starts.get(workerId) === operation) {
+      starts.delete(workerId)
+    }
+  }
+}
+
 export async function startWorkerProcess(options: {
   state: ClawasState
   workers: Map<string, ClawasRpcWorker>

@@ -3,7 +3,7 @@ import type { ClawaDefaults } from '../config'
 import { getClawasSessionStatus } from './comms/client.js'
 import { sendWorkerPrompt } from './daemon-prompt.js'
 import { stopAllWorkers } from './daemon-shutdown.js'
-import { startWorkerProcess } from './daemon-start-worker.js'
+import { coalesceWorkerStart, startWorkerProcess } from './daemon-start-worker.js'
 import {
   clearManualSessionState,
   markWorkerDetachedState,
@@ -34,6 +34,7 @@ function now(): number {
 export class ClawasDaemon {
   private readonly state: ClawasState
   private readonly workers = new Map<string, ClawasRpcWorker>()
+  private readonly workerStarts = new Map<string, Promise<void>>()
   private readonly streamBuffers = new Map<string, string>()
   private readonly intentionalStops = new Set<string>()
   private readonly extensionPaths: string[]
@@ -246,23 +247,25 @@ export class ClawasDaemon {
   }
 
   private async startWorker(workerId: string): Promise<void> {
-    await startWorkerProcess({
-      state: this.state,
-      workers: this.workers,
-      streamBuffers: this.streamBuffers,
-      controlPlaneRoot: this.controlPlaneRoot,
-      workerId,
-      createWorker: (cwd, definition, sessionFile) =>
-        this.createWorker(cwd, definition, sessionFile),
-      attachWorkerListeners: (id, worker) => this.attachWorkerListeners(id, worker),
-      nameWorkerSession: async (worker) => await nameWorkerSession(worker, this.clawaDefaults),
-      markWorkerReady: async (id, worker, fallbackSummary) =>
-        await this.markWorkerReady(id, worker, fallbackSummary),
-      sendStartupPrompt: async (id, definition) => await this.sendStartupPrompt(id, definition),
-      handleWorkerStartFailure: async (id, worker, definition, error) =>
-        await this.handleWorkerStartFailure(id, worker, definition, error),
-      notifyChanged: () => this.notifyChanged(),
-      getNow: now,
+    await coalesceWorkerStart(this.workerStarts, workerId, async () => {
+      await startWorkerProcess({
+        state: this.state,
+        workers: this.workers,
+        streamBuffers: this.streamBuffers,
+        controlPlaneRoot: this.controlPlaneRoot,
+        workerId,
+        createWorker: (cwd, definition, sessionFile) =>
+          this.createWorker(cwd, definition, sessionFile),
+        attachWorkerListeners: (id, worker) => this.attachWorkerListeners(id, worker),
+        nameWorkerSession: async (worker) => await nameWorkerSession(worker, this.clawaDefaults),
+        markWorkerReady: async (id, worker, fallbackSummary) =>
+          await this.markWorkerReady(id, worker, fallbackSummary),
+        sendStartupPrompt: async (id, definition) => await this.sendStartupPrompt(id, definition),
+        handleWorkerStartFailure: async (id, worker, definition, error) =>
+          await this.handleWorkerStartFailure(id, worker, definition, error),
+        notifyChanged: () => this.notifyChanged(),
+        getNow: now,
+      })
     })
   }
 
@@ -298,7 +301,7 @@ export class ClawasDaemon {
       this.eventRouter.handleEvent(workerId, event)
     })
     worker.onClose((code, signal) => {
-      this.handleWorkerClose(workerId, code, signal)
+      this.handleWorkerClose(workerId, worker, code, signal)
     })
   }
 
@@ -357,10 +360,14 @@ export class ClawasDaemon {
 
   private handleWorkerClose(
     workerId: string,
+    closedWorker: ClawasRpcWorker,
     code: number | null,
     signal: NodeJS.Signals | null,
   ): void {
     const worker = this.workers.get(workerId)
+    if (worker !== closedWorker) {
+      return
+    }
     const stderr = worker?.getStderr() ?? ''
     const intentional = this.intentionalStops.delete(workerId)
     const definition = getWorkerState(this.state, workerId).definition
@@ -368,7 +375,20 @@ export class ClawasDaemon {
     this.eventRouter.handleClose(workerId, code, signal, stderr, this.stopping || intentional)
 
     if (!(this.stopping || intentional) && definition.enabled && definition.autostart) {
-      void this.startWorker(workerId)
+      // If the process died while its startup path was still settling, wait for
+      // that reservation to clear before replacing it.
+      void this.restartWorkerAfterClose(workerId)
+    }
+  }
+
+  private async restartWorkerAfterClose(workerId: string): Promise<void> {
+    await this.workerStarts.get(workerId)?.catch(() => {})
+    if (this.stopping || this.workers.has(workerId)) {
+      return
+    }
+    const definition = getWorkerState(this.state, workerId).definition
+    if (definition.enabled && definition.autostart) {
+      await this.startWorker(workerId)
     }
   }
 
