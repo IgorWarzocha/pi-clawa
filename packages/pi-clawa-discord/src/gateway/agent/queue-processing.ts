@@ -14,12 +14,23 @@ export async function processQueuedMessage(params: {
   sender: string;
   senderName: string;
   sourceMessageId: string | null;
+  replyToMessageId?: string | null;
   content: string;
   signal: AbortSignal;
   attachments?: string | null;
   logRowId?: number | null;
 }): Promise<void> {
-  const { jid, rowid, sender, senderName, sourceMessageId, content, signal, logRowId } = params;
+  const {
+    jid,
+    rowid,
+    sender,
+    senderName,
+    sourceMessageId,
+    replyToMessageId,
+    content,
+    signal,
+    logRowId,
+  } = params;
   const channel = getChannel(jid);
   if (!channel) {
     logger.warn({ jid }, 'Channel disappeared during processing');
@@ -38,7 +49,7 @@ export async function processQueuedMessage(params: {
       content,
       mappedWorker,
       logRowId,
-      sourceMessageId,
+      sourceMessageId: replyToMessageId ?? sourceMessageId,
     });
 
     if (!mappedWorker) {
@@ -57,7 +68,10 @@ export async function processQueuedMessage(params: {
       mode: 'followUp',
       messageType: 'session',
       discordContext: buildClawasDiscordContext({
-        sourceMessageId: getReplyAnchorSourceMessageId(sender, sourceMessageId),
+        sourceMessageId: getReplyAnchorSourceMessageId(
+          sender,
+          replyToMessageId ?? sourceMessageId,
+        ),
         sourceChannelJid: jid,
         messageHandles,
       }),

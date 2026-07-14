@@ -13,5 +13,5 @@
     "packages/pi-clawa-discord/index.ts": ["exports"]
   },
   "ignore": ["packages/pi-clawa-discord/src/gateway/**"],
-  "ignoreDependencies": ["pino-pretty", "tsx"]
+  "ignoreDependencies": ["discord.js", "pino-pretty", "tsx"]
 }

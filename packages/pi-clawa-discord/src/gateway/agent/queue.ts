@@ -126,6 +126,7 @@ function dispatch(): void {
 				sender: msg.sender,
 				senderName: msg.sender_name,
 				sourceMessageId: msg.source_message_id,
+				replyToMessageId: msg.reply_to_message_id,
 				content: msg.content,
 				signal: controller.signal,
 				attachments: msg.attachments,

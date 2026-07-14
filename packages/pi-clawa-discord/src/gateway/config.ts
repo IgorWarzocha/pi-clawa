@@ -193,10 +193,10 @@ export const config = {
   ),
 
   /** Max size for a single Discord attachment in bytes (0 disables the limit) */
-  maxAttachmentBytes: envInt('MAX_ATTACHMENT_BYTES', 25 * 1024 * 1024, { min: 0 }),
+  maxAttachmentBytes: envInt('MAX_ATTACHMENT_BYTES', 10 * 1024 * 1024, { min: 0 }),
 
   /** Max combined attachment size per Discord message in bytes (0 disables the limit) */
-  maxTotalAttachmentBytes: envInt('MAX_TOTAL_ATTACHMENT_BYTES', 50 * 1024 * 1024, { min: 0 }),
+  maxTotalAttachmentBytes: envInt('MAX_TOTAL_ATTACHMENT_BYTES', 25 * 1024 * 1024, { min: 0 }),
 } as const;
 
 export type Config = typeof config;

@@ -263,6 +263,7 @@ export function createMessageHandler(
 		sender,
 		senderName,
 		sourceMessageId: message.id,
+		replyToMessageId: message.id,
 		logRowId: observedLogRowId,
 		content,
 		timestamp,

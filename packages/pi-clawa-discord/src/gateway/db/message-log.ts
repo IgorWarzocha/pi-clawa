@@ -61,6 +61,29 @@ export function getLoggedSourceMessageRowId(
 	return row?.rowid;
 }
 
+export function updateLoggedDiscordMessage(
+	channelJid: string,
+	sourceMessageId: string,
+	content: string,
+): boolean {
+	return (
+		getDb()
+			.prepare(`
+      update message_log
+      set content = ?, timestamp = datetime('now')
+      where channel_jid = ? and role = 'user' and source_message_id = ?
+    `)
+			.run(content, channelJid, sourceMessageId).changes > 0
+	);
+}
+
+export function markLoggedDiscordMessageDeleted(
+	channelJid: string,
+	sourceMessageId: string,
+): boolean {
+	return updateLoggedDiscordMessage(channelJid, sourceMessageId, "[Deleted Discord message]");
+}
+
 export function getLatestLoggedMessageRowId(channelJid: string): number {
 	const row = getDb()
 		.prepare(`

@@ -12,6 +12,7 @@ export interface QueuedMessage {
 	sender: string;
 	sender_name: string;
 	source_message_id: string | null;
+	reply_to_message_id: string | null;
 	log_rowid: number | null;
 	content: string;
 	timestamp: string;
@@ -35,4 +36,20 @@ export interface DiscordMessageHandle {
 	label: string;
 	channelJid: string;
 	messageId: string;
+}
+
+export interface QueuedDiscordDelivery {
+	rowid: number;
+	request_json: string;
+	status: "pending" | "processing" | "done" | "failed";
+}
+
+export interface StoredDiscordInteraction {
+	token: string;
+	channel_jid: string;
+	message_id: string | null;
+	kind: "button" | "select" | "modal";
+	payload_json: string;
+	expires_at: number;
+	consumed_at: number | null;
 }

@@ -11,6 +11,7 @@ import { stopGateway } from './src/extension/gateway.js'
 import { getGatewayProcess, setGatewayProcess } from './src/extension/gateway-state.js'
 import { parseFinalRoutes } from './src/gateway/agent/final-routes.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
+import { validateDiscordDeliveryRequest } from './src/gateway/delivery-types.js'
 import { stripAcceptedTrigger } from './src/gateway/discord/policy.js'
 import { sanitizeDiscordLabel, sanitizeDiscordText } from './src/gateway/discord/sanitize.js'
 
@@ -22,6 +23,7 @@ const PRIMARY_TRIGGER_PATTERN = /^@pi\b/iu
 const TRIGGER_ALIAS_PATTERN = /\b(?:claw\w*|clawa\w*)\b/iu
 const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
 const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
+const CARD_POLL_CONFLICT_PATTERN = /cards and polls are separate message modes/
 
 type Handler = (event: unknown, ctx: any) => unknown
 
@@ -250,6 +252,24 @@ test('Discord schema rejects duplicate source messages at durable boundaries', (
         ('dc:one', 'human', 'Human', 'old-message', 2, 'pending replay', datetime('now'), 'pending');
     `)
     runSchemaMigrations(db)
+    const queueColumns = db.prepare('pragma table_info(message_queue)').all() as Array<{
+      name: string
+    }>
+    assert.ok(queueColumns.some((column) => column.name === 'reply_to_message_id'))
+    assert.ok(
+      db
+        .prepare(
+          "select 1 from sqlite_master where type = 'table' and name = 'discord_delivery_queue'",
+        )
+        .get(),
+    )
+    assert.ok(
+      db
+        .prepare(
+          "select 1 from sqlite_master where type = 'table' and name = 'discord_interactions'",
+        )
+        .get(),
+    )
     assert.equal(
       (db.prepare('select count(*) as count from message_queue').get() as { count: number }).count,
       1,
@@ -292,4 +312,41 @@ test('Discord schema rejects duplicate source messages at durable boundaries', (
   } finally {
     db.close()
   }
+})
+
+test('Discord rich delivery validation keeps incompatible message modes explicit', () => {
+  const fileStat = () => ({ size: 512 })
+  assert.doesNotThrow(() =>
+    validateDiscordDeliveryRequest(
+      {
+        channelJid: 'dc:one',
+        title: 'A useful picture',
+        card: true,
+        files: [{ path: '/house/result.png', description: 'A purple chart' }],
+        actions: [{ label: 'Dig deeper', prompt: 'Please dig deeper.' }],
+        select: {
+          placeholder: 'Choose one',
+          options: [
+            { label: 'Quick', prompt: 'Do the quick pass.' },
+            { label: 'Deep', prompt: 'Do the deep pass.' },
+          ],
+        },
+      },
+      { maxAttachmentBytes: 1024, maxTotalAttachmentBytes: 2048, fileStat },
+    ),
+  )
+
+  assert.throws(
+    () =>
+      validateDiscordDeliveryRequest(
+        {
+          channelJid: 'dc:one',
+          card: true,
+          files: [],
+          poll: { question: 'Which?', answers: ['A', 'B'] },
+        },
+        { maxAttachmentBytes: 1024, maxTotalAttachmentBytes: 2048, fileStat },
+      ),
+    CARD_POLL_CONFLICT_PATTERN,
+  )
 })

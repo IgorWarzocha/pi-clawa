@@ -9,8 +9,10 @@
 import {
 	Client,
 	Events,
+	MessageFlags,
 	Partials,
 	type Interaction,
+	type InteractionReplyOptions,
 	type MessageReaction,
 	type PartialMessageReaction,
 	type PartialUser,
@@ -28,10 +30,25 @@ import {
 } from "./slash-commands.js";
 import { createMessageHandler } from "./inbound.js";
 import {
+	handleAskClawaCommand,
+	handleDiscordButton,
+	handleDiscordModal,
+	handleDiscordSelect,
+} from "./interactions.js";
+import {
+	reconcileDiscordMessageDelete,
+	reconcileDiscordMessageUpdate,
+} from "./message-lifecycle.js";
+import {
 	addReactionWithClient,
 	sendResponseWithClient,
 	setTypingWithClient,
 } from "./outbound.js";
+import type {
+	DiscordDeliveryRequest,
+	DiscordDeliveryResult,
+} from "../delivery-types.js";
+import { sendDiscordDeliveryWithClient } from "./delivery-renderer.js";
 import {
 	buildTriggerAliasPattern,
 	escapeRegExp,
@@ -69,6 +86,12 @@ export async function startDiscord(): Promise<void> {
 	);
 	client.on(Events.MessageReactionAdd, (reaction, user) => {
 		void handleReactionEvent(reaction, user, "added");
+	});
+	client.on(Events.MessageUpdate, (_oldMessage, newMessage) => {
+		void reconcileDiscordMessageUpdate(newMessage);
+	});
+	client.on(Events.MessageDelete, (message) => {
+		reconcileDiscordMessageDelete(message);
 	});
 	client.on(Events.MessageReactionRemove, (reaction, user) => {
 		void handleReactionEvent(reaction, user, "removed");
@@ -126,13 +149,52 @@ async function handleInteraction(interaction: Interaction): Promise<void> {
 
 		if (interaction.isChatInputCommand()) {
 			await handleChatCommand(interaction);
+			return;
+		}
+
+		if (interaction.isMessageContextMenuCommand()) {
+			await handleAskClawaCommand(interaction);
+			return;
+		}
+
+		if (interaction.isButton()) {
+			await handleDiscordButton(interaction);
+			return;
+		}
+
+		if (interaction.isStringSelectMenu()) {
+			await handleDiscordSelect(interaction);
+			return;
+		}
+
+		if (interaction.isModalSubmit()) {
+			await handleDiscordModal(interaction);
 		}
 	} catch (err: any) {
 		logger.error(
 			{ err: err.message, id: interaction.id },
 			"Interaction handler failed",
 		);
+		await reportInteractionFailure(interaction).catch((replyError: unknown) => {
+			logger.warn(
+				{ err: replyError instanceof Error ? replyError.message : String(replyError) },
+				"Could not report Discord interaction failure",
+			);
+		});
 	}
+}
+
+async function reportInteractionFailure(interaction: Interaction): Promise<void> {
+	if (!interaction.isRepliable()) return;
+	const payload: InteractionReplyOptions = {
+		content: "Clawa could not handle that Discord action. Please try again.",
+		...(interaction.inGuild() ? { flags: MessageFlags.Ephemeral } : {}),
+	};
+	if (interaction.replied || interaction.deferred) {
+		await interaction.followUp(payload);
+		return;
+	}
+	await interaction.reply(payload);
 }
 
 async function handleReactionEvent(
@@ -212,6 +274,12 @@ export async function addReaction(
 	emoji: string,
 ): Promise<boolean> {
 	return addReactionWithClient(client, jid, messageId, emoji);
+}
+
+export async function sendDelivery(
+	request: DiscordDeliveryRequest,
+): Promise<DiscordDeliveryResult> {
+	return await sendDiscordDeliveryWithClient(client, request);
 }
 
 export function stopDiscord(): void {

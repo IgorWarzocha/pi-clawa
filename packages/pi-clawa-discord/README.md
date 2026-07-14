@@ -4,6 +4,10 @@ Discord adapter for `@howaboua/pi-clawa`.
 
 Status: WIP. The adapter works, but setup polish, lifecycle behavior, multi-channel taste, and autonomy policy are still being shaped.
 
+The Discord lane understands incoming media, replies, reactions, edits, and deletions. Clawa can send local images and files, ordinary messages, Components V2 cards, buttons, selects, modal-backed actions, and native polls. Interactive choices return through the same routed Clawa conversation instead of becoming a separate workflow system.
+
+Right-click any routed Discord message and choose **Apps → Ask Clawa** to ask about that exact message.
+
 Setup guide: `DISCORD-BOT-SETUP.md`.
 
 For git-repo installs, add the core package from git and this adapter from a local checkout path:

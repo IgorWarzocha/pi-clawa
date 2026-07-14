@@ -50,10 +50,37 @@ export function runSchemaMigrations(db: Database.Database): void {
       processed_at      text not null default (datetime('now')),
       primary key (worker_id, message_timestamp, content_hash)
     );
+
+    create table if not exists discord_delivery_queue (
+      rowid             integer primary key autoincrement,
+      request_json      text not null,
+      status            text not null default 'pending',
+      result_json       text,
+      error             text,
+      created_at        text not null default (datetime('now')),
+      processed_at      text
+    );
+
+    create index if not exists idx_discord_delivery_queue_status
+      on discord_delivery_queue(status, rowid);
+
+    create table if not exists discord_interactions (
+      token         text primary key,
+      channel_jid   text not null,
+      message_id    text,
+      kind          text not null,
+      payload_json  text not null,
+      expires_at    integer not null,
+      consumed_at   integer
+    );
+
+    create index if not exists idx_discord_interactions_expiry
+      on discord_interactions(expires_at);
   `);
 
 	ensureTableColumn(db, "message_queue", "attachments", "text");
 	ensureTableColumn(db, "message_queue", "source_message_id", "text");
+	ensureTableColumn(db, "message_queue", "reply_to_message_id", "text");
 	ensureTableColumn(db, "message_queue", "log_rowid", "integer");
 	ensureTableColumn(db, "message_log", "sender_id", "text not null default ''");
 	ensureTableColumn(db, "message_log", "sender_name", "text not null default ''");

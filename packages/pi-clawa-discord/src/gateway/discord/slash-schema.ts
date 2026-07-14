@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from 'discord.js'
+import { ApplicationCommandType, ContextMenuCommandBuilder, SlashCommandBuilder } from 'discord.js'
 
 export const PI_COMMAND = new SlashCommandBuilder()
   .setName('pi')
@@ -6,3 +6,7 @@ export const PI_COMMAND = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub.setName('status').setDescription('Show the Clawa Discord route and worker status'),
   )
+
+export const ASK_CLAWA_COMMAND = new ContextMenuCommandBuilder()
+  .setName('Ask Clawa')
+  .setType(ApplicationCommandType.Message)

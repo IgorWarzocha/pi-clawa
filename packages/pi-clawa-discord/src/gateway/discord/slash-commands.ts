@@ -11,11 +11,11 @@ import { config } from '../config.js';
 import { createDmChannel, getChannel, registerChannel } from '../db.js';
 import { logger } from '../logger.js';
 import type { RegisteredChannel } from '../types.js';
-import { PI_COMMAND } from './slash-schema.js';
+import { ASK_CLAWA_COMMAND, PI_COMMAND } from './slash-schema.js';
 import { buildClawaStatusMessage } from './slash-status.js';
 
 export async function registerGlobalCommands(client: Client<true>): Promise<void> {
-  await client.application.commands.set([PI_COMMAND.toJSON()]);
+  await client.application.commands.set([PI_COMMAND.toJSON(), ASK_CLAWA_COMMAND.toJSON()]);
   logger.info('Registered global slash commands');
 }
 

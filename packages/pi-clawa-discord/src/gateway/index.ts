@@ -6,6 +6,7 @@ import { initDb, closeDb, writeChannelsSnapshot } from './db.js';
 import { startDiscord, stopDiscord, getBotTag } from './discord/client.js';
 import { startProcessingLoop, stopProcessingLoop } from './agent/queue.js';
 import { clearAllTypingLeases } from './agent/typing.js';
+import { startDiscordDeliveryQueue, stopDiscordDeliveryQueue } from './agent/delivery-queue.js';
 import { ensureDiscordRoutesFile } from './channel-routes.js';
 import { cleanupOldDiscordMediaAssets } from './discord/attachments.js';
 
@@ -27,6 +28,7 @@ export async function startGateway(): Promise<void> {
   cleanupOldDiscordMediaAssets();
 
   let processingStarted = false;
+  let deliveryQueueStarted = false;
   let shutdownPromise: Promise<void> | null = null;
 
   let resolveSignalWait!: () => void;
@@ -51,6 +53,10 @@ export async function startGateway(): Promise<void> {
         await stopProcessingLoop({ timeoutMs: config.shutdownTimeoutMs });
       }
 
+      if (deliveryQueueStarted) {
+        await stopDiscordDeliveryQueue();
+      }
+
       clearAllTypingLeases();
       stopDiscord();
       closeDb();
@@ -72,6 +78,8 @@ export async function startGateway(): Promise<void> {
 
     startProcessingLoop();
     processingStarted = true;
+    startDiscordDeliveryQueue();
+    deliveryQueueStarted = true;
     logger.info({
       bot: getBotTag(),
       trigger: `@${config.triggerName}`,
