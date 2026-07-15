@@ -277,6 +277,7 @@ test('Discord schema rejects duplicate source messages at durable boundaries', (
       name: string
     }>
     assert.ok(queueColumns.some((column) => column.name === 'reply_to_message_id'))
+    assert.ok(queueColumns.some((column) => column.name === 'reply_context'))
     assert.ok(
       db
         .prepare(

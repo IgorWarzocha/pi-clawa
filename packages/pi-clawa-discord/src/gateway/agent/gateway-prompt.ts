@@ -21,6 +21,7 @@ export interface GatewayPromptOptions {
 	mappedWorker?: string | undefined;
 	logRowId?: number | null | undefined;
 	sourceMessageId?: string | null | undefined;
+	replyContext?: string | null | undefined;
 }
 
 export interface GatewayPrompt {
@@ -37,7 +38,7 @@ export function getReplyAnchorSourceMessageId(
 }
 
 export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt {
-	const { jid, senderName, content, mappedWorker, logRowId, sourceMessageId } = options;
+	const { jid, senderName, content, mappedWorker, logRowId, sourceMessageId, replyContext } = options;
 	const lastSeenLogRowId = getChannelContextLastSeenLogRowId(jid);
 	const latestLogRowId = getLatestLoggedMessageRowId(jid);
 	const observedThroughRowId = logRowId ?? latestLogRowId;
@@ -116,6 +117,7 @@ export function buildGatewayPrompt(options: GatewayPromptOptions): GatewayPrompt
 			timeNote,
 			buildDiscordSourceLine(jid),
 			observedContext,
+			replyContext?.trim() ?? "",
 			`Current trigger:\n${formatMessageLine({ handle: currentHandle, senderName, content })}`,
 		]
 			.filter(Boolean)

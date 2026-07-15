@@ -11,20 +11,22 @@ export function enqueueMessage(msg: {
 	senderName: string;
 	sourceMessageId?: string | null;
 	replyToMessageId?: string | null;
+	replyContext?: string | null;
 	logRowId?: number | null;
 	content: string;
 	timestamp: string;
 	attachments?: string | null;
 }): boolean {
 	const result = getDb().prepare(`
-    insert or ignore into message_queue (channel_jid, sender, sender_name, source_message_id, reply_to_message_id, log_rowid, content, timestamp, attachments)
-    values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    insert or ignore into message_queue (channel_jid, sender, sender_name, source_message_id, reply_to_message_id, reply_context, log_rowid, content, timestamp, attachments)
+    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
 		msg.channelJid,
 		msg.sender,
 		msg.senderName,
 		msg.sourceMessageId ?? null,
 		msg.replyToMessageId ?? msg.sourceMessageId ?? null,
+		msg.replyContext ?? null,
 		msg.logRowId ?? null,
 		msg.content,
 		msg.timestamp,
@@ -49,7 +51,7 @@ export function claimNextMessage(
     set status = 'processing'
     where rowid = (select rowid from next_message)
       and status = 'pending'
-    returning rowid, channel_jid, sender, sender_name, source_message_id, reply_to_message_id, log_rowid, content, timestamp, status, attachments
+    returning rowid, channel_jid, sender, sender_name, source_message_id, reply_to_message_id, reply_context, log_rowid, content, timestamp, status, attachments
   `)
 		.get(channelJid) as QueuedMessage | undefined;
 }

@@ -13,6 +13,7 @@ export interface QueuedMessage {
 	sender_name: string;
 	source_message_id: string | null;
 	reply_to_message_id: string | null;
+	reply_context: string | null;
 	log_rowid: number | null;
 	content: string;
 	timestamp: string;

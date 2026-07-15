@@ -15,6 +15,7 @@ export function runSchemaMigrations(db: Database.Database): void {
       sender        text not null,
       sender_name   text not null,
       source_message_id text,
+      reply_context text,
       log_rowid     integer,
       content       text not null,
       timestamp     text not null,
@@ -87,6 +88,7 @@ export function runSchemaMigrations(db: Database.Database): void {
 	ensureTableColumn(db, "message_queue", "attachments", "text");
 	ensureTableColumn(db, "message_queue", "source_message_id", "text");
 	ensureTableColumn(db, "message_queue", "reply_to_message_id", "text");
+	ensureTableColumn(db, "message_queue", "reply_context", "text");
 	ensureTableColumn(db, "message_queue", "log_rowid", "integer");
 	ensureTableColumn(db, "message_log", "sender_id", "text not null default ''");
 	ensureTableColumn(db, "message_log", "sender_name", "text not null default ''");

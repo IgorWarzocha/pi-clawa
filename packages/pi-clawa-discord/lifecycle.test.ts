@@ -113,12 +113,16 @@ test('Discord sends carry enforced stable nonces', async () => {
 
   const result = await sendDiscordDeliveryWithClient(
     client as never,
-    { channelJid: 'dc:one', text: 'hello', files: [] },
+    { channelJid: 'dc:one', text: 'hello', replyToMessageId: 'current-trigger', files: [] },
     'stable-nonce',
   )
   assert.equal(result.messageId, 'message-one')
   assert.equal(sentPayload?.['nonce'], 'stable-nonce')
   assert.equal(sentPayload?.['enforceNonce'], true)
+  assert.deepEqual(sentPayload?.['reply'], {
+    messageReference: 'current-trigger',
+    failIfNotExists: false,
+  })
 })
 
 test('Discord long text retries each rendered chunk idempotently', async () => {

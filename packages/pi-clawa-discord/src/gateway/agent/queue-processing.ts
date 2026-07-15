@@ -20,6 +20,7 @@ export async function processQueuedMessage(params: {
   senderName: string;
   sourceMessageId: string | null;
   replyToMessageId?: string | null;
+  replyContext?: string | null;
   content: string;
   signal: AbortSignal;
   attachments?: string | null;
@@ -32,6 +33,7 @@ export async function processQueuedMessage(params: {
     senderName,
     sourceMessageId,
     replyToMessageId,
+    replyContext,
     content,
     signal,
     logRowId,
@@ -55,6 +57,7 @@ export async function processQueuedMessage(params: {
       mappedWorker,
       logRowId,
       sourceMessageId: replyToMessageId ?? sourceMessageId,
+      replyContext,
     });
 
     if (!mappedWorker) {

@@ -21,6 +21,7 @@ import {
 	type LinkMeta,
 } from "./attachments.js";
 import { buildGuildPresenceContext } from "./presence.js";
+import { formatDiscordReplyContext, readDiscordReplyContext } from "./reply-context.js";
 import {
 	shouldAcceptTriggeredMessage,
 	shouldIgnoreExcludedGuildChannel,
@@ -130,27 +131,12 @@ export function createMessageHandler(
 		}
 	}
 
-	// Reply context
-	let isReplyToBot = false;
-	if (message.reference?.messageId) {
-		try {
-			const ref = await message.channel.messages.fetch(
-				message.reference.messageId,
-			);
-			isReplyToBot = ref.author.id === botId;
-			const refAuthor =
-				sanitizeDiscordLabel(
-					ref.member?.displayName ||
-						ref.author.displayName ||
-						ref.author.username,
-				) || ref.author.id;
-			content = `[Reply to ${refAuthor}] ${content}`;
-		} catch {
-			// deleted message
-		}
-	}
+	const reply = await readDiscordReplyContext(message, botId);
+	const replyContext = formatDiscordReplyContext(reply.entries);
 
-	let observedContent = content.trim();
+	let observedContent = reply.immediateAuthor
+		? `[Reply to ${reply.immediateAuthor}] ${content}`.trim()
+		: content.trim();
 	if (!observedContent && acceptedAttachments.length > 0) {
 		observedContent = buildAttachmentOnlyPrompt(acceptedAttachments.length);
 	}
@@ -228,7 +214,7 @@ export function createMessageHandler(
 
 	const isDirected = shouldAcceptTriggeredMessage(content, {
 		requiresTrigger: channel.requiresTrigger,
-		isReplyToBot,
+		isReplyToBot: reply.isReplyToBot,
 		triggerPattern,
 		triggerAliasPattern,
 	});
@@ -264,6 +250,7 @@ export function createMessageHandler(
 		senderName,
 		sourceMessageId: message.id,
 		replyToMessageId: message.id,
+		replyContext,
 		logRowId: observedLogRowId,
 		content,
 		timestamp,
