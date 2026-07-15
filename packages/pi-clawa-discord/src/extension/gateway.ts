@@ -100,13 +100,17 @@ export async function startGateway(projectRoot: string, ctx: ExtensionContext): 
   if (ctx.hasUI) ctx.ui.notify('Discord gateway started for this Clawa workspace.', 'info')
 }
 
-export async function stopGateway(): Promise<void> {
+export async function stopGateway(options: { stopAdopted?: boolean } = {}): Promise<void> {
   const state = getGatewayState()
   if (state.status === 'running-owned') {
     await stopOwnedGateway(state.process, state.projectRoot)
     return
   }
   if (state.status === 'running-adopted') {
+    if (options.stopAdopted === false) {
+      setGatewayState({ status: 'stopped' })
+      return
+    }
     await stopAdoptedGateway(state.lock, state.projectRoot)
     return
   }

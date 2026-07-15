@@ -29,6 +29,6 @@ export default function clawDiscord(pi: ExtensionAPI): void {
   })
 
   pi.on('session_shutdown', async () => {
-    await stopGateway()
+    await stopGateway({ stopAdopted: false })
   })
 }

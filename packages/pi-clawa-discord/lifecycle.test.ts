@@ -4,7 +4,6 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import Database from 'better-sqlite3'
-import { splitDiscordMessage } from './src/gateway/agent/delivery.js'
 import { readSessionTokensFromJsonl } from './src/gateway/agent/session-status.js'
 import {
   claimNextDiscordDeliveryInDb,
@@ -17,6 +16,7 @@ import {
 import { enqueueDiscordInteractionTurnInDb } from './src/gateway/db/interactions.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
 import { sendDiscordDeliveryWithClient } from './src/gateway/discord/delivery-renderer.js'
+import { splitDiscordMessage } from './src/gateway/discord/text.js'
 import { parseBooleanSetting, parseEnumSetting, parseIntegerSetting } from './src/shared/env.js'
 import { acquireGatewayLock, readGatewayLock } from './src/shared/gateway-lock.js'
 
@@ -119,6 +119,35 @@ test('Discord sends carry enforced stable nonces', async () => {
   assert.equal(result.messageId, 'message-one')
   assert.equal(sentPayload?.['nonce'], 'stable-nonce')
   assert.equal(sentPayload?.['enforceNonce'], true)
+})
+
+test('Discord long text retries each rendered chunk idempotently', async () => {
+  const sentPayloads: Record<string, unknown>[] = []
+  const client = {
+    channels: {
+      fetch: async () => ({
+        send: async (payload: Record<string, unknown>) => {
+          sentPayloads.push(payload)
+          return { id: `message-${sentPayloads.length}` }
+        },
+      }),
+    },
+  }
+
+  const result = await sendDiscordDeliveryWithClient(
+    client as never,
+    { channelJid: 'dc:one', text: 'x'.repeat(4_501), files: [] },
+    'stable-parent-nonce',
+  )
+  assert.equal(result.messageId, 'message-3')
+  assert.deepEqual(
+    sentPayloads.map((payload) => String(payload['content']).length),
+    [2_000, 2_000, 501],
+  )
+  const nonces = sentPayloads.map((payload) => String(payload['nonce']))
+  assert.equal(new Set(nonces).size, 3)
+  assert.ok(nonces.every((nonce) => nonce.length <= 24))
+  assert.ok(sentPayloads.every((payload) => payload['enforceNonce'] === true))
 })
 
 test('Discord interaction consumption rolls back when enqueue fails', () => {

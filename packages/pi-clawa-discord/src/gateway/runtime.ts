@@ -16,12 +16,14 @@ export class GatewayRuntime {
   private deliveryQueueStarted = false;
   private shutdownPromise: Promise<void> | null = null;
   private releaseLock: (() => Promise<void>) | null = null;
+  private stoppingForSignal = false;
   private resolveSignalWait!: () => void;
   private readonly signalWait = new Promise<void>((resolve) => {
     this.resolveSignalWait = resolve;
   });
 
   private readonly onSignal = (signal: NodeJS.Signals): void => {
+	this.stoppingForSignal = true;
     void this.shutdown(`received ${signal}`).then(this.resolveSignalWait, this.resolveSignalWait);
   };
 
@@ -72,6 +74,7 @@ export class GatewayRuntime {
       await this.signalWait;
     } catch (error) {
       await this.shutdown('startup failure');
+      if (this.stoppingForSignal) return;
       throw error;
     }
   }

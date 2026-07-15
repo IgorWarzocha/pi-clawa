@@ -220,6 +220,22 @@ test('Discord gateway stop waits for the managed child to exit', async () => {
   assert.deepEqual(getGatewayState(), { status: 'stopped' })
 })
 
+test('Discord session shutdown releases an adopted gateway without killing it', async () => {
+  setGatewayState({
+    status: 'running-adopted',
+    projectRoot: '/test',
+    lockPath: '/test/gateway.pid',
+    lock: {
+      pid: process.pid,
+      projectRoot: '/test',
+      entryPath: process.argv[1] ?? '',
+      startedAt: new Date().toISOString(),
+    },
+  })
+  await stopGateway({ stopAdopted: false })
+  assert.deepEqual(getGatewayState(), { status: 'stopped' })
+})
+
 test('Discord schema rejects duplicate source messages at durable boundaries', () => {
   const db = new Database(':memory:')
   try {

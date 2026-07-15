@@ -60,6 +60,7 @@ let client: Client | null = null;
 let triggerPattern: RegExp;
 let triggerAliasPattern: RegExp | null = null;
 let botId: string;
+let rejectDiscordStartup: ((error: Error) => void) | null = null;
 
 export async function startDiscord(): Promise<void> {
 	client = new Client({
@@ -130,10 +131,12 @@ export async function startDiscord(): Promise<void> {
 		};
 
 		const cleanup = () => {
+			if (rejectDiscordStartup === onStartupError) rejectDiscordStartup = null;
 			client?.off(Events.ClientReady, onReady);
 			client?.off(Events.Error, onStartupError);
 		};
 
+		rejectDiscordStartup = onStartupError;
 		client!.once(Events.ClientReady, onReady);
 		client!.once(Events.Error, onStartupError);
 		client!.login(config.discordToken).catch(onStartupError);
@@ -279,6 +282,7 @@ export async function sendDelivery(
 }
 
 export function stopDiscord(): void {
+	rejectDiscordStartup?.(new Error("Discord startup was stopped"));
 	if (client) {
 		client.destroy();
 		client = null;

@@ -1,14 +1,13 @@
 import type { ClawasDiscordContext } from '@howaboua/pi-clawa/clawas/comms/types';
 import { enqueueDiscordDelivery } from '../db.js';
 import type { DiscordDeliveryRequest } from '../delivery-types.js';
+import { splitDiscordMessage } from '../discord/text.js';
 import { logger } from '../logger.js';
 import type { DiscordMessageHandle } from '../types.js';
 import { extractDiscordDirectives } from './discord-directives.js';
 import { parseFinalRoutes, resolveDiscordRouteTarget } from './final-routes.js';
 import { sendClawasSessionMessage } from './invoke-clawas-rpc.js';
 import { clearTypingLease } from './typing.js';
-
-const DISCORD_MAX_LENGTH = 2_000;
 
 export async function deliverClawaFinalText(options: {
   workerId: string;
@@ -99,19 +98,6 @@ export async function deliverClawaFinalText(options: {
 
 function queueIntent(request: DiscordDeliveryRequest, deliveryKey: string): void {
   enqueueDiscordDelivery(request, { deliveryKey });
-}
-
-export function splitDiscordMessage(text: string): string[] {
-  const chunks: string[] = [];
-  let remaining = text.trim();
-  while (remaining.length > DISCORD_MAX_LENGTH) {
-    let splitAt = remaining.lastIndexOf('\n', DISCORD_MAX_LENGTH);
-    if (splitAt <= 0) splitAt = DISCORD_MAX_LENGTH;
-    chunks.push(remaining.slice(0, splitAt));
-    remaining = remaining.slice(splitAt).replace(/^\n/u, '');
-  }
-  if (remaining) chunks.push(remaining);
-  return chunks;
 }
 
 function discordContextHandles(

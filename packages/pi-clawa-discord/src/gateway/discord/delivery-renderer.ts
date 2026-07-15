@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { basename, extname } from "node:path";
@@ -28,6 +28,7 @@ import type {
 	DiscordFileInput,
 } from "../delivery-types.js";
 import { replacePlainUserMentions, type MentionCandidate } from "./mentions.js";
+import { splitDiscordMessage } from "./text.js";
 import { validateDiscordDeliveryRequest } from "../delivery-types.js";
 import { config } from "../config.js";
 import {
@@ -97,6 +98,9 @@ export async function sendDiscordDeliveryWithClient(
 	if (!hasMessage) {
 		return { sentFiles: 0, sentText: false, reacted };
 	}
+	if (isPlainTextDelivery(resolvedRequest)) {
+		return await sendPlainTextDelivery(textChannel, resolvedRequest, nonce, reacted);
+	}
 
 	const preparedFiles = await prepareFiles(resolvedRequest.files);
 	const interactive = prepareInteractiveComponents(resolvedRequest);
@@ -116,6 +120,50 @@ export async function sendDiscordDeliveryWithClient(
 		deleteDiscordInteractions(interactive.tokens);
 		throw error;
 	}
+}
+
+function isPlainTextDelivery(request: DiscordDeliveryRequest): boolean {
+	return Boolean(
+		request.text?.trim() &&
+			!request.title?.trim() &&
+			!request.card &&
+			request.files.length === 0 &&
+			!request.actions?.length &&
+			!request.select &&
+			!request.poll,
+	);
+}
+
+async function sendPlainTextDelivery(
+	channel: TextChannel | DMChannel,
+	request: DiscordDeliveryRequest,
+	nonce: string,
+	reacted: boolean,
+): Promise<DiscordDeliveryResult> {
+	const chunks = splitDiscordMessage(request.text ?? "");
+	let messageId: string | undefined;
+	for (const [index, chunk] of chunks.entries()) {
+		const message = await channel.send({
+			content: chunk,
+			nonce: chunks.length === 1 ? nonce : childNonce(nonce, index),
+			enforceNonce: true,
+			allowedMentions: { parse: ["users"], repliedUser: false },
+			...(index === 0 && request.replyToMessageId
+				? {
+						reply: {
+							messageReference: request.replyToMessageId,
+							failIfNotExists: false,
+						},
+					}
+				: {}),
+		});
+		messageId = message.id;
+	}
+	return { messageId, sentFiles: 0, sentText: chunks.length > 0, reacted };
+}
+
+function childNonce(nonce: string, index: number): string {
+	return createHash("sha256").update(`${nonce}:${index}`).digest("hex").slice(0, 24);
 }
 
 async function resolveOutgoingMentions(
