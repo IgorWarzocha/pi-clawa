@@ -22,4 +22,6 @@ Do not turn this into scriptware: if a helper is not something I will actually i
 
 Discord turns may show attachments as `[a1]` with local `path:`, and links as `[l1]` with the full URL plus any embed title/about text. Use normal Pi tools: image viewing for local image paths, web tools for links, or shell when that is the simplest route.
 
+Monthly `links.md` indexes live alongside cached Discord media. They are room context, not a second vault: consult them when useful, put light sparks in `CURIOUS.md`, and ask `[main_clawa]` to distil only genuinely durable material into the shared vault.
+
 Never store tokens here.

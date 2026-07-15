@@ -1,11 +1,16 @@
-import { getChannel, markChannelContextSeen, markMessageDone, markMessageFailed } from '../db.js';
-import { sendResponse } from '../discord/client.js';
+import {
+  enqueueDiscordDelivery,
+  getChannel,
+  markChannelContextSeen,
+  markMessageDone,
+  markMessageFailed,
+} from '../db.js';
 import { logger } from '../logger.js';
 import { resolveClawaWorkerForDiscordChannel } from '../channel-routes.js';
 import { buildGatewayPrompt, getReplyAnchorSourceMessageId } from './gateway-prompt.js';
 import { buildClawasDiscordContext } from './invoke-clawas.js';
 import { sendClawasSessionMessage } from './invoke-clawas-rpc.js';
-import { startTypingLease } from './typing.js';
+import { clearTypingLease, startTypingLease } from './typing.js';
 import { primeWorkerOutputMonitor } from './worker-output-monitor.js';
 
 export async function processQueuedMessage(params: {
@@ -54,7 +59,13 @@ export async function processQueuedMessage(params: {
 
     if (!mappedWorker) {
       markMessageFailed(rowid);
-      await sendResponse(jid, 'This Discord channel is known, but it is not routed to a Clawa yet.');
+      enqueueGatewayReply(
+        jid,
+        'This Discord channel is known, but it is not routed to a Clawa yet.',
+        rowid,
+        'unrouted',
+        sourceMessageId,
+      );
       logger.warn({ jid, rowid }, 'Discord message had no Clawa route');
       return;
     }
@@ -83,6 +94,7 @@ export async function processQueuedMessage(params: {
 
     if (signal.aborted) {
       markMessageFailed(rowid);
+      clearTypingLease(jid);
       logger.info({ jid, rowid }, 'Message abandoned: shutdown interrupted delivery');
       return;
     }
@@ -93,6 +105,7 @@ export async function processQueuedMessage(params: {
   } catch (err: any) {
     if (signal.aborted) {
       markMessageFailed(rowid);
+      clearTypingLease(jid);
       logger.info({ jid, rowid }, 'Message abandoned: shutdown interrupted delivery');
       return;
     }
@@ -100,9 +113,34 @@ export async function processQueuedMessage(params: {
     logger.error({ jid, err: err.message }, 'Discord message delivery to Clawa failed');
     markMessageFailed(rowid);
     try {
-      await sendResponse(jid, `⚠️ Internal error: ${err.message?.slice(0, 200)}`);
+      enqueueGatewayReply(
+        jid,
+        `⚠️ Internal error: ${err.message?.slice(0, 200)}`,
+        rowid,
+        'error',
+        sourceMessageId,
+      );
     } catch {
-      // Nothing else to do here.
+      clearTypingLease(jid);
     }
   }
+}
+
+function enqueueGatewayReply(
+  jid: string,
+  text: string,
+  inputRowId: number,
+  kind: string,
+  replyToMessageId: string | null,
+): void {
+  enqueueDiscordDelivery(
+    {
+      channelJid: jid,
+      typingJid: jid,
+      text,
+      replyToMessageId: replyToMessageId ?? undefined,
+      files: [],
+    },
+    { deliveryKey: `gateway-input:${inputRowId}:${kind}` },
+  );
 }

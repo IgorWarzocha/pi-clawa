@@ -8,7 +8,7 @@ import Database from 'better-sqlite3'
 import clawDiscord from './index.js'
 import { adapterEntryPath } from './src/extension/constants.js'
 import { stopGateway } from './src/extension/gateway.js'
-import { getGatewayProcess, setGatewayProcess } from './src/extension/gateway-state.js'
+import { getGatewayState, setGatewayState } from './src/extension/gateway-state.js'
 import { parseFinalRoutes } from './src/gateway/agent/final-routes.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
 import { validateDiscordDeliveryRequest } from './src/gateway/delivery-types.js'
@@ -208,11 +208,16 @@ test('Discord gateway stop waits for the managed child to exit', async () => {
     return true
   }
 
-  setGatewayProcess(child as never)
+  setGatewayState({
+    status: 'running-owned',
+    projectRoot: '/test',
+    lockPath: '/test/gateway.pid',
+    process: child as never,
+  })
   const stopping = stopGateway()
-  assert.equal(getGatewayProcess(), child)
+  assert.equal(getGatewayState().status, 'stopping')
   await stopping
-  assert.equal(getGatewayProcess(), null)
+  assert.deepEqual(getGatewayState(), { status: 'stopped' })
 })
 
 test('Discord schema rejects duplicate source messages at durable boundaries', () => {

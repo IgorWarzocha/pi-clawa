@@ -20,6 +20,10 @@ export function buildClawaStatusMessage(status: ClawaMappedStatus): string {
     ],
     ['Tokens', formatTokenUsage(status.sessionStatus.tokens, status.sessionStatus.statsSource)],
     ['Context', formatContextUsage(status.sessionStatus.contextUsage)],
+    [
+      'Outbound',
+      `${formatNumber(status.deliveryQueue.pending)} pending / ${formatNumber(status.deliveryQueue.dead)} dead`,
+    ],
   ]
 
   return `\`\`\`text\n${formatTwoColumnRows(rows)}\n\`\`\``

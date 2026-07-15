@@ -41,7 +41,10 @@ export interface DiscordMessageHandle {
 export interface QueuedDiscordDelivery {
 	rowid: number;
 	request_json: string;
-	status: "pending" | "processing" | "done" | "failed";
+	status: "pending" | "processing" | "done" | "dead";
+	nonce: string;
+	attempt_count: number;
+	max_attempts: number;
 }
 
 export interface StoredDiscordInteraction {

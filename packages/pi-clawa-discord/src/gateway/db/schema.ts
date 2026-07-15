@@ -53,11 +53,17 @@ export function runSchemaMigrations(db: Database.Database): void {
 
     create table if not exists discord_delivery_queue (
       rowid             integer primary key autoincrement,
+      delivery_key      text,
+      nonce             text,
       request_json      text not null,
       status            text not null default 'pending',
+      attempt_count     integer not null default 0,
+      max_attempts      integer not null default 5,
+      next_attempt_at   integer not null default 0,
       result_json       text,
       error             text,
       created_at        text not null default (datetime('now')),
+      started_at        text,
       processed_at      text
     );
 
@@ -85,6 +91,25 @@ export function runSchemaMigrations(db: Database.Database): void {
 	ensureTableColumn(db, "message_log", "sender_id", "text not null default ''");
 	ensureTableColumn(db, "message_log", "sender_name", "text not null default ''");
 	ensureTableColumn(db, "message_log", "source_message_id", "text");
+	ensureTableColumn(db, "discord_delivery_queue", "delivery_key", "text");
+	ensureTableColumn(db, "discord_delivery_queue", "nonce", "text");
+	ensureTableColumn(db, "discord_delivery_queue", "attempt_count", "integer not null default 0");
+	ensureTableColumn(db, "discord_delivery_queue", "max_attempts", "integer not null default 5");
+	ensureTableColumn(db, "discord_delivery_queue", "next_attempt_at", "integer not null default 0");
+	ensureTableColumn(db, "discord_delivery_queue", "started_at", "text");
+	db.exec(`
+    update discord_delivery_queue
+    set delivery_key = 'legacy:' || rowid
+    where delivery_key is null;
+    update discord_delivery_queue
+    set nonce = printf('clawa-%019d', rowid)
+    where nonce is null;
+    update discord_delivery_queue
+    set status = 'dead'
+    where status = 'failed';
+    create unique index if not exists idx_discord_delivery_queue_key
+      on discord_delivery_queue(delivery_key);
+  `);
 
 	// Discord may replay events after reconnects. Migrate old duplicate rows as one
 	// transaction, preserving completed work first and keeping queue log anchors valid.

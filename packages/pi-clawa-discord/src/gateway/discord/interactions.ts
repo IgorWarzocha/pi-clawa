@@ -10,13 +10,10 @@ import {
 	TextInputStyle,
 } from "discord.js";
 import {
-	consumeDiscordInteraction,
-	enqueueMessage,
+	enqueueDiscordInteractionTurn,
 	getChannel,
 	getDiscordInteraction,
-	logMessage,
 } from "../db.js";
-import { logger } from "../logger.js";
 import type { StoredDiscordInteraction } from "../types.js";
 import type { DiscordInteractionPayload, DiscordModalActionPayload } from "./interaction-payloads.js";
 
@@ -40,12 +37,14 @@ export async function handleDiscordButton(interaction: ButtonInteraction): Promi
 		await interaction.showModal(buildActionModal(token, payload));
 		return;
 	}
-	if (payload.type !== "prompt" || !consumeDiscordInteraction(token)) {
+	if (
+		payload.type !== "prompt" ||
+		!enqueueInteractionTurn(interaction, payload.prompt, interaction.message.id, token)
+	) {
 		await replyUnavailable(interaction);
 		return;
 	}
 	await interaction.deferUpdate();
-	enqueueInteractionTurn(interaction, payload.prompt, interaction.message.id);
 }
 
 export async function handleDiscordSelect(
@@ -61,7 +60,7 @@ export async function handleDiscordSelect(
 		return;
 	}
 	const payload = parsePayload(stored);
-	if (payload.type !== "select" || !consumeDiscordInteraction(token)) {
+	if (payload.type !== "select") {
 		await replyUnavailable(interaction);
 		return;
 	}
@@ -72,8 +71,11 @@ export async function handleDiscordSelect(
 		await replyUnavailable(interaction);
 		return;
 	}
+	if (!enqueueInteractionTurn(interaction, prompts.join("\n"), interaction.message.id, token)) {
+		await replyUnavailable(interaction);
+		return;
+	}
 	await interaction.deferUpdate();
-	enqueueInteractionTurn(interaction, prompts.join("\n"), interaction.message.id);
 }
 
 export async function handleDiscordModal(interaction: ModalSubmitInteraction): Promise<void> {
@@ -92,14 +94,17 @@ export async function handleDiscordModal(interaction: ModalSubmitInteraction): P
 		return;
 	}
 	const payload = parsePayload(stored);
-	if (payload.type !== "modal" || !consumeDiscordInteraction(token)) {
+	if (payload.type !== "modal") {
 		await replyUnavailable(interaction);
 		return;
 	}
 	const answer = interaction.fields.getTextInputValue(MODAL_FIELD_ID).trim();
 	const prompt = answer ? `${payload.prompt}\n${answer}` : payload.prompt;
+	if (!enqueueInteractionTurn(interaction, prompt, stored.message_id ?? undefined, token)) {
+		await replyUnavailable(interaction);
+		return;
+	}
 	await interaction.deferReply(ephemeral(interaction.inGuild()));
-	enqueueInteractionTurn(interaction, prompt, stored.message_id ?? undefined);
 	await interaction.editReply("Passed to Clawa.");
 }
 
@@ -162,31 +167,22 @@ function enqueueInteractionTurn(
 		| ModalSubmitInteraction,
 	prompt: string,
 	replyToMessageId?: string,
-): void {
+	token?: string,
+): boolean {
 	const jid = `dc:${interaction.channelId}`;
 	const channel = getChannel(jid);
 	if (!channel) throw new Error("Discord interaction channel is not registered.");
 	const senderName = interaction.user.displayName || interaction.user.username;
-	const timestamp = new Date().toISOString();
-	const logRowId = logMessage({
+	return enqueueDiscordInteractionTurn({
+		token,
 		channelJid: jid,
-		role: "user",
 		senderId: interaction.user.id,
 		senderName,
-		content: prompt,
-		timestamp,
-	});
-	const enqueued = enqueueMessage({
-		channelJid: jid,
-		sender: interaction.user.id,
-		senderName,
 		sourceMessageId: interaction.id,
-		...(replyToMessageId ? { replyToMessageId } : {}),
-		logRowId,
+		replyToMessageId,
 		content: prompt,
-		timestamp,
+		timestamp: new Date().toISOString(),
 	});
-	if (!enqueued) logger.debug({ interactionId: interaction.id }, "Duplicate Discord interaction ignored");
 }
 
 function validStoredInteraction(

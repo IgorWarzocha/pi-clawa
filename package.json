@@ -12,14 +12,14 @@
   "scripts": {
     "typecheck": "tsc --noEmit --noCheck",
     "typecheck:strict": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
+    "test": "node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "lint:strict": "biome check --error-on-warnings .",
     "knip": "knip",
     "deadcode": "knip",
-    "ai:check": "biome check . && tsc --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
-    "ai:check:strict": "biome check --error-on-warnings . && tsc --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/smoke.test.ts",
+    "ai:check": "biome check . && tsc --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts",
+    "ai:check:strict": "biome check --error-on-warnings . && tsc --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts",
     "check": "bun run ai:check"
   },
   "pi": {

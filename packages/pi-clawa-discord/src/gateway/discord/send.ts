@@ -62,7 +62,7 @@ export async function queueDiscordDelivery(
 	while (Date.now() - startedAt < DELIVERY_CONFIRMATION_TIMEOUT_MS) {
 		const state = getDiscordDeliveryState(rowid);
 		if (state?.status === "done" && state.result) return state.result;
-		if (state?.status === "failed") {
+		if (state?.status === "dead") {
 			throw new Error(state.error ?? "Discord delivery failed.");
 		}
 		await sleep(100);

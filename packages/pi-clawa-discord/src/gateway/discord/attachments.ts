@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { appendFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { config } from '../config.js';
@@ -18,6 +18,13 @@ export interface LinkMeta {
 	title?: string | undefined;
 	description?: string | undefined;
 }
+
+const LINKS_INDEX_HEADER = `# Discord links
+
+Room context, not automatic memory. Use this index when a past link becomes relevant.
+If something earns a longer life, distil it into CURIOUS.md or ask [main_clawa] to fold it into the shared vault. Most links are passing scenery; do not preserve them twice.
+
+`;
 
 interface DiscordEmbedLike {
 	url?: string | null | undefined;
@@ -268,7 +275,19 @@ export async function appendDiscordLinksIndex(options: {
 	const timestamp = options.createdAt.toISOString();
 	const channel = options.channelName ? ` — ${options.channelName}` : '';
 	const lines = options.links.map((link) => `- ${timestamp} — ${options.senderName}${channel} — ${markdownLink(link)}`);
-	await appendFile(join(dir, 'links.md'), `${lines.join('\n')}\n`, 'utf8');
+	const indexPath = join(dir, 'links.md');
+	ensureLinksIndexHeader(indexPath);
+	await appendFile(indexPath, `${lines.join('\n')}\n`, 'utf8');
+}
+
+function ensureLinksIndexHeader(indexPath: string): void {
+	if (!existsSync(indexPath)) {
+		writeFileSync(indexPath, LINKS_INDEX_HEADER, 'utf8');
+		return;
+	}
+	const existing = readFileSync(indexPath, 'utf8');
+	if (existing.startsWith('# Discord links')) return;
+	writeFileSync(indexPath, `${LINKS_INDEX_HEADER}${existing}`, 'utf8');
 }
 
 function parseAssetDay(year: string, month: string, day: string): number | null {

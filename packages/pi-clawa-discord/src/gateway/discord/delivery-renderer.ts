@@ -12,6 +12,7 @@ import {
 	MediaGalleryBuilder,
 	MediaGalleryItemBuilder,
 	MessageFlags,
+	PermissionFlagsBits,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 	type Client,
@@ -26,6 +27,7 @@ import type {
 	DiscordDeliveryResult,
 	DiscordFileInput,
 } from "../delivery-types.js";
+import { replacePlainUserMentions, type MentionCandidate } from "./mentions.js";
 import { validateDiscordDeliveryRequest } from "../delivery-types.js";
 import { config } from "../config.js";
 import {
@@ -57,6 +59,7 @@ interface PreparedComponents {
 export async function sendDiscordDeliveryWithClient(
 	client: Client | null,
 	request: DiscordDeliveryRequest,
+	nonce: string,
 ): Promise<DiscordDeliveryResult> {
 	if (!client) throw new Error("Discord gateway is not connected.");
 	validateDiscordDeliveryRequest(request, {
@@ -71,6 +74,12 @@ export async function sendDiscordDeliveryWithClient(
 		throw new Error(`Discord channel is unavailable: ${request.channelJid}`);
 	}
 	const textChannel = channel as TextChannel | DMChannel;
+	const resolvedRequest: DiscordDeliveryRequest = {
+		...request,
+		text: request.text
+			? await resolveOutgoingMentions(textChannel, request.text)
+			: undefined,
+	};
 
 	let reacted = false;
 	if (request.reaction) {
@@ -89,12 +98,12 @@ export async function sendDiscordDeliveryWithClient(
 		return { sentFiles: 0, sentText: false, reacted };
 	}
 
-	const preparedFiles = await prepareFiles(request.files);
-	const interactive = prepareInteractiveComponents(request);
+	const preparedFiles = await prepareFiles(resolvedRequest.files);
+	const interactive = prepareInteractiveComponents(resolvedRequest);
 	try {
-		const payload = request.card
-			? buildCardPayload(request, preparedFiles, interactive.rows)
-			: buildPlainPayload(request, preparedFiles, interactive.rows);
+		const payload = resolvedRequest.card
+			? buildCardPayload(resolvedRequest, preparedFiles, interactive.rows, nonce)
+			: buildPlainPayload(resolvedRequest, preparedFiles, interactive.rows, nonce);
 		const message = await textChannel.send(payload);
 		attachDiscordInteractionMessage(interactive.tokens, message.id);
 		return {
@@ -109,16 +118,44 @@ export async function sendDiscordDeliveryWithClient(
 	}
 }
 
+async function resolveOutgoingMentions(
+	channel: TextChannel | DMChannel,
+	text: string,
+): Promise<string> {
+	if (!("guild" in channel)) return text;
+	try {
+		const members = [...channel.guild.members.cache.values()]
+			.filter((member) => !member.user.bot)
+			.filter((member) =>
+				channel.permissionsFor(member).has(PermissionFlagsBits.ViewChannel),
+			);
+		const candidates: MentionCandidate[] = members.map((member) => ({
+			id: member.id,
+			names: [
+				member.displayName,
+				member.user.globalName ?? "",
+				member.user.username,
+			],
+		}));
+		return candidates.length > 0 ? replacePlainUserMentions(text, candidates) : text;
+	} catch {
+		return text;
+	}
+}
+
 function buildPlainPayload(
 	request: DiscordDeliveryRequest,
 	files: PreparedFile[],
 	rows: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[],
+	nonce: string,
 ): MessageCreateOptions {
 	const content = formatDeliveryText(request);
 	if (content.length > MAX_PLAIN_TEXT) {
 		throw new Error(`Discord messages with files or interactions must fit ${MAX_PLAIN_TEXT} characters.`);
 	}
 	return {
+		nonce,
+		enforceNonce: true,
 		...(content ? { content } : {}),
 		...(files.length > 0 ? { files: files.map((file) => file.attachment) } : {}),
 		...(rows.length > 0 ? { components: rows } : {}),
@@ -148,6 +185,7 @@ function buildCardPayload(
 	request: DiscordDeliveryRequest,
 	files: PreparedFile[],
 	rows: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[],
+	nonce: string,
 ): MessageCreateOptions {
 	const container = new ContainerBuilder().setAccentColor(0x9b7edb);
 	const text = formatDeliveryText(request);
@@ -175,6 +213,8 @@ function buildCardPayload(
 	for (const row of rows) container.addActionRowComponents(row);
 
 	return {
+		nonce,
+		enforceNonce: true,
 		flags: MessageFlags.IsComponentsV2,
 		components: [container],
 		files: files.map((file) => file.attachment),

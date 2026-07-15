@@ -3,6 +3,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { loadClawasConfig } from '@howaboua/pi-clawa/clawas/config-loader';
 import { resolveClawaDefaults } from '@howaboua/pi-clawa/config';
 import { config } from '../config.js';
+import { getDiscordDeliveryBacklog } from '../db.js';
 import { getClawasWorkerStatus } from './invoke-clawas-rpc.js';
 import { getSessionFileStatus, type ChannelSessionStatus } from './session-status.js';
 
@@ -16,6 +17,7 @@ export interface ClawaMappedStatus {
 	cwd: string;
 	runtime: 'idle' | 'busy' | 'offline';
 	sessionStatus: ChannelSessionStatus;
+	deliveryQueue: { pending: number; dead: number };
 }
 
 interface RegistryRecord {
@@ -36,7 +38,7 @@ export async function getMappedClawaStatus(workerId: string): Promise<ClawaMappe
 	const registryRecord = readWorkerRegistryRecord(workerId);
 	const sessionFile = registryRecord?.path;
 	const sessionStatus = sessionFile && existsSync(sessionFile)
-		? await getSessionFileStatus(sessionFile, cwd)
+		? await getSessionFileStatus(sessionFile)
 		: { statsSource: 'none' as const };
 	const runtime = await readWorkerRuntime(workerId);
 
@@ -48,6 +50,7 @@ export async function getMappedClawaStatus(workerId: string): Promise<ClawaMappe
 		cwd,
 		runtime,
 		sessionStatus,
+		deliveryQueue: getDiscordDeliveryBacklog(),
 	};
 }
 

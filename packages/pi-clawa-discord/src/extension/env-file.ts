@@ -10,24 +10,13 @@ import {
   TRAILING_NEWLINES_REGEX,
 } from './constants.js'
 
+export { readEnvFile } from '../shared/env.js'
+
 export function maskSecret(value: string | undefined): string {
   const token = value?.trim() ?? ''
   if (!token) return 'missing'
   if (token.length <= TOKEN_VISIBLE_PREFIX + TOKEN_VISIBLE_SUFFIX) return 'set'
   return `${token.slice(0, TOKEN_VISIBLE_PREFIX)}…${token.slice(-TOKEN_VISIBLE_SUFFIX)}`
-}
-
-export function readEnvFile(filePath: string): Record<string, string> {
-  if (!existsSync(filePath)) return {}
-  const out: Record<string, string> = {}
-  for (const rawLine of readFileSync(filePath, 'utf8').split(LINE_SPLIT_REGEX)) {
-    const line = rawLine.trim()
-    if (!line || line.startsWith('#')) continue
-    const equals = line.indexOf('=')
-    if (equals === -1) continue
-    out[line.slice(0, equals).trim()] = line.slice(equals + 1).trim()
-  }
-  return out
 }
 
 export function writeEnvValue(filePath: string, key: string, value: string): void {

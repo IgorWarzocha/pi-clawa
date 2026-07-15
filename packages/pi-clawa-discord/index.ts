@@ -25,7 +25,7 @@ export default function clawDiscord(pi: ExtensionAPI): void {
     const projectRoot = findRepoRoot(ctx.cwd)
     ensureDiscordConfig(projectRoot)
     await ensureDiscordWorker(projectRoot)
-    startGateway(projectRoot, ctx)
+    await startGateway(projectRoot, ctx)
   })
 
   pi.on('session_shutdown', async () => {

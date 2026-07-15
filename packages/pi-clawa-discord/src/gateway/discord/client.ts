@@ -40,8 +40,6 @@ import {
 	reconcileDiscordMessageUpdate,
 } from "./message-lifecycle.js";
 import {
-	addReactionWithClient,
-	sendResponseWithClient,
 	setTypingWithClient,
 } from "./outbound.js";
 import type {
@@ -75,28 +73,30 @@ export async function startDiscord(): Promise<void> {
 		],
 	});
 
-	client.on(
-		Events.MessageCreate,
-		createMessageHandler({
-			getClient: () => client,
-			getBotId: () => botId,
-			getTriggerPattern: () => triggerPattern,
-			getTriggerAliasPattern: () => triggerAliasPattern,
-		}),
-	);
+	const handleMessage = createMessageHandler({
+		getClient: () => client,
+		getBotId: () => botId,
+		getTriggerPattern: () => triggerPattern,
+		getTriggerAliasPattern: () => triggerAliasPattern,
+	});
+	client.on(Events.MessageCreate, (message) => {
+		runDiscordEvent("message create", () => handleMessage(message));
+	});
 	client.on(Events.MessageReactionAdd, (reaction, user) => {
-		void handleReactionEvent(reaction, user, "added");
+		runDiscordEvent("reaction add", () => handleReactionEvent(reaction, user, "added"));
 	});
 	client.on(Events.MessageUpdate, (_oldMessage, newMessage) => {
-		void reconcileDiscordMessageUpdate(newMessage);
+		runDiscordEvent("message update", () => reconcileDiscordMessageUpdate(newMessage));
 	});
 	client.on(Events.MessageDelete, (message) => {
-		reconcileDiscordMessageDelete(message);
+		runDiscordEvent("message delete", () => reconcileDiscordMessageDelete(message));
 	});
 	client.on(Events.MessageReactionRemove, (reaction, user) => {
-		void handleReactionEvent(reaction, user, "removed");
+		runDiscordEvent("reaction remove", () => handleReactionEvent(reaction, user, "removed"));
 	});
-	client.on(Events.InteractionCreate, handleInteraction);
+	client.on(Events.InteractionCreate, (interaction) => {
+		runDiscordEvent("interaction", () => handleInteraction(interaction));
+	});
 	client.on(Events.Error, (err) =>
 		logger.error({ err: err.message }, "Discord client error"),
 	);
@@ -138,6 +138,17 @@ export async function startDiscord(): Promise<void> {
 		client!.once(Events.Error, onStartupError);
 		client!.login(config.discordToken).catch(onStartupError);
 	});
+}
+
+function runDiscordEvent(name: string, handler: () => void | Promise<void>): void {
+	Promise.resolve()
+		.then(handler)
+		.catch((error: unknown) => {
+			logger.error(
+				{ event: name, err: error instanceof Error ? error.message : String(error) },
+				"Discord event handler failed",
+			);
+		});
 }
 
 async function handleInteraction(interaction: Interaction): Promise<void> {
@@ -256,30 +267,15 @@ async function handleReactionEvent(
 	}
 }
 
-export async function sendResponse(
-	jid: string,
-	text: string,
-	options: { replyToMessageId?: string | null } = {},
-): Promise<boolean> {
-	return sendResponseWithClient(client, jid, text, options);
-}
-
 export async function setTyping(jid: string): Promise<void> {
 	return setTypingWithClient(client, jid);
 }
 
-export async function addReaction(
-	jid: string,
-	messageId: string,
-	emoji: string,
-): Promise<boolean> {
-	return addReactionWithClient(client, jid, messageId, emoji);
-}
-
 export async function sendDelivery(
 	request: DiscordDeliveryRequest,
+	nonce: string,
 ): Promise<DiscordDeliveryResult> {
-	return await sendDiscordDeliveryWithClient(client, request);
+	return await sendDiscordDeliveryWithClient(client, request, nonce);
 }
 
 export function stopDiscord(): void {

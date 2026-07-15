@@ -1,6 +1,6 @@
+import { createHash } from 'node:crypto';
 import type {
   ClawasDiscordContext,
-  ClawasExtractedDelivery,
   ClawasExtractedMessage,
 } from '@howaboua/pi-clawa/clawas/comms/types';
 import { listDiscordRouteTags, listDiscordRouteWorkers } from '../channel-routes.js';
@@ -14,15 +14,16 @@ import {
   getClawasWorkerOutput,
   sendClawasSessionMessage,
 } from './invoke-clawas-rpc.js';
+import { clearTypingLease } from './typing.js';
 
 const POLL_MS = 500;
 
 interface WorkerOutputState {
   timer?: NodeJS.Timeout | undefined;
   lastMessage: ClawasExtractedMessage | null;
-  lastDelivery: ClawasExtractedDelivery | null;
   initialized: boolean;
   isProcessing: boolean;
+  failures: number;
 }
 
 const workers = new Map<string, WorkerOutputState>();
@@ -48,9 +49,9 @@ export function ensureWorkerOutputMonitor(workerId: string): void {
   if (workers.has(workerId)) return;
   const state: WorkerOutputState = {
     lastMessage: null,
-    lastDelivery: null,
     initialized: false,
     isProcessing: false,
+    failures: 0,
   };
   workers.set(workerId, state);
   schedule(workerId, state, 0);
@@ -64,7 +65,6 @@ export async function primeWorkerOutputMonitor(workerId: string): Promise<void> 
   state.isProcessing = true;
   try {
     const output = await getClawasWorkerOutput(workerId);
-    state.lastDelivery = output.delivery;
     state.initialized = true;
     await processAssistantMessage(workerId, output.message, output.discordContext);
     state.lastMessage = output.message;
@@ -91,27 +91,26 @@ async function pollWorker(workerId: string, state: WorkerOutputState): Promise<v
     return;
   }
   state.isProcessing = true;
+  let nextDelay = POLL_MS;
   try {
     const output = await getClawasWorkerOutput(workerId);
     if (!state.initialized) {
-      state.lastDelivery = output.delivery;
       state.initialized = true;
-    }
-
-    if (isNewDelivery(output.delivery, state.lastDelivery)) {
-      state.lastDelivery = output.delivery;
     }
 
     if (isNewMessage(output.message, state.lastMessage)) {
       await processAssistantMessage(workerId, output.message, output.discordContext);
       state.lastMessage = output.message;
     }
+    state.failures = 0;
   } catch (err: any) {
+    state.failures += 1;
+    nextDelay = Math.min(30_000, POLL_MS * 2 ** Math.min(state.failures, 6));
     logger.warn({ workerId, err: err.message }, 'Discord worker output monitor failed to process worker output');
   } finally {
     state.isProcessing = false;
     const latest = workers.get(workerId);
-    if (latest) schedule(workerId, latest);
+    if (latest) schedule(workerId, latest, nextDelay);
   }
 }
 
@@ -127,6 +126,7 @@ async function processAssistantMessage(
 
   if (message.error) {
     logger.warn({ workerId, err: message.error }, 'Discord Clawa assistant turn failed');
+    clearTypingLease(context?.channelJid);
     markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
     return;
   }
@@ -145,8 +145,18 @@ async function processAssistantMessage(
     return;
   }
 
-  await deliverClawaFinalText({ workerId, text, discordContext: context });
+  await deliverClawaFinalText({
+    workerId,
+    outputKey: workerOutputDeliveryKey(workerId, message.timestamp, message.content),
+    text,
+    discordContext: context,
+  });
   markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
+}
+
+function workerOutputDeliveryKey(workerId: string, timestamp: number, content: string): string {
+  const hash = createHash('sha256').update(content).digest('hex').slice(0, 16);
+  return `worker:${workerId}:${timestamp}:${hash}`;
 }
 
 function getFinalRouteProblem(
@@ -229,13 +239,4 @@ function isNewMessage(
   if (!next) return false;
   if (!previous) return true;
   return next.timestamp !== previous.timestamp || next.content !== previous.content;
-}
-
-function isNewDelivery(
-  next: ClawasExtractedDelivery | null,
-  previous: ClawasExtractedDelivery | null,
-): boolean {
-  if (!next) return false;
-  if (!previous) return true;
-  return next.timestamp !== previous.timestamp || next.route !== previous.route || next.content !== previous.content;
 }

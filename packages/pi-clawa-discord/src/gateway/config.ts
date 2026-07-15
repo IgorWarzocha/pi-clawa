@@ -1,7 +1,11 @@
-import { parse } from 'dotenv';
-import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, resolve } from 'node:path';
+import {
+  parseBooleanSetting,
+  parseEnumSetting,
+  parseIntegerSetting,
+  readEnvFile,
+} from '../shared/env.js';
 
 export const DEFAULT_PI_BIN = 'pi';
 export const DEFAULT_CHANNEL_POLICY = 'open-trigger' as const;
@@ -44,22 +48,10 @@ function readEnvValue(key: string): string | undefined {
 
 function buildConfigSource(): Record<string, string> {
   return {
-    ...loadEnvFile(LEGACY_ENV_PATH),
-    ...loadEnvFile(resolveConfigPath()),
+    ...readEnvFile(LEGACY_ENV_PATH),
+    ...readEnvFile(resolveConfigPath()),
     ...readProcessEnv(),
   };
-}
-
-function loadEnvFile(filePath: string): Record<string, string> {
-  try {
-    return parse(readFileSync(filePath, 'utf8'));
-  } catch (error) {
-    if (isMissingFileError(error)) {
-      return {};
-    }
-
-    throw error;
-  }
 }
 
 function readProcessEnv(): Record<string, string> {
@@ -74,38 +66,28 @@ function readProcessEnv(): Record<string, string> {
   return values;
 }
 
-function isMissingFileError(error: unknown): error is NodeJS.ErrnoException {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
-}
-
 function env(key: string, fallback = ''): string {
   return (readEnvValue(key) ?? '').trim() || fallback;
 }
 
 function envInt(key: string, fallback: number, opts: { min?: number } = {}): number {
-  const raw = env(key);
-  if (!raw) return fallback;
-
-  const v = Number.parseInt(raw, 10);
-  if (Number.isNaN(v)) return fallback;
-  if (opts.min !== undefined && v < opts.min) return fallback;
-  return v;
+  return parseIntegerSetting(CONFIG_SOURCE, key, fallback, opts);
 }
 
 function envBool(key: string, fallback: boolean): boolean {
-  const v = env(key).toLowerCase();
-  if (!v) return fallback;
-  return ['1', 'true', 'yes', 'on'].includes(v);
+  return parseBooleanSetting(CONFIG_SOURCE, key, fallback);
 }
 
 const VALID_CHANNEL_POLICIES = ['open', 'open-trigger', 'allowlist'] as const;
 type ChannelPolicy = typeof VALID_CHANNEL_POLICIES[number];
 
 function parseChannelPolicy(value: string): ChannelPolicy {
-  if ((VALID_CHANNEL_POLICIES as readonly string[]).includes(value)) {
-    return value as ChannelPolicy;
-  }
-  return DEFAULT_CHANNEL_POLICY;
+  return parseEnumSetting(
+    { CHANNEL_POLICY: value },
+    'CHANNEL_POLICY',
+    DEFAULT_CHANNEL_POLICY,
+    VALID_CHANNEL_POLICIES,
+  );
 }
 
 export const config = {
@@ -145,12 +127,6 @@ export const config = {
   /** Graceful shutdown timeout before aborting in-flight tasks (ms) */
   shutdownTimeoutMs: envInt('SHUTDOWN_TIMEOUT_MS', 15_000, { min: 0 }),
 
-  /** How long to wait for a CLAWAS worker to produce a reply/delivery (ms) */
-  clawasReplyTimeoutMs: envInt('CLAWAS_REPLY_TIMEOUT_MS', 300_000, { min: 1_000 }),
-
-  /** How often to log that we are still waiting on a CLAWAS worker (ms) */
-  clawasWaitLogIntervalMs: envInt('CLAWAS_WAIT_LOG_INTERVAL_MS', 15_000, { min: 1_000 }),
-
   /** How often to refresh Discord typing indicators while work is in flight (ms) */
   discordTypingRefreshMs: envInt('DISCORD_TYPING_REFRESH_MS', 4_000, { min: 1_000 }),
 
@@ -158,7 +134,12 @@ export const config = {
   discordTypingLeaseMs: envInt('DISCORD_TYPING_LEASE_MS', 120_000, { min: 1_000 }),
 
   /** Log level */
-  logLevel: env('LOG_LEVEL', 'info'),
+  logLevel: parseEnumSetting(
+    CONFIG_SOURCE,
+    'LOG_LEVEL',
+    'info',
+    ['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent'] as const,
+  ),
 
   /** Working directory for pi agent */
   piCwd: env('PI_CWD', DEFAULT_PROJECT_ROOT),

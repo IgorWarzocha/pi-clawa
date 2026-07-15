@@ -50,6 +50,8 @@ export interface DiscordReactionInput {
 
 export interface DiscordDeliveryRequest {
   channelJid: string
+  /** Typing lease completed when this intent reaches a terminal state. */
+  typingJid?: string | undefined
   text?: string | undefined
   title?: string | undefined
   card?: boolean | undefined
@@ -69,7 +71,8 @@ export interface DiscordDeliveryResult {
 }
 
 export interface DiscordDeliveryQueueState {
-  status: 'pending' | 'processing' | 'done' | 'failed'
+  status: 'pending' | 'processing' | 'done' | 'dead'
+  attempts: number
   result?: DiscordDeliveryResult | undefined
   error?: string | undefined
 }
