@@ -41,23 +41,23 @@
   ],
   "peerDependencies": {
     "@earendil-works/pi-agent-core": "*",
-    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-coding-agent": ">=0.80.6",
     "@earendil-works/pi-tui": "*",
     "typebox": "*",
     "@earendil-works/pi-ai": "*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.16",
-    "@earendil-works/pi-agent-core": "0.79.6",
-    "@earendil-works/pi-coding-agent": "0.79.6",
-    "@earendil-works/pi-tui": "0.79.6",
+    "@earendil-works/pi-agent-core": "0.80.6",
+    "@earendil-works/pi-ai": "0.80.6",
+    "@earendil-works/pi-coding-agent": "0.80.6",
+    "@earendil-works/pi-tui": "0.80.6",
     "@types/node": "25.9.2",
-    "tsx": "^4.20.0",
-    "typebox": "1.2.8",
-    "typescript": "^6.0.3",
     "@typescript/native-preview": "7.0.0-dev.20260610.1",
     "knip": "6.12.1",
-    "@earendil-works/pi-ai": "0.79.8"
+    "tsx": "^4.20.0",
+    "typebox": "1.2.8",
+    "typescript": "^6.0.3"
   },
   "publishConfig": {
     "access": "public"

@@ -30,6 +30,11 @@ export interface ClawaWorkerConfig {
   reportMode?: ClawaWorkerReportMode | undefined
 }
 
+export interface ClawaCompactionConfig {
+  triggerTokens?: number | undefined
+  summaryMaxTokens: number
+}
+
 export interface ClawaDefaults {
   humanName: string
   mainClawName: string
@@ -37,6 +42,39 @@ export interface ClawaDefaults {
   workerSessionPrefix: string
   controlPlaneDir: string
   controlSocketDir: string
+  compaction: ClawaCompactionConfig
+}
+
+export const DEFAULT_SUMMARY_MAX_TOKENS = 20_000
+
+export const DEFAULT_CLAWA_COMPACTION_CONFIG: ClawaCompactionConfig = {
+  summaryMaxTokens: DEFAULT_SUMMARY_MAX_TOKENS,
+}
+
+export function normalizeCompactionTriggerTokens(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value <= 0) {
+    return undefined
+  }
+  return value
+}
+
+export function normalizeCompactionSummaryMaxTokens(value: unknown): number {
+  const normalized = normalizeCompactionTriggerTokens(value)
+  return normalized ?? DEFAULT_SUMMARY_MAX_TOKENS
+}
+
+function normalizeCompactionConfig(input: unknown): ClawaCompactionConfig {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return { ...DEFAULT_CLAWA_COMPACTION_CONFIG }
+  }
+
+  const rec = input as Record<string, unknown>
+  const triggerTokens = normalizeCompactionTriggerTokens(rec['triggerTokens'])
+  const summaryMaxTokens = normalizeCompactionSummaryMaxTokens(rec['summaryMaxTokens'])
+  return {
+    summaryMaxTokens,
+    ...(triggerTokens === undefined ? {} : { triggerTokens }),
+  }
 }
 
 export interface ClawEnvironmentConfig {
@@ -56,6 +94,7 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
   workerSessionPrefix: 'Clawas',
   controlPlaneDir: 'clawas',
   controlSocketDir: 'clawas-control',
+  compaction: DEFAULT_CLAWA_COMPACTION_CONFIG,
 }
 
 export function resolveClawasControlSocketRoot(projectRoot: string): string {
@@ -175,6 +214,7 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
       typeof rec['controlSocketDir'] === 'string' && rec['controlSocketDir'].trim()
         ? rec['controlSocketDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
+    compaction: normalizeCompactionConfig(rec['compaction']),
   }
 }
 

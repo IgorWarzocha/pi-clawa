@@ -80,12 +80,35 @@ Living docs are still where shaped truth belongs.
 
 Clawa hooks Pi's normal compaction and runs a Clawa-shaped continuity pass with the active Pi model. There is no separate compaction model or extra model config.
 
+**Requirements:** Pi coding-agent/runtime **>= 0.80.6** (for `agent_settled` and extension compaction APIs).
+
 The Clawa compaction asks for two things:
 
 - a compact continuity summary for future-Clawa after context loss
 - 0-3 small memory lines worth storing in `.pi/clawa-memory.sqlite`
 
-It is intentionally not a ticket ledger. It should preserve live decisions, tone, corrections, relationship texture, curiosity sparks, and the next useful move — not stale completed-work recaps.
+Continuity completion uses `clawa.compaction.summaryMaxTokens` (default **20000**), independent of Pi's `compaction.reserveTokens`. That cap may include provider reasoning; it is not a promise of 20K visible prose.
+
+Main Clawa can optionally request automatic compaction from the `agent_settled` safe point when `clawa.compaction.triggerTokens` is set in `.pi/claw.jsonc`:
+
+```jsonc
+{
+  "clawa": {
+    "compaction": {
+      "triggerTokens": 130000,
+      "summaryMaxTokens": 20000
+    }
+  }
+}
+```
+
+`clawa.compaction` in `.pi/claw.jsonc` is home defaults read by every Pi-Clawa process. The continuity handler uses `summaryMaxTokens` for both Main and workers. Only `triggerTokens` and the automatic compaction policy are Main-only; subclawas do not register the auto-compaction policy. Values must be positive safe integers; invalid `triggerTokens` are ignored (no silent auto compaction). Invalid/missing `summaryMaxTokens` falls back to 20000.
+
+`triggerTokens` is a no-later-than idle safe-point policy (`usage.tokens >= triggerTokens` at `agent_settled`), not a hard per-request context ceiling.
+
+When Main owns an automatic compaction, completion queues a hidden follow-up turn so ambient work resumes immediately instead of waiting for a pulse. Manual `/compact` stays deliberate and does not auto-continue. A one-settled cooldown after that continuation prevents a compact→continue loop.
+
+**Pi settings scope:** project/root-home `.pi/settings.json` is exact-cwd — it applies to Main here because Main runs from the home root. Workers run from their own cwd, so project settings do not reach them; dedicated agent-dir or global Pi settings affect workers. Pi native auto-compaction uses those per-process compaction settings and triggers when `usage > contextWindow - reserveTokens`.
 
 After `/compact`, Clawa rehydrates the living docs on the next turn so it wakes back up with the home shape in context again.
 
@@ -103,6 +126,8 @@ Main Clawa sessions use Pi's normal session store, so `pi -c` and `pi -r` behave
 If you have global Pi extensions you do not want in this Clawa home, adjust project `.pi/settings.json` instead of changing global settings. Pi package filters can disable package resources for this project only; Clawa's `clawa-ops` skill has notes for helping with that.
 
 ## Recommended install while Clawa is being finetuned
+
+**Pi requirement:** `@earendil-works/pi-coding-agent` **>= 0.80.6** (and matching pi-agent-core / pi-ai / pi-tui versions).
 
 Clone the repo first, then run Clawa from the checkout. This makes it easy to tweak obvious rough edges locally and report the ones that should be fixed upstream.
 

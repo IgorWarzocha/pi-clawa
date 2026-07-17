@@ -34,10 +34,27 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
     "clawasName": "Clawas",
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
-    "controlSocketDir": "clawas-control"
+    "controlSocketDir": "clawas-control",
+    "compaction": {
+      "triggerTokens": 130000,
+      "summaryMaxTokens": 20000
+    }
   }
 }
 ```
+
+## Compaction settings
+
+Optional `clawa.compaction` lives in `.pi/claw.jsonc` as home defaults read by every Pi-Clawa process. The continuity handler uses `summaryMaxTokens` for both Main and workers. Only `triggerTokens` and the automatic compaction policy are Main-only; subclawas do not register the auto-compaction policy.
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `triggerTokens` | unset | Optional Main-only auto-compaction trigger. Positive safe integer; invalid values are ignored. Fires at `agent_settled` when `usage.tokens >= triggerTokens`. Idle safe-point policy, not a hard per-request ceiling. On owned auto-compact completion, queues a hidden follow-up turn so work continues without waiting for a pulse; manual `/compact` does not auto-continue. |
+| `summaryMaxTokens` | `20000` | Continuity summary completion cap for Clawa's custom compaction pass on Main and workers. Independent of Pi `compaction.reserveTokens`. May include provider reasoning. |
+
+**Pi settings scope:** project/root-home `.pi/settings.json` is exact-cwd — Main-only here because Main runs from the home root. Workers run from their own cwd, so project settings do not reach them; dedicated agent-dir or global Pi settings affect workers. Pi native auto-compaction uses those per-process compaction settings and triggers when `usage > contextWindow - reserveTokens`.
+
+Values must be positive safe integers (no decimals). Do not edit live home configs until the package change is reviewed and deployed.
 
 ## Worker fields
 

@@ -1,10 +1,11 @@
-import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai'
+import { completeSimple, type ThinkingLevel } from '@earendil-works/pi-ai/compat'
 import type {
   ExtensionAPI,
   ExtensionContext,
   SessionBeforeCompactEvent,
 } from '@earendil-works/pi-coding-agent'
 import { convertToLlm } from '@earendil-works/pi-coding-agent'
+import type { ClawaCompactionConfig } from './config.js'
 import { rememberMemory, resolveMemoryDbPath } from './memory.js'
 
 const MAX_MEMORY_LINES = 3
@@ -178,6 +179,7 @@ type ActiveModelAuth = {
   headers?: Record<string, string>
 }
 type SimpleCompletionResponse = Awaited<ReturnType<typeof completeSimple>>
+export type ContinuityCompletionFn = typeof completeSimple
 
 type PreparedCompaction = {
   conversationText: string
@@ -185,15 +187,18 @@ type PreparedCompaction = {
   fileOps?: unknown
   firstKeptEntryId: SessionBeforeCompactEvent['preparation']['firstKeptEntryId']
   previousSummary?: string | undefined
-  reserveTokens: number
   signal: AbortSignal
   tokensBefore: SessionBeforeCompactEvent['preparation']['tokensBefore']
 }
 
-function resolveCompactionMaxTokens(model: ActiveModel, reserveTokens: number): number {
-  const reserveBudget = Math.floor(0.8 * reserveTokens)
-  const modelBudget = model.maxTokens > 0 ? model.maxTokens : Number.POSITIVE_INFINITY
-  return Math.min(reserveBudget, modelBudget)
+export function resolveContinuitySummaryMaxTokens(
+  configuredCap: number,
+  modelMaxTokens: number,
+): number {
+  if (modelMaxTokens > 0) {
+    return Math.min(configuredCap, modelMaxTokens)
+  }
+  return configuredCap
 }
 
 function prepareCompactionInput(event: SessionBeforeCompactEvent): PreparedCompaction | undefined {
@@ -214,7 +219,6 @@ function prepareCompactionInput(event: SessionBeforeCompactEvent): PreparedCompa
     fileOps: (preparation as { fileOps?: unknown }).fileOps,
     firstKeptEntryId,
     previousSummary,
-    reserveTokens: preparation.settings.reserveTokens,
     signal,
     tokensBefore,
   }
@@ -266,11 +270,21 @@ function writeCompactionMemories(cwd: string, text: string): { path: string; cou
   return memoryWrite
 }
 
-function notifyCompactionFailure(ctx: ExtensionContext, signal: AbortSignal, error: unknown): void {
+function formatContinuitySummaryFailureNotice(message: string): string {
+  return `Clawa continuity summary failed; Pi will use native compaction: ${message}`
+}
+
+function notifyContinuitySummaryFailure(
+  ctx: ExtensionContext,
+  signal: AbortSignal,
+  error: unknown,
+): void {
   if (signal.aborted || !ctx.hasUI) return
   const message = error instanceof Error ? error.message : String(error)
-  ctx.ui.notify(`Clawa compaction failed: ${message}`, 'warning')
+  ctx.ui.notify(formatContinuitySummaryFailureNotice(message), 'warning')
 }
+
+export { formatContinuitySummaryFailureNotice }
 
 function notifyMemoryFailure(ctx: ExtensionContext, signal: AbortSignal, error: unknown): void {
   if (signal.aborted || !ctx.hasUI) return
@@ -301,7 +315,11 @@ export function registerContextOverflowNormalization(pi: ExtensionAPI): void {
   })
 }
 
-export function registerContinuityCompaction(pi: ExtensionAPI): void {
+export function registerContinuityCompaction(
+  pi: ExtensionAPI,
+  getCompactionConfig: () => ClawaCompactionConfig,
+  complete: ContinuityCompletionFn = completeSimple,
+): void {
   pi.on('session_before_compact', async (event, ctx) => {
     const prepared = prepareCompactionInput(event)
     if (!prepared) {
@@ -313,11 +331,14 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
       const model = requireActiveModel(ctx)
       const auth = await resolveActiveModelAuth(ctx, model)
       const prompt = buildCompactionPrompt(prepared)
-      const maxTokens = resolveCompactionMaxTokens(model, prepared.reserveTokens)
+      const maxTokens = resolveContinuitySummaryMaxTokens(
+        getCompactionConfig().summaryMaxTokens,
+        model.maxTokens,
+      )
       if (ctx.hasUI) ctx.ui.notify(`Clawa compaction via ${model.provider}/${model.id}`, 'info')
 
       const thinkingLevel = pi.getThinkingLevel() as ThinkingLevel | undefined
-      const response = await completeSimple(
+      const response = await complete(
         model,
         {
           systemPrompt:
@@ -362,7 +383,7 @@ export function registerContinuityCompaction(pi: ExtensionAPI): void {
         },
       }
     } catch (error) {
-      notifyCompactionFailure(ctx, prepared.signal, error)
+      notifyContinuitySummaryFailure(ctx, prepared.signal, error)
       return undefined
     }
   })
