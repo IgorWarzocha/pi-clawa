@@ -44,6 +44,8 @@ export interface ClawasSendCommand {
 
 export interface ClawasGetMessageCommand {
   type: 'get_message'
+  afterTimestamp?: number | undefined
+  afterContent?: string | undefined
   id?: string | undefined
 }
 

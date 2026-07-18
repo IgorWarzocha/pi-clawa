@@ -17,6 +17,10 @@ function isUserMessage(message: unknown): boolean {
   return isRecord(message) && message['role'] === 'user'
 }
 
+function isToolResultMessage(message: unknown): boolean {
+  return isRecord(message) && message['role'] === 'toolResult'
+}
+
 /**
  * Keep the latest user image message and images at the provider-call tail.
  *
@@ -36,9 +40,14 @@ export function boundHistoricalImages<T>(messages: T[]): T[] {
     }
   }
 
+  let freshToolBatchStart = messages.length
+  while (freshToolBatchStart > 0 && isToolResultMessage(messages[freshToolBatchStart - 1])) {
+    freshToolBatchStart -= 1
+  }
+
   let changed = false
   const bounded = messages.map((message, messageIndex) => {
-    if (messageIndex === messages.length - 1 || messageIndex === latestUserImageIndex) {
+    if (messageIndex >= freshToolBatchStart || messageIndex === latestUserImageIndex) {
       return message
     }
     const content = messageContent(message)

@@ -37,7 +37,7 @@ test('provider replay keeps only tail images and leaves the persisted session un
 
   const bounded = boundHistoricalImages(messages)
 
-  assert.deepEqual(imageData(bounded), ['fresh-a', 'fresh-b', 'tool-c'])
+  assert.deepEqual(imageData(bounded), ['fresh-a', 'fresh-b', 'tool-a', 'tool-b', 'tool-c'])
   assert.match(JSON.stringify(bounded), OMITTED_IMAGE_PATTERN)
   assert.deepEqual(imageData(messages), [
     'old-user',
@@ -67,6 +67,7 @@ test('processed images make one stable transition without churning the older pre
   const firstReplay = boundHistoricalImages(firstTurn)
   const secondReplay = boundHistoricalImages([
     ...firstTurn,
+    { role: 'assistant', content: [{ type: 'text', text: 'checking again' }] },
     { role: 'toolResult', content: [image('tool-two')] },
   ])
 

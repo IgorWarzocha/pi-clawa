@@ -1,6 +1,10 @@
 import { createServer, type Server, type Socket } from 'node:net'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { getLastAssistantTurn, getLastDeliveryMessage } from './message-extract.js'
+import {
+  getAssistantTurns,
+  getLastAssistantTurn,
+  getLastDeliveryMessage,
+} from './message-extract.js'
 import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.js'
 import {
   ensureControlDir,
@@ -188,7 +192,7 @@ export class ClawasCommsServer {
     }
 
     if (command.type === 'get_message') {
-      this.handleGetMessageCommand(ctx, respond)
+      this.handleGetMessageCommand(ctx, command, respond)
       return
     }
 
@@ -205,16 +209,31 @@ export class ClawasCommsServer {
     respond(false, 'unknown', undefined, 'Unsupported command')
   }
 
-  private handleGetMessageCommand(ctx: ExtensionContext, respond: CommandResponder): void {
+  private handleGetMessageCommand(
+    ctx: ExtensionContext,
+    command: Extract<ClawasCommsCommand, { type: 'get_message' }>,
+    respond: CommandResponder,
+  ): void {
     if (IS_MANUAL_SESSION) {
       respond(false, 'get_message', undefined, 'Worker is in a manual session')
       return
     }
     const turn = getLastAssistantTurn(ctx)
+    const turns = getAssistantTurns(ctx)
+    const cursorIndex = turns.findLastIndex(
+      (output) =>
+        output.message.timestamp === command.afterTimestamp &&
+        output.message.content === command.afterContent,
+    )
+    const pendingTurns = cursorIndex >= 0 ? turns.slice(cursorIndex + 1) : turns
     respond(true, 'get_message', {
       message: turn?.message ?? null,
       delivery: getLastDeliveryMessage(ctx) ?? null,
       discordContext: turn?.mailDetails ?? null,
+      outputs: pendingTurns.map((output) => ({
+        message: output.message,
+        discordContext: output.mailDetails ?? null,
+      })),
     })
   }
 

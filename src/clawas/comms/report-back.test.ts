@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  getAssistantTurns,
   getLastAssistantTurn,
   getLastDiscordChannelJid,
   getLastDiscordSourceMessageId,
@@ -169,6 +170,44 @@ test('assistant output stays paired with the Discord mail that preceded its turn
 
   assert.equal(turn?.message.content, '[dm] reply to A while B is queued')
   assert.equal(turn?.mailDetails?.['channelJid'], 'dc:dm-a')
+})
+
+test('assistant turn history preserves every queued Discord output in order', () => {
+  const mail = (queueRowId: number) => ({
+    type: 'custom_message',
+    customType: CLAWAS_MAIL_MESSAGE_TYPE,
+    details: { workerId: 'discord-gateway', queueRowId },
+  })
+  const user = (content: string, timestamp: number) => ({
+    type: 'message',
+    message: { role: 'user', content, timestamp },
+  })
+  const assistant = (content: string, timestamp: number) => ({
+    type: 'message',
+    message: { role: 'assistant', content, timestamp, stopReason: 'stop' },
+  })
+
+  const turns = getAssistantTurns(
+    ctxWithBranch([
+      mail(41),
+      user('first', 1),
+      assistant('[dm] first reply', 2),
+      mail(42),
+      user('second', 3),
+      assistant('[dm] second reply', 4),
+    ]),
+  )
+
+  assert.deepEqual(
+    turns.map((turn) => ({
+      content: turn.message.content,
+      queueRowId: turn.mailDetails?.['queueRowId'],
+    })),
+    [
+      { content: '[dm] first reply', queueRowId: 41 },
+      { content: '[dm] second reply', queueRowId: 42 },
+    ],
+  )
 })
 
 test('getLastDiscordChannelJid uses nearest carried Discord context only', () => {

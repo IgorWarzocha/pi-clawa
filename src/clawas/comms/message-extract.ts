@@ -104,68 +104,69 @@ export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedM
   return getLastAssistantTurn(ctx)?.message
 }
 
-export function getLastAssistantTurn(ctx: ExtensionContext):
-  | {
-      message: ClawasExtractedMessage
-      mailDetails?: Record<string, unknown> | undefined
-    }
-  | undefined {
+export interface ClawasExtractedTurn {
+  message: ClawasExtractedMessage
+  mailDetails?: Record<string, unknown> | undefined
+}
+
+export function getAssistantTurns(ctx: ExtensionContext): ClawasExtractedTurn[] {
+  const branch = ctx.sessionManager.getBranch()
+  const turns: ClawasExtractedTurn[] = []
+
+  for (let index = 0; index < branch.length; index += 1) {
+    const turn = extractAssistantTurn(branch, index)
+    if (turn) turns.push(turn)
+  }
+
+  return turns
+}
+
+export function getLastAssistantTurn(ctx: ExtensionContext): ClawasExtractedTurn | undefined {
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (entry?.['type'] !== 'message') {
-      continue
-    }
+    const turn = extractAssistantTurn(branch, index)
+    if (turn) return turn
+  }
 
-    const message = getRecord(entry['message'])
-    if (message?.['role'] !== 'assistant') {
-      continue
-    }
+  return undefined
+}
 
-    const text = getTextFromMessageContent(message['content']).trim()
+function extractAssistantTurn(
+  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
+  index: number,
+): ClawasExtractedTurn | undefined {
+  const entry = getRecord(branch[index])
+  if (entry?.['type'] !== 'message') return undefined
 
-    const stopReason = message['stopReason']
-    const errorMessage = message['errorMessage']
-    if (
-      !text &&
-      stopReason === 'error' &&
-      typeof errorMessage === 'string' &&
-      errorMessage.trim()
-    ) {
-      return {
-        message: {
-          role: 'assistant',
-          content: '',
-          timestamp: getEntryTimestamp(message['timestamp']),
-          error: errorMessage.trim(),
-        },
-        mailDetails: findPrecedingMailDetails(branch, index),
-      }
-    }
+  const message = getRecord(entry['message'])
+  if (message?.['role'] !== 'assistant') return undefined
 
-    if (!text) {
-      continue
-    }
-
-    // Assistant messages that also contain tool calls are pre-tool narration,
-    // not final Discord copy. The gateway may poll while those tool turns are
-    // still running, so never expose them as deliverable public text.
-    if (messageContentHasToolCall(message['content'])) {
-      continue
-    }
-
+  const text = getTextFromMessageContent(message['content']).trim()
+  const stopReason = message['stopReason']
+  const errorMessage = message['errorMessage']
+  if (!text && stopReason === 'error' && typeof errorMessage === 'string' && errorMessage.trim()) {
     return {
       message: {
         role: 'assistant',
-        content: text,
+        content: '',
         timestamp: getEntryTimestamp(message['timestamp']),
+        error: errorMessage.trim(),
       },
       mailDetails: findPrecedingMailDetails(branch, index),
     }
   }
 
-  return undefined
+  if (!text || messageContentHasToolCall(message['content'])) return undefined
+
+  return {
+    message: {
+      role: 'assistant',
+      content: text,
+      timestamp: getEntryTimestamp(message['timestamp']),
+    },
+    mailDetails: findPrecedingMailDetails(branch, index),
+  }
 }
 
 function findPrecedingMailDetails(

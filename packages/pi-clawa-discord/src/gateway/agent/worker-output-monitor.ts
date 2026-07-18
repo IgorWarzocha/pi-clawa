@@ -6,6 +6,7 @@ import type {
 import { listDiscordRouteTags, listDiscordRouteWorkers } from '../channel-routes.js';
 import {
   hasProcessedWorkerOutput,
+  getMessageStatus,
   markMessageDone,
   markMessageFailed,
   markWorkerOutputProcessed,
@@ -69,10 +70,10 @@ export async function primeWorkerOutputMonitor(workerId: string): Promise<void> 
 
   state.isProcessing = true;
   try {
-    const output = await getClawasWorkerOutput(workerId);
+    const output = await getClawasWorkerOutput(workerId, state.lastMessage);
+    await processOutputBatch(workerId, output.outputs, !state.initialized);
+    state.lastMessage = output.outputs.at(-1)?.message ?? state.lastMessage;
     state.initialized = true;
-    await processAssistantMessage(workerId, output.message, output.discordContext);
-    state.lastMessage = output.message;
   } catch (err: any) {
     logger.debug({ workerId, err: err.message }, 'Could not prime Discord worker output monitor yet');
   } finally {
@@ -98,15 +99,10 @@ async function pollWorker(workerId: string, state: WorkerOutputState): Promise<v
   state.isProcessing = true;
   let nextDelay = POLL_MS;
   try {
-    const output = await getClawasWorkerOutput(workerId);
-    if (!state.initialized) {
-      state.initialized = true;
-    }
-
-    if (isNewMessage(output.message, state.lastMessage)) {
-      await processAssistantMessage(workerId, output.message, output.discordContext);
-      state.lastMessage = output.message;
-    }
+    const output = await getClawasWorkerOutput(workerId, state.lastMessage);
+    await processOutputBatch(workerId, output.outputs, !state.initialized);
+    state.lastMessage = output.outputs.at(-1)?.message ?? state.lastMessage;
+    state.initialized = true;
     state.failures = 0;
   } catch (err: any) {
     state.failures += 1;
@@ -117,6 +113,42 @@ async function pollWorker(workerId: string, state: WorkerOutputState): Promise<v
     const latest = workers.get(workerId);
     if (latest) schedule(workerId, latest, nextDelay);
   }
+}
+
+async function processOutputBatch(
+  workerId: string,
+  outputs: Array<{
+    message: ClawasExtractedMessage;
+    discordContext: ClawasDiscordContext | null;
+  }>,
+  recoverOnly: boolean,
+): Promise<void> {
+  for (const output of outputs) {
+    const processed = hasProcessedWorkerOutput({
+      workerId,
+      timestamp: output.message.timestamp,
+      content: output.message.content,
+    });
+    if (processed) continue;
+
+    if (recoverOnly && !hasActiveSourceMessage(output.discordContext)) {
+      markWorkerOutputProcessed({
+        workerId,
+        timestamp: output.message.timestamp,
+        content: output.message.content,
+      });
+      continue;
+    }
+
+    await processAssistantMessage(workerId, output.message, output.discordContext);
+  }
+}
+
+function hasActiveSourceMessage(context: ClawasDiscordContext | null): boolean {
+  const rowid = context?.queueRowId;
+  if (!rowid) return false;
+  const status = getMessageStatus(rowid);
+  return status === 'pending' || status === 'processing' || status === 'awaiting';
 }
 
 async function processAssistantMessage(
@@ -247,13 +279,4 @@ function discordContextHandles(context: ClawasDiscordContext | null | undefined)
     channelJid: value.channelJid,
     messageId: value.messageId,
   }));
-}
-
-function isNewMessage(
-  next: ClawasExtractedMessage | null,
-  previous: ClawasExtractedMessage | null,
-): boolean {
-  if (!next) return false;
-  if (!previous) return true;
-  return next.timestamp !== previous.timestamp || next.content !== previous.content;
 }

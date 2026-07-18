@@ -6,6 +6,8 @@ interface PendingChannelRow {
 	channel_jid: string;
 }
 
+type MessageQueueStatus = QueuedMessage["status"];
+
 export function enqueueMessage(msg: {
 	channelJid: string;
 	sender: string;
@@ -75,16 +77,42 @@ export function markMessageAwaitingInDb(db: Database.Database, rowid: number): b
 		.run(rowid).changes > 0;
 }
 
-export function markMessageDoneInDb(db: Database.Database, rowid: number): void {
-	db.prepare(
-		"update message_queue set status = 'done', processed_at = datetime('now') where rowid = ?",
-	).run(rowid);
+export function getMessageStatus(rowid: number): MessageQueueStatus | undefined {
+	return getMessageStatusInDb(getDb(), rowid);
 }
 
-export function markMessageFailedInDb(db: Database.Database, rowid: number): void {
-	db.prepare(
-		"update message_queue set status = 'failed', processed_at = datetime('now') where rowid = ?",
-	).run(rowid);
+export function getMessageStatusInDb(
+	db: Database.Database,
+	rowid: number,
+): MessageQueueStatus | undefined {
+	const row = db
+		.prepare("select status from message_queue where rowid = ?")
+		.get(rowid) as { status: MessageQueueStatus } | undefined;
+	return row?.status;
+}
+
+export function markMessageDoneInDb(db: Database.Database, rowid: number): boolean {
+	return (
+		db
+			.prepare(`
+        update message_queue
+        set status = 'done', processed_at = datetime('now')
+        where rowid = ? and status in ('pending', 'processing', 'awaiting')
+      `)
+			.run(rowid).changes > 0
+	);
+}
+
+export function markMessageFailedInDb(db: Database.Database, rowid: number): boolean {
+	return (
+		db
+			.prepare(`
+        update message_queue
+        set status = 'failed', processed_at = datetime('now')
+        where rowid = ? and status in ('pending', 'processing', 'awaiting')
+      `)
+			.run(rowid).changes > 0
+	);
 }
 
 export function clearPendingMessages(channelJid: string): number {

@@ -17,7 +17,7 @@ export interface QueuedMessage {
 	log_rowid: number | null;
 	content: string;
 	timestamp: string;
-	status: "pending" | "processing" | "done" | "failed";
+	status: "pending" | "processing" | "awaiting" | "done" | "failed";
 	/** JSON array of attachment metadata, or null */
 	attachments: string | null;
 }

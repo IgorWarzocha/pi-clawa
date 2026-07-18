@@ -17,6 +17,10 @@ type ClawasWorkerOutput = {
   message: ClawasExtractedMessage | null;
   delivery: ClawasExtractedDelivery | null;
   discordContext: ClawasDiscordContext | null;
+  outputs: Array<{
+    message: ClawasExtractedMessage;
+    discordContext: ClawasDiscordContext | null;
+  }>;
 };
 
 export interface ClawasWorkerStatus {
@@ -24,8 +28,15 @@ export interface ClawasWorkerStatus {
   hasPendingMessages: boolean;
 }
 
-export async function getClawasWorkerOutput(target: string): Promise<ClawasWorkerOutput> {
-  const response = await sendRpcCommand(target, { type: 'get_message' });
+export async function getClawasWorkerOutput(
+  target: string,
+  after?: ClawasExtractedMessage | null,
+): Promise<ClawasWorkerOutput> {
+  const response = await sendRpcCommand(target, {
+    type: 'get_message',
+    afterTimestamp: after?.timestamp,
+    afterContent: after?.content,
+  });
   if (!response.success) {
     throw new Error(response.error ?? `Failed to read CLAWAS message from ${target}`);
   }
@@ -34,11 +45,20 @@ export async function getClawasWorkerOutput(target: string): Promise<ClawasWorke
     message?: ClawasExtractedMessage | null;
     delivery?: ClawasExtractedDelivery | null;
     discordContext?: ClawasDiscordContext | null;
+    outputs?: Array<{
+      message: ClawasExtractedMessage;
+      discordContext: ClawasDiscordContext | null;
+    }>;
   } | undefined;
   return {
     message: data?.message ?? null,
     delivery: data?.delivery ?? null,
     discordContext: data?.discordContext ?? null,
+    outputs:
+      data?.outputs ??
+      (data?.message
+        ? [{ message: data.message, discordContext: data.discordContext ?? null }]
+        : []),
   };
 }
 

@@ -15,6 +15,7 @@ import {
 } from './src/gateway/db/delivery-queue.js'
 import { enqueueDiscordInteractionTurnInDb } from './src/gateway/db/interactions.js'
 import {
+  getMessageStatusInDb,
   markMessageAwaitingInDb,
   markMessageDoneInDb,
   markMessageFailedInDb,
@@ -54,7 +55,10 @@ test('Discord inbox settles only after the worker turn and preserves awaiting wo
 
     markMessageDoneInDb(db, 1)
     assert.equal(markMessageAwaitingInDb(db, 1), false)
+    assert.equal(markMessageFailedInDb(db, 1), false)
+    assert.equal(getMessageStatusInDb(db, 1), 'done')
     markMessageFailedInDb(db, 2)
+    assert.equal(markMessageDoneInDb(db, 2), false)
     assert.equal(
       (db.prepare('select status from message_queue where rowid = 2').get() as { status: string })
         .status,
