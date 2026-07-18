@@ -5,14 +5,16 @@ export function buildClawasDiscordContext(
   opts?: {
     sourceMessageId?: string | null | undefined;
     sourceChannelJid?: string | undefined;
+    queueRowId?: number | undefined;
     messageHandles?: DiscordMessageHandle[] | undefined;
   },
 ): ClawasDiscordContext | undefined {
   const sourceMessageId = opts?.sourceMessageId?.trim() || undefined;
   const channelJid = opts?.sourceChannelJid?.trim() || undefined;
+  const queueRowId = opts?.queueRowId;
   const messageHandles = buildMessageHandleMap(opts?.messageHandles ?? []);
-  if (!(sourceMessageId || channelJid || messageHandles)) return undefined;
-  return { sourceMessageId, channelJid, messageHandles };
+  if (!(sourceMessageId || channelJid || queueRowId || messageHandles)) return undefined;
+  return { sourceMessageId, channelJid, queueRowId, messageHandles };
 }
 
 function buildMessageHandleMap(

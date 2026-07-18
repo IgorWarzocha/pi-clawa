@@ -14,6 +14,12 @@ import {
   recoverStuckDiscordDeliveriesInDb,
 } from './src/gateway/db/delivery-queue.js'
 import { enqueueDiscordInteractionTurnInDb } from './src/gateway/db/interactions.js'
+import {
+  markMessageAwaitingInDb,
+  markMessageDoneInDb,
+  markMessageFailedInDb,
+  recoverStuckMessagesInDb,
+} from './src/gateway/db/queue.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
 import { sendDiscordDeliveryWithClient } from './src/gateway/discord/delivery-renderer.js'
 import { splitDiscordMessage } from './src/gateway/discord/text.js'
@@ -26,6 +32,38 @@ const INVALID_LIMIT_PATTERN = /Invalid LIMIT/u
 const INVALID_ENABLED_PATTERN = /Invalid ENABLED/u
 const INVALID_POLICY_PATTERN = /Invalid POLICY/u
 const ALREADY_RUNNING_PATTERN = /already running/u
+
+test('Discord inbox settles only after the worker turn and preserves awaiting work on restart', () => {
+  const db = new Database(':memory:')
+  try {
+    runSchemaMigrations(db)
+    db.prepare(`
+      insert into message_queue
+        (channel_jid, sender, sender_name, content, timestamp, status)
+      values
+        ('dc:one', 'human', 'Human', 'first', datetime('now'), 'processing'),
+        ('dc:one', 'human', 'Human', 'second', datetime('now'), 'processing')
+    `).run()
+
+    assert.equal(markMessageAwaitingInDb(db, 1), true)
+    assert.equal(recoverStuckMessagesInDb(db), 1)
+    assert.deepEqual(db.prepare('select rowid, status from message_queue order by rowid').all(), [
+      { rowid: 1, status: 'awaiting' },
+      { rowid: 2, status: 'pending' },
+    ])
+
+    markMessageDoneInDb(db, 1)
+    assert.equal(markMessageAwaitingInDb(db, 1), false)
+    markMessageFailedInDb(db, 2)
+    assert.equal(
+      (db.prepare('select status from message_queue where rowid = 2').get() as { status: string })
+        .status,
+      'failed',
+    )
+  } finally {
+    db.close()
+  }
+})
 
 test('Discord outbox keys, nonces, retry states, and recovery are durable', () => {
   const db = new Database(':memory:')

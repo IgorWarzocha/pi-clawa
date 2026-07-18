@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { buildHydrationSystemPrompt, loadHydrationFiles } from '../hydrate.js'
 import { loadClawaImage } from '../hydration-image.js'
 import { HYDRATION_MESSAGE_TYPE } from './constants.js'
+import { boundHistoricalImages } from './historical-images.js'
 import type { ClawaRuntimeState } from './runtime-state.js'
 
 type HydrationPayload = {
@@ -132,12 +133,15 @@ export function registerHydrationContext(
     runtime.ensureBootstrapped(ctx.cwd)
 
     const baseMessages = Array.isArray(event.messages) ? event.messages : []
-    const messages = baseMessages.filter((message) => !isHydrationMessage(message))
+    const withoutHydration = baseMessages.filter((message) => !isHydrationMessage(message))
+    const messages = boundHistoricalImages(withoutHydration)
+    const contextChanged =
+      withoutHydration.length !== baseMessages.length || messages !== withoutHydration
     const refresh = await refreshHydration(ctx.cwd, runtime)
     notifyHydrationRefresh(ctx, refresh, runtime.hydrationText, options.debugProbe)
     const injected = buildHydrationMessage(runtime, ctx.model?.input.includes('image') === true)
     if (!injected) {
-      return messages.length === baseMessages.length ? undefined : { messages }
+      return contextChanged ? { messages } : undefined
     }
 
     // Context transforms are non-persistent. Reapply one cached hydration block to every

@@ -61,11 +61,7 @@ export async function sendClawasSessionMessage(
     message: string;
     mode?: 'steer' | 'followUp' | undefined;
     messageType?: 'session' | 'report' | undefined;
-    discordContext?: {
-      sourceMessageId?: string | undefined;
-      channelJid?: string | undefined;
-      messageHandles?: Record<string, { channelJid: string; messageId: string }> | undefined;
-    } | undefined;
+    discordContext?: ClawasDiscordContext | undefined;
     sender?: ClawasSenderInfo | undefined;
     kind?: ClawasMessageKind | undefined;
     intent?: ClawasMessageIntent | undefined;

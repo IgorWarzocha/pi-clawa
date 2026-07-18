@@ -71,6 +71,7 @@ export function buildMessageDetails(
     workerTitle: sender?.workerTitle,
     sourceMessageId: discordContext?.sourceMessageId,
     channelJid: discordContext?.channelJid,
+    queueRowId: discordContext?.queueRowId,
     messageHandles: discordContext?.messageHandles,
     kind,
     intent,

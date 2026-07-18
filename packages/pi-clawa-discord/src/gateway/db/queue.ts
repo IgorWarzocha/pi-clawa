@@ -1,5 +1,6 @@
 import type { QueuedMessage } from "../types.js";
 import { getDb } from "./connection.js";
+import type Database from "better-sqlite3";
 
 interface PendingChannelRow {
 	channel_jid: string;
@@ -57,19 +58,33 @@ export function claimNextMessage(
 }
 
 export function markMessageDone(rowid: number): void {
-	getDb()
-		.prepare(
-			"update message_queue set status = 'done', processed_at = datetime('now') where rowid = ?",
-		)
-		.run(rowid);
+	markMessageDoneInDb(getDb(), rowid);
 }
 
 export function markMessageFailed(rowid: number): void {
-	getDb()
-		.prepare(
-			"update message_queue set status = 'failed', processed_at = datetime('now') where rowid = ?",
-		)
-		.run(rowid);
+	markMessageFailedInDb(getDb(), rowid);
+}
+
+export function markMessageAwaiting(rowid: number): boolean {
+	return markMessageAwaitingInDb(getDb(), rowid);
+}
+
+export function markMessageAwaitingInDb(db: Database.Database, rowid: number): boolean {
+	return db
+		.prepare("update message_queue set status = 'awaiting' where rowid = ? and status = 'processing'")
+		.run(rowid).changes > 0;
+}
+
+export function markMessageDoneInDb(db: Database.Database, rowid: number): void {
+	db.prepare(
+		"update message_queue set status = 'done', processed_at = datetime('now') where rowid = ?",
+	).run(rowid);
+}
+
+export function markMessageFailedInDb(db: Database.Database, rowid: number): void {
+	db.prepare(
+		"update message_queue set status = 'failed', processed_at = datetime('now') where rowid = ?",
+	).run(rowid);
 }
 
 export function clearPendingMessages(channelJid: string): number {
@@ -112,10 +127,12 @@ export function deletePendingDiscordMessage(
 }
 
 export function recoverStuckMessages(): number {
-	const result = getDb()
-		.prepare(
-			"update message_queue set status = 'pending' where status = 'processing'",
-		)
+	return recoverStuckMessagesInDb(getDb());
+}
+
+export function recoverStuckMessagesInDb(db: Database.Database): number {
+	const result = db
+		.prepare("update message_queue set status = 'pending' where status = 'processing'")
 		.run();
 	return result.changes;
 }

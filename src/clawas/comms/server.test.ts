@@ -16,13 +16,14 @@ const DISCORD_ROOM_UPDATE_OPEN_REGEX = /^\[Discord room update/
 test('only discord-gateway mail uses the worker-facing Discord user-message envelope', () => {
   const details = buildMessageDetails(
     { workerId: 'discord-gateway', workerTitle: 'Discord gateway' },
-    { sourceMessageId: 'dc-msg-1' },
+    { sourceMessageId: 'dc-msg-1', queueRowId: 42 },
     'mail',
     'reply_requested',
     'worker',
   )
 
   assert.equal(shouldDeliverClawasMailAsUserMessage(details), true)
+  assert.equal(details.queueRowId, 42)
   const message = buildWorkerUserMessage(
     'Recent channel context:\nIgor: hey\nEnd recent channel context.\nJosXa: ping',
     details,

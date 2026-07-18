@@ -2,7 +2,7 @@ import {
   enqueueDiscordDelivery,
   getChannel,
   markChannelContextSeen,
-  markMessageDone,
+  markMessageAwaiting,
   markMessageFailed,
 } from '../db.js';
 import { logger } from '../logger.js';
@@ -87,6 +87,7 @@ export async function processQueuedMessage(params: {
           replyToMessageId ?? sourceMessageId,
         ),
         sourceChannelJid: jid,
+        queueRowId: rowid,
         messageHandles,
       }),
       sender: {
@@ -103,8 +104,8 @@ export async function processQueuedMessage(params: {
     }
 
     markChannelContextSeen(jid, observedThroughRowId);
-    markMessageDone(rowid);
-    logger.info({ jid, rowid, worker: mappedWorker }, 'Delivered Discord message to Clawa');
+    markMessageAwaiting(rowid);
+    logger.info({ jid, rowid, worker: mappedWorker }, 'Handed Discord message to Clawa');
   } catch (err: any) {
     if (signal.aborted) {
       markMessageFailed(rowid);

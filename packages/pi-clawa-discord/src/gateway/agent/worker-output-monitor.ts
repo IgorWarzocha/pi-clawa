@@ -4,7 +4,12 @@ import type {
   ClawasExtractedMessage,
 } from '@howaboua/pi-clawa/clawas/comms/types';
 import { listDiscordRouteTags, listDiscordRouteWorkers } from '../channel-routes.js';
-import { hasProcessedWorkerOutput, markWorkerOutputProcessed } from '../db.js';
+import {
+  hasProcessedWorkerOutput,
+  markMessageDone,
+  markMessageFailed,
+  markWorkerOutputProcessed,
+} from '../db.js';
 import { logger } from '../logger.js';
 import type { DiscordMessageHandle } from '../types.js';
 import { findInvalidReactionHandle } from './discord-directives.js';
@@ -127,6 +132,7 @@ async function processAssistantMessage(
   if (message.error) {
     logger.warn({ workerId, err: message.error }, 'Discord Clawa assistant turn failed');
     clearTypingLease(context?.channelJid);
+    settleSourceMessage(context, 'failed');
     markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
     return;
   }
@@ -151,7 +157,18 @@ async function processAssistantMessage(
     text,
     discordContext: context,
   });
+  settleSourceMessage(context, 'done');
   markWorkerOutputProcessed({ workerId, timestamp: message.timestamp, content: message.content });
+}
+
+function settleSourceMessage(
+  context: ClawasDiscordContext | null | undefined,
+  status: 'done' | 'failed',
+): void {
+  const rowid = context?.queueRowId;
+  if (!rowid) return;
+  if (status === 'done') markMessageDone(rowid);
+  else markMessageFailed(rowid);
 }
 
 function workerOutputDeliveryKey(workerId: string, timestamp: number, content: string): string {
