@@ -18,19 +18,23 @@ Use short ids, usually one or two useful words. Three is already a stretch. Keep
 
 ## Create the home
 
+If the human already used Clawa's native create flow, the seed, config entry, shared links, and routing stub may already exist. Inspect that result and continue with onboarding instead of creating a second copy.
+
+For an agent-driven manual setup:
+
 1. Pick `id`, `title`, `emoji`, and home path under `clawas/`.
 2. Create the folder.
-3. Copy the bundled starter templates from this skill:
+3. Copy the package's worker templates. From this skill directory they live at:
 
 ```text
-references/templates/subclawas/AGENTS.md
-references/templates/subclawas/CLAW.md
-references/templates/subclawas/CURIOUS.md
-references/templates/subclawas/TOOLS.md
-references/templates/subclawas/pulses-AGENTS.md
+../../templates/worker/AGENTS.md
+../../templates/worker/CLAW.md
+../../templates/worker/CURIOUS.md
+../../templates/worker/TOOLS.md
+../../templates/worker/pulses/AGENTS.md
 ```
 
-`pulses-AGENTS.md` becomes `clawas/<id>/pulses/AGENTS.md`.
+Copy them into the same relative paths under `clawas/<id>/`; the pulse index stays at `pulses/AGENTS.md`.
 
 4. Symlink shared home context:
 
@@ -82,6 +86,8 @@ Cover, through natural back-and-forth:
 Start small. Do not make the first message a tour of every file in its home. Let `TOOLS.md`, `CURIOUS.md`, and `pulses/AGENTS.md` enter the conversation only when the lane actually needs them.
 
 Let it adjust its local docs as the conversation settles. Keep going until it has enough shape to operate without freezing, then ask it for a short summary of its lane and first useful next move.
+
+After onboarding, run doctor and verify the managed worker is live on its configured model/thinking identity. A successful private reply proves the route; inspect live session identity when the exact model matters.
 
 ## Talk to it later
 

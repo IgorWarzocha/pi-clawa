@@ -13,7 +13,7 @@ I made GPT 5.4 lose its robotic tone of voice. This works. Just trust me, bro.
 Clawa changes the shape of a Pi session without taking Pi away.
 
 - It swaps the top of Pi's default system prompt for Clawa posture, while keeping the rest of it intact.
-- `AGENTS.md` is the load-bearing behavior spine, Clawa relies mostly on it, not dozens of other files.
+- `AGENTS.md` is the core behavior spine; Clawa relies mostly on it, not dozens of other files.
 - The other living docs are hydrated after session start and after compaction. This is enough. Clawa stays true to its voice, and context doesn't bloat. No need for artificial filesize limits. This applies to: `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`.
 - Nested `AGENTS.md` files progressively disclose local folder rules when a Clawa works there - based on bash detection. They are instructed to create them for folders. This keeps context lean.
 - Custom `.pi/SYSTEM.md` prompts are ignored by Clawa to keep things simple. Put compatible additions in this home's `.pi/APPEND_SYSTEM.md` instead. The Clawa system-prompt swap lives in [`src/system-prompt.ts`](src/system-prompt.ts): it replaces Pi's default assistant intro with the Clawa personal-assistant intro while keeping Pi's tool/runtime context intact.

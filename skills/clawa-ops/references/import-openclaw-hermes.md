@@ -31,7 +31,7 @@ This is not a raw migration. Treat the old environment as source material, then 
 - `pulses/<name>/PULSE.md` — scheduled/manual wakes.
 - `pulses/AGENTS.md` — pulse index, disabled notes, short journal.
 
-Load `configuration.md`, `subclawas-setup.md`, or `pulses.md` before touching those parts.
+Load `references/configuration.md`, `references/subclawas-setup.md`, or `references/pulses.md` before touching those parts.
 
 ## Hermes mapping
 
@@ -54,7 +54,7 @@ Hermes subagents are usually behavior/capability, not a folder of people. Create
 OpenClaw config is usually JSON5. Look for:
 
 - `openclaw.json` — agents, channels, models, heartbeat, skills, MCP, plugins, sessions.
-- agent defaults/list/multi-agent config — map recurring agents into subclawas via `subclawas-setup.md`.
+- agent defaults/list/multi-agent config — map recurring agents into subclawas via `references/subclawas-setup.md`.
 - identity/context/memory files — fold useful parts into `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, `TOOLS.md`, or `remember`.
 - heartbeat config or `HEARTBEAT.md` — map into `Hey, Clawa` or a named pulse. Do not recreate `HEARTBEAT.md`.
 - cron/scheduled jobs — map into pulse folders, preserving intent and cadence.

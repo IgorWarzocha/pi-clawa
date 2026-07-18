@@ -30,6 +30,7 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
     ]
   },
   "clawa": {
+    "humanName": "human",
     "mainClawName": "Clawa",
     "clawasName": "Clawas",
     "workerSessionPrefix": "Clawas",
@@ -55,6 +56,7 @@ Common:
 - `model` — optional Pi model ref.
 - `thinking` — `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`.
 - `extensions` — optional extra Pi extensions for that worker.
+- `discordEnabled` — optional adapter-facing flag for Discord-owned workers; most workers omit it.
 - `reportMode` — `auto`, `explicit`, or `off`.
 
 Less common:
@@ -79,6 +81,20 @@ Use the `provider/model-id` style that Pi prints or accepts for `--model`. Pick 
 - Append or update the one worker entry you mean to touch.
 - Preserve existing workers and home defaults.
 - Keep disabled workers if their history or naming lesson may matter later.
+- Verify runtime state after model, thinking, extension, or startup changes. Config text alone does not prove a managed worker respawned with the new identity.
+
+## Home defaults
+
+The `clawa` object controls names and runtime directories shared by the home:
+
+- `humanName` — human label used by Clawa-facing surfaces.
+- `mainClawName` — main assistant name.
+- `clawasName` — collective worker name.
+- `workerSessionPrefix` — prefix for managed worker sessions.
+- `controlPlaneDir` — project-local control-plane state directory.
+- `controlSocketDir` — logical socket directory name; the runtime resolves collision-safe sockets under the system runtime directory.
+
+Keep defaults unless the home deliberately uses another naming or control-plane shape.
 
 ## Project Pi settings
 

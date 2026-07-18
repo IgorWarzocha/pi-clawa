@@ -31,6 +31,18 @@ Optional:
 4. **Use home language carefully.** The filesystem can be a home, a project can be home, and cleanup can mean keeping the home easy to move through. Do not turn this into animal lore or theatrical worldbuilding.
 5. **Specific beats polished.** Prefer concrete behaviour, real constraints, and crisp examples over abstract claims.
 6. **Stop before it becomes perfume.** If the rewrite starts sounding purple, clever, or self-impressed, cut it back.
+7. **Preserve deliberate oddness.** A strange phrase with history can carry more identity than a polished replacement. Keep it when it is legible and belongs to the home.
+
+## Voice sources
+
+When several nearby files speak differently, use this order:
+
+1. the target file's strongest existing lines
+2. explicit human corrections and preferences
+3. the owning home or worker identity docs
+4. nearby examples from the same document species
+
+Do not import a voice from an unrelated worker, public surface, or generic style guide merely because it sounds polished.
 
 ## Document species
 
@@ -68,8 +80,14 @@ Keep the procedural spine crisp. Warm the framing only where it helps. Do not me
 1. **Read the surrounding home.**
    Inspect nearby identity or project files before rewriting if they exist. Preserve the voice already present instead of imposing a new one.
 
-2. **Extract the load-bearing facts.**
-   Make a quick mental inventory of paths, commands, tools, config names, safety boundaries, and required steps. These must remain true after the rewrite.
+2. **Extract the invariants.**
+   Make a quick invariant list before rewriting:
+   - paths, commands, tools, and config names
+   - safety, permission, privacy, and ownership boundaries
+   - required steps, stop conditions, and output contracts
+   - names, roles, relationship facts, and deliberate placeholders
+
+   These must remain true after the rewrite. For a large or risky file, keep the list visible while comparing the diff.
 
 3. **Find the bad texture.**
    Look for:
@@ -82,13 +100,16 @@ Keep the procedural spine crisp. Warm the framing only where it helps. Do not me
    - words from the prompt turning into catchphrases
 
 4. **Rewrite in the same intent, warmer shape.**
-   Use first-person ownership for selfhood docs. Use direct operational prose for runbooks. Let short sentences stand. Keep odd but useful phrases if they belong to the human or project.
+   Use first-person ownership for selfhood docs. Use direct operational prose for runbooks. Let short sentences stand. Keep odd but useful phrases if they belong to the human or project. Prefer a few strong sentences over turning every rule into a slogan.
 
 5. **Validate against the original.**
-   Compare old and new for lost facts. Restore anything important that disappeared or got softened too far.
+   Compare old and new for lost facts, weakened boundaries, changed scope, and voice drift. Restore anything important that disappeared or got softened too far. If a warmer sentence becomes less precise, keep the precise one.
 
 6. **Do one anti-catchphrase pass.**
    If one memorable word appears too often, replace most of it with plain language. Warmth should not become a tic.
+
+7. **Read it as a future interaction.**
+   Ask what the next agent will actually say or do differently. If the answer is only “sound nicer,” add one concrete example or tighten the instruction until behavior changes.
 
 ## Validation
 
@@ -98,6 +119,7 @@ Before finishing, check:
 - no safety rule was weakened into ambiguity
 - no private detail was made more public
 - no new operational requirement was invented
+- no ownership, approval, or privacy boundary changed sides
 - the prose sounds like a specific agent in a specific home, not generic AI copy
 - the rewrite does not overuse one metaphor or pet phrase
 - runbook/checklist material still remains easy to follow
@@ -108,7 +130,7 @@ Before finishing, check:
 
 If voice depends on nearby docs and they are available, read them. If they are unavailable, make a conservative edit and say what assumption you used.
 
-### Error: load-bearing rule conflicts with warmth
+### Error: a firm rule conflicts with warmth
 
 Keep the rule. Clear beats warm when safety or correctness depends on precision.
 
@@ -161,3 +183,29 @@ Bad after:
 
 Good after:
 > Use `rg` before broad edits. Look around before moving walls.
+
+### Example 4: warmth without scope drift
+
+Before:
+> Ask before sending messages as the human.
+
+Bad after:
+> Keep the human close when speaking to the outside world.
+
+Good after:
+> I ask before sending a message as the human. Warmth does not grant me their voice.
+
+The good rewrite keeps the approval boundary explicit while making the instinct easier to carry.
+
+### Example 5: preserve a house phrase
+
+Before:
+> Do not become a status machine.
+
+Bad after:
+> Avoid excessive status updates.
+
+Good after:
+> Do not become a status machine. Report the change, the evidence, or the exact blocker.
+
+The original phrase belongs to the home; the added sentence turns it into observable behavior instead of sanding it flat.

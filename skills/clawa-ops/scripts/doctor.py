@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -27,6 +28,8 @@ REQUIRED_WORKER_LOCAL_DOCS = [
 REQUIRED_WORKER_SHARED_DOCS = ['HUMAN.md', 'CLAWAS.md']
 HYDRATION_ROOT_FILES = ['CLAW.md', 'HUMAN.md', 'CLAWAS.md', 'CURIOUS.md', 'TOOLS.md']
 HYDRATION_WORKER_LOCAL_FILES = ['CLAW.md', 'CURIOUS.md', 'TOOLS.md']
+VISUAL_HYDRATION_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.webp', '.gif')
+VISUAL_HYDRATION_MAX_DIMENSION = 1024
 THINKING_LEVELS = {'off', 'minimal', 'low', 'medium', 'high', 'xhigh'}
 REPORT_MODES = {'auto', 'explicit', 'off'}
 WORKER_ID_RE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
@@ -98,6 +101,132 @@ def estimate_tokens(path: Path) -> int:
         return (len(path.read_text(errors='ignore')) + 3) // 4
     except OSError:
         return 0
+
+
+def find_visual_hydration_files(home: Path) -> list[Path]:
+    try:
+        candidates = [
+            path
+            for path in home.iterdir()
+            if path.is_file()
+            and path.stem.upper() == 'CLAWA'
+            and path.suffix.lower() in VISUAL_HYDRATION_EXTENSIONS
+        ]
+    except OSError:
+        return []
+    return sorted(
+        candidates,
+        key=lambda path: (
+            VISUAL_HYDRATION_EXTENSIONS.index(path.suffix.lower()),
+            path.name,
+        ),
+    )
+
+
+def read_image_dimensions(path: Path) -> tuple[int, int] | None:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+
+    dimensions = (
+        read_png_dimensions(data)
+        or read_jpeg_dimensions(data)
+        or read_gif_dimensions(data)
+        or read_webp_dimensions(data)
+    )
+    if dimensions is None:
+        return None
+    width, height = dimensions
+    if width <= 0 or height <= 0:
+        return None
+    return width, height
+
+
+def read_png_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 24 or data[:8] != b'\x89PNG\r\n\x1a\n' or data[12:16] != b'IHDR':
+        return None
+    return int.from_bytes(data[16:20], 'big'), int.from_bytes(data[20:24], 'big')
+
+
+def read_jpeg_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 4 or data[:3] != b'\xff\xd8\xff':
+        return None
+    offset = 2
+    start_of_frame_markers = {
+        0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+        0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF,
+    }
+    while offset + 3 < len(data):
+        if data[offset] != 0xFF:
+            offset += 1
+            continue
+        while offset < len(data) and data[offset] == 0xFF:
+            offset += 1
+        if offset >= len(data):
+            return None
+        marker = data[offset]
+        offset += 1
+        if marker in {0x01, 0xD8, 0xD9}:
+            continue
+        if offset + 2 > len(data):
+            return None
+        segment_length = int.from_bytes(data[offset:offset + 2], 'big')
+        if segment_length < 2 or offset + segment_length > len(data):
+            return None
+        if marker in start_of_frame_markers and segment_length >= 7:
+            height = int.from_bytes(data[offset + 3:offset + 5], 'big')
+            width = int.from_bytes(data[offset + 5:offset + 7], 'big')
+            return width, height
+        offset += segment_length
+    return None
+
+
+def read_gif_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 10 or data[:3] != b'GIF':
+        return None
+    return int.from_bytes(data[6:8], 'little'), int.from_bytes(data[8:10], 'little')
+
+
+def read_webp_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 30 or data[:4] != b'RIFF' or data[8:12] != b'WEBP':
+        return None
+    chunk = data[12:16]
+    if chunk == b'VP8X':
+        width = 1 + int.from_bytes(data[24:27], 'little')
+        height = 1 + int.from_bytes(data[27:30], 'little')
+        return width, height
+    if chunk == b'VP8 ' and data[23:26] == b'\x9d\x01\x2a':
+        width = int.from_bytes(data[26:28], 'little') & 0x3FFF
+        height = int.from_bytes(data[28:30], 'little') & 0x3FFF
+        return width, height
+    if chunk == b'VP8L' and data[20] == 0x2F:
+        b1, b2, b3, b4 = data[21:25]
+        width = 1 + (((b2 & 0x3F) << 8) | b1)
+        height = 1 + (((b4 & 0x0F) << 10) | (b3 << 2) | (b2 >> 6))
+        return width, height
+    return None
+
+
+def estimate_visual_tokens(width: int, height: int) -> tuple[int, int]:
+    """Return a provider-agnostic range from common high-detail image schemes."""
+    runtime_scale = min(1.0, VISUAL_HYDRATION_MAX_DIMENSION / max(width, height))
+    width = max(1, round(width * runtime_scale))
+    height = max(1, round(height * runtime_scale))
+    patch_tokens = min(1536, math.ceil(width / 32) * math.ceil(height / 32))
+
+    scale = min(1.0, 2048 / width, 2048 / height)
+    tiled_width = width * scale
+    tiled_height = height * scale
+    shortest = min(tiled_width, tiled_height)
+    if shortest > 768:
+        scale = 768 / shortest
+        tiled_width *= scale
+        tiled_height *= scale
+    tiles = math.ceil(tiled_width / 512) * math.ceil(tiled_height / 512)
+    tile_tokens = 85 + 170 * tiles
+
+    return min(tile_tokens, patch_tokens), max(tile_tokens, patch_tokens)
 
 
 def parse_frontmatter(path: Path) -> dict[str, Any] | None:
@@ -302,11 +431,43 @@ class Doctor:
         paths = [home / item for item in files]
         if shared:
             paths.extend(shared)
-        total = sum(estimate_tokens(path) for path in paths if path.exists())
-        if total > 20_000:
-            self.warn(f'{name} hydration estimate is large: ~{total} tokens (>20k)')
+        text_total = sum(estimate_tokens(path) for path in paths if path.exists())
+
+        visual_range: tuple[int, int] | None = None
+        visual_paths = find_visual_hydration_files(home)
+        if visual_paths:
+            visual_path = visual_paths[0]
+            dimensions = read_image_dimensions(visual_path)
+            if dimensions is None:
+                self.warn(f'{name} {visual_path.name} dimensions could not be read')
+            else:
+                width, height = dimensions
+                visual_range = estimate_visual_tokens(width, height)
+                low, high = visual_range
+                self.ok_line(
+                    f'{name} {visual_path.name} is {width}x{height} '
+                    f'(~{low}-{high} visual tokens, provider-dependent)'
+                )
+            if len(visual_paths) > 1:
+                extras = ', '.join(path.name for path in visual_paths[1:])
+                self.warn(f'{name} has multiple CLAWA images; using {visual_path.name}, also found {extras}')
+
+        if visual_range:
+            low, high = visual_range
+            low_total = text_total + low
+            high_total = text_total + high
+            message = (
+                f'{name} hydration estimate ~{text_total} text + ~{low}-{high} visual '
+                f'= ~{low_total}-{high_total} tokens'
+            )
         else:
-            self.ok_line(f'{name} hydration estimate ~{total} tokens')
+            high_total = text_total
+            message = f'{name} hydration estimate ~{text_total} text tokens'
+
+        if high_total > 20_000:
+            self.warn(f'{message} (>20k)')
+        else:
+            self.ok_line(message)
 
     def check_agents_budgets(self) -> None:
         print('\nAGENTS budgets')
