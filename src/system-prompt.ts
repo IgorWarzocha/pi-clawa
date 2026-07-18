@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -79,6 +79,93 @@ function sanitizeClawaName(name: string): string {
 function isPathInsideOrSame(childPath: string, parentPath: string): boolean {
   const rel = relative(parentPath, childPath)
   return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel))
+}
+
+const GLOBAL_PI_AGENT_DIR = join(homedir(), '.pi', 'agent')
+
+function realpathExisting(path: string): string | undefined {
+  if (!existsSync(path)) return undefined
+  try {
+    return realpathSync.native?.(path) ?? realpathSync(path)
+  } catch {
+    return undefined
+  }
+}
+
+function resolveClawaHomeRoot(cwd: string): string {
+  const resolvedCwd = realpathExisting(cwd) ?? resolve(cwd)
+  const environmentRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim()
+  if (environmentRoot) {
+    const resolvedEnvironmentRoot = realpathExisting(environmentRoot) ?? resolve(environmentRoot)
+    if (isPathInsideOrSame(resolvedCwd, resolvedEnvironmentRoot)) return resolvedEnvironmentRoot
+  }
+  const discoveredRoot = findRepoRoot(resolvedCwd)
+  return realpathExisting(discoveredRoot) ?? resolve(discoveredRoot)
+}
+
+type ContextFile = NonNullable<BuildSystemPromptOptions['contextFiles']>[number]
+
+export function filterClawaHomeContextFiles(
+  contextFiles: ContextFile[] | undefined,
+  cwd: string,
+  globalAgentDir = GLOBAL_PI_AGENT_DIR,
+): ContextFile[] {
+  const homeRoot = resolveClawaHomeRoot(cwd)
+  const lexicalGlobalAgentDir = resolve(globalAgentDir)
+  const canonicalGlobalAgentDir = realpathExisting(globalAgentDir) ?? lexicalGlobalAgentDir
+  return (contextFiles ?? []).filter((file) => {
+    const lexicalPath = resolve(isAbsolute(file.path) ? file.path : resolve(cwd, file.path))
+    if (dirname(lexicalPath) === lexicalGlobalAgentDir) return false
+    const canonicalPath = realpathExisting(lexicalPath)
+    if (!canonicalPath || dirname(canonicalPath) === canonicalGlobalAgentDir) return false
+    return isPathInsideOrSame(canonicalPath, homeRoot)
+  })
+}
+
+function buildProjectContext(files: ContextFile[]): string {
+  if (files.length === 0) return ''
+  return [
+    '<project_context>',
+    '',
+    'Project-specific instructions and guidelines:',
+    '',
+    ...files.map(
+      (file) =>
+        `<project_instructions path="${file.path}">\n${file.content}\n</project_instructions>\n`,
+    ),
+    '</project_context>',
+  ].join('\n')
+}
+
+function replaceProjectContext(
+  systemPrompt: string,
+  originalFiles: ContextFile[],
+  homeFiles: ContextFile[],
+): string {
+  if (originalFiles.length === 0) return systemPrompt
+
+  const instructionPositions = originalFiles
+    .map((file) => systemPrompt.indexOf(`<project_instructions path="${file.path}">`))
+    .filter((position) => position >= 0)
+  const firstInstruction = instructionPositions.length > 0 ? Math.min(...instructionPositions) : -1
+  const start =
+    firstInstruction >= 0
+      ? systemPrompt.lastIndexOf('<project_context>', firstInstruction)
+      : systemPrompt.lastIndexOf('<project_context>')
+  const closingTag = '</project_context>'
+  const end = systemPrompt.lastIndexOf(closingTag)
+
+  if (start < 0 || end < start) {
+    const leakedFile = originalFiles.find(
+      (file) => !homeFiles.includes(file) && systemPrompt.includes(file.content),
+    )
+    if (leakedFile) {
+      throw new Error(`Clawa could not isolate outside context file: ${leakedFile.path}`)
+    }
+    return systemPrompt
+  }
+
+  return `${systemPrompt.slice(0, start)}${buildProjectContext(homeFiles)}${systemPrompt.slice(end + closingTag.length)}`
 }
 
 export function resolveClawaPromptName(cwd: string): string {
@@ -175,8 +262,17 @@ export function resolveClawaSystemPrompt(
   options: BuildSystemPromptOptions,
 ): { systemPrompt: string; ignoredCustomPrompt: boolean } {
   const clawaName = resolveClawaPromptName(options.cwd)
-  if (options.customPrompt && systemPrompt.startsWith(options.customPrompt)) {
-    const suffix = systemPrompt.slice(options.customPrompt.length)
+  const homeContextFiles = filterClawaHomeContextFiles(options.contextFiles, options.cwd)
+  const removedContextFiles = (options.contextFiles ?? []).filter(
+    (file) => !homeContextFiles.includes(file),
+  )
+  const selfContainedPrompt =
+    removedContextFiles.length > 0
+      ? replaceProjectContext(systemPrompt, options.contextFiles ?? [], homeContextFiles)
+      : systemPrompt
+
+  if (options.customPrompt && selfContainedPrompt.startsWith(options.customPrompt)) {
+    const suffix = selfContainedPrompt.slice(options.customPrompt.length)
     return {
       systemPrompt: replacePiDefaultAssistantIntro(
         `${buildPiDefaultSystemPromptBase(options)}${suffix}`,
@@ -187,7 +283,7 @@ export function resolveClawaSystemPrompt(
   }
 
   return {
-    systemPrompt: replacePiDefaultAssistantIntro(systemPrompt, clawaName),
+    systemPrompt: replacePiDefaultAssistantIntro(selfContainedPrompt, clawaName),
     ignoredCustomPrompt: false,
   }
 }

@@ -106,6 +106,8 @@ Project Pi settings live at:
 
 Use them for project-local Pi package loading. Keep main Clawa on Pi's normal session store unless the human explicitly wants a custom session directory; do not edit the human's global `~/.pi/agent/settings.json` when tuning this Clawa home.
 
+Clawa filters Pi context files to the active home root. Global and outside-parent `AGENTS.md`/`CLAUDE.md` instructions do not enter Clawa's model context; root, worker, and nested context inside the home still can.
+
 Common Clawa shape:
 
 ```json
