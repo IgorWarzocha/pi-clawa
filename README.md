@@ -57,6 +57,8 @@ Pulses are Clawa's scheduled/ambient wake layer: a softer hybrid of cron and hea
 
 Each pulse is a named folder in a Clawa home, for example `pulses/weekly-pulse-review/PULSE.md`. The definition is markdown with frontmatter (`title`, `schedule`, `enabled`) and a body that tells the Clawa what the wake is for. Manual-only pulses use `schedule: manual` - tell your Clawa to trigger it... Or it might trigger it automatically during `hey-clawa`.
 
+Pulse instructions always state their local wake date, time, UTC offset, and timezone. Add optional `quietHours: 23:00-08:00` to a pulse when scheduled wakes should sleep through a local-time window; manual runs still work.
+
 The default home includes:
 
 - `hey-clawa/` — every 30 minutes, asks Clawa to make one small useful or interesting move.

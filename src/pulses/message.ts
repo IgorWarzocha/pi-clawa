@@ -14,6 +14,18 @@ export interface PulseMessageDetails {
 export interface PulseInstructionOptions {
   forced?: boolean | undefined
   queued?: boolean | undefined
+  nowMs?: number | undefined
+}
+
+function formatPulseWakeTime(nowMs: number): string {
+  const now = new Date(nowMs)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const offsetMinutes = -now.getTimezoneOffset()
+  const offsetSign = offsetMinutes >= 0 ? '+' : '-'
+  const offsetHours = pad(Math.floor(Math.abs(offsetMinutes) / 60))
+  const offsetRemainder = pad(Math.abs(offsetMinutes) % 60)
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'local time'
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} UTC${offsetSign}${offsetHours}:${offsetRemainder} (${timeZone})`
 }
 
 function queuedPulseLines(queued: boolean): string[] {
@@ -31,12 +43,17 @@ export function buildPulseInstruction(
 ): string {
   const forced = options.forced === true
   const queued = options.queued === true
+  const nowMs = options.nowMs ?? Date.now()
   return [
     `Pulse: ${pulse.title}`,
     `Owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
+    `Wake time: ${formatPulseWakeTime(nowMs)}`,
     `Pulse folder: ${pulse.relativeHome}`,
     `Definition file: ${pulse.relativeFile}`,
     forced ? 'Trigger: manual run-now' : `Trigger: schedule ${pulse.scheduleText}`,
+    pulse.quietHoursText
+      ? `Quiet hours: ${pulse.quietHoursText} local time${forced ? ' (manual run-now bypass)' : ''}`
+      : null,
     '',
     ...queuedPulseLines(queued),
     queued ? '' : null,

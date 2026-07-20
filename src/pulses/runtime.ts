@@ -5,7 +5,7 @@ import type { WorkerState } from '../clawas/types.js'
 import { getWorkerSocketAlias } from '../clawas/worker-identity.js'
 import { discoverPulseDefinitions, type PulseDefinition } from './definitions.js'
 import { buildPulseInstruction, CLAWA_PULSE_MESSAGE_TYPE, pulseDetails } from './message.js'
-import { isPulseDue, pulseDueKey } from './schedule.js'
+import { isPulseDue, isPulseQuietAt, pulseDueKey } from './schedule.js'
 import { type PulseSchedulerState, readPulseState, writePulseState } from './state.js'
 
 const PULSE_TICK_MS = 5 * 60 * 1000
@@ -66,7 +66,7 @@ export class PulseRuntime {
     const pulses = await discoverPulseDefinitions(ctx.cwd)
     const pulse = resolvePulseTarget(pulses, target)
     if (!pulse) throw new Error(`Unknown pulse: ${target}`)
-    await this.dispatchPulse(pulse, 'forced')
+    await this.dispatchPulse(pulse, 'forced', Date.now())
     return pulse
   }
 
@@ -88,7 +88,7 @@ export class PulseRuntime {
       for (const { pulse, dueKey } of duePulses) {
         if (delayedHeyPulses.has(pulse)) continue
         const entry = state.pulses[pulse.key]
-        await this.dispatchPulse(pulse, 'scheduled')
+        await this.dispatchPulse(pulse, 'scheduled', nowMs)
         state.pulses[pulse.key] = {
           ...entry,
           firstSeenAt: entry?.firstSeenAt ?? nowMs,
@@ -113,19 +113,23 @@ export class PulseRuntime {
     this.timer.unref?.()
   }
 
-  private async dispatchPulse(pulse: PulseDefinition, mode: PulseRunMode): Promise<void> {
+  private async dispatchPulse(
+    pulse: PulseDefinition,
+    mode: PulseRunMode,
+    nowMs: number,
+  ): Promise<void> {
     const forced = mode === 'forced'
     if (pulse.ownerId === 'main') {
-      this.sendMainPulse(pulse, forced)
+      this.sendMainPulse(pulse, forced, nowMs)
       return
     }
-    await this.sendWorkerPulse(pulse, forced)
+    await this.sendWorkerPulse(pulse, forced, nowMs)
   }
 
-  private sendMainPulse(pulse: PulseDefinition, forced: boolean): void {
+  private sendMainPulse(pulse: PulseDefinition, forced: boolean, nowMs: number): void {
     const ctx = this.requireContext()
     const queued = !ctx.isIdle()
-    const instruction = buildPulseInstruction(pulse, { forced, queued })
+    const instruction = buildPulseInstruction(pulse, { forced, queued, nowMs })
     this.pi.sendMessage(
       {
         customType: CLAWA_PULSE_MESSAGE_TYPE,
@@ -137,11 +141,15 @@ export class PulseRuntime {
     )
   }
 
-  private async sendWorkerPulse(pulse: PulseDefinition, forced: boolean): Promise<void> {
+  private async sendWorkerPulse(
+    pulse: PulseDefinition,
+    forced: boolean,
+    nowMs: number,
+  ): Promise<void> {
     await this.clawasRuntime.refreshFromConfig()
     const worker = findWorker(this.clawasRuntime, pulse.ownerId)
     const queued = isWorkerBusy(worker)
-    const instruction = buildPulseInstruction(pulse, { forced, queued })
+    const instruction = buildPulseInstruction(pulse, { forced, queued, nowMs })
     if (worker?.manualSession) {
       await this.sendWorkerSessionMessage(getWorkerSocketAlias(worker.definition), {
         message: instruction,
@@ -181,6 +189,7 @@ function collectDuePulses(
   for (const pulse of pulses) {
     if (!pulse.enabled) continue
     if (pulse.schedule.kind === 'manual') continue
+    if (pulse.quietHours && isPulseQuietAt(pulse.quietHours, nowMs)) continue
     const entry = state.pulses[pulse.key]
     if (entry?.deferUntil && nowMs < entry.deferUntil) continue
     const due = isPulseDue({

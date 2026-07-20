@@ -64,6 +64,7 @@ function buildPulseDetail(item: PulseItem): Primitive {
       `key: ${pulse.key}`,
       `owner: ${pulse.ownerTitle} (${pulse.ownerId})`,
       `schedule: ${pulse.enabled ? pulse.scheduleText : `${pulse.scheduleText} (disabled)`}`,
+      ...(pulse.quietHoursText ? [`quiet hours: ${pulse.quietHoursText} local time`] : []),
       `folder: ${pulse.relativeHome}`,
       `definition: ${pulse.relativeFile}`,
     ],

@@ -144,7 +144,7 @@ function buildPulseItems(
     title: definition.title,
     summary:
       definition.status === 'valid'
-        ? `${definition.ownerTitle} • ${definition.enabled ? definition.scheduleText : 'disabled'} • ${definition.relativeFile}`
+        ? `${definition.ownerTitle} • ${definition.enabled ? definition.scheduleText : 'disabled'}${definition.quietHoursText ? ` • quiet ${definition.quietHoursText}` : ''} • ${definition.relativeFile}`
         : `${definition.ownerTitle} • invalid • ${definition.error}`,
     detailKey: `pulse:${definition.key}`,
     definition,

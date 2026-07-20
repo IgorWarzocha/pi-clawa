@@ -2,6 +2,7 @@ Lane pulses are gentle wakes, not an escape hatch.
 
 - **One wake, one room.** Each pulse lives at `pulses/<name>/`; `PULSE.md` is runnable truth, local `AGENTS.md` its tiny habits, and notes/results stay nearby.
 - Frontmatter requires `title`, `schedule`, and `enabled`; `schedule: manual` wakes run only by human or pulse nudge.
+- Optional `quietHours: HH:MM-HH:MM` keeps scheduled wakes asleep during that local-time window; manual runs still work.
 - **Stand on your own feet.** Choose any target inside the definition; never rely on hidden parameters.
 - **Own the lane.** Keep wakes inside my specialty. External action happens only when the pulse says so; otherwise stay local/private.
 - **The work owns the memory.** Invoked work journals under the invoked pulse.

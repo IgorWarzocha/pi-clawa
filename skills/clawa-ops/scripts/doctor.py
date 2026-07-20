@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 import math
 import os
@@ -35,19 +36,19 @@ REPORT_MODES = {'auto', 'explicit', 'off'}
 WORKER_ID_RE = re.compile(r'^[a-z0-9][a-z0-9-]*$')
 PULSE_ID_RE = WORKER_ID_RE
 FRONTMATTER_RE = re.compile(r'^---\n(.*?)\n---\n?', re.S)
-SCHEDULE_PATTERNS = [
-    re.compile(r'^manual$', re.I),
-    re.compile(
-        r'^every\s+\d+\s*(m|min|mins|minute|minutes|h|hr|hour|hours|d|day|days)$',
-        re.I,
-    ),
-    re.compile(r'^daily\s+([01]?\d|2[0-3]):[0-5]\d$', re.I),
-    re.compile(
-        r'^weekly\s+(sun|mon|tue|wed|thu|fri|sat|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+([01]?\d|2[0-3]):[0-5]\d$',
-        re.I,
-    ),
-    re.compile(r'^at\s+\d{4}-\d{2}-\d{2}T.+$', re.I),
-]
+EVERY_SCHEDULE_PATTERN = re.compile(
+    r'^every\s+(\d+)\s*(m|min|mins|minute|minutes|h|hr|hour|hours|d|day|days)$',
+    re.I,
+)
+DAILY_SCHEDULE_PATTERN = re.compile(r'^daily\s+([01]?\d|2[0-3]):[0-5]\d$', re.I)
+WEEKLY_SCHEDULE_PATTERN = re.compile(
+    r'^weekly\s+(sun|mon|tue|wed|thu|fri|sat|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+([01]?\d|2[0-3]):[0-5]\d$',
+    re.I,
+)
+AT_SCHEDULE_PATTERN = re.compile(r'^at\s+(.+)$', re.I)
+QUIET_HOURS_PATTERN = re.compile(
+    r'^(?:[01]?\d|2[0-3]):[0-5]\d\s*-\s*(?:[01]?\d|2[0-3]):[0-5]\d$'
+)
 
 
 def strip_jsonc(text: str) -> str:
@@ -257,7 +258,32 @@ def parse_frontmatter(path: Path) -> dict[str, Any] | None:
 
 
 def valid_schedule(value: str) -> bool:
-    return any(pattern.match(value.strip()) for pattern in SCHEDULE_PATTERNS)
+    text = value.strip()
+    if text.lower() == 'manual':
+        return True
+    every = EVERY_SCHEDULE_PATTERN.match(text)
+    if every:
+        return int(every.group(1)) > 0
+    if DAILY_SCHEDULE_PATTERN.match(text) or WEEKLY_SCHEDULE_PATTERN.match(text):
+        return True
+    at = AT_SCHEDULE_PATTERN.match(text)
+    if not at:
+        return False
+    try:
+        datetime.fromisoformat(at.group(1).replace('Z', '+00:00'))
+        return True
+    except ValueError:
+        return False
+
+
+def valid_quiet_hours(value: str) -> bool:
+    text = value.strip()
+    if not QUIET_HOURS_PATTERN.match(text):
+        return False
+    start, end = [part.strip() for part in text.split('-', 1)]
+    start_hour, start_minute = [int(part) for part in start.split(':', 1)]
+    end_hour, end_minute = [int(part) for part in end.split(':', 1)]
+    return start_hour * 60 + start_minute != end_hour * 60 + end_minute
 
 
 class Doctor:
@@ -541,7 +567,18 @@ class Doctor:
             )
         elif not valid_schedule(schedule):
             self.fail(f'{owner}: {self.rel(path)} has invalid schedule: {schedule!r}')
-        else:
+        quiet_hours = data.get('quietHours')
+        if quiet_hours is not None and (
+            not isinstance(quiet_hours, str) or not valid_quiet_hours(quiet_hours)
+        ):
+            self.fail(
+                f'{owner}: {self.rel(path)} quietHours must use distinct local times: HH:MM-HH:MM'
+            )
+        if (
+            isinstance(schedule, str)
+            and valid_schedule(schedule)
+            and (quiet_hours is None or (isinstance(quiet_hours, str) and valid_quiet_hours(quiet_hours)))
+        ):
             self.ok_line(f'{self.rel(path)} frontmatter is valid')
 
     def run(self) -> int:

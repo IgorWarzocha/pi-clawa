@@ -6,7 +6,12 @@ import test from 'node:test'
 import { discoverPulseCatalog, discoverPulseDefinitions } from '../src/pulses/definitions.js'
 import { CLAWA_PULSE_MESSAGE_TYPE } from '../src/pulses/message.js'
 import { PulseRuntime } from '../src/pulses/runtime.js'
-import { isPulseDue, parsePulseSchedule } from '../src/pulses/schedule.js'
+import {
+  isPulseDue,
+  isPulseQuietAt,
+  parsePulseQuietHours,
+  parsePulseSchedule,
+} from '../src/pulses/schedule.js'
 import { readPulseState } from '../src/pulses/state.js'
 
 const TINY_CHECK_FILE_PATTERN = /Definition file: .*pulses\/tiny-check\/PULSE.md/
@@ -18,6 +23,10 @@ const HEY_CLAWA_FILE_PATTERN = /hey-clawa\/PULSE.md/
 const HEY_CLAWA_STATE_PATTERN = /"main:hey-clawa"/
 const HEY_CLAWA_DEFER_PATTERN = /"deferUntil": 962000/
 const JSON_ERROR_PATTERN = /JSON/
+const WAKE_TIME_PATTERN =
+  /Wake time: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC[+-]\d{2}:\d{2} \([^)]+\)/u
+const QUIET_HOURS_PATTERN = /Quiet hours: 23:00-08:00 local time/u
+const MANUAL_QUIET_BYPASS_PATTERN = /Quiet hours: 23:00-08:00 local time \(manual run-now bypass\)/u
 
 function stubClawasRuntime() {
   return {
@@ -45,6 +54,19 @@ test('pulse schedules parse and skip first-seen interval runs', () => {
     due: false,
     dueKey: null,
   })
+})
+
+test('pulse quiet hours parse local daytime and overnight windows', () => {
+  const overnight = parsePulseQuietHours('23:00-08:00')
+  const daytime = parsePulseQuietHours('13:00 - 14:00')
+  assert.deepEqual(overnight, { startMinute: 1380, endMinute: 480 })
+  assert.deepEqual(daytime, { startMinute: 780, endMinute: 840 })
+  assert.equal(isPulseQuietAt(overnight!, new Date(2026, 6, 18, 23, 0).getTime()), true)
+  assert.equal(isPulseQuietAt(overnight!, new Date(2026, 6, 19, 7, 59).getTime()), true)
+  assert.equal(isPulseQuietAt(overnight!, new Date(2026, 6, 19, 8, 0).getTime()), false)
+  assert.equal(isPulseQuietAt(daytime!, new Date(2026, 6, 18, 13, 30).getTime()), true)
+  assert.equal(parsePulseQuietHours('24:00-08:00'), null)
+  assert.equal(parsePulseQuietHours('08:00-08:00'), null)
 })
 
 test('pulse runtime dispatches due main-home pulse as custom message', async () => {
@@ -143,6 +165,7 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     assert.equal(messages.length, 1)
     assert.equal(messages[0]?.customType, CLAWA_PULSE_MESSAGE_TYPE)
     assert.match(messages[0]?.content ?? '', TINY_CHECK_FILE_PATTERN)
+    assert.match(messages[0]?.content ?? '', WAKE_TIME_PATTERN)
     assert.match(await readFile(join(root, '.pi', 'pulses.json'), 'utf8'), TINY_CHECK_STATE_PATTERN)
     assert.doesNotMatch(
       await readFile(join(root, '.pi', 'pulses.json'), 'utf8'),
@@ -152,6 +175,58 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     await pulseRuntime.runNow('manual-note')
     assert.equal(messages.length, 2)
     assert.match(messages[1]?.content ?? '', MANUAL_PULSE_FILE_PATTERN)
+    pulseRuntime.dispose()
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('scheduled pulses sleep through quiet hours and run once awake', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-quiet-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, 'pulses', 'night-sleeper'), { recursive: true })
+    await writeFile(
+      join(root, 'pulses', 'night-sleeper', 'PULSE.md'),
+      [
+        '---',
+        'title: Night sleeper',
+        'schedule: daily 23:30',
+        'quietHours: 23:00-08:00',
+        'enabled: true',
+        '---',
+        '',
+        '# Night sleeper',
+      ].join('\n'),
+      'utf8',
+    )
+
+    const definitions = await discoverPulseDefinitions(root)
+    assert.equal(definitions[0]?.quietHoursText, '23:00-08:00')
+    const messages: string[] = []
+    const pulseRuntime = new PulseRuntime(
+      {
+        sendMessage: (message: { content?: string }) => messages.push(message.content ?? ''),
+      } as never,
+      stubClawasRuntime() as never,
+    )
+    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+
+    const beforeQuiet = new Date(2026, 6, 18, 10, 0).getTime()
+    const duringQuiet = new Date(2026, 6, 18, 23, 31).getTime()
+    const afterQuiet = new Date(2026, 6, 19, 8, 0).getTime()
+    await pulseRuntime.scanAndRunDue(beforeQuiet)
+    await pulseRuntime.scanAndRunDue(duringQuiet)
+    assert.equal(messages.length, 0)
+
+    await pulseRuntime.scanAndRunDue(afterQuiet)
+    assert.equal(messages.length, 1)
+    assert.match(messages[0] ?? '', QUIET_HOURS_PATTERN)
+    assert.match(messages[0] ?? '', WAKE_TIME_PATTERN)
+
+    await pulseRuntime.runNow('night-sleeper')
+    assert.equal(messages.length, 2)
+    assert.match(messages[1] ?? '', MANUAL_QUIET_BYPASS_PATTERN)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })

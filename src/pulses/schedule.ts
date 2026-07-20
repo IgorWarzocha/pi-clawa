@@ -5,12 +5,18 @@ export type PulseSchedule =
   | { kind: 'weekly'; day: number; hour: number; minute: number }
   | { kind: 'at'; atMs: number }
 
+export interface PulseQuietHours {
+  startMinute: number
+  endMinute: number
+}
+
 const DURATION_PATTERN = /^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hour|hours|d|day|days)$/iu
 const EVERY_PATTERN = /^every\s+(.+)$/iu
 const DAILY_PATTERN = /^daily\s+(\d{1,2}):(\d{2})$/iu
 const WEEKLY_PATTERN =
   /^weekly\s+(sun|mon|tue|wed|thu|fri|sat|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(\d{1,2}):(\d{2})$/iu
 const AT_PATTERN = /^at\s+(.+)$/iu
+const QUIET_HOURS_PATTERN = /^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/u
 
 const DAY_INDEX: Record<string, number> = {
   sun: 0,
@@ -50,6 +56,29 @@ function validTime(hour: number, minute: number): boolean {
     minute >= 0 &&
     minute < 60
   )
+}
+
+export function parsePulseQuietHours(raw: string): PulseQuietHours | null {
+  const match = QUIET_HOURS_PATTERN.exec(raw.trim())
+  if (!(match?.[1] && match[2] && match[3] && match[4])) return null
+  const startHour = Number(match[1])
+  const startMinute = Number(match[2])
+  const endHour = Number(match[3])
+  const endMinute = Number(match[4])
+  if (!(validTime(startHour, startMinute) && validTime(endHour, endMinute))) return null
+
+  const start = startHour * 60 + startMinute
+  const end = endHour * 60 + endMinute
+  return start === end ? null : { startMinute: start, endMinute: end }
+}
+
+export function isPulseQuietAt(quietHours: PulseQuietHours, nowMs: number): boolean {
+  const now = new Date(nowMs)
+  const minute = now.getHours() * 60 + now.getMinutes()
+  if (quietHours.startMinute < quietHours.endMinute) {
+    return minute >= quietHours.startMinute && minute < quietHours.endMinute
+  }
+  return minute >= quietHours.startMinute || minute < quietHours.endMinute
 }
 
 export function parsePulseSchedule(raw: string): PulseSchedule | null {
@@ -116,9 +145,8 @@ export function pulseDueKey(schedule: PulseSchedule, nowMs: number): string | nu
   const slot = new Date(now)
   slot.setHours(schedule.hour, schedule.minute, 0, 0)
   if (schedule.kind === 'daily') {
-    return nowMs >= slot.getTime()
-      ? `daily:${slot.toISOString().slice(0, 10)}:${schedule.hour}:${schedule.minute}`
-      : null
+    if (nowMs < slot.getTime()) slot.setDate(slot.getDate() - 1)
+    return `daily:${slot.toISOString().slice(0, 10)}:${schedule.hour}:${schedule.minute}`
   }
 
   const diff = (now.getDay() - schedule.day + 7) % 7

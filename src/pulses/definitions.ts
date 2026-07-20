@@ -3,7 +3,12 @@ import { join, relative, resolve } from 'node:path'
 import { loadClawasConfig } from '../clawas/config-loader.js'
 import { findRepoRoot } from '../config.js'
 import { parsePulseFrontmatter } from './frontmatter.js'
-import { type PulseSchedule, parsePulseSchedule } from './schedule.js'
+import {
+  type PulseQuietHours,
+  type PulseSchedule,
+  parsePulseQuietHours,
+  parsePulseSchedule,
+} from './schedule.js'
 
 export interface PulseDefinition {
   status: 'valid'
@@ -19,6 +24,8 @@ export interface PulseDefinition {
   absoluteFile: string
   scheduleText: string
   schedule: PulseSchedule
+  quietHoursText?: string | undefined
+  quietHours?: PulseQuietHours | undefined
   enabled: boolean
   body: string
 }
@@ -42,6 +49,23 @@ export type PulseCatalogItem = PulseDefinition | InvalidPulseDefinition
 
 const PULSE_FOLDER_PATTERN = /^[a-z0-9][a-z0-9-]*$/u
 const PULSE_DEFINITION_FILE = 'PULSE.md'
+
+type ParsedQuietHours =
+  | { status: 'none' }
+  | { status: 'valid'; text: string; value: PulseQuietHours }
+  | { status: 'invalid'; error: string }
+
+function parseQuietHoursValue(value: string | boolean | undefined): ParsedQuietHours {
+  if (value === undefined) return { status: 'none' }
+  if (!(typeof value === 'string' && value.trim())) {
+    return { status: 'invalid', error: 'quietHours must use HH:MM-HH:MM' }
+  }
+  const text = value.trim()
+  const quietHours = parsePulseQuietHours(text)
+  return quietHours
+    ? { status: 'valid', text, value: quietHours }
+    : { status: 'invalid', error: `invalid quietHours: ${text}` }
+}
 
 async function pathExists(path: string): Promise<boolean> {
   try {
@@ -104,6 +128,9 @@ async function readPulseFolder(options: {
   const schedule = parsePulseSchedule(scheduleText)
   if (!schedule) return invalid(`invalid schedule: ${scheduleText}`)
 
+  const quietHours = parseQuietHoursValue(parsed.data['quietHours'])
+  if (quietHours.status === 'invalid') return invalid(quietHours.error)
+
   const title = parsed.data['title'].trim()
 
   return {
@@ -120,6 +147,9 @@ async function readPulseFolder(options: {
     absoluteFile: file,
     scheduleText,
     schedule,
+    ...(quietHours.status === 'valid'
+      ? { quietHoursText: quietHours.text, quietHours: quietHours.value }
+      : {}),
     enabled,
     body: parsed.body,
   }

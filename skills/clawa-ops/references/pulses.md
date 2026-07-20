@@ -66,6 +66,12 @@ Supported schedules:
 Pulse timing has roughly five-minute resolution. Treat schedules as gentle wakes, not second-perfect alarms.
 If `hey-clawa` is due in the same scan as another pulse for the same Clawa, it is delayed by about 15 minutes so the ambient wake does not crowd the more specific pulse.
 
+Optional `quietHours: HH:MM-HH:MM` suppresses scheduled wakes during that local-time window. Overnight windows such as `23:00-08:00` and daytime windows such as `13:00-14:00` both work; the start is included and the end is excluded. A due pulse waits and runs once after quiet hours instead of being discarded. Manual `/pulse run` bypasses quiet hours. Every dispatched pulse includes its local wake date, time, UTC offset, and timezone in the instruction.
+
+```yaml
+quietHours: 23:00-08:00
+```
+
 ## Managing pulses
 
 Before adding a pulse:
