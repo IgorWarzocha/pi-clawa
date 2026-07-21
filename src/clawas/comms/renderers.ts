@@ -58,6 +58,18 @@ function getOutboundMessage(details: unknown): string | undefined {
   return undefined
 }
 
+function getRawMailContent(details: unknown): string | undefined {
+  if (!details || typeof details !== 'object') {
+    return undefined
+  }
+
+  if ('rawContent' in details && typeof details.rawContent === 'string') {
+    return details.rawContent
+  }
+
+  return undefined
+}
+
 function getSourceTitle(details: unknown, clawaDefaults: ClawaDefaults): string {
   if (
     details &&
@@ -117,7 +129,9 @@ export function createClawasCommsRenderer(getClawaDefaults: () => ClawaDefaults)
       message.customType === CLAWAS_OUTBOUND_MESSAGE_TYPE
         ? getOutboundMessage(message.details)
         : undefined
-    const text = stripClawasMessageEnvelope(outboundText ?? rawText)
+    const text = stripClawasMessageEnvelope(
+      outboundText ?? getRawMailContent(message.details) ?? rawText,
+    )
     const clawaDefaults = getClawaDefaults()
     const box = new Box(1, 1, (value) => theme.bg('customMessageBg', value))
     box.addChild(

@@ -14,6 +14,7 @@ import {
   syncSocketAlias,
 } from './paths.js'
 import {
+  buildClawasMailContext,
   buildMessageDetails,
   buildWorkerUserMessage,
   getLegacyMailCustomType,
@@ -25,7 +26,12 @@ import {
   shouldTriggerTurn,
 } from './server-messages.js'
 
-export { buildMessageDetails, buildWorkerUserMessage, shouldDeliverClawasMailAsUserMessage }
+export {
+  buildClawasMailContext,
+  buildMessageDetails,
+  buildWorkerUserMessage,
+  shouldDeliverClawasMailAsUserMessage,
+}
 
 import type { ClawasCommsCommand, ClawasRpcResponse, ClawasSendCommand } from './types.js'
 
@@ -303,9 +309,9 @@ export class ClawasCommsServer {
     this.pi.sendMessage(
       {
         customType: getLegacyMailCustomType(command),
-        content: command.message,
+        content: buildClawasMailContext(command.message, details),
         display: true,
-        details,
+        details: { ...details, rawContent: command.message },
       },
       deliverAs
         ? { triggerTurn: shouldTriggerTurn(command), deliverAs }

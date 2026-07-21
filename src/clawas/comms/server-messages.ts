@@ -147,6 +147,19 @@ export function buildWorkerUserMessage(
   ].join('\n')
 }
 
+export function buildClawasMailContext(
+  message: string,
+  details: ReturnType<typeof buildMessageDetails>,
+): string {
+  const title = details.workerTitle || details.workerId || 'another Clawa'
+  return [
+    `[Clawas ${details.kind} from ${title}]`,
+    'This came through Clawas coordination, not directly from Igor.',
+    '',
+    message,
+  ].join('\n')
+}
+
 export function shouldDeliverClawasMailAsUserMessage(
   details: ReturnType<typeof buildMessageDetails>,
 ): boolean {

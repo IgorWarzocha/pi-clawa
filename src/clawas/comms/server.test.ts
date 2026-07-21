@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  buildClawasMailContext,
   buildMessageDetails,
   buildWorkerUserMessage,
   ClawasCommsServer,
@@ -12,6 +13,9 @@ const RECENT_CONTEXT_REGEX = /Recent channel context:\nIgor: hey/
 const CURRENT_TRIGGER_REGEX = /\n\nJosXa: ping$/
 const CLAWAS_WORKER_UPDATE_REGEX = /^\[Clawas worker update\]/
 const DISCORD_ROOM_UPDATE_OPEN_REGEX = /^\[Discord room update/
+const CLAWAS_COORDINATION_REGEX = /^\[Clawas coordination from Clawa\]/
+const NOT_DIRECTLY_FROM_IGOR_REGEX = /not directly from Igor/
+const TEMPLATE_NOTE_REGEX = /Please inspect the templates\.$/
 
 test('only discord-gateway mail uses the worker-facing Discord user-message envelope', () => {
   const details = buildMessageDetails(
@@ -48,6 +52,22 @@ test('worker reports are not routed through the chunky user-message envelope', (
 
   assert.match(message, CLAWAS_WORKER_UPDATE_REGEX)
   assert.doesNotMatch(message, DISCORD_ROOM_UPDATE_OPEN_REGEX)
+})
+
+test('Clawas mail identifies its source in model context', () => {
+  const details = buildMessageDetails(
+    { workerId: 'main-claw', workerTitle: 'Clawa' },
+    undefined,
+    'coordination',
+    'reply_requested',
+    'worker',
+  )
+
+  const message = buildClawasMailContext('Please inspect the templates.', details)
+
+  assert.match(message, CLAWAS_COORDINATION_REGEX)
+  assert.match(message, NOT_DIRECTLY_FROM_IGOR_REGEX)
+  assert.match(message, TEMPLATE_NOTE_REGEX)
 })
 
 function makeServerHarness() {
@@ -88,6 +108,32 @@ test('for_context startup mail is stored as custom context without triggering a 
   assert.ok(firstCall)
   assert.equal((firstCall.args[1] as { triggerTurn?: boolean }).triggerTurn, false)
   assert.equal((firstCall.args[0] as { customType?: string }).customType, 'clawas-session')
+})
+
+test('custom Clawas mail keeps its raw display text beside the model-facing source envelope', () => {
+  const { server, ctx, calls } = makeServerHarness()
+
+  ;(
+    server as never as {
+      handleSendCommand: (ctx: unknown, command: unknown) => void
+    }
+  ).handleSendCommand(ctx, {
+    type: 'send',
+    message: 'Please inspect the templates.',
+    messageType: 'session',
+    mode: 'steer',
+    sender: { workerId: 'main-claw', workerTitle: 'Clawa' },
+    kind: 'coordination',
+    intent: 'reply_requested',
+    visibility: 'worker',
+  })
+
+  const sent = calls[0]?.args[0] as {
+    content?: string
+    details?: { rawContent?: string }
+  }
+  assert.match(sent.content ?? '', CLAWAS_COORDINATION_REGEX)
+  assert.equal(sent.details?.rawContent, 'Please inspect the templates.')
 })
 
 test('discord gateway mail still wakes the worker through the Discord user-message path', () => {
