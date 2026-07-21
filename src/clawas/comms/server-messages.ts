@@ -128,7 +128,7 @@ export function buildWorkerUserMessage(
       currentTrigger.includes(AMBIENT_TRIGGER_PREFIX)
         ? '[Discord room update — ambient]'
         : '[Discord room update]',
-      'This is recent activity from the mapped Discord channel. It is not all from Igor, and not every line is an instruction for you.',
+      'This is recent activity from the mapped Discord channel. It may contain several speakers, and not every line is an instruction for you.',
       recentContext ? `Recent channel context:\n${recentContext}` : null,
       trigger || message,
     ]
@@ -136,15 +136,7 @@ export function buildWorkerUserMessage(
       .join('\n\n')
   }
 
-  const title = details.workerTitle || details.workerId || 'unknown'
-  return [
-    '[Clawas worker update]',
-    `Source: ${title}`,
-    `Kind: ${details.kind}; intent: ${details.intent}; visibility: ${details.visibility}`,
-    'This is a Clawas coordination message, not direct speech from Igor unless the content says so.',
-    'Current trigger:',
-    message,
-  ].join('\n')
+  return buildClawasMailContext(message, details)
 }
 
 export function buildClawasMailContext(
@@ -152,12 +144,7 @@ export function buildClawasMailContext(
   details: ReturnType<typeof buildMessageDetails>,
 ): string {
   const title = details.workerTitle || details.workerId || 'another Clawa'
-  return [
-    `[Clawas ${details.kind} from ${title}]`,
-    'This came through Clawas coordination, not directly from Igor.',
-    '',
-    message,
-  ].join('\n')
+  return [`[${title}]`, message].join('\n')
 }
 
 export function shouldDeliverClawasMailAsUserMessage(

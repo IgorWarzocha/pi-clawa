@@ -127,7 +127,7 @@ function serializeLeanMessage(msg: ReturnType<typeof convertToLlm>[number]): str
   return []
 }
 
-export function serializeContinuityConversation(messages: ReturnType<typeof convertToLlm>): string {
+function serializeContinuityConversation(messages: ReturnType<typeof convertToLlm>): string {
   return messages.flatMap(serializeLeanMessage).join('\n\n')
 }
 

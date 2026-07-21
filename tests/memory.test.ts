@@ -29,7 +29,7 @@ test('remember creates updates and deletes shared sqlite memories', async () => 
     const dbPath = resolveMemoryDbPath(workerCwd)
 
     const created = rememberMemory(workerCwd, {
-      text: 'Igor prefers few concepts over many files.',
+      text: 'The human prefers few concepts over many files.',
       tags: ['Human', 'taste', 'taste'],
     })
     assert.equal(created.action, 'created')
@@ -38,21 +38,21 @@ test('remember creates updates and deletes shared sqlite memories', async () => 
     assert.deepEqual(readMemories(dbPath), [
       {
         id: created.id,
-        text: 'Igor prefers few concepts over many files.',
+        text: 'The human prefers few concepts over many files.',
         tags: '["human","taste"]',
       },
     ])
 
     const updated = rememberMemory(root, {
       id: created.id,
-      text: 'Igor prefers few concepts and low-bloat systems.',
+      text: 'The human prefers few concepts and low-bloat systems.',
       tags: ['human', 'low bloat'],
     })
     assert.equal(updated.action, 'updated')
     assert.deepEqual(readMemories(dbPath), [
       {
         id: created.id,
-        text: 'Igor prefers few concepts and low-bloat systems.',
+        text: 'The human prefers few concepts and low-bloat systems.',
         tags: '["human","low-bloat"]',
       },
     ])

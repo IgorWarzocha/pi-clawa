@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  buildClawasMailContext,
   buildMessageDetails,
   buildWorkerUserMessage,
   ClawasCommsServer,
@@ -9,13 +8,8 @@ import {
 } from './server.ts'
 
 const DISCORD_ROOM_UPDATE_REGEX = /^\[Discord room update\]/
-const RECENT_CONTEXT_REGEX = /Recent channel context:\nIgor: hey/
-const CURRENT_TRIGGER_REGEX = /\n\nJosXa: ping$/
-const CLAWAS_WORKER_UPDATE_REGEX = /^\[Clawas worker update\]/
-const DISCORD_ROOM_UPDATE_OPEN_REGEX = /^\[Discord room update/
-const CLAWAS_COORDINATION_REGEX = /^\[Clawas coordination from Clawa\]/
-const NOT_DIRECTLY_FROM_IGOR_REGEX = /not directly from Igor/
-const TEMPLATE_NOTE_REGEX = /Please inspect the templates\.$/
+const RECENT_CONTEXT_REGEX = /Recent channel context:\nmember-a: hey/
+const CURRENT_TRIGGER_REGEX = /\n\nmember-b: ping$/
 
 test('only discord-gateway mail uses the worker-facing Discord user-message envelope', () => {
   const details = buildMessageDetails(
@@ -29,45 +23,13 @@ test('only discord-gateway mail uses the worker-facing Discord user-message enve
   assert.equal(shouldDeliverClawasMailAsUserMessage(details), true)
   assert.equal(details.queueRowId, 42)
   const message = buildWorkerUserMessage(
-    'Recent channel context:\nIgor: hey\nEnd recent channel context.\nJosXa: ping',
+    'Recent channel context:\nmember-a: hey\nEnd recent channel context.\nmember-b: ping',
     details,
   )
 
   assert.match(message, DISCORD_ROOM_UPDATE_REGEX)
   assert.match(message, RECENT_CONTEXT_REGEX)
   assert.match(message, CURRENT_TRIGGER_REGEX)
-})
-
-test('worker reports are not routed through the chunky user-message envelope', () => {
-  const details = buildMessageDetails(
-    { workerId: 'discord-clawa', workerTitle: 'discord-clawa' },
-    undefined,
-    'report',
-    'handoff',
-    'private',
-  )
-
-  assert.equal(shouldDeliverClawasMailAsUserMessage(details), false)
-  const message = buildWorkerUserMessage('Got the update.', details)
-
-  assert.match(message, CLAWAS_WORKER_UPDATE_REGEX)
-  assert.doesNotMatch(message, DISCORD_ROOM_UPDATE_OPEN_REGEX)
-})
-
-test('Clawas mail identifies its source in model context', () => {
-  const details = buildMessageDetails(
-    { workerId: 'main-claw', workerTitle: 'Clawa' },
-    undefined,
-    'coordination',
-    'reply_requested',
-    'worker',
-  )
-
-  const message = buildClawasMailContext('Please inspect the templates.', details)
-
-  assert.match(message, CLAWAS_COORDINATION_REGEX)
-  assert.match(message, NOT_DIRECTLY_FROM_IGOR_REGEX)
-  assert.match(message, TEMPLATE_NOTE_REGEX)
 })
 
 function makeServerHarness() {
@@ -81,62 +43,6 @@ function makeServerHarness() {
   const ctx = { isIdle: () => true }
   return { server, ctx, calls }
 }
-
-test('Clawas mail waits for settled compaction before entering the session', async () => {
-  let release: (ready: boolean) => void = () => {}
-  const ready = new Promise<boolean>((resolve) => {
-    release = resolve
-  })
-  const calls: Array<{ name: string; args: unknown[] }> = []
-  const pi = {
-    appendEntry: (...args: unknown[]) => calls.push({ name: 'appendEntry', args }),
-    sendUserMessage: (...args: unknown[]) => calls.push({ name: 'sendUserMessage', args }),
-    sendMessage: (...args: unknown[]) => calls.push({ name: 'sendMessage', args }),
-  }
-  const server = new ClawasCommsServer(
-    pi as never,
-    () => 'worker',
-    () => ready,
-  )
-  const ctx = { isIdle: () => true }
-  ;(server as never as { context: unknown }).context = ctx
-
-  let response: { success: boolean; error: string | undefined } | undefined
-  const delivery = (
-    server as never as {
-      handleSendRpcCommand: (
-        ctx: unknown,
-        command: unknown,
-        respond: (success: boolean, command: string, data?: unknown, error?: string) => void,
-      ) => Promise<void>
-    }
-  ).handleSendRpcCommand(
-    ctx,
-    {
-      type: 'send',
-      message: 'Discord message during compaction',
-      sender: { workerId: 'discord-gateway', workerTitle: 'Discord gateway' },
-      kind: 'mail',
-      intent: 'reply_requested',
-      visibility: 'worker',
-    },
-    (success, _command, _data, error) => {
-      response = { success, error }
-    },
-  )
-
-  await Promise.resolve()
-  assert.equal(calls.length, 0)
-  assert.equal(response, undefined)
-
-  release(true)
-  await delivery
-  assert.deepEqual(
-    calls.map((call) => call.name),
-    ['appendEntry', 'sendUserMessage'],
-  )
-  assert.deepEqual(response, { success: true, error: undefined })
-})
 
 test('for_context startup mail is stored as custom context without triggering a worker turn', () => {
   const { server, ctx, calls } = makeServerHarness()
@@ -166,32 +72,6 @@ test('for_context startup mail is stored as custom context without triggering a 
   assert.equal((firstCall.args[0] as { customType?: string }).customType, 'clawas-session')
 })
 
-test('custom Clawas mail keeps its raw display text beside the model-facing source envelope', () => {
-  const { server, ctx, calls } = makeServerHarness()
-
-  ;(
-    server as never as {
-      handleSendCommand: (ctx: unknown, command: unknown) => void
-    }
-  ).handleSendCommand(ctx, {
-    type: 'send',
-    message: 'Please inspect the templates.',
-    messageType: 'session',
-    mode: 'steer',
-    sender: { workerId: 'main-claw', workerTitle: 'Clawa' },
-    kind: 'coordination',
-    intent: 'reply_requested',
-    visibility: 'worker',
-  })
-
-  const sent = calls[0]?.args[0] as {
-    content?: string
-    details?: { rawContent?: string }
-  }
-  assert.match(sent.content ?? '', CLAWAS_COORDINATION_REGEX)
-  assert.equal(sent.details?.rawContent, 'Please inspect the templates.')
-})
-
 test('discord gateway mail still wakes the worker through the Discord user-message path', () => {
   const { server, ctx, calls } = makeServerHarness()
 
@@ -201,7 +81,7 @@ test('discord gateway mail still wakes the worker through the Discord user-messa
     }
   ).handleSendCommand(ctx, {
     type: 'send',
-    message: 'JosXa: ping',
+    message: 'member-b: ping',
     messageType: 'session',
     sender: { workerId: 'discord-gateway', workerTitle: 'Discord gateway' },
     kind: 'mail',

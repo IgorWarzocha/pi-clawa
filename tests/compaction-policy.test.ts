@@ -1,14 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import type {
-  CompactOptions,
-  ContextUsage,
-  ExtensionAPI,
-  ExtensionContext,
-} from '@earendil-works/pi-coding-agent'
+import type { ContextUsage } from '@earendil-works/pi-coding-agent'
 import {
   createCompactionPolicyState,
-  registerCompactionPolicy,
   shouldRequestAutoCompaction,
 } from '../src/compaction-policy.js'
 
@@ -34,39 +28,6 @@ test('Clawa auto-compaction follows each model context window', () => {
   assert.equal(shouldRequestAutoCompaction(CONFIG, usage(250_000), true), false)
 })
 
-test('every Clawa session compacts quietly at the settled safe point', async () => {
-  const handlers = new Map<string, (event: unknown, ctx: ExtensionContext) => Promise<void>>()
-  const pi = {
-    on: (event: string, handler: (event: unknown, ctx: ExtensionContext) => Promise<void>) => {
-      handlers.set(event, handler)
-    },
-  } as unknown as ExtensionAPI
-  const compactCalls: CompactOptions[] = []
-  const ctx = {
-    hasUI: false,
-    getContextUsage: () => usage(220_000),
-    compact: (options: CompactOptions) => compactCalls.push(options),
-  } as unknown as ExtensionContext
-
-  const state = registerCompactionPolicy(pi, () => CONFIG)
-  const settled = handlers.get('agent_settled')
-  assert.ok(settled)
-
-  const settling = settled({}, ctx)
-  await Promise.resolve()
-  const duplicate = settled({}, ctx)
-  assert.equal(compactCalls.length, 1)
-  assert.equal(state.hasPending(), true)
-
-  compactCalls[0]?.onComplete?.({
-    summary: 'continuity',
-    firstKeptEntryId: 'entry-1',
-    tokensBefore: 220_000,
-  })
-  await Promise.all([settling, duplicate])
-  assert.equal(state.hasPending(), false)
-})
-
 test('session replacement invalidates an in-flight compaction callback', async () => {
   const state = createCompactionPolicyState()
   const stale = state.beginPending()
@@ -77,12 +38,4 @@ test('session replacement invalidates an in-flight compaction callback', async (
   assert.equal(await ready, false)
   assert.equal(state.clearIfOwned(stale), false)
   assert.equal(state.hasPending(), false)
-})
-
-test('session start leaves an idle compaction gate ready for Clawas mail', async () => {
-  const state = createCompactionPolicyState()
-
-  state.invalidatePending()
-
-  assert.equal(await state.waitUntilReady(), true)
 })

@@ -19,7 +19,7 @@ test('recall searches shared memory and current session text while skipping tool
     await mkdir(sessionDir, { recursive: true })
     const sessionFile = join(sessionDir, 'session.jsonl')
 
-    rememberMemory(root, { text: 'Igor likes banana sparks in memory.', tags: ['human'] })
+    rememberMemory(root, { text: 'The human likes banana sparks in memory.', tags: ['human'] })
 
     await writeFile(
       sessionFile,

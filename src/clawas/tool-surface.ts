@@ -171,7 +171,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
           content: [
             {
               type: 'text',
-              text: `Delivered to ${definition.title}.`,
+              text: `Delivered to ${definition.title}:\n\n${params.message}`,
             },
           ],
           details: { workerId: definition.id },

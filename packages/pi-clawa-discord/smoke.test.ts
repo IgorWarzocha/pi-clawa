@@ -161,7 +161,7 @@ test('Discord input sanitizer strips hidden controls without mangling normal tex
     sanitizeDiscordText('hej\u200b clawa\u202e\nemoji 👨‍💻 café\r\n\u0000done'),
     'hej clawa\nemoji 👨‍💻 café\ndone',
   )
-  assert.equal(sanitizeDiscordLabel('Igor\n\u202eWarzocha'), 'Igor Warzocha')
+  assert.equal(sanitizeDiscordLabel('member-a\n\u202emember-b'), 'member-a member-b')
 })
 
 test('Discord trigger aliases are removed from accepted worker prompts', () => {

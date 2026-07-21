@@ -48,7 +48,7 @@ test('Discord reply context is short, chronological, and explicit', async () => 
   const { messages, makeMessage } = createReplyHarness()
   const oldest = makeMessage({
     id: 'oldest',
-    authorName: 'JosXa',
+    authorName: 'member-a',
     content: 'the bit being discussed',
   })
   const parent = makeMessage({
@@ -65,7 +65,7 @@ test('Discord reply context is short, chronological, and explicit', async () => 
   const reply = await readDiscordReplyContext(
     makeMessage({
       id: 'current',
-      authorName: 'Igor',
+      authorName: 'member-b',
       content: 'what?',
       parentId: 'parent',
     }) as never,
@@ -81,7 +81,7 @@ test('Discord reply context is short, chronological, and explicit', async () => 
     formatDiscordReplyContext(reply.entries),
     [
       'Reply context (oldest → newest):',
-      '- JosXa: the bit being discussed',
+      '- member-a: the bit being discussed',
       '- Howaclawa: my actual answer [attached: poster.png]',
     ].join('\n'),
   )
