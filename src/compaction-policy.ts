@@ -22,7 +22,7 @@ export function createCompactionPolicyState(): CompactionPolicyState {
   }
 
   return {
-    invalidatePending: () => clearPending(false),
+    invalidatePending: () => clearPending(pendingToken === null),
     hasPending: () => pendingToken !== null,
     beginPending: () => {
       clearPending(false)

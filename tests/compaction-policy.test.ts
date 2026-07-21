@@ -78,3 +78,11 @@ test('session replacement invalidates an in-flight compaction callback', async (
   assert.equal(state.clearIfOwned(stale), false)
   assert.equal(state.hasPending(), false)
 })
+
+test('session start leaves an idle compaction gate ready for Clawas mail', async () => {
+  const state = createCompactionPolicyState()
+
+  state.invalidatePending()
+
+  assert.equal(await state.waitUntilReady(), true)
+})
