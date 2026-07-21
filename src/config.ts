@@ -30,6 +30,11 @@ export interface ClawaWorkerConfig {
   reportMode?: ClawaWorkerReportMode | undefined
 }
 
+export interface ClawaCompactionConfig {
+  auto: boolean
+  triggerPercent: number
+}
+
 export interface ClawaDefaults {
   humanName: string
   mainClawName: string
@@ -37,6 +42,12 @@ export interface ClawaDefaults {
   workerSessionPrefix: string
   controlPlaneDir: string
   controlSocketDir: string
+  compaction: ClawaCompactionConfig
+}
+
+export const DEFAULT_CLAWA_COMPACTION_CONFIG: ClawaCompactionConfig = {
+  auto: true,
+  triggerPercent: 80,
 }
 
 export interface ClawEnvironmentConfig {
@@ -56,6 +67,7 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
   workerSessionPrefix: 'Clawas',
   controlPlaneDir: 'clawas',
   controlSocketDir: 'clawas-control',
+  compaction: DEFAULT_CLAWA_COMPACTION_CONFIG,
 }
 
 export function resolveClawasControlSocketRoot(projectRoot: string): string {
@@ -143,6 +155,30 @@ function normalizeWorkers(input: unknown): ClawaWorkerConfig[] {
   return input.map(normalizeWorker)
 }
 
+function normalizeCompactionConfig(input: unknown): ClawaCompactionConfig {
+  if (input === undefined) return { ...DEFAULT_CLAWA_COMPACTION_CONFIG }
+
+  const rec = asRecord(input, '.pi/claw.jsonc clawa.compaction')
+  const auto = rec['auto'] ?? DEFAULT_CLAWA_COMPACTION_CONFIG.auto
+  const triggerPercent = rec['triggerPercent'] ?? DEFAULT_CLAWA_COMPACTION_CONFIG.triggerPercent
+
+  if (typeof auto !== 'boolean') {
+    throw new Error('.pi/claw.jsonc clawa.compaction.auto must be a boolean')
+  }
+  if (
+    typeof triggerPercent !== 'number' ||
+    !Number.isSafeInteger(triggerPercent) ||
+    triggerPercent <= 0 ||
+    triggerPercent >= 100
+  ) {
+    throw new Error(
+      '.pi/claw.jsonc clawa.compaction.triggerPercent must be an integer from 1 to 99',
+    )
+  }
+
+  return { auto, triggerPercent }
+}
+
 function clampClawaDefaults(input: unknown): ClawaDefaults {
   if (!input || typeof input !== 'object') {
     return DEFAULT_CLAWA_DEFAULTS
@@ -175,6 +211,7 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
       typeof rec['controlSocketDir'] === 'string' && rec['controlSocketDir'].trim()
         ? rec['controlSocketDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
+    compaction: normalizeCompactionConfig(rec['compaction']),
   }
 }
 

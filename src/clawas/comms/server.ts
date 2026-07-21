@@ -78,10 +78,16 @@ export class ClawasCommsServer {
   private context: ExtensionContext | null = null
   private readonly pi: ExtensionAPI
   private readonly getAlias: () => string | undefined
+  private readonly waitUntilReady: () => Promise<boolean>
 
-  constructor(pi: ExtensionAPI, getAlias: () => string | undefined) {
+  constructor(
+    pi: ExtensionAPI,
+    getAlias: () => string | undefined,
+    waitUntilReady: () => Promise<boolean> = () => Promise.resolve(true),
+  ) {
     this.pi = pi
     this.getAlias = getAlias
+    this.waitUntilReady = waitUntilReady
   }
 
   async start(ctx: ExtensionContext): Promise<void> {
@@ -162,7 +168,18 @@ export class ClawasCommsServer {
             continue
           }
 
-          this.handleCommand(parsed.command, socket)
+          void this.handleCommand(parsed.command, socket).catch((error) => {
+            writeResponse(socket, {
+              type: 'response',
+              command: parsed.command?.type ?? 'unknown',
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+              id:
+                parsed.command && 'id' in parsed.command && typeof parsed.command.id === 'string'
+                  ? parsed.command.id
+                  : undefined,
+            })
+          })
         }
       })
     })
@@ -178,7 +195,7 @@ export class ClawasCommsServer {
     return server
   }
 
-  private handleCommand(command: ClawasCommsCommand, socket: Socket): void {
+  private async handleCommand(command: ClawasCommsCommand, socket: Socket): Promise<void> {
     const ctx = this.context
     const id = 'id' in command && typeof command.id === 'string' ? command.id : undefined
     const respond = (success: boolean, commandName: string, data?: unknown, error?: string) => {
@@ -208,7 +225,7 @@ export class ClawasCommsServer {
     }
 
     if (command.type === 'send') {
-      this.handleSendRpcCommand(ctx, command, respond)
+      await this.handleSendRpcCommand(ctx, command, respond, () => !socket.destroyed)
       return
     }
 
@@ -254,13 +271,20 @@ export class ClawasCommsServer {
     })
   }
 
-  private handleSendRpcCommand(
+  private async handleSendRpcCommand(
     ctx: ExtensionContext,
     command: ClawasSendCommand,
     respond: CommandResponder,
-  ): void {
+    isConnected: () => boolean = () => true,
+  ): Promise<void> {
     if (IS_MANUAL_SESSION && !shouldAllowManualSessionSend(command)) {
       respond(false, 'send', undefined, 'Worker is in a manual session')
+      return
+    }
+    const ready = await this.waitUntilReady()
+    if (!isConnected()) return
+    if (!ready || this.context !== ctx) {
+      respond(false, 'send', undefined, 'Session changed before delivery')
       return
     }
     this.handleSendCommand(ctx, command)

@@ -90,6 +90,21 @@ The Clawa compaction asks for two things:
 
 It is intentionally not a ticket ledger. It should preserve live decisions, tone, corrections, relationship texture, curiosity sparks, and the next useful move — not stale completed-work recaps.
 
+Every Clawa, including Discord and other subclawas, also compacts quietly after a settled turn once its active model reaches 80% context usage. The threshold follows the model instead of assuming one universal token window. Compaction does not manufacture a continuation turn: the next real message or pulse resumes from the continuity summary. Override or disable the settled policy in `.pi/claw.jsonc` when a home needs another shape:
+
+```jsonc
+{
+  "clawa": {
+    "compaction": {
+      "auto": true,
+      "triggerPercent": 80
+    }
+  }
+}
+```
+
+The continuity summary remains bounded by Pi's active compaction reserve. Ordinary tool chatter is culled; Clawa-to-Clawa notes and their delivery result remain as relationship and handoff context.
+
 After `/compact`, Clawa rehydrates the living docs on the next turn so it wakes back up with the home shape in context again.
 
 ## Running it well

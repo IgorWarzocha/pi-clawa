@@ -82,6 +82,62 @@ function makeServerHarness() {
   return { server, ctx, calls }
 }
 
+test('Clawas mail waits for settled compaction before entering the session', async () => {
+  let release: (ready: boolean) => void = () => {}
+  const ready = new Promise<boolean>((resolve) => {
+    release = resolve
+  })
+  const calls: Array<{ name: string; args: unknown[] }> = []
+  const pi = {
+    appendEntry: (...args: unknown[]) => calls.push({ name: 'appendEntry', args }),
+    sendUserMessage: (...args: unknown[]) => calls.push({ name: 'sendUserMessage', args }),
+    sendMessage: (...args: unknown[]) => calls.push({ name: 'sendMessage', args }),
+  }
+  const server = new ClawasCommsServer(
+    pi as never,
+    () => 'worker',
+    () => ready,
+  )
+  const ctx = { isIdle: () => true }
+  ;(server as never as { context: unknown }).context = ctx
+
+  let response: { success: boolean; error: string | undefined } | undefined
+  const delivery = (
+    server as never as {
+      handleSendRpcCommand: (
+        ctx: unknown,
+        command: unknown,
+        respond: (success: boolean, command: string, data?: unknown, error?: string) => void,
+      ) => Promise<void>
+    }
+  ).handleSendRpcCommand(
+    ctx,
+    {
+      type: 'send',
+      message: 'Discord message during compaction',
+      sender: { workerId: 'discord-gateway', workerTitle: 'Discord gateway' },
+      kind: 'mail',
+      intent: 'reply_requested',
+      visibility: 'worker',
+    },
+    (success, _command, _data, error) => {
+      response = { success, error }
+    },
+  )
+
+  await Promise.resolve()
+  assert.equal(calls.length, 0)
+  assert.equal(response, undefined)
+
+  release(true)
+  await delivery
+  assert.deepEqual(
+    calls.map((call) => call.name),
+    ['appendEntry', 'sendUserMessage'],
+  )
+  assert.deepEqual(response, { success: true, error: undefined })
+})
+
 test('for_context startup mail is stored as custom context without triggering a worker turn', () => {
   const { server, ctx, calls } = makeServerHarness()
 

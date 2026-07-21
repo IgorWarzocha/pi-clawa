@@ -35,7 +35,11 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
     "clawasName": "Clawas",
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
-    "controlSocketDir": "clawas-control"
+    "controlSocketDir": "clawas-control",
+    "compaction": {
+      "auto": true,
+      "triggerPercent": 80
+    }
   }
 }
 ```
@@ -93,8 +97,12 @@ The `clawa` object controls names and runtime directories shared by the home:
 - `workerSessionPrefix` — prefix for managed worker sessions.
 - `controlPlaneDir` — project-local control-plane state directory.
 - `controlSocketDir` — logical socket directory name; the runtime resolves collision-safe sockets under the system runtime directory.
+- `compaction.auto` — quietly compact every settled Main or subclawa session before it becomes brittle; defaults to `true`.
+- `compaction.triggerPercent` — active-model context percentage that starts settled compaction; defaults to `80` and must be an integer from 1 to 99.
 
 Keep defaults unless the home deliberately uses another naming or control-plane shape.
+
+The threshold follows each active model's own context window. It is not a universal token count. Settled compaction never creates a synthetic continuation turn; the next real message or pulse resumes naturally. Pi's own reserve still caps the continuity summary. Ordinary tool traffic is discarded, while Clawa-to-Clawa notes remain available to the continuity pass.
 
 ## Project Pi settings
 

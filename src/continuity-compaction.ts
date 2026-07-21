@@ -69,11 +69,23 @@ function extractTextContent(content: unknown): string {
     .join('\n')
 }
 
-function serializeToolCall(block: { name: string; arguments?: Record<string, unknown> }): string {
-  const args = Object.entries(block.arguments ?? {})
-    .map(([key, value]) => `${key}=${JSON.stringify(value)}`)
-    .join(', ')
-  return `${block.name}(${args})`
+const CLAWAS_COORDINATION_TOOLS = new Set(['message_clawa', 'message_main_claw'])
+
+function serializeClawasCoordination(block: {
+  name: string
+  arguments?: Record<string, unknown>
+}): string | undefined {
+  if (!CLAWAS_COORDINATION_TOOLS.has(block.name)) return undefined
+
+  const message = block.arguments?.['message']
+  if (typeof message !== 'string' || !message.trim()) return undefined
+
+  const configuredTarget = block.arguments?.['claw']
+  const target =
+    typeof configuredTarget === 'string' && configuredTarget.trim()
+      ? configuredTarget.trim()
+      : 'Main Clawa'
+  return `[Assistant Clawas note to ${target}]: ${message.trim()}`
 }
 
 function serializeAssistantBlocks(content: Array<{ type: string; text?: string }>): string[] {
@@ -81,7 +93,7 @@ function serializeAssistantBlocks(content: Array<{ type: string; text?: string }
     .filter((block) => block.type === 'text' && typeof block.text === 'string')
     .map((block) => block.text?.trim() ?? '')
     .filter(Boolean)
-  const toolCalls = content
+  const coordination = content
     .filter(
       (
         block,
@@ -93,11 +105,12 @@ function serializeAssistantBlocks(content: Array<{ type: string; text?: string }
         return block.type === 'toolCall' && 'name' in block && typeof block.name === 'string'
       },
     )
-    .map(serializeToolCall)
+    .map(serializeClawasCoordination)
+    .filter((entry): entry is string => Boolean(entry))
 
   return [
     textParts.length > 0 ? `[Assistant]: ${textParts.join('\n')}` : '',
-    toolCalls.length > 0 ? `[Assistant tool calls]: ${toolCalls.join('; ')}` : '',
+    ...coordination,
   ].filter(Boolean)
 }
 
@@ -107,10 +120,14 @@ function serializeLeanMessage(msg: ReturnType<typeof convertToLlm>[number]): str
     return text ? [`[User]: ${text}`] : []
   }
   if (msg.role === 'assistant') return serializeAssistantBlocks(msg.content)
+  if (msg.role === 'toolResult' && CLAWAS_COORDINATION_TOOLS.has(msg.toolName)) {
+    const text = extractTextContent(msg.content)
+    return text ? [`[Clawas delivery result]: ${text}`] : []
+  }
   return []
 }
 
-function serializeLeanConversation(messages: ReturnType<typeof convertToLlm>): string {
+export function serializeContinuityConversation(messages: ReturnType<typeof convertToLlm>): string {
   return messages.flatMap(serializeLeanMessage).join('\n\n')
 }
 
@@ -210,7 +227,7 @@ function prepareCompactionInput(event: SessionBeforeCompactEvent): PreparedCompa
   if (allMessages.length === 0 && !previousSummary?.trim()) return undefined
 
   return {
-    conversationText: serializeLeanConversation(convertToLlm(allMessages)),
+    conversationText: serializeContinuityConversation(convertToLlm(allMessages)),
     customInstructions,
     fileOps: (preparation as { fileOps?: unknown }).fileOps,
     firstKeptEntryId,

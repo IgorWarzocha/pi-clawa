@@ -7,6 +7,7 @@ import {
   registerSteerCommand,
 } from './clawas/steer-command.js'
 import { registerClawasTools } from './clawas/tool-surface.js'
+import { createCompactionPolicyState, registerCompactionPolicy } from './compaction-policy.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
 import {
   registerContextOverflowNormalization,
@@ -34,9 +35,19 @@ const DEBUG_HYDRATION_PROBE = false
 
 export default function howabouaClaw(pi: ExtensionAPI): void {
   const clawasRuntime = new ClawasRuntime()
-  const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
+  const compactionPolicyState = createCompactionPolicyState()
+  const pulseRuntime = new PulseRuntime(
+    pi,
+    clawasRuntime,
+    undefined,
+    compactionPolicyState.waitUntilReady,
+  )
   const runtime = new ClawaRuntimeState()
-  const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias())
+  const commsServer = new ClawasCommsServer(
+    pi,
+    () => getWorkerAlias(),
+    compactionPolicyState.waitUntilReady,
+  )
   let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
 
   const setDefaults = (defaults: typeof DEFAULT_CLAWA_DEFAULTS) => {
@@ -48,6 +59,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerRecallTool(pi)
   registerContextOverflowNormalization(pi)
   registerContinuityCompaction(pi)
+  registerCompactionPolicy(pi, () => currentClawaDefaults.compaction, compactionPolicyState)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)
   registerHydrationContext(pi, runtime, { debugProbe: DEBUG_HYDRATION_PROBE })

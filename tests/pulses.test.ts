@@ -147,6 +147,10 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
       details?: unknown
       options?: unknown
     }> = []
+    let releaseCompaction: (ready: boolean) => void = () => {}
+    const compactionReady = new Promise<boolean>((resolve) => {
+      releaseCompaction = resolve
+    })
     const pulseRuntime = new PulseRuntime(
       {
         sendMessage: (
@@ -155,12 +159,18 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
         ) => messages.push({ ...message, options }),
       } as never,
       stubClawasRuntime() as never,
+      undefined,
+      () => compactionReady,
     )
     pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
 
     await pulseRuntime.scanAndRunDue(1_000)
     assert.equal(messages.length, 0)
-    await pulseRuntime.scanAndRunDue(62_000)
+    const dueScan = pulseRuntime.scanAndRunDue(62_000)
+    await Promise.resolve()
+    assert.equal(messages.length, 0)
+    releaseCompaction(true)
+    await dueScan
 
     assert.equal(messages.length, 1)
     assert.equal(messages[0]?.customType, CLAWA_PULSE_MESSAGE_TYPE)
