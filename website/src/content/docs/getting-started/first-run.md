@@ -1,6 +1,6 @@
 ---
 title: First run
-description: What bootstrap creates, what the quiet onboarding turn asks, and why an existing home can stop setup.
+description: Let Clawa build a new home without overwriting an existing one.
 section: Start
 order: 20
 ---
@@ -43,15 +43,6 @@ It should not interrogate you, search old sessions without a reason, or turn the
 policy ceremony. You can correct any assumption in normal conversation. Corrections should land in
 the appropriate living file while the context is warm.
 
-## What is sent to the model
-
-After bootstrap, the five continuity files—`CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and
-`TOOLS.md`—are injected into provider context. Each file is capped at 8,000 characters and the
-combined block at 24,000 characters.
-
-That means these files are private to your machine **but not private from your selected model
-provider**. Never put tokens, passwords, private account IDs, or other credentials in them.
-
 ## A sensible first session
 
 1. Let the opening conversation finish.
@@ -62,4 +53,5 @@ provider**. Never put tokens, passwords, private account IDs, or other credentia
    time.
 
 The home is now live. There is no generated lockstep between template and runtime: future upgrades
-do not overwrite your living documents.
+do not overwrite your living documents. Read [privacy and trust boundaries](../../reference/privacy/)
+before deciding what belongs in those files.

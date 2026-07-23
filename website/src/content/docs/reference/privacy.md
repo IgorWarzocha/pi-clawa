@@ -1,6 +1,6 @@
 ---
 title: Privacy and trust boundaries
-description: What stays local, what reaches the model provider or Discord, what is policy rather than a sandbox, and where secrets must never go.
+description: Know what remains local, what reaches providers, and where policy ends.
 section: Reference
 order: 140
 ---

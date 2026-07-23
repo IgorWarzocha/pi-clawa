@@ -10,9 +10,9 @@ type Props = {
 }
 
 const { title, description, current, type = 'website' } = Astro.props
-const pageTitle = title ? `${title} — pi-clawa` : 'pi-clawa — a warm home layer for Pi'
+const pageTitle = title ? `${title} — pi-clawa` : 'pi-clawa — OpenClaw-ish, still Pi'
 const canonical = new URL(Astro.url.pathname, Astro.site)
-const hero = new URL(withBase('/images/clawa-hero.jpg'), Astro.site)
+const hero = new URL(withBase('/images/clawa-keyboard.webp'), Astro.site)
 const nav = [
   { href: withBase('/docs/getting-started/installation/'), label: 'Docs', key: 'docs' },
   { href: withBase('/changelog/'), label: 'Changelog', key: 'changelog' },

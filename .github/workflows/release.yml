@@ -1,4 +1,4 @@
-name: Release and deploy Pages
+name: Release
 
 on:
   workflow_dispatch:
@@ -8,18 +8,16 @@ on:
         required: true
         type: string
       confirm:
-        description: Create the public release and deploy its documentation
+        description: Create the public release
         required: true
         default: false
         type: boolean
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
-  group: release-pages
+  group: release
   cancel-in-progress: false
 
 jobs:
@@ -96,20 +94,3 @@ jobs:
               --notes-file release-notes.md \
               --verify-tag
           fi
-      - uses: actions/configure-pages@v6
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: website/dist
-
-  deploy:
-    needs: release
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5

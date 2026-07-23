@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: The complete core .pi/claw.jsonc shape, worker fields, defaults, validation rules, and the separate Pi package settings boundary.
+description: Configure workers, naming, and compaction in .pi/claw.jsonc.
 section: Reference
 order: 110
 ---

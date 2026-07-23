@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: Diagnose bootstrap blocks, missing workers, stale sessions, silent Pulses, context trouble, package loading, and Discord gateway state.
+description: Start at the owning layer when part of the home misbehaves.
 section: Reference
 order: 150
 ---
@@ -18,9 +18,8 @@ auth problem, and Discord gateway problem can look similar from the final conver
 
 ## Bootstrap was blocked
 
-Any existing core root document blocks automatic bootstrap. Clawa will not merge it. Use a clean
-folder or manually reconcile the existing files with the templates. Do not set `bootstrapped: true`
-just to silence the error; that produces an explicit half-home.
+Use the exact file list in [First run](../../getting-started/first-run/). Reconcile those files or move
+to a clean home; setting `bootstrapped: true` only turns the blockage into a half-home.
 
 ## A worker will not start
 
@@ -35,15 +34,9 @@ worker that still says “busy” may indicate another owner rather than a swall
 
 ## Pulses are silent
 
-- The main Pi TUI must remain running.
-- The Pulse needs valid frontmatter and `enabled: true`.
-- Quiet hours may suppress scheduled—but not manual—runs.
-- New schedules are seeded rather than fired immediately.
-- Timing is approximate to the five-minute scanner.
-- A delivery failure leaves the Pulse eligible for retry.
-
-Try `/pulse run owner:id`. If a title is ambiguous, target by qualified ID. Inspect `.pi/pulses.json`
-only after checking the visible Pulse definition and owning session.
+Try `/pulse run owner:id` first. Then check the visible definition, quiet hours, and owning session
+against the [Pulse runtime rules](../../guide/pulses/). Inspect `.pi/pulses.json` only after those
+surfaces look right.
 
 ## Identity feels stale after compaction
 
@@ -62,8 +55,5 @@ python /absolute/path/to/pi-clawa/skills/clawa-ops/scripts/doctor.py /path/to/ho
 - Untagged final text is intentionally not delivered.
 - The worker must use a known `[#channel]`, `[dm]`, `[main_clawa]`, or `[quiet]` route.
 - Check `.pi/clawa-discord/routes.jsonc` names and the gateway channel snapshot.
-- Inspect `.pi/clawa-discord/gateway.log` with secrets and message content in mind.
+- Inspect `.pi/clawa-discord/gateway.log`.
 - Determine whether this Pi session owns or merely adopted the gateway before killing processes.
-
-The adapter is WIP. When the behavior is reproducible, include the expected route, observed route,
-and redacted gateway error in an issue.

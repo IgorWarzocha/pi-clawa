@@ -1,6 +1,6 @@
 ---
 title: Upgrading and removing
-description: Move between tagged batches, keep home state intact, roll back the package checkout, or remove the extension without confusing code and memory.
+description: Update package code without replacing home state.
 section: Operate
 order: 90
 ---
@@ -28,17 +28,9 @@ product edits there unless you intentionally maintain a fork.
 
 ## Back up what matters
 
-Before a risky migration, stop Pi and copy the home material you actually value:
-
-- living documents and `vault/`;
-- worker homes;
-- `.pi/claw.jsonc`;
-- `.pi/clawa-memory.sqlite`;
-- Pulse definitions and, if timing continuity matters, `.pi/pulses.json`;
-- Discord config/state if that adapter is in use.
-
-Pi's own session storage may live outside or inside these paths depending on main versus worker
-sessions. Use Pi's session commands rather than assuming every transcript is under the home.
+Before a risky migration, stop Pi and follow the backup map in
+[Files and runtime state](../../reference/files-state/). Pi's main and worker sessions do not all
+live in the same place.
 
 ## Roll back
 

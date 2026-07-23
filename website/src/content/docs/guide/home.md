@@ -1,6 +1,6 @@
 ---
 title: The Clawa home
-description: The files that carry identity, relationship, crew state, curiosity, local handles, and shaped knowledge.
+description: Understand the living files that make one Clawa home.
 section: Core concepts
 order: 30
 ---
@@ -14,10 +14,10 @@ the readable layer where identity and relationship can keep changing without a d
 | --- | --- |
 | `AGENTS.md` | The posture and boundaries that should touch every future reply. |
 | `CLAW.md` | The Clawa's identity, voice, instincts, and evolving shape. |
-| `HUMAN.md` | Relationship texture and useful facts about the human. No credentials. |
+| `HUMAN.md` | Relationship texture and useful facts about the human. |
 | `CLAWAS.md` | The crew map: main Clawa and specialist Clawas. |
 | `CURIOUS.md` | Live questions, sparks, and things worth returning to. |
-| `TOOLS.md` | Machine-local handles and operational notes. No secrets. |
+| `TOOLS.md` | Machine-local handles and operational notes. |
 
 These files have different jobs so one giant memory document does not become a mystery drawer.
 When a raw remembered note becomes settled truth, shape it into the owning file rather than keeping
@@ -49,11 +49,9 @@ Place one image at the home root named `CLAWA.png`, `.jpg`, `.jpeg`, `.webp`, or
 that accept images, Clawa loads a bounded version as a visual self-card. Invalid or oversized inputs
 warn instead of being sent blindly.
 
-This is identity context, not an avatar upload service. The image is included in provider context and
-therefore crosses the same provider boundary as the living documents.
-
 ## Editing the home
 
 Edit these files directly or ask Clawa to do it. Prefer small, accurate updates over biographies and
 grand declarations. The useful test is whether the next session behaves better because the sentence
-is there.
+is there. The [privacy page](../../reference/privacy/) owns what these files and the optional image
+can expose.

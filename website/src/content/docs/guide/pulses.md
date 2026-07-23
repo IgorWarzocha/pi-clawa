@@ -1,6 +1,6 @@
 ---
 title: Pulses
-description: Folder-based scheduled wakes, supported schedules, quiet hours, delivery semantics, and why timing is intentionally approximate.
+description: Define scheduled or manual work inside a Clawa home.
 section: Core concepts
 order: 60
 ---
@@ -61,9 +61,8 @@ about 15 minutes to give the specific job the room.
 
 ## Operational limits
 
-Pulses are in-process timers. They stop when the UI-bearing main Pi session stops, even if the
-computer remains on. They are not cron, systemd, or a hosted scheduler. Five-minute scanning also
-means a `10:00` schedule means “around 10:00,” not second-perfect execution.
+Pulses run inside the main Pi process, not an external scheduler. A `10:00` schedule therefore means
+“around 10:00” while that process is alive, not second-perfect execution.
 
 An unsuccessful dispatch remains eligible on the next scan. This is useful recovery, but a broken
 Pulse can retry repeatedly until fixed or disabled. Keep the main TUI observable.

@@ -1,6 +1,6 @@
 ---
 title: Runtime architecture
-description: An end-to-end trace from extension factory through session start, prompt shaping, provider context, compaction, workers, Pulses, and shutdown.
+description: Trace the extension lifecycle from Pi startup to shutdown.
 section: Reference
 order: 130
 ---
@@ -22,8 +22,7 @@ On every startup, reload, new session, resume, or fork, the extension:
 7. attaches managed Clawas and the Pulse timer in a UI-bearing main session;
 8. queues invisible conversational onboarding after the first successful bootstrap.
 
-`session_shutdown` stops the current comms server, Pulse timer, and managed worker runtime. The
-Discord package has its own gateway ownership rules.
+`session_shutdown` stops the current comms server, Pulse timer, and managed worker runtime.
 
 ## Prompt shaping
 
@@ -62,10 +61,3 @@ hydration, prompt shaping, compaction, comms, and private reporting, but not the
 Managed workers are separate Pi RPC processes. The main daemon owns starting, adoption, restart,
 prompt normalization, session registry, and status. Local newline-delimited socket RPC carries
 private messages without placing them on a public adapter.
-
-## Failure posture
-
-Critical operations surface visible errors rather than reporting success after a failed handoff.
-Compaction summary and memory persistence degrade separately. Invalid Pulse definitions remain
-visible in the GUI. Some UI notifications naturally do not exist in print/JSON modes; the complete
-always-on runtime is intentionally a TUI/RPC shape, not a headless service.

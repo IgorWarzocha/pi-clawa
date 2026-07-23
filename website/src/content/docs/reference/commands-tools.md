@@ -1,6 +1,6 @@
 ---
 title: Commands, tools, and keys
-description: The user commands, model-facing tools, and monitor shortcuts added by core pi-clawa and the optional Discord package.
+description: Look up Clawa's commands, model tools, and shortcuts.
 section: Reference
 order: 100
 ---

@@ -1,6 +1,6 @@
 ---
 title: Files and runtime state
-description: A map of durable documents, configuration, databases, session registries, Pulse state, sockets, logs, and what is safe to recreate.
+description: Find durable home data and disposable runtime state.
 section: Reference
 order: 120
 ---

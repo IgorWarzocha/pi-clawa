@@ -1,6 +1,6 @@
 ---
 title: Running it day to day
-description: Session habits, persistent hosting, worker observation, and a short operating loop that keeps the home coherent.
+description: Keep one long-lived home healthy between sessions.
 section: Operate
 order: 80
 ---
@@ -37,16 +37,6 @@ The Clawas monitor and Pulse tab are the first operational surfaces:
 If a worker looks stale, first distinguish config drift, a live manual session, a stale socket/process,
 session registry trouble, and model authentication failure. Repeatedly editing the worker entry can
 make the actual state harder to see.
-
-## Let work land where it belongs
-
-- Main relationship corrections go into the root living files.
-- Specialist lane knowledge stays in that worker's home or the shared vault.
-- A raw fact can use `remember`; shaped truth should move into a living document.
-- Pulse notes stay beside their `PULSE.md`.
-- Public Discord context stays public-safe; private coordination uses Clawas routes.
-
-This separation is what lets the home remain legible months later.
 
 ## Structural health check
 

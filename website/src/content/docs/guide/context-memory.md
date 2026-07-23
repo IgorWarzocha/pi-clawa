@@ -1,6 +1,6 @@
 ---
 title: Context, memory, and continuity
-description: How living documents, SQLite memory, session recall, image bounds, and compaction fit together without becoming one giant memory system.
+description: See where current context, raw memory, recall, and compaction each belong.
 section: Core concepts
 order: 40
 ---
@@ -31,9 +31,6 @@ database is shared by the main Clawa and workers through the project root.
 Memories have numeric IDs and up to 12 normalized tags. Passing an ID updates that memory; passing
 an ID with empty text deletes it. The tool is meant for texture and sparks that matter but do not yet
 deserve a living-document edit.
-
-The SQLite file can contain private material. Keep it out of git and include it deliberately in any
-backup policy.
 
 ## `recall`: explicit search
 

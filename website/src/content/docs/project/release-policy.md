@@ -1,6 +1,6 @@
 ---
 title: Release policy
-description: Why master collects work, how Unreleased stays useful, what the manual release workflow checks, and when a change earns a tagged batch.
+description: How pi-clawa versions and ships changes.
 section: Project
 order: 160
 ---
@@ -39,19 +39,20 @@ publishing is not part of the current release workflow.
 
 ## Automation boundary
 
-Normal pushes and pull requests run the strict gate, including the static docs build. They do **not**
-deploy Pages or create a release.
+Normal pushes and pull requests run the strict gate. Changes to `website/**` or `CHANGELOG.md` also
+deploy Pages from `master`; code-only pushes do not. A documentation correction is not an extension
+release.
 
-The maintainer manually dispatches **Release and deploy Pages** with a semantic version and an
-explicit confirmation. The workflow verifies:
+The maintainer manually dispatches **Release** with a semantic version and an explicit confirmation.
+The workflow verifies:
 
 - it runs from `master`;
 - package versions match the input;
 - `CHANGELOG.md` contains that dated version;
 - the full strict gate passes.
 
-It then creates the `vX.Y.Z` GitHub release from that changelog section and deploys the exact same
-commit's static site. A failed Pages deploy can be rerun without manufacturing a second release.
+It then creates the `vX.Y.Z` tag and GitHub release from that changelog section. Pages updates
+independently when the changelog lands on `master`.
 
 ## Preparing the next batch
 

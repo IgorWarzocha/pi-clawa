@@ -205,7 +205,7 @@ h3 {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(440px, 1.35fr);
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 0.9fr);
   gap: clamp(2rem, 5vw, 5rem);
   align-items: center;
   padding: clamp(3rem, 8vw, 7rem) 0 var(--space-16);
@@ -235,52 +235,18 @@ h3 {
   text-decoration: none;
 }
 .hero-media {
+  width: min(100%, 560px);
   margin: 0;
+  margin-left: auto;
 }
 .hero-media img {
   display: block;
   width: 100%;
-  aspect-ratio: 2.5 / 1;
+  height: auto;
+  aspect-ratio: 1;
   border: 1px solid var(--line-strong);
   border-radius: 0.4rem;
   object-fit: cover;
-  filter: saturate(0.82) contrast(1.03);
-}
-.hero-media figcaption {
-  margin-top: var(--space-2);
-  color: var(--dim);
-  font-size: 0.82rem;
-}
-
-.orientation {
-  display: grid;
-  grid-template-columns: 0.7fr 1.3fr;
-  gap: clamp(2rem, 6vw, 6rem);
-  padding: var(--space-12) 0;
-  border-block: 1px solid var(--line);
-}
-.orientation h2 {
-  max-width: 12ch;
-  margin-top: var(--space-2);
-  font-size: clamp(2rem, 4vw, 3.7rem);
-  line-height: 0.94;
-}
-.orientation dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-6);
-  margin: 0;
-}
-.orientation dt {
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: 1.08rem;
-  font-weight: 700;
-}
-.orientation dd {
-  margin: var(--space-1) 0 0;
-  color: var(--muted);
-  line-height: 1.5;
 }
 
 .docs-index {
@@ -315,10 +281,6 @@ h3 {
 .doc-row:hover span {
   color: var(--rust);
 }
-.full-index {
-  display: none;
-}
-
 .docs-layout {
   display: grid;
   grid-template-columns: 210px minmax(0, 760px) minmax(130px, 180px);
@@ -542,9 +504,7 @@ h3 {
   }
   .hero-media {
     order: -1;
-  }
-  .orientation {
-    grid-template-columns: 1fr;
+    margin-inline: auto;
   }
   .docs-layout {
     display: block;
@@ -593,9 +553,6 @@ h3 {
   }
   .hero h1 {
     font-size: clamp(3rem, 16vw, 5rem);
-  }
-  .orientation dl {
-    grid-template-columns: 1fr;
   }
   .docs-group,
   .doc-row {

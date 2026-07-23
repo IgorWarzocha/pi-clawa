@@ -5,4 +5,6 @@
 - Docs explain shipped behavior from runtime source and tests. Label Discord and other unsettled
   behavior plainly instead of smoothing over it.
 - Use root-relative site links through `withBase()` in Astro. Markdown pages use relative links.
+- Pages deploys from `master` when `website/**` or `CHANGELOG.md` changes; extension releases remain
+  separately manual and batched.
 - Validate with `bun run docs:build`; the root strict gate includes it.

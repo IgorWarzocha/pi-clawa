@@ -1,13 +1,12 @@
 ---
 title: Discord adapter
-description: "The optional WIP Discord edge: dedicated worker, gateway process, strict route blocks, rich messages, and current limits."
+description: Connect a dedicated Clawa to Discord's routed message lane.
 section: Operate
 order: 70
 ---
 
 The Discord adapter is an optional package under `packages/pi-clawa-discord`. It is substantial but
-still explicitly **work in progress**. Treat route and lifecycle behavior as a moving edge, not the
-stable core contract.
+still **work in progress**. Its own README and setup guide own details that are still moving.
 
 ## Shape
 
@@ -56,13 +55,3 @@ The adapter also handles reply-parent context, attachments, edits and deletions,
 The gateway uses a lock so another main session can adopt a live process rather than starting a
 duplicate. An adopted gateway is not killed when the adopting Pi session shuts down. Gateway logs
 live at `.pi/clawa-discord/gateway.log`.
-
-Keep the main Clawa on an always-on host and inspect the adapter README and `/discord` flow before
-placing it in a real community. Bot tokens and Discord state must never enter living documents or a
-public repository.
-
-## Current limits
-
-Lifecycle ownership, DM and multi-channel policy, and autonomy tuning are still unsettled. The core
-Clawa docs describe Discord where it crosses runtime behavior, but the adapter's own README and
-source remain authoritative for its rapidly changing details.

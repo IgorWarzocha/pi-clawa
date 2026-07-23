@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Put the extension and the Clawa home in separate folders, pin a release, and let Pi load it for that home.
+description: Install a tagged checkout into a separate Clawa home.
 section: Start
 order: 10
 ---
@@ -13,13 +13,11 @@ Clawa's home.
 
 - Git.
 - Node.js **24.15 or newer, but lower than 27**.
-- [Pi](https://github.com/earendil-works/pi-mono) with a configured model provider. pi-clawa 0.1.0
-  is developed and tested against Pi 0.80.6.
-- A clean folder for the home. “Clean” matters: existing Clawa core documents block bootstrap.
-- A persistent terminal on an always-on host if you want scheduled Pulses or the Discord adapter.
+- [Pi](https://github.com/earendil-works/pi-mono) with a configured model provider.
+- A clean folder for the home. [First run](../first-run/) explains the exact bootstrap boundary.
 
-Pi extensions execute with your full user permissions. Read the source you install and pin a tagged
-release rather than silently following `master`.
+Pi extensions execute with your user permissions. Read the [trust boundaries](../../reference/privacy/)
+before putting personal context into a home.
 
 ## Install a tagged release
 
@@ -66,24 +64,11 @@ the package list.
 ## Follow development instead
 
 If you explicitly want unreleased work, clone `master` without `--branch`. Treat that checkout as a
-development channel: behavior may move between tagged batches. The release policy intentionally
-does not deploy the public site or create a release for every push to `master`.
+development channel. The [release policy](../../project/release-policy/) explains what does and does
+not ship from it.
 
-## Keep private state out of git
-
-A Clawa home is personal state, not a normal source checkout. If you do version parts of it, ignore
-at least:
-
-```text
-.pi/claw.jsonc
-.pi/clawa-memory.sqlite
-.pi/clawas/
-.pi/clawas-control/
-.pi/clawa-discord/
-```
-
-Living documents may contain private context too. Decide deliberately which, if any, belong in a
-remote repository.
+The [files and runtime state](../../reference/files-state/) page separates home data from disposable
+runtime artifacts and lists what belongs in a backup or ignore policy.
 
 ## Next
 

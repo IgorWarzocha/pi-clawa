@@ -1,6 +1,6 @@
 ---
 title: Specialist Clawas
-description: Purpose-seeded worker homes, managed and manual sessions, private coordination, reporting, monitor controls, and their sharp edges.
+description: Create and operate long-lived specialist Clawas.
 section: Core concepts
 order: 50
 ---
@@ -31,9 +31,6 @@ and reporting mode are supplied from the worker definition.
 The runtime serializes lifecycle changes, coalesces concurrent starts, adopts already-live manual
 workers, and restarts an enabled managed worker after an unexpected exit. It will not start a second
 managed copy while a human-owned manual session has the lane.
-
-Managed Clawas only attach from a **UI-bearing main Pi session**. Print/JSON headless use is not an
-always-on worker daemon.
 
 ## Talk to a Clawa
 
