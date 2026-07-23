@@ -1,0 +1,67 @@
+---
+import DocsNav from '@/components/docs-nav.astro'
+import BaseLayout from '@/layouts/base-layout.astro'
+import { docHref, getDocs, groupDocs, withBase } from '@/lib/site'
+
+const docs = await getDocs()
+const groups = groupDocs(docs)
+const description =
+  'How pi-clawa turns a Pi project into a warm, persistent home with memory, specialist Clawas, Pulses, and an optional Discord edge.'
+---
+
+<BaseLayout description={description}>
+  <main id="main-content" class="site-shell home-page" tabindex="-1">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="kicker">Pi extension · v0.1.0</p>
+        <h1>A home layer, not another agent runtime.</h1>
+        <p class="lede">
+          Clawa keeps Pi's tools and sessions, then adds a place to live: durable identity,
+          remembered texture, specialist Clawas, scheduled Pulses, and careful continuity.
+        </p>
+        <div class="hero-links">
+          <a class="primary-link" href={withBase('/docs/getting-started/installation/')}>Install pi-clawa</a>
+          <a href={withBase('/docs/reference/runtime/')}>Trace the runtime</a>
+        </div>
+      </div>
+      <figure class="hero-media">
+        <img src={withBase('/images/clawa-hero.jpg')} width="1584" height="634" alt="A small orange Clawa in a dark workshop surrounded by terminals and notes" />
+        <figcaption>Warm front room. Serious machinery behind it.</figcaption>
+      </figure>
+    </header>
+
+    <section class="orientation" aria-labelledby="orientation-title">
+      <div>
+        <p class="kicker">Start here</p>
+        <h2 id="orientation-title">Pick the layer you need.</h2>
+      </div>
+      <dl>
+        <div><dt>New home</dt><dd>Install into a clean folder and let first run build the house.</dd></div>
+        <div><dt>Existing home</dt><dd>Read the bootstrap boundary first. Clawa will not merge over core docs.</dd></div>
+        <div><dt>Always-on work</dt><dd>Keep a UI-bearing main Pi session alive. Pulses are not a daemon.</dd></div>
+        <div><dt>Stable updates</dt><dd>Run tagged releases. Master is where the next batch settles.</dd></div>
+      </dl>
+    </section>
+
+    <section class="docs-index" aria-label="Documentation index">
+      {Array.from(groups).map(([section, entries]) => (
+        <section class="docs-group">
+          <h2>{section}</h2>
+          <div class="docs-rows">
+            {entries.map((entry) => (
+              <a class="doc-row" href={docHref(entry)}>
+                <strong>{entry.data.title}</strong>
+                <span>{entry.data.description}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ))}
+    </section>
+
+    <details class="full-index">
+      <summary>Compact documentation index</summary>
+      <DocsNav docs={docs} />
+    </details>
+  </main>
+</BaseLayout>

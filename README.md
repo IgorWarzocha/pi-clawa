@@ -1,5 +1,9 @@
 # Clawa for Pi
 
+**[Documentation](https://igorwarzocha.github.io/pi-clawa/)** ·
+**[Changelog](CHANGELOG.md)** ·
+**[Releases](https://github.com/IgorWarzocha/pi-clawa/releases)**
+
 Clawa is my spin on OpenClaw/Hermes-style personal agents in an attempt to make the Clankers speak hooman, built as a thin-ish Pi extension.
 
 OpenClaw and Hermes both come with all the batteries included. Some say too many. Some, like me, would prefer something more barebones that you can add to yourself. Clawa keeps raw Pi underneath — your models, tools, extensions, terminal — and adds basically the same things as the bigger cousins.
@@ -15,7 +19,7 @@ Clawa changes the shape of a Pi session without taking Pi away.
 - It swaps the top of Pi's default system prompt for Clawa posture, while keeping the rest of it intact.
 - `AGENTS.md` is the core behavior spine; Clawa relies mostly on it, not dozens of other files.
 - Clawa instruction context is home-contained: Pi's global and outside-parent `AGENTS.md`/`CLAUDE.md` files are excluded, while files inside the active Clawa home still apply. Ordinary Pi sessions are unchanged.
-- The other living docs are hydrated after session start and after compaction. This is enough. Clawa stays true to its voice, and context doesn't bloat. No need for artificial filesize limits. This applies to: `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`.
+- The other living docs are hydrated after session start and after compaction. This applies to `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`, bounded at 8,000 characters per file and 24,000 characters total.
 - Nested `AGENTS.md` files progressively disclose local folder rules when a Clawa works there - based on bash detection. They are instructed to create them for folders. This keeps context lean.
 - Custom `.pi/SYSTEM.md` prompts are ignored by Clawa to keep things simple. Put compatible additions in this home's `.pi/APPEND_SYSTEM.md` instead. The Clawa system-prompt swap lives in [`src/system-prompt.ts`](src/system-prompt.ts): it replaces Pi's default assistant intro with the Clawa personal-assistant intro while keeping Pi's tool/runtime context intact.
 
@@ -31,7 +35,10 @@ On first run, Clawa creates a familiar set of markdown files with a few twists. 
 | `CLAWAS.md` | agent-facing routing map for sibling Clawas |
 | `CURIOUS.md` | live sparks, motifs, sidequests worth revisiting (key difference between this and other implementations) |
 | `TOOLS.md` | local tools, services, commands, and gotchas |
+| `vault/` | shared shaped knowledge and its front-door index |
 | `pulses/` | skill-like scheduled/manual wake folders: frontmatter + body |
+
+An optional root-level `CLAWA.png`, `.jpg`, `.jpeg`, `.webp`, or `.gif` becomes a bounded visual identity card for image-capable models.
 
 Subclawas inherit the main Clawa's root `AGENTS.md` principles, then add their own smaller local `AGENTS.md`. They share `HUMAN.md` and `CLAWAS.md` through symlinks, but keep their own `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, sessions, and pulses.
 
@@ -112,7 +119,7 @@ After `/compact`, Clawa rehydrates the living docs on the next turn so it wakes 
 Clawa is meant to run as a long-lived Pi home.
 
 - Run it inside herdr, tmux, or another persistent terminal environment.
-- Use an always-on machine if pulses, Discord, or ambient behavior should keep running.
+- Use an always-on machine and keep a UI-bearing main Pi session running if pulses, managed Clawas, Discord, or ambient behavior should keep running.
 - After stopping, resume the same home with `pi -c` instead of starting fresh.
 - Start a new session only when the branch is badly wedged or the compacted context has become too bloated.
 
@@ -120,12 +127,12 @@ Main Clawa sessions use Pi's normal session store, so `pi -c` and `pi -r` behave
 
 If you have global Pi extensions you do not want in this Clawa home, adjust project `.pi/settings.json` instead of changing global settings. Pi package filters can disable package resources for this project only; Clawa's `clawa-ops` skill has notes for helping with that.
 
-## Recommended install while Clawa is being finetuned
+## Recommended install
 
-Clone the repo first, then run Clawa from the checkout. This makes it easy to tweak obvious rough edges locally and report the ones that should be fixed upstream.
+Keep the package checkout separate from the clean folder that will become the Clawa home. Tagged releases are the stable update channel; `master` collects the next batch.
 
 ```sh
-git clone https://github.com/IgorWarzocha/pi-clawa.git
+git clone --branch v0.1.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
 cd /path/to/your-clawa-home
 pi -e /absolute/path/to/pi-clawa
 ```
@@ -160,13 +167,16 @@ If you prefer to write the settings file yourself:
 
 For now Clawa is expected to be run from a cloned repo. Once npm publishing is ready, the package source can be swapped to `npm:@howaboua/pi-clawa`.
 
+Full installation, first-run, privacy, upgrade, and troubleshooting guidance lives in the **[documentation](https://igorwarzocha.github.io/pi-clawa/)**.
+
 ## Bundled skills
 
-Clawa bundles three skills:
+Clawa bundles four skills:
 
 - `clawa-ops` — agent-facing home operations: subclawas, pulses, config, imports.
 - `warmth-pass` — keeps Clawa docs/prompts from sliding back into flat assistant voice.
 - `skill-creator` — helps create or tune skills when the home needs one.
+- `clawa-vault` — keeps the shared second brain shaped, linked, and navigable.
 
 These are not a giant skill library. They are the minimum needed for Clawa to operate and improve its own home. Warmth pass is the key component of making Clawas speak hooman - they are instructed to use it for everything they write.
 

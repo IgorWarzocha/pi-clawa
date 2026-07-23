@@ -1,0 +1,29 @@
+---
+import type { DocEntry } from '@/lib/site'
+import { docHref, groupDocs } from '@/lib/site'
+
+type Props = {
+  docs: DocEntry[]
+  currentId?: string
+}
+
+const { docs, currentId } = Astro.props
+const groups = groupDocs(docs)
+---
+
+<nav class="docs-nav" aria-label="Documentation">
+  {Array.from(groups).map(([section, entries]) => (
+    <section>
+      <h2>{section}</h2>
+      <ul>
+        {entries.map((entry) => (
+          <li>
+            <a href={docHref(entry)} aria-current={entry.id === currentId ? 'page' : undefined}>
+              {entry.data.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</nav>

@@ -5,7 +5,10 @@ node_modules/
 .pi/clawas/session-registry.json
 .pi/clawas-control/
 dist/
+website/.astro/
+website/dist/
 .pi/clawa-memory.jsonl
+.pi/clawa-memory.sqlite
 .pi/claw.json
 .pi/claw.jsonc
 .pi/semantic-grep.sqlite

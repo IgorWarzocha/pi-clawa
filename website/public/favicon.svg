@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>pi-clawa</title>
+  <rect width="64" height="64" rx="14" fill="#1b2119"/>
+  <path d="M17 25 13 12l13 8M47 25l4-13-13 8" fill="#d98a62" stroke="#efe7d0" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M14 34c0-12 8-20 18-20s18 8 18 20-8 18-18 18-18-6-18-18Z" fill="#d98a62" stroke="#efe7d0" stroke-width="3"/>
+  <circle cx="25" cy="33" r="2.5" fill="#1b2119"/><circle cx="39" cy="33" r="2.5" fill="#1b2119"/>
+  <path d="m27 40 5 3 5-3" fill="none" stroke="#1b2119" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,22 @@
+---
+import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { marked } from 'marked'
+import BaseLayout from '@/layouts/base-layout.astro'
+
+const changelog = await readFile(resolve(process.cwd(), '../CHANGELOG.md'), 'utf8')
+const html = await marked.parse(changelog)
+const description =
+  'Every tagged pi-clawa release, plus the user-visible changes collecting for the next batch.'
+---
+
+<BaseLayout title="Changelog" description={description} current="changelog" type="article">
+  <main id="main-content" class="site-shell standalone-page" tabindex="-1">
+    <header class="doc-header">
+      <p class="kicker">Release ledger</p>
+      <h1>Changelog</h1>
+      <p class="lede">The same file that gates a release, rendered without a second copy.</p>
+    </header>
+    <article class="prose changelog" set:html={html} />
+  </main>
+</BaseLayout>

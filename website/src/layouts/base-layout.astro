@@ -1,0 +1,92 @@
+---
+import '@/styles/global.css'
+import { withBase } from '@/lib/site'
+
+type Props = {
+  title?: string
+  description: string
+  current?: 'docs' | 'changelog'
+  type?: 'website' | 'article'
+}
+
+const { title, description, current, type = 'website' } = Astro.props
+const pageTitle = title ? `${title} — pi-clawa` : 'pi-clawa — a warm home layer for Pi'
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const hero = new URL(withBase('/images/clawa-hero.jpg'), Astro.site)
+const nav = [
+  { href: withBase('/docs/getting-started/installation/'), label: 'Docs', key: 'docs' },
+  { href: withBase('/changelog/'), label: 'Changelog', key: 'changelog' },
+]
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:site_name" content="pi-clawa" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={hero} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={hero} />
+    <meta name="theme-color" content="#1b2119" />
+    <link rel="icon" href={withBase('/favicon.svg')} />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <nav class="site-shell nav" aria-label="Main navigation">
+        <a class="site-brand" href={withBase('/')} aria-label="pi-clawa home">
+          <span>pi-clawa</span><small>/ docs from the living thing</small>
+        </a>
+        <div class="nav-links">
+          {nav.map((item) => (
+            <a href={item.href} aria-current={current === item.key ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))}
+          <a href="https://github.com/IgorWarzocha/pi-clawa">GitHub</a>
+        </div>
+      </nav>
+    </header>
+    <slot />
+    <footer class="site-footer">
+      <div class="site-shell footer-grid">
+        <p>Clawa lives inside Pi. This site documents what the code actually does.</p>
+        <nav class="footer-links" aria-label="Footer">
+          <a href={withBase('/docs/project/release-policy/')}>Release policy</a>
+          <a href="https://github.com/IgorWarzocha/pi-clawa/issues">Issues</a>
+          <a href="https://howaboua.dev">Howaboua</a>
+        </nav>
+      </div>
+    </footer>
+    <script>
+      const installCopyButtons = () => {
+        document.querySelectorAll('pre').forEach((block) => {
+          if (block.querySelector('.copy-code')) return
+          const button = document.createElement('button')
+          button.type = 'button'
+          button.className = 'copy-code'
+          button.textContent = 'copy'
+          button.addEventListener('click', async () => {
+            const code = block.querySelector('code')?.textContent ?? ''
+            await navigator.clipboard.writeText(code)
+            button.textContent = 'copied'
+            window.setTimeout(() => { button.textContent = 'copy' }, 1200)
+          })
+          block.append(button)
+        })
+      }
+      installCopyButtons()
+    </script>
+  </body>
+</html>

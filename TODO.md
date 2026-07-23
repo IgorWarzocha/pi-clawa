@@ -120,6 +120,8 @@ Status: git-repo release-shaped; full clean-room install is still pending.
 - [x] local-checkout install instructions for adapter package until npm publishing
 - [x] security notes for local secrets and external adapters
 - [x] package publish checklist
+- [x] GitHub Pages reference site, canonical changelog, and release-bound deployment
+- [x] CI on normal pushes plus manual tag/release workflow for deliberate batches
 
 Depends on: A-D feature shape.
 Blocks: publishing.
@@ -134,7 +136,7 @@ Git release checklist:
 
 1. `bun run ai:check`
 2. clean-room install pass from an empty project using a local checkout path
-3. tag/push the repo once the clean-room pass is good
+3. dispatch the release workflow once the clean-room pass is good; it tags, publishes, and deploys
 4. if publishing to npm later, run `npm pack --dry-run --json` for root and Discord adapter first
 
 ## F. Clean-room test pass

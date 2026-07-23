@@ -1,0 +1,115 @@
+name: Release and deploy Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version without the v prefix
+        required: true
+        type: string
+      confirm:
+        description: Create the public release and deploy its documentation
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: release-pages
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: inputs.confirm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: Validate release metadata
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          test "$GITHUB_REF" = "refs/heads/master" || {
+            echo "Releases must run from master, not $GITHUB_REF" >&2
+            exit 1
+          }
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]] || {
+            echo "Invalid semantic version: $VERSION" >&2
+            exit 1
+          }
+          test "$(bun -e "console.log(require('./package.json').version)")" = "$VERSION"
+          test "$(bun -e "console.log(require('./packages/pi-clawa-discord/package.json').version)")" = "$VERSION"
+          test "$(bun -e "console.log(require('./website/package.json').version)")" = "$VERSION"
+          grep -Fq "## [$VERSION] - " CHANGELOG.md || {
+            echo "CHANGELOG.md has no dated $VERSION section" >&2
+            exit 1
+          }
+      - run: bun run ai:check:strict
+      - name: Extract release notes
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          python - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          version = re.escape(os.environ['VERSION'])
+          changelog = Path('CHANGELOG.md').read_text()
+          match = re.search(rf'^## \[{version}\] - .+?\n(.*?)(?=^## \[|\Z)', changelog, re.M | re.S)
+          if not match:
+              raise SystemExit('Could not extract release notes')
+          Path('release-notes.md').write_text(match.group(1).strip() + '\n')
+          PY
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            git fetch --force origin "refs/tags/v$VERSION:refs/tags/v$VERSION"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "v$VERSION" -m "pi-clawa v$VERSION" "$GITHUB_SHA"
+            git push origin "v$VERSION"
+          fi
+
+          test "$(git rev-list -n 1 "v$VERSION")" = "$GITHUB_SHA" || {
+            echo "v$VERSION does not point at this workflow commit" >&2
+            exit 1
+          }
+
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "v$VERSION already exists; keeping it for a safe Pages retry."
+          else
+            gh release create "v$VERSION" \
+              --title "pi-clawa v$VERSION" \
+              --notes-file release-notes.md \
+              --verify-tag
+          fi
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+
+  deploy:
+    needs: release
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

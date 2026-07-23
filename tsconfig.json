@@ -35,5 +35,5 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "packages/pi-clawa-discord/src/gateway"]
+  "exclude": ["node_modules", "packages/pi-clawa-discord/src/gateway", "website"]
 }

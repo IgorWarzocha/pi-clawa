@@ -1,0 +1,43 @@
+---
+import { render } from 'astro:content'
+import DocsNav from '@/components/docs-nav.astro'
+import BaseLayout from '@/layouts/base-layout.astro'
+import { type DocEntry, getDocs } from '@/lib/site'
+
+export async function getStaticPaths() {
+  const docs = await getDocs()
+  return docs.map((entry) => ({ params: { slug: entry.id }, props: { doc: entry, docs } }))
+}
+
+type Props = { doc: DocEntry; docs: DocEntry[] }
+const { doc, docs } = Astro.props
+const { Content, headings } = await render(doc)
+---
+
+<BaseLayout title={doc.data.title} description={doc.data.description} current="docs" type="article">
+  <main id="main-content" class="site-shell docs-layout" tabindex="-1">
+    <details class="mobile-docs">
+      <summary>Browse documentation</summary>
+      <DocsNav docs={docs} currentId={doc.id} />
+    </details>
+    <aside class="docs-sidebar"><DocsNav docs={docs} currentId={doc.id} /></aside>
+    <article class="docs-article">
+      <header class="doc-header">
+        <p class="kicker">{doc.data.section}</p>
+        <h1>{doc.data.title}</h1>
+        <p class="lede">{doc.data.description}</p>
+      </header>
+      <div class="prose"><Content /></div>
+    </article>
+    {headings.length > 1 && (
+      <aside class="page-toc">
+        <p>On this page</p>
+        <ol>
+          {headings.filter((heading) => heading.depth === 2).map((heading) => (
+            <li><a href={`#${heading.slug}`}>{heading.text}</a></li>
+          ))}
+        </ol>
+      </aside>
+    )}
+  </main>
+</BaseLayout>

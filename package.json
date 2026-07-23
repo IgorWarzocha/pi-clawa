@@ -1,6 +1,6 @@
 {
   "name": "@howaboua/pi-clawa",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "description": "Redistributable Pi extension package for the Clawa/Clawas runtime.",
   "keywords": [
@@ -18,8 +18,10 @@
     "lint:strict": "biome check --error-on-warnings .",
     "knip": "knip",
     "deadcode": "knip",
-    "ai:check": "biome check . && tsc --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts",
-    "ai:check:strict": "biome check --error-on-warnings . && tsc --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts",
+    "docs:dev": "bun --cwd website dev",
+    "docs:build": "bun --cwd website build",
+    "ai:check": "biome check . && tsc --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts && bun run docs:build",
+    "ai:check:strict": "biome check --error-on-warnings . && tsc --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts && bun run docs:build",
     "check": "bun run ai:check"
   },
   "pi": {
@@ -69,7 +71,8 @@
     "node": ">=24.15.0 <27"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "website"
   ],
   "exports": {
     ".": "./src/index.ts",
