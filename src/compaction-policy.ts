@@ -4,8 +4,11 @@ import type { ClawaCompactionConfig } from './config.js'
 export type CompactionPolicyState = {
   invalidatePending: () => void
   hasPending: () => boolean
+  isArmed: () => boolean
+  disarm: () => void
+  rearm: () => void
   beginPending: () => symbol
-  clearIfOwned: (token: symbol) => boolean
+  settleIfOwned: (token: symbol, outcome: 'succeeded' | 'failed') => boolean
   waitUntilReady: () => Promise<boolean>
 }
 
@@ -13,6 +16,7 @@ export function createCompactionPolicyState(): CompactionPolicyState {
   let pendingToken: symbol | null = null
   let pendingPromise = Promise.resolve(true)
   let resolvePending: ((ready: boolean) => void) | null = null
+  let armed = true
 
   const clearPending = (ready: boolean) => {
     pendingToken = null
@@ -22,8 +26,18 @@ export function createCompactionPolicyState(): CompactionPolicyState {
   }
 
   return {
-    invalidatePending: () => clearPending(pendingToken === null),
+    invalidatePending: () => {
+      armed = true
+      clearPending(pendingToken === null)
+    },
     hasPending: () => pendingToken !== null,
+    isArmed: () => armed,
+    disarm: () => {
+      armed = false
+    },
+    rearm: () => {
+      armed = true
+    },
     beginPending: () => {
       clearPending(false)
       const token = Symbol('clawa-auto-compaction')
@@ -33,8 +47,9 @@ export function createCompactionPolicyState(): CompactionPolicyState {
       })
       return token
     },
-    clearIfOwned: (token) => {
+    settleIfOwned: (token, outcome) => {
       if (pendingToken !== token) return false
+      if (outcome === 'succeeded') armed = false
       clearPending(true)
       return true
     },
@@ -46,14 +61,29 @@ export function shouldRequestAutoCompaction(
   config: ClawaCompactionConfig,
   usage: ContextUsage | undefined,
   hasPendingOperation: boolean,
+  armed = true,
 ): boolean {
-  if (!config.auto || hasPendingOperation || usage?.tokens === null || usage === undefined) {
+  if (
+    !(config.auto && armed) ||
+    hasPendingOperation ||
+    usage?.tokens === null ||
+    usage === undefined
+  ) {
     return false
   }
   if (!Number.isFinite(usage.contextWindow) || usage.contextWindow <= 0) return false
 
   const triggerTokens = Math.floor((usage.contextWindow * config.triggerPercent) / 100)
   return usage.tokens >= triggerTokens
+}
+
+export function isUsageBelowCompactionThreshold(
+  config: ClawaCompactionConfig,
+  usage: ContextUsage | undefined,
+): boolean {
+  if (usage?.tokens === null || usage === undefined) return false
+  if (!Number.isFinite(usage.contextWindow) || usage.contextWindow <= 0) return false
+  return usage.tokens < Math.floor((usage.contextWindow * config.triggerPercent) / 100)
 }
 
 type AutoCompactionNotifier = {
@@ -81,26 +111,29 @@ export function registerCompactionPolicy(
 
   pi.on('session_start', invalidatePending)
   pi.on('session_shutdown', invalidatePending)
+  pi.on('session_compact', () => state.disarm())
 
   pi.on('agent_settled', async (_event, ctx) => {
     const usage = ctx.getContextUsage()
-    if (!shouldRequestAutoCompaction(getCompactionConfig(), usage, state.hasPending())) return
+    const config = getCompactionConfig()
+    if (isUsageBelowCompactionThreshold(config, usage)) state.rearm()
+    if (!shouldRequestAutoCompaction(config, usage, state.hasPending(), state.isArmed())) return
 
     const token = state.beginPending()
     const notifier = captureNotifier(ctx)
     try {
       ctx.compact({
         onComplete: () => {
-          state.clearIfOwned(token)
+          state.settleIfOwned(token, 'succeeded')
         },
         onError: (error) => {
-          if (!state.clearIfOwned(token)) return
+          if (!state.settleIfOwned(token, 'failed')) return
           notifier?.notifyError(error.message)
         },
       })
       await state.waitUntilReady()
     } catch (error) {
-      if (!state.clearIfOwned(token)) return
+      if (!state.settleIfOwned(token, 'failed')) return
       notifier?.notifyError(error instanceof Error ? error.message : String(error))
     }
   })

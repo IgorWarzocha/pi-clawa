@@ -45,24 +45,27 @@ or the session is resuming after compaction.
 
 ## Compaction: carry the branch
 
-Clawa customizes Pi's `session_before_compact` event. It sends a lean serialization of the branch to
-the currently active Pi model and asks for:
+Pi's configured default, custom, or provider-native compactor carries the canonical session branch.
+Clawa does not replace or merge that result. Pi cannot compose competing compaction summaries, so
+there is one history owner rather than two summaries racing by extension load order.
 
-- a continuity summary for the compacted session;
-- at most three short durable memory lines.
-
-Those memory lines are written to shared SQLite. If the memory write fails, a successful summary is
-still used. If the model call or parsing fails, Clawa warns and returns no custom result so Pi can
-continue with its normal compaction behavior.
+Alongside compaction, Clawa sends a lean serialization of the prepared segment to the configured
+sidecar model—or the active model by default—and asks for at most three short durable memory lines.
+This sidecar request is cache-cold and independent from the main provider continuation. Its output
+budget and transport are left to the selected provider. It stages its result without touching
+SQLite. Only after Pi reports successful compaction are the staged memories written to the shared
+database; failed, aborted, replaced, and stale operations are discarded.
 
 Automatic compaction runs after the agent has settled when usage reaches the configured percentage
 of the active model context window—80% by default. Pulses and private comms wait behind the pending
-compaction operation so they do not inject into a branch while its context is changing.
+compaction operation so they do not inject into a branch while its context is changing. After a
+successful compaction, a still-high usage reading cannot immediately launch another one. The policy
+rearms after usage falls below the threshold or a new session begins.
 
 ## The practical hierarchy
 
 1. **Session history** holds the detailed current branch.
-2. **Compaction summary** keeps that branch usable when context grows.
+2. **Pi's compaction boundary** keeps that branch usable when context grows.
 3. **Raw memory** carries small facts and sparks across the crew.
 4. **Living files and vault pages** hold shaped, durable understanding.
 

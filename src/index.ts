@@ -8,11 +8,9 @@ import {
 } from './clawas/steer-command.js'
 import { registerClawasTools } from './clawas/tool-surface.js'
 import { createCompactionPolicyState, registerCompactionPolicy } from './compaction-policy.js'
+import { registerCompactionSidecar } from './compaction-sidecar.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
-import {
-  registerContextOverflowNormalization,
-  registerContinuityCompaction,
-} from './continuity-compaction.js'
+import { registerContextOverflowNormalization } from './context-overflow.js'
 import { registerClawCommand } from './extension/claw-command.js'
 import { extensionPath, IS_CLAWAS_WORKER } from './extension/constants.js'
 import { getWorkerAlias } from './extension/environment.js'
@@ -58,7 +56,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerRememberTool(pi)
   registerRecallTool(pi)
   registerContextOverflowNormalization(pi)
-  registerContinuityCompaction(pi)
+  registerCompactionSidecar(pi, () => currentClawaDefaults.compaction)
   registerCompactionPolicy(pi, () => currentClawaDefaults.compaction, compactionPolicyState)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)

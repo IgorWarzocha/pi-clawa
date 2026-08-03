@@ -41,16 +41,25 @@ prepends exactly one current living-document block. It runs on each model/tool-l
 the first call after compaction. Nested `AGENTS.md` context arrives progressively through relevant
 tool results instead of the opening hydration block.
 
-Normal replies use Pi's selected model. Clawa makes one direct model call of its own: continuity
-compaction, using the active model, resolved authentication, current thinking level, and a token
-budget bounded by Pi's reserve.
+Normal replies use Pi's selected model. During compaction, Clawa launches one cache-cold sidecar call
+with the configured `clawa.compaction.sidecarModel`, or the active model when no override is set. It
+uses resolved authentication and the current thinking level. It has a fresh request identity, does
+not share the main provider continuation lane, and leaves output budgeting and transport to the
+selected provider.
 
 ## Settlement and compaction
 
 After an agent run has fully settled—no retry, compaction, or follow-up pending—the policy checks
 model-relative usage. At the configured threshold it asks Pi to compact. A gate prevents Pulses and
-comms from racing that operation. Certain opaque provider overflow errors are normalized to Pi's
-recognized context-length error so normal recovery can happen.
+comms from racing that operation. After success, the threshold policy stays disarmed while usage is
+still high and rearms only after a lower reading or a new session.
+
+Pi's configured default, custom, or provider-native compactor is the sole owner of canonical session
+history. The Clawa sidecar only observes the prepared segment and stages memory candidates
+independently. A successful `session_compact` event commits those memories to SQLite; failure,
+abort, session replacement, or shutdown discards them. Pi does not compose competing compaction
+results, so Clawa does not return one. Certain opaque provider overflow errors are normalized to
+Pi's recognized context-length error so normal recovery can happen.
 
 ## Main and worker roles
 

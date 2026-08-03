@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
-import { rememberMemory, resolveMemoryDbPath } from '../src/memory.js'
+import { rememberMemories, rememberMemory, resolveMemoryDbPath } from '../src/memory.js'
 
 function readMemories(path: string): Array<{ id: number; text: string; tags: string }> {
   const db = new DatabaseSync(path)
@@ -60,6 +60,41 @@ test('remember creates updates and deletes shared sqlite memories', async () => 
     const deleted = rememberMemory(workerCwd, { id: created.id, text: '' })
     assert.equal(deleted.action, 'deleted')
     assert.deepEqual(readMemories(dbPath), [])
+  } finally {
+    if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
+    else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('compaction memories commit as one SQLite batch', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-memory-batch-'))
+  const previousRoot = process.env['PI_CLAW_PROJECT_ROOT']
+  try {
+    process.env['PI_CLAW_PROJECT_ROOT'] = root
+    const dbPath = resolveMemoryDbPath(root)
+    rememberMemory(root, { text: 'existing memory' })
+
+    const db = new DatabaseSync(dbPath)
+    try {
+      db.exec(`
+        CREATE TRIGGER reject_memory BEFORE INSERT ON memories
+        WHEN NEW.text = 'reject me'
+        BEGIN
+          SELECT RAISE(ABORT, 'rejected by test');
+        END;
+      `)
+    } finally {
+      db.close()
+    }
+
+    assert.throws(() =>
+      rememberMemories(root, [{ text: 'would be partial' }, { text: 'reject me' }]),
+    )
+    assert.deepEqual(
+      readMemories(dbPath).map((memory) => memory.text),
+      ['existing memory'],
+    )
   } finally {
     if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
     else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot

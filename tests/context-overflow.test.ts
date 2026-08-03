@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { normalizeUnknownContextOverflowMessage } from '../src/continuity-compaction.js'
+import { normalizeUnknownContextOverflowMessage } from '../src/context-overflow.js'
 
 test('normalizes provider context-window markers for Pi overflow recovery', () => {
   const normalized = normalizeUnknownContextOverflowMessage({
