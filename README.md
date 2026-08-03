@@ -18,7 +18,7 @@ layer:
 - shared memory and session recall;
 - long-lived specialist Clawas with private coordination;
 - folder-based scheduled and manual Pulses;
-- continuity-aware compaction;
+- compaction-time memory extraction that leaves Pi's configured history owner intact;
 - an optional Discord adapter.
 
 The result stays open-ended. Add normal Pi packages and extensions when the home needs more.

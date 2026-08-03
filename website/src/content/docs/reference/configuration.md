@@ -43,7 +43,8 @@ Clawa config.
     "controlSocketDir": "clawas-control",
     "compaction": {
       "auto": true,
-      "triggerPercent": 80
+      "triggerPercent": 80,
+      "sidecarModel": "provider/model-id"
     }
   }
 }
@@ -73,8 +74,14 @@ Optional strings and booleans generally fall back or are ignored when their type
 
 ## Compaction
 
-`triggerPercent` must be an integer from 1 to 99. Set `auto` to `false` to keep custom continuity on
-manual/overflow compaction while disabling settled-turn threshold compaction.
+`triggerPercent` must be an integer from 1 to 99. Set `auto` to `false` to disable settled-turn
+threshold compaction. Manual and overflow compaction remain Pi-owned, and Clawa's memory sidecar
+still follows those successful boundaries.
+
+`sidecarModel` optionally selects the model used only for memory extraction. Use Pi's
+`provider/model-id` form; model IDs may themselves contain slashes. Omit it to use the session's
+active model. The sidecar resolves that model's own credentials, headers, and provider environment,
+and lets the provider choose its normal output budget and transport.
 
 ## Pi project settings
 

@@ -13,6 +13,8 @@ export interface RememberMemoryInput {
   tags?: string[] | undefined
 }
 
+export type NewMemoryInput = Omit<RememberMemoryInput, 'id'>
+
 export type RememberMemoryResult =
   | { action: 'created'; id: number; path: string }
   | { action: 'updated'; id: number; path: string }
@@ -79,6 +81,29 @@ function runInsert(db: DatabaseSync, input: { ts: number; text: string; tags: st
     .prepare('INSERT INTO memories (ts, text, tags) VALUES (?, ?, ?)')
     .run(input.ts, input.text, JSON.stringify(input.tags))
   return Number(result.lastInsertRowid)
+}
+
+export function rememberMemories(cwd: string, inputs: readonly NewMemoryInput[]): void {
+  if (inputs.length === 0) return
+  const memories = inputs.map((input) => {
+    const text = input.text.trim()
+    if (!text) throw new Error('Memory text is empty.')
+    return { text, tags: normalizeTags(input.tags) }
+  })
+
+  const { db } = openMemoryDb(cwd)
+  try {
+    db.exec('BEGIN IMMEDIATE')
+    try {
+      for (const memory of memories) runInsert(db, { ...memory, ts: Date.now() })
+      db.exec('COMMIT')
+    } catch (error) {
+      db.exec('ROLLBACK')
+      throw error
+    }
+  } finally {
+    db.close()
+  }
 }
 
 export function rememberMemory(cwd: string, input: RememberMemoryInput): RememberMemoryResult {

@@ -6,7 +6,15 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
-No changes recorded yet.
+### Changed
+
+- Clawa now runs compaction-time memory extraction as a cache-cold sidecar while Pi's configured
+  default, custom, or provider-native compactor remains the sole owner of session history. Memories
+  are committed only after successful compaction; aborted and stale work is discarded. The optional
+  `clawa.compaction.sidecarModel` can select another provider/model, while transport and output
+  budgeting remain provider-owned.
+- Automatic compaction now waits for usage to fall below its threshold before rearming after a
+  successful compaction, preventing immediate repeat runs from a stale high usage reading.
 
 ## [0.1.0] - 2026-07-23
 

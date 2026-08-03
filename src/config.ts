@@ -33,6 +33,7 @@ export interface ClawaWorkerConfig {
 export interface ClawaCompactionConfig {
   auto: boolean
   triggerPercent: number
+  sidecarModel?: string | undefined
 }
 
 export interface ClawaDefaults {
@@ -161,6 +162,7 @@ function normalizeCompactionConfig(input: unknown): ClawaCompactionConfig {
   const rec = asRecord(input, '.pi/claw.jsonc clawa.compaction')
   const auto = rec['auto'] ?? DEFAULT_CLAWA_COMPACTION_CONFIG.auto
   const triggerPercent = rec['triggerPercent'] ?? DEFAULT_CLAWA_COMPACTION_CONFIG.triggerPercent
+  const sidecarModel = rec['sidecarModel']
 
   if (typeof auto !== 'boolean') {
     throw new Error('.pi/claw.jsonc clawa.compaction.auto must be a boolean')
@@ -175,8 +177,23 @@ function normalizeCompactionConfig(input: unknown): ClawaCompactionConfig {
       '.pi/claw.jsonc clawa.compaction.triggerPercent must be an integer from 1 to 99',
     )
   }
+  if (
+    sidecarModel !== undefined &&
+    (typeof sidecarModel !== 'string' ||
+      !sidecarModel.trim() ||
+      sidecarModel.trim().indexOf('/') <= 0 ||
+      sidecarModel.trim().endsWith('/'))
+  ) {
+    throw new Error(
+      '.pi/claw.jsonc clawa.compaction.sidecarModel must be a provider/model-id string',
+    )
+  }
 
-  return { auto, triggerPercent }
+  return {
+    auto,
+    triggerPercent,
+    ...(typeof sidecarModel === 'string' ? { sidecarModel: sidecarModel.trim() } : {}),
+  }
 }
 
 function clampClawaDefaults(input: unknown): ClawaDefaults {
