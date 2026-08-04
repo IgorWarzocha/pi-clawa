@@ -8,6 +8,7 @@ import {
   getLastMailMessageTimestamp,
 } from './message-extract.ts'
 import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.ts'
+import { isDirectMainPromptAfterMail } from './report-back.ts'
 import {
   extractClawaReportText,
   normalizeDiscordReplyText,
@@ -23,6 +24,23 @@ function ctxWithBranch(branch: unknown[]) {
     },
   } as never
 }
+
+test('scheduled pulses do not turn explicit worker reports into automatic Main returns', () => {
+  assert.equal(
+    isDirectMainPromptAfterMail({
+      lastUserMessage: { content: 'Pulse: Hey, Discord\nOwner: discord-clawa', timestamp: 20 },
+      lastMailTimestamp: 10,
+    }),
+    false,
+  )
+  assert.equal(
+    isDirectMainPromptAfterMail({
+      lastUserMessage: { content: 'Handle this direct worker task', timestamp: 20 },
+      lastMailTimestamp: 10,
+    }),
+    true,
+  )
+})
 
 test('extractClawaReportText keeps explicit clawas content only', () => {
   assert.equal(extractClawaReportText('[CLAWAS]\nhello from worker'), 'hello from worker')
