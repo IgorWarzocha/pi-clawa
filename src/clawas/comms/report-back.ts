@@ -155,7 +155,7 @@ export async function reportFinalAssistantMessageToMain(
   })
 }
 
-function isDirectMainPromptAfterMail(options: {
+export function isDirectMainPromptAfterMail(options: {
   lastUserMessage?: { content: string; timestamp?: number | undefined } | undefined
   lastMailTimestamp?: number | undefined
 }): boolean {
@@ -163,7 +163,8 @@ function isDirectMainPromptAfterMail(options: {
   if (messageTimestamp === undefined) {
     return false
   }
-  if (options.lastUserMessage?.content.startsWith('[Discord room update]')) {
+  const content = options.lastUserMessage?.content
+  if (content?.startsWith('[Discord room update]') || content?.startsWith('Pulse:')) {
     return false
   }
   return options.lastMailTimestamp === undefined || messageTimestamp > options.lastMailTimestamp
