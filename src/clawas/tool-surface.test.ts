@@ -16,8 +16,8 @@ test('message_clawa advertises its route and returns only a named receipt', () =
 
     assert.equal(tools.length, 1)
     assert.equal(tools[0]?.name, 'message_clawa')
-    assert.equal(tools[0]?.promptSnippet, 'Send a private note to another Clawa')
-    assert.equal(formatClawaDeliveryReceipt('Techie'), 'Delivered private note to Techie.')
+    assert.equal(tools[0]?.promptSnippet, 'Send a note to another Clawa')
+    assert.equal(formatClawaDeliveryReceipt('Techie'), 'Techie received the note.')
   } finally {
     if (previousRole === undefined) delete process.env['PI_CLAWAS_ROLE']
     else process.env['PI_CLAWAS_ROLE'] = previousRole

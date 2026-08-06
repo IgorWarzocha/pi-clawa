@@ -27,7 +27,7 @@ blocks:
 ```text
 [#known-channel]: public room reply
 [dm]: private reply to the human
-[main_clawa]: private handoff to the main Clawa
+[main_clawa]: internal handoff to the main Clawa
 [quiet]
 ```
 

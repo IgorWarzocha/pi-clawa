@@ -16,9 +16,9 @@ layer:
 
 - living identity and relationship documents;
 - shared memory and session recall;
-- long-lived specialist Clawas with private coordination;
+- long-lived specialist Clawas with internal coordination;
 - folder-based scheduled and manual Pulses;
-- compaction-time memory extraction that leaves Pi's configured history owner intact;
+- an in-branch memory pass before Pi's native compaction boundary;
 - an optional Discord adapter.
 
 The result stays open-ended. Add normal Pi packages and extensions when the home needs more.
@@ -33,6 +33,10 @@ work reaches them.
 Five living documents are rehydrated without accumulating duplicate context: `CLAW.md`, `HUMAN.md`,
 `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`. `AGENTS.md` remains the behavior spine. The main Clawa uses
 ordinary Pi sessions; specialists keep independent homes and sessions.
+
+Pi alone owns compaction. Near the boundary—90% of the active model window by default—Clawa gets one
+ordinary follow-up in the same branch to revisit recent shared memories and save only genuinely new
+or updated continuity. There is no detached compaction sidecar or competing history summary.
 
 The [runtime reference](https://igorwarzocha.github.io/pi-clawa/docs/reference/runtime/) traces the
 full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/docs/reference/privacy/)
@@ -66,10 +70,10 @@ adapting an existing OpenClaw or Hermes home.
 ## The useful entrances
 
 - `/claw` — inspect the crew or create a specialist Clawa.
-- `/steer` — send a private nudge to a specialist.
+- `/steer` — send an internal nudge to a specialist.
 - `/jump` — take over a specialist in a Herdr or tmux panel.
 - `/pulse` — inspect Pulses or run one manually.
-- `remember` / `recall` — carry small raw memories and search them with the current session.
+- `remember` / `recall` — carry small raw memories and search recent session history.
 
 The wiki owns the detail:
 

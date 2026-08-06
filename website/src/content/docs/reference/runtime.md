@@ -6,7 +6,7 @@ order: 130
 ---
 
 The package entrypoint is `src/index.ts`. Pi imports it as an extension factory. The factory creates
-one Clawas runtime, Pulse runtime, in-memory hydration state, compaction gate, and comms server, then
+one Clawas runtime, Pulse runtime, hydration state, memory-pass state, and comms server, then
 registers hooks, commands, tools, renderers, and main-only controls.
 
 ## Session start
@@ -18,7 +18,7 @@ On every startup, reload, new session, resume, or fork, the extension:
 3. names worker sessions when running in worker role;
 4. performs protective bootstrap when needed;
 5. starts a per-session local comms socket;
-6. marks hydration stale so the next provider context gets a fresh home snapshot;
+6. refreshes and persists the current home snapshot as a hidden session message;
 7. attaches managed Clawas and the Pulse timer in a UI-bearing main session;
 8. queues invisible conversational onboarding after the first successful bootstrap.
 
@@ -34,37 +34,34 @@ Custom `.pi/SYSTEM.md` content is intentionally ignored with a warning. Compatib
 in `.pi/APPEND_SYSTEM.md`. This prevents a second full system identity from silently fighting the
 home spine.
 
-## Provider context
+## Continuity context
 
-The context hook removes older Clawa hydration messages, bounds historical image content, and
-prepends exactly one current living-document block. It runs on each model/tool-loop call, including
-the first call after compaction. Nested `AGENTS.md` context arrives progressively through relevant
-tool results instead of the opening hydration block.
+Hydration is model-visible session history, not a provider-only rewrite. At session start Clawa reads
+the bounded living documents and optional image, then persists one hidden custom message without
+triggering a turn. After compaction it refreshes that payload unless the same hydration remains active
+in Pi's rebuilt branch. This keeps Pi's native compaction serializer, provider continuation, and the
+model's actual context aligned.
 
-Normal replies use Pi's selected model. During compaction, Clawa launches one cache-cold sidecar call
-with the configured `clawa.compaction.sidecarModel`, or the active model when no override is set. It
-uses resolved authentication and the current thinking level. It has a fresh request identity, does
-not share the main provider continuation lane, and leaves output budgeting and transport to the
-selected provider.
+Nested `AGENTS.md` context remains separate. It arrives progressively through relevant read and
+discovery tool results as work reaches governed paths.
 
 ## Settlement and compaction
 
-After an agent run has fully settled—no retry, compaction, or follow-up pending—the policy checks
-model-relative usage. At the configured threshold it asks Pi to compact. A gate prevents Pulses and
-comms from racing that operation. After success, the threshold policy stays disarmed while usage is
-still high and rearms only after a lower reading or a new session.
+After an agent run settles, Clawa checks usage against the active model's context window. At the
+configured memory-pass threshold—90% by default—it claims one follow-up on the same branch. The
+model uses `recall` and `remember` normally, with explicit guidance to update rather than duplicate
+and to save nothing when no durable signal emerged.
 
-Pi's configured default, custom, or provider-native compactor is the sole owner of canonical session
-history. The Clawa sidecar only observes the prepared segment and stages memory candidates
-independently. A successful `session_compact` event commits those memories to SQLite; failure,
-abort, session replacement, or shutdown discards them. Pi does not compose competing compaction
-results, so Clawa does not return one. Certain opaque provider overflow errors are normalized to
-Pi's recognized context-length error so normal recovery can happen.
+That follow-up does not compact or call a detached model. Pi's configured default, custom, or
+provider-native compactor remains the sole owner of canonical history, threshold, retries, overflow
+recovery, and summary shape. The memory pass rearms after `session_compact` or `session_start`.
+Certain opaque provider overflow errors are normalized to Pi's recognized context-length error so
+normal recovery can happen.
 
 ## Main and worker roles
 
 `PI_CLAWAS_ROLE=worker` fixes the worker role at module load. Workers receive memory/recall,
-hydration, prompt shaping, compaction, comms, and private reporting, but not the main monitor,
+hydration, prompt shaping, the memory pass, comms, and private reporting, but not the main monitor,
 `/steer`, `/jump`, or Pulse GUI.
 
 Managed workers are separate Pi RPC processes. The main daemon owns starting, adoption, restart,

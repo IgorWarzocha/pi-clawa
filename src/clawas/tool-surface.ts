@@ -43,7 +43,7 @@ function manualSessionError(title: string, clawasName: string) {
 }
 
 export function formatClawaDeliveryReceipt(title: string): string {
-  return `Delivered private note to ${title}.`
+  return `${title} received the note.`
 }
 
 export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): void {
@@ -52,11 +52,11 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
       name: 'message_main_claw',
       label: 'Message main Clawa',
       description:
-        'Send a private note to the main Clawa for internal coordination or a handoff. Send at most one private status per turn.',
-      promptSnippet: 'Send a private note to the main Clawa',
+        'Send an internal coordination note or handoff to the main Clawa. Send at most one status per turn.',
+      promptSnippet: 'Send a note to the main Clawa',
       parameters: Type.Object({
         message: Type.String({
-          description: 'Private note delivered only through the Clawas lane',
+          description: 'Coordination note delivered through the Clawas lane',
         }),
       }),
       async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -74,7 +74,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
               content: [
                 {
                   type: 'text',
-                  text: `Private note already sent to ${runtime.getClawaDefaults().mainClawName} for this turn.`,
+                  text: `Note already sent to ${runtime.getClawaDefaults().mainClawName} for this turn.`,
                 },
               ],
               details: { workerId },
@@ -102,7 +102,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
             content: [
               {
                 type: 'text',
-                text: `Sent private note to ${runtime.getClawaDefaults().mainClawName}.`,
+                text: formatClawaDeliveryReceipt(runtime.getClawaDefaults().mainClawName),
               },
             ],
             details: { workerId },
@@ -129,14 +129,14 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
     name: 'message_clawa',
     label: 'Message Clawa',
     description:
-      'Send a private coordination note to another configured Clawa by name or title. Use when that Clawa should act or reply in its own lane.',
-    promptSnippet: 'Send a private note to another Clawa',
+      'Send a coordination note to another configured Clawa by name or title. Use when that Clawa should act or reply in its own lane.',
+    promptSnippet: 'Send a note to another Clawa',
     parameters: Type.Object({
       claw: Type.String({
         description: 'Configured Clawa name or title',
       }),
       message: Type.String({
-        description: 'Private coordination note',
+        description: 'Coordination note',
       }),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {

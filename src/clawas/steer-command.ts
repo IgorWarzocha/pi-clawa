@@ -66,7 +66,7 @@ function resolveJumpTarget(runtime: ClawasRuntime, args: string): WorkerState | 
 export function registerSteerCommand(pi: ExtensionAPI, runtime: ClawasRuntime): void {
   pi.registerCommand('steer', {
     description:
-      'Send a private steer note to the active Clawas claw, or to /steer <slot> <message>',
+      'Send an internal steer note to the active Clawas claw, or to /steer <slot> <message>',
     handler: async (args, ctx) => {
       const target = resolveSteerTarget(runtime, args ?? '')
       if (typeof target === 'string') {

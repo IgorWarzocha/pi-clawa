@@ -53,8 +53,10 @@ Delivery respects current work:
 
 - a main Pulse queues as a Pi follow-up while the main session is busy;
 - a managed worker receives a prompt or follow-up according to its activity;
-- a manual worker receives socket mail;
-- comms and Pulse delivery wait for pending compaction.
+- a manual worker receives socket mail.
+
+Each successful scheduled delivery is checkpointed immediately. If a later due Pulse fails in the
+same scan, work that already landed is not replayed on the next scan.
 
 If another Pulse for an owner is due at the same time as the default `hey-clawa`, Hey Clawa waits
 about 15 minutes to give the specific job the room.
