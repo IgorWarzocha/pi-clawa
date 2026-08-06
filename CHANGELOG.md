@@ -8,13 +8,25 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Changed
 
-- Clawa now runs compaction-time memory extraction as a cache-cold sidecar while Pi's configured
-  default, custom, or provider-native compactor remains the sole owner of session history. Memories
-  are committed only after successful compaction; aborted and stale work is discarded. The optional
-  `clawa.compaction.sidecarModel` can select another provider/model, while transport and output
-  budgeting remain provider-owned.
-- Automatic compaction now waits for usage to fall below its threshold before rearming after a
-  successful compaction, preventing immediate repeat runs from a stale high usage reading.
+- Pi is now the sole compaction owner. At 90% of the active model's context window, Clawa gets one
+  same-branch memory pass to recall recent shared memories and save only genuinely new or updated
+  continuity before Pi compacts normally. Legacy `clawa.compaction` settings no longer alter this.
+- Living-document and optional image hydration is now persisted in session history at lifecycle
+  boundaries, so Pi's native compaction and provider continuation rebuild the same model-visible
+  branch instead of losing extension-injected context or cache continuity.
+- `recall` now takes a fast path for recent shared memories, streams bounded session search, and
+  keeps only the strongest results instead of synchronously loading broad session history.
+- Worker configuration now has one strict normalization path. Duplicate IDs and malformed booleans,
+  thinking levels, report modes, or extension lists fail visibly rather than changing behavior.
+- `message_clawa` now returns a concise named delivery receipt instead of repeating the outgoing note.
+- Development checks now target Pi 0.84.0.
+
+### Fixed
+
+- Successful Pulse deliveries are checkpointed individually, so a later failed Pulse cannot replay
+  work that already landed.
+- Failed partial Clawas daemon starts are disposed before retry, and local comms reject malformed
+  commands and response payloads at the socket boundary.
 
 ## [0.1.0] - 2026-07-23
 
@@ -23,7 +35,7 @@ The first public release of pi-clawa.
 ### Added
 
 - A warm, long-lived Pi home with automatic conversational onboarding and living home documents.
-- Clawas: purpose-seeded specialist homes with private coordination, a monitor, management UI,
+- Clawas: purpose-seeded specialist homes with internal coordination, a monitor, management UI,
   `/steer`, `/jump`, and independent sessions.
 - Shared SQLite memory, session recall, continuity-aware compaction, and bounded home-document
   hydration on every provider call.

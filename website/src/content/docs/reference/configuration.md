@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure workers, naming, and compaction in .pi/claw.jsonc.
+description: Configure workers, naming, and the memory pass in .pi/claw.jsonc.
 section: Reference
 order: 110
 ---
@@ -41,10 +41,9 @@ Clawa config.
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
     "controlSocketDir": "clawas-control",
-    "compaction": {
-      "auto": true,
-      "triggerPercent": 80,
-      "sidecarModel": "provider/model-id"
+    "memoryPass": {
+      "enabled": true,
+      "triggerPercent": 90
     }
   }
 }
@@ -64,24 +63,29 @@ comments.
 | `autostart` | Whether the main daemon should start it. |
 | `startupPrompt` | Prompt used when starting its lane. Legacy `initialPrompt` is accepted. |
 | `model` | Optional Pi model selector for this worker. |
-| `thinking` | `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`. Invalid values are ignored. |
-| `reportMode` | `auto`, `explicit`, or `off`. Invalid values are ignored. |
+| `thinking` | `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`. |
+| `reportMode` | `auto`, `explicit`, or `off`. |
 | `extensions` | Extra extension paths passed to this worker. |
 | `discordEnabled` | Marks Discord behavior for that worker. |
 
-Malformed worker arrays, missing IDs/cwds, and invalid compaction values throw visible config errors.
-Optional strings and booleans generally fall back or are ignored when their type is wrong.
+Malformed worker arrays, duplicate IDs, missing IDs/cwds, and invalid worker or memory-pass values
+throw visible config errors. Optional fields may be omitted, but a present boolean, thinking level,
+report mode, or extension list must have the documented type.
 
-## Compaction
+## Memory pass
 
-`triggerPercent` must be an integer from 1 to 99. Set `auto` to `false` to disable settled-turn
-threshold compaction. Manual and overflow compaction remain Pi-owned, and Clawa's memory sidecar
-still follows those successful boundaries.
+`memoryPass.enabled` defaults to `true`. `triggerPercent` defaults to `90` and must be an integer from
+1 to 99. The percentage follows the active model's own context window rather than a fixed token
+count.
 
-`sidecarModel` optionally selects the model used only for memory extraction. Use Pi's
-`provider/model-id` form; model IDs may themselves contain slashes. Omit it to use the session's
-active model. The sidecar resolves that model's own credentials, headers, and provider environment,
-and lets the provider choose its normal output budget and transport.
+At the threshold, Clawa receives one hidden follow-up in the active branch. It revisits up to five
+recent shared memories, updates an existing memory when the truth changed, and adds only new material
+worth carrying. Saving fewer than five—or nothing—is valid. The pass rearms after Pi compacts or a
+new session starts.
+
+Pi remains the sole owner of automatic, manual, overflow, custom, and provider-native compaction.
+Legacy `clawa.compaction` settings are ignored; they do not restore Clawa-owned compaction or the old
+detached sidecar.
 
 ## Pi project settings
 

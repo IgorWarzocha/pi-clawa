@@ -40,9 +40,11 @@ surfaces look right.
 
 ## Identity feels stale after compaction
 
-The next provider call should rehydrate the five living files. Check that the files are under the
-resolved home, within the documented bounds, and not replaced by an outside instruction file you
-expected Clawa to load. Custom `.pi/SYSTEM.md` is ignored; use `.pi/APPEND_SYSTEM.md`.
+The `session_compact` boundary should preserve an already-active hydration payload or persist a fresh
+one from the five living files. Check that the files are under the resolved home, within the
+documented bounds, and not replaced by an outside instruction file you expected Clawa to load. If
+the files changed after the last lifecycle boundary, `/reload` starts a fresh hydration cycle.
+Custom `.pi/SYSTEM.md` is ignored; use `.pi/APPEND_SYSTEM.md`.
 
 For structural checks:
 

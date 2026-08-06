@@ -14,7 +14,7 @@ order: 100
 | `/claw <purpose>` | Create a purpose-seeded specialist when the arguments resolve as a creation request. |
 | `/pulse` | Open the GUI on the Pulses tab. Main session only. |
 | `/pulse run <target>` | Queue by Pulse ID, `owner:id`, or title. |
-| `/steer <message>` | Send a private steer to the selected monitor worker. |
+| `/steer <message>` | Send an internal steer to the selected monitor worker. |
 | `/steer <slot\|worker> <message>` | Target a worker by monitor slot, ID, or title. |
 | `/jump [slot\|worker]` | Open a manual worker panel through Herdr or tmux. |
 | `/discord` | Optional adapter: create config/worker as needed and open Discord setup. |
@@ -31,18 +31,21 @@ is paired with empty text. Tags are normalized, deduplicated, and capped at 12.
 
 ### `recall`
 
-Searches shared memory and the current Clawa's session history. Accepts an optional text `query`,
+Searches shared memory and the current Clawa's recent session history. Accepts an optional text `query`,
 memory `tags`, and result `limit`. Tags do not filter session results. Tool calls and tool results are
-excluded from session search.
+excluded from session search. Omitting the query returns recent entries; the pre-compaction memory
+pass uses `limit: 5` to compare against recent shared memory before saving anything new.
 
 ### `message_clawa`
 
-Main-only private sideband to a worker by ID or title. It refreshes config, refuses delivery to a
+Main-only coordination route to a worker by ID or title. It refreshes config, refuses delivery to a
 human-owned manual session, ensures a managed worker is running, and sends a reply-requested steer.
+Success returns only a named receipt—`Research Clawa received the note.` It does not repeat the
+outgoing note in the tool result.
 
 ### `message_main_claw`
 
-Worker-only private handoff to the main Clawa. Duplicate private status relays in one turn are
+Worker-only internal handoff to the main Clawa. Duplicate status relays in one turn are
 suppressed.
 
 ### `message_discord`

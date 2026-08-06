@@ -25,7 +25,7 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | Path | Purpose |
 | --- | --- |
 | `.pi/settings.json` | Pi package and project settings. |
-| `.pi/claw.jsonc` | Bootstrap flag, worker definitions, naming, sockets, compaction. |
+| `.pi/claw.jsonc` | Bootstrap flag, worker definitions, naming, sockets, and memory-pass settings. |
 | `.pi/clawa-memory.sqlite` | Shared raw memory database. |
 | `.pi/pulses.json` | First-seen, last-run, due-key, and deferral state per Pulse. |
 | `.pi/clawas/session-registry.json` | Managed worker session records. |

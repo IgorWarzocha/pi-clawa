@@ -37,11 +37,13 @@ managed copy while a human-owned manual session has the lane.
 - `/steer <message>` sends to the selected monitor worker.
 - `/steer <slot|worker> <message>` targets one explicitly.
 - The main model can use `message_clawa` for private worker coordination.
-- A worker can use `message_main_claw` once per turn for a private handoff or status.
+- A worker can use `message_main_claw` once per turn for an internal handoff or status.
 
 Messages are carried over project-scoped Unix sockets. A steer to an active worker becomes a
 follow-up; a steer or follow-up to an inactive worker becomes a new prompt. Delivery failures restore
-the prior worker status and surface an error rather than pretending the handoff landed.
+the prior worker status and surface an error rather than pretending the handoff landed. A successful
+`message_clawa` call acknowledges the named recipient without echoing the outgoing note back into the
+tool result.
 
 ## Reporting modes
 

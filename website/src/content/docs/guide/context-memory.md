@@ -10,9 +10,10 @@ another, but they are not interchangeable.
 
 ## Hydration: the current shape
 
-Before each provider call after bootstrap, Clawa prepends one fresh hydration block built from five
-living files. Old hydration copies are removed first, so tool loops and compaction do not accumulate
-duplicate identity context.
+At session start, Clawa builds one hidden hydration message from five living files and persists it in
+the branch without triggering a turn. After Pi compacts, Clawa refreshes that message only when the
+same payload is no longer active. Provider continuation and native compaction therefore see the same
+model-visible history rather than a separate extension-only overlay.
 
 Limits are intentionally hard:
 
@@ -34,33 +35,32 @@ deserve a living-document edit.
 
 ## `recall`: explicit search
 
-`recall` searches both shared SQLite memory and the current Clawa's discovered Pi session files. It
-returns memory IDs for edits and file/line anchors for session matches. Session search skips tool
-calls and tool results, which reduces noise and avoids treating command output as remembered human
-intent.
+`recall` searches both shared SQLite memory and up to five recent Pi session files discovered for the
+current Clawa. It returns memory IDs for edits and file/line anchors for session matches. Recent
+no-query memory recall takes a direct bounded database path; session files are streamed and only the
+strongest bounded result set is retained. Session search skips tool calls and tool results, which
+reduces noise and avoids treating command output as remembered human intent.
 
-Recall is explicit, not ambient. The model should search when prior preference or a decision may
-matter, not on every turn. During first-run onboarding it is specifically discouraged unless you ask
-or the session is resuming after compaction.
+Recall is normally explicit, not ambient. The model should search when prior preference or a decision
+may matter, not on every turn. The one lifecycle exception is the deliberate memory pass near
+compaction. During first-run onboarding recall is specifically discouraged unless you ask or the
+session is resuming after compaction.
 
-## Compaction: carry the branch
+## Memory pass and compaction
 
 Pi's configured default, custom, or provider-native compactor carries the canonical session branch.
 Clawa does not replace or merge that result. Pi cannot compose competing compaction summaries, so
 there is one history owner rather than two summaries racing by extension load order.
 
-Alongside compaction, Clawa sends a lean serialization of the prepared segment to the configured
-sidecar model—or the active model by default—and asks for at most three short durable memory lines.
-This sidecar request is cache-cold and independent from the main provider continuation. Its output
-budget and transport are left to the selected provider. It stages its result without touching
-SQLite. Only after Pi reports successful compaction are the staged memories written to the shared
-database; failed, aborted, replaced, and stale operations are discarded.
+Before that boundary, Clawa can run one ordinary in-branch memory pass at 90% of the active model's
+context window. A hidden follow-up asks the resident Clawa to recall its five latest shared memories,
+update any whose truth has changed, and remember at most five genuinely new pieces from the current
+run. Routine completion, temporary work, and truth already owned by living documents should not be
+stored again. Zero new memories is a good result when nothing deserves promotion.
 
-Automatic compaction runs after the agent has settled when usage reaches the configured percentage
-of the active model context window—80% by default. Pulses and private comms wait behind the pending
-compaction operation so they do not inject into a branch while its context is changing. After a
-successful compaction, a still-high usage reading cannot immediately launch another one. The policy
-rearms after usage falls below the threshold or a new session begins.
+The pass uses the current session, model, tools, and provider continuation. It is not a detached
+sidecar and does not stage a competing compaction result. It fires once per compaction cycle and
+rearms after Pi compacts or a new session starts. Pi alone decides when and how compaction happens.
 
 ## The practical hierarchy
 

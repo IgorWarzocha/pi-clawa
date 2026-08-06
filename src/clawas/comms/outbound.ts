@@ -17,7 +17,7 @@ interface ClawasOutboundDetails {
 }
 
 const OUTBOUND_CONTEXT_MARKER =
-  'Display-only Clawa routing marker. The main Clawa sent a private note to another Clawa; do not answer this marker in the main chat.'
+  'Display-only Clawa routing marker. The main Clawa sent an internal note to another Clawa; do not answer this marker in the main chat.'
 
 export interface ClawasDeliveryDetails {
   route: ClawasDeliveryRoute
