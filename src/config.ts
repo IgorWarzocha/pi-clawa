@@ -30,10 +30,9 @@ export interface ClawaWorkerConfig {
   reportMode?: ClawaWorkerReportMode | undefined
 }
 
-export interface ClawaCompactionConfig {
-  auto: boolean
+export interface ClawaMemoryPassConfig {
+  enabled: boolean
   triggerPercent: number
-  sidecarModel?: string | undefined
 }
 
 export interface ClawaDefaults {
@@ -43,12 +42,12 @@ export interface ClawaDefaults {
   workerSessionPrefix: string
   controlPlaneDir: string
   controlSocketDir: string
-  compaction: ClawaCompactionConfig
+  memoryPass: ClawaMemoryPassConfig
 }
 
-export const DEFAULT_CLAWA_COMPACTION_CONFIG: ClawaCompactionConfig = {
-  auto: true,
-  triggerPercent: 80,
+export const DEFAULT_CLAWA_MEMORY_PASS_CONFIG: ClawaMemoryPassConfig = {
+  enabled: true,
+  triggerPercent: 90,
 }
 
 export interface ClawEnvironmentConfig {
@@ -68,7 +67,7 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
   workerSessionPrefix: 'Clawas',
   controlPlaneDir: 'clawas',
   controlSocketDir: 'clawas-control',
-  compaction: DEFAULT_CLAWA_COMPACTION_CONFIG,
+  memoryPass: DEFAULT_CLAWA_MEMORY_PASS_CONFIG,
 }
 
 export function resolveClawasControlSocketRoot(projectRoot: string): string {
@@ -156,16 +155,15 @@ function normalizeWorkers(input: unknown): ClawaWorkerConfig[] {
   return input.map(normalizeWorker)
 }
 
-function normalizeCompactionConfig(input: unknown): ClawaCompactionConfig {
-  if (input === undefined) return { ...DEFAULT_CLAWA_COMPACTION_CONFIG }
+function normalizeMemoryPassConfig(input: unknown): ClawaMemoryPassConfig {
+  if (input === undefined) return { ...DEFAULT_CLAWA_MEMORY_PASS_CONFIG }
 
-  const rec = asRecord(input, '.pi/claw.jsonc clawa.compaction')
-  const auto = rec['auto'] ?? DEFAULT_CLAWA_COMPACTION_CONFIG.auto
-  const triggerPercent = rec['triggerPercent'] ?? DEFAULT_CLAWA_COMPACTION_CONFIG.triggerPercent
-  const sidecarModel = rec['sidecarModel']
+  const rec = asRecord(input, '.pi/claw.jsonc clawa.memoryPass')
+  const enabled = rec['enabled'] ?? DEFAULT_CLAWA_MEMORY_PASS_CONFIG.enabled
+  const triggerPercent = rec['triggerPercent'] ?? DEFAULT_CLAWA_MEMORY_PASS_CONFIG.triggerPercent
 
-  if (typeof auto !== 'boolean') {
-    throw new Error('.pi/claw.jsonc clawa.compaction.auto must be a boolean')
+  if (typeof enabled !== 'boolean') {
+    throw new Error('.pi/claw.jsonc clawa.memoryPass.enabled must be a boolean')
   }
   if (
     typeof triggerPercent !== 'number' ||
@@ -174,25 +172,13 @@ function normalizeCompactionConfig(input: unknown): ClawaCompactionConfig {
     triggerPercent >= 100
   ) {
     throw new Error(
-      '.pi/claw.jsonc clawa.compaction.triggerPercent must be an integer from 1 to 99',
-    )
-  }
-  if (
-    sidecarModel !== undefined &&
-    (typeof sidecarModel !== 'string' ||
-      !sidecarModel.trim() ||
-      sidecarModel.trim().indexOf('/') <= 0 ||
-      sidecarModel.trim().endsWith('/'))
-  ) {
-    throw new Error(
-      '.pi/claw.jsonc clawa.compaction.sidecarModel must be a provider/model-id string',
+      '.pi/claw.jsonc clawa.memoryPass.triggerPercent must be an integer from 1 to 99',
     )
   }
 
   return {
-    auto,
+    enabled,
     triggerPercent,
-    ...(typeof sidecarModel === 'string' ? { sidecarModel: sidecarModel.trim() } : {}),
   }
 }
 
@@ -228,7 +214,7 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
       typeof rec['controlSocketDir'] === 'string' && rec['controlSocketDir'].trim()
         ? rec['controlSocketDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
-    compaction: normalizeCompactionConfig(rec['compaction']),
+    memoryPass: normalizeMemoryPassConfig(rec['memoryPass']),
   }
 }
 

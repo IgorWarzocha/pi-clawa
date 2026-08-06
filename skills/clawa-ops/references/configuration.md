@@ -36,10 +36,9 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
     "controlSocketDir": "clawas-control",
-    "compaction": {
-      "auto": true,
-      "triggerPercent": 80,
-      "sidecarModel": "provider/model-id"
+    "memoryPass": {
+      "enabled": true,
+      "triggerPercent": 90
     }
   }
 }
@@ -98,13 +97,12 @@ The `clawa` object controls names and runtime directories shared by the home:
 - `workerSessionPrefix` — prefix for managed worker sessions.
 - `controlPlaneDir` — project-local control-plane state directory.
 - `controlSocketDir` — logical socket directory name; the runtime resolves collision-safe sockets under the system runtime directory.
-- `compaction.auto` — quietly compact every settled Main or subclawa session before it becomes brittle; defaults to `true`.
-- `compaction.triggerPercent` — active-model context percentage that starts settled compaction; defaults to `80` and must be an integer from 1 to 99.
-- `compaction.sidecarModel` — optional Pi `provider/model-id` used only for compaction-time memory extraction; omit it to use the active model.
+- `memoryPass.enabled` — let Clawa tend shared memory once before Pi compacts; defaults to `true`.
+- `memoryPass.triggerPercent` — active-model context percentage that starts the memory pass; defaults to `90` and must be an integer from 1 to 99.
 
 Keep defaults unless the home deliberately uses another naming or control-plane shape.
 
-The threshold follows each active model's own context window. It is not a universal token count. Settled compaction never creates a synthetic continuation turn; the next real message or pulse resumes naturally. Pi's configured compactor owns session continuity. Clawa runs a cache-cold memory sidecar and commits its staged memories only after Pi reports success. The sidecar model uses its own resolved provider credentials and normal output/transport defaults. Ordinary tool traffic is discarded, while Clawa-to-Clawa notes remain available to the memory pass. After success, automatic compaction rearms only when usage drops below the threshold or a new session starts.
+The threshold follows each active model's own context window. It is not a universal token count. At the threshold, Clawa gets one warm turn on the same branch: recall the latest shared memories, update what has genuinely changed, and remember only new texture worth carrying. The pass may save nothing. Pi remains the sole owner of compaction threshold, overflow recovery, retries, and canonical session continuity. The memory pass rearms after Pi compacts or a new session starts.
 
 ## Project Pi settings
 

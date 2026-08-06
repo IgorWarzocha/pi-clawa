@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import type { SessionEntry } from '@earendil-works/pi-coding-agent'
 import { markClawEnvironmentBootstrapped } from '../src/config.js'
 import { HYDRATION_MESSAGE_TYPE } from '../src/extension/constants.js'
 import { registerHydrationContext } from '../src/extension/hydration-context.js'
@@ -15,36 +16,51 @@ type TestContext = {
   hasUI: false
   isIdle: () => boolean
   model: { input: Array<'image' | 'text'> }
+  sessionManager: { getBranch: () => SessionEntry[] }
   ui: Record<string, never>
 }
 
 const HYDRATION_FILES = ['CLAW.md', 'HUMAN.md', 'CLAWAS.md', 'CURIOUS.md', 'TOOLS.md']
 const INITIAL_CLAW_PATTERN = /initial CLAW\.md/
 const RESUMED_SHAPE_PATTERN = /resumed shape/
-const STALE_COPY_PATTERN = /stale copy/
 const AFTER_COMPACT_PATTERN = /after compact/
 const MID_SESSION_EDIT_PATTERN = /mid-session edit/
 const TINY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
 
 function registerTestRuntime(): {
+  branch: SessionEntry[]
   handlers: Map<string, EventHandler[]>
-  pi: Record<string, unknown>
+  sent: Array<{ content: unknown; customType: string; display: boolean }>
 } {
   const handlers = new Map<string, EventHandler[]>()
+  const branch: SessionEntry[] = []
+  const sent: Array<{ content: unknown; customType: string; display: boolean }> = []
+  let nextId = 1
   const pi = {
     on(name: string, handler: EventHandler) {
       const registered = handlers.get(name) ?? []
       registered.push(handler)
       handlers.set(name, registered)
     },
-    sendMessage() {},
+    sendMessage(message: { content: unknown; customType: string; display: boolean }) {
+      sent.push(message)
+      const parentId = branch.at(-1)?.id ?? null
+      branch.push({
+        type: 'custom_message',
+        id: `hydration-${nextId++}`,
+        parentId,
+        timestamp: new Date().toISOString(),
+        customType: message.customType,
+        content: message.content,
+        display: message.display,
+      } as SessionEntry)
+    },
     sendUserMessage() {},
     setSessionName() {},
   }
   const runtime = new ClawaRuntimeState()
 
-  registerHydrationContext(pi as never, runtime, { debugProbe: false })
   registerClawaSessionEvents(pi as never, {
     runtime,
     clawasRuntime: { attach() {} } as never,
@@ -52,8 +68,9 @@ function registerTestRuntime(): {
     commsServer: { async start() {}, async stop() {} } as never,
     setDefaults() {},
   })
+  registerHydrationContext(pi as never, runtime, { debugProbe: false })
 
-  return { handlers, pi }
+  return { branch, handlers, sent }
 }
 
 async function emit(
@@ -61,39 +78,8 @@ async function emit(
   name: string,
   event: Record<string, unknown>,
   ctx: TestContext,
-): Promise<unknown> {
-  let result: unknown
-  for (const handler of handlers.get(name) ?? []) {
-    const next = await handler(event, ctx)
-    if (next !== undefined) result = next
-  }
-  return result
-}
-
-async function transformContext(
-  handlers: Map<string, EventHandler[]>,
-  messages: unknown[],
-  ctx: TestContext,
-): Promise<unknown[]> {
-  let current = messages
-  for (const handler of handlers.get('context') ?? []) {
-    const result = (await handler({ type: 'context', messages: current }, ctx)) as
-      | { messages?: unknown[] }
-      | undefined
-    if (result?.messages) current = result.messages
-  }
-  return current
-}
-
-function hydrationMessages(messages: unknown[]): Array<{ content: unknown }> {
-  return messages.filter((message): message is { content: unknown } & Record<string, unknown> =>
-    Boolean(
-      message &&
-        typeof message === 'object' &&
-        'customType' in message &&
-        message.customType === HYDRATION_MESSAGE_TYPE,
-    ),
-  )
+): Promise<void> {
+  for (const handler of handlers.get(name) ?? []) await handler(event, ctx)
 }
 
 function hydrationText(message: { content: unknown } | undefined): string {
@@ -121,7 +107,7 @@ function hydrationImages(message: { content: unknown } | undefined): unknown[] {
   )
 }
 
-test('hydration stays singular across provider calls and refreshes on resume and compaction', async () => {
+test('hydration persists in branch history and refreshes only at lifecycle boundaries', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-hydration-lifecycle-'))
   const previousRoot = process.env['PI_CLAW_PROJECT_ROOT']
   const previousSocketRoot = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
@@ -134,74 +120,54 @@ test('hydration stays singular across provider calls and refreshes on resume and
       await writeFile(join(root, name), `# ${name}\n\ninitial ${name}\n`, 'utf8')
     }
 
-    const { handlers } = registerTestRuntime()
+    const { branch, handlers, sent } = registerTestRuntime()
     const ctx: TestContext = {
       cwd: root,
       hasUI: false,
       isIdle: () => true,
       model: { input: ['text', 'image'] },
+      sessionManager: { getBranch: () => branch },
       ui: {},
     }
     await emit(handlers, 'session_start', { type: 'session_start', reason: 'startup' }, ctx)
 
-    const firstCall = await transformContext(handlers, [{ role: 'user', content: 'hello' }], ctx)
+    assert.equal(sent.length, 1)
+    assert.equal(sent[0]?.customType, HYDRATION_MESSAGE_TYPE)
+    assert.equal(sent[0]?.display, false)
+    assert.match(hydrationText(sent[0]), INITIAL_CLAW_PATTERN)
+    assert.equal(handlers.has('context'), false)
+
     await writeFile(join(root, 'CLAW.md'), '# CLAW.md\n\nmid-session edit\n', 'utf8')
-    const secondCall = await transformContext(
-      handlers,
-      [
-        { role: 'user', content: 'hello' },
-        { role: 'toolResult', content: 'result' },
-      ],
-      ctx,
-    )
-    assert.equal(hydrationMessages(firstCall).length, 1)
-    assert.equal((firstCall[0] as { customType?: string }).customType, HYDRATION_MESSAGE_TYPE)
-    assert.equal(hydrationMessages(secondCall).length, 1)
-    assert.match(hydrationText(hydrationMessages(secondCall)[0]), INITIAL_CLAW_PATTERN)
-    assert.doesNotMatch(hydrationText(hydrationMessages(secondCall)[0]), MID_SESSION_EDIT_PATTERN)
+    assert.doesNotMatch(hydrationText(sent.at(-1)), MID_SESSION_EDIT_PATTERN)
 
     await writeFile(join(root, 'CLAW.md'), '# CLAW.md\n\nresumed shape\n', 'utf8')
     await emit(handlers, 'session_start', { type: 'session_start', reason: 'resume' }, ctx)
-    const resumed = await transformContext(
-      handlers,
-      [
-        ...secondCall,
-        { role: 'custom', customType: HYDRATION_MESSAGE_TYPE, content: 'stale copy' },
-      ],
-      ctx,
-    )
-    assert.equal(hydrationMessages(resumed).length, 1)
-    assert.match(hydrationText(hydrationMessages(resumed)[0]), RESUMED_SHAPE_PATTERN)
-    assert.doesNotMatch(hydrationText(hydrationMessages(resumed)[0]), STALE_COPY_PATTERN)
+    assert.equal(sent.length, 2)
+    assert.match(hydrationText(sent.at(-1)), RESUMED_SHAPE_PATTERN)
+
+    await emit(handlers, 'session_start', { type: 'session_start', reason: 'resume' }, ctx)
+    assert.equal(sent.length, 2)
 
     await writeFile(join(root, 'HUMAN.md'), '# HUMAN.md\n\nafter compact\n', 'utf8')
     await writeFile(join(root, 'CLAWA.PNG'), Buffer.from(TINY_PNG_BASE64, 'base64'))
+    branch.splice(0, branch.length)
     await emit(
       handlers,
       'session_compact',
       { type: 'session_compact', reason: 'overflow', willRetry: true },
       ctx,
     )
-    const compacted = await transformContext(handlers, resumed, ctx)
-    const compactFollowUp = await transformContext(handlers, compacted, ctx)
-    assert.equal(hydrationMessages(compacted).length, 1)
-    assert.equal(hydrationMessages(compactFollowUp).length, 1)
-    assert.match(hydrationText(hydrationMessages(compactFollowUp)[0]), AFTER_COMPACT_PATTERN)
-    assert.equal(hydrationImages(hydrationMessages(compactFollowUp)[0]).length, 1)
+    assert.equal(sent.length, 3)
+    assert.match(hydrationText(sent.at(-1)), AFTER_COMPACT_PATTERN)
+    assert.equal(hydrationImages(sent.at(-1)).length, 1)
 
-    const textOnly = await transformContext(handlers, compactFollowUp, {
-      ...ctx,
-      model: { input: ['text'] },
-    })
-    assert.equal(hydrationImages(hydrationMessages(textOnly)[0]).length, 0)
-
-    const emptyRoot = join(root, 'empty-home')
-    await mkdir(join(emptyRoot, '.pi'), { recursive: true })
-    markClawEnvironmentBootstrapped(emptyRoot)
-    const emptyCtx: TestContext = { ...ctx, cwd: emptyRoot }
-    await emit(handlers, 'session_start', { type: 'session_start', reason: 'resume' }, emptyCtx)
-    const emptyHome = await transformContext(handlers, compactFollowUp, emptyCtx)
-    assert.equal(hydrationMessages(emptyHome).length, 0)
+    await emit(
+      handlers,
+      'session_compact',
+      { type: 'session_compact', reason: 'manual', willRetry: false },
+      ctx,
+    )
+    assert.equal(sent.length, 3)
   } finally {
     if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
     else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot

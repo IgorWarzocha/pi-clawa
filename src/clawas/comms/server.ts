@@ -78,16 +78,10 @@ export class ClawasCommsServer {
   private context: ExtensionContext | null = null
   private readonly pi: ExtensionAPI
   private readonly getAlias: () => string | undefined
-  private readonly waitUntilReady: () => Promise<boolean>
 
-  constructor(
-    pi: ExtensionAPI,
-    getAlias: () => string | undefined,
-    waitUntilReady: () => Promise<boolean> = () => Promise.resolve(true),
-  ) {
+  constructor(pi: ExtensionAPI, getAlias: () => string | undefined) {
     this.pi = pi
     this.getAlias = getAlias
-    this.waitUntilReady = waitUntilReady
   }
 
   async start(ctx: ExtensionContext): Promise<void> {
@@ -281,9 +275,8 @@ export class ClawasCommsServer {
       respond(false, 'send', undefined, 'Worker is in a manual session')
       return
     }
-    const ready = await this.waitUntilReady()
     if (!isConnected()) return
-    if (!ready || this.context !== ctx) {
+    if (this.context !== ctx) {
       respond(false, 'send', undefined, 'Session changed before delivery')
       return
     }

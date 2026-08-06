@@ -1,8 +1,11 @@
-import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import {
+  buildSessionContext,
+  type ExtensionAPI,
+  type ExtensionContext,
+} from '@earendil-works/pi-coding-agent'
 import { buildHydrationSystemPrompt, loadHydrationFiles } from '../hydrate.js'
 import { loadClawaImage } from '../hydration-image.js'
 import { HYDRATION_MESSAGE_TYPE } from './constants.js'
-import { boundHistoricalImages } from './historical-images.js'
 import type { ClawaRuntimeState } from './runtime-state.js'
 
 type HydrationPayload = {
@@ -62,7 +65,6 @@ function buildHydrationMessage(runtime: ClawaRuntimeState, includeImage: boolean
     ? [runtime.hydrationText, VISUAL_SELF_CARD_NOTE].filter(Boolean).join('\n\n')
     : runtime.hydrationText
   return {
-    role: 'custom' as const,
     customType: HYDRATION_MESSAGE_TYPE,
     content: image ? [{ type: 'text' as const, text }, image.content] : text,
     display: false,
@@ -105,7 +107,7 @@ function buildHydrationProbeNote(text: string): string {
   ].join('\n')
 }
 
-function isHydrationMessage(message: unknown): boolean {
+function isHydrationMessage(message: unknown): message is { content: unknown } {
   return Boolean(
     message &&
       typeof message === 'object' &&
@@ -116,36 +118,36 @@ function isHydrationMessage(message: unknown): boolean {
   )
 }
 
+function hasMatchingActiveHydration(ctx: ExtensionContext, content: unknown): boolean {
+  const activeMessages = buildSessionContext(ctx.sessionManager.getBranch()).messages
+  const expected = JSON.stringify(content)
+  return activeMessages.some(
+    (message) => isHydrationMessage(message) && JSON.stringify(message.content) === expected,
+  )
+}
+
 export function registerHydrationContext(
   pi: ExtensionAPI,
   runtime: ClawaRuntimeState,
   options: { debugProbe: boolean },
 ): void {
-  pi.on('session_compact', async (_event, ctx) => {
-    await runtime.armHydration(ctx.cwd)
-    if (options.debugProbe && ctx.hasUI) {
-      ctx.ui.notify('claw: workspace context will reload on the next turn.', 'info')
-    }
-  })
-
-  pi.on('context', async (event, ctx) => {
+  const persistHydration = async (ctx: ExtensionContext): Promise<void> => {
     if (!runtime.extensionBootstrapped) return undefined
     runtime.ensureBootstrapped(ctx.cwd)
-
-    const baseMessages = Array.isArray(event.messages) ? event.messages : []
-    const withoutHydration = baseMessages.filter((message) => !isHydrationMessage(message))
-    const messages = boundHistoricalImages(withoutHydration)
-    const contextChanged =
-      withoutHydration.length !== baseMessages.length || messages !== withoutHydration
     const refresh = await refreshHydration(ctx.cwd, runtime)
     notifyHydrationRefresh(ctx, refresh, runtime.hydrationText, options.debugProbe)
-    const injected = buildHydrationMessage(runtime, ctx.model?.input.includes('image') === true)
-    if (!injected) {
-      return contextChanged ? { messages } : undefined
-    }
+    const hydration = buildHydrationMessage(runtime, ctx.model?.input.includes('image') === true)
+    if (!hydration || hasMatchingActiveHydration(ctx, hydration.content)) return
 
-    // Context transforms are non-persistent. Reapply one cached hydration block to every
-    // provider call so tool loops keep their continuity without accumulating copies.
-    return { messages: [injected, ...messages] }
+    pi.sendMessage(hydration, { triggerTurn: false })
+  }
+
+  pi.on('session_start', async (_event, ctx) => {
+    await persistHydration(ctx)
+  })
+
+  pi.on('session_compact', async (_event, ctx) => {
+    await runtime.armHydration(ctx.cwd)
+    await persistHydration(ctx)
   })
 }
