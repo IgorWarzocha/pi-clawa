@@ -1,11 +1,6 @@
-import type {
-  ClawaWorkerConfig,
-  ClawaWorkerReportMode,
-  ClawaWorkerThinkingLevel,
-} from '../config.js'
+import type { ClawaWorkerConfig, ClawaWorkerThinkingLevel } from '../config.js'
 
 export type WorkerThinkingLevel = ClawaWorkerThinkingLevel
-export type WorkerReportMode = ClawaWorkerReportMode
 export type WorkerDefinition = ClawaWorkerConfig
 
 export interface ClawasConfig {

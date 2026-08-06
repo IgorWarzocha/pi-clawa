@@ -11,7 +11,7 @@ function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return typeof error === 'object' && error !== null && 'code' in error
 }
 
-export function getClawasControlDir(): string {
+function getClawasControlDir(): string {
   const dirName = process.env['PI_CLAWAS_CONTROL_SOCKET_DIR']?.trim() || DEFAULT_CONTROL_SOCKET_DIR
   const projectRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || process.cwd()
   const rootDir =

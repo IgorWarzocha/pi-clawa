@@ -7,8 +7,8 @@ import {
   readEnvFile,
 } from '../shared/env.js';
 
-export const DEFAULT_PI_BIN = 'pi';
-export const DEFAULT_CHANNEL_POLICY = 'open-trigger' as const;
+const DEFAULT_PI_BIN = 'pi';
+const DEFAULT_CHANNEL_POLICY = 'open-trigger' as const;
 
 const DEFAULT_PROJECT_ROOT = process.env['PI_CWD']?.trim() || process.cwd();
 const DEFAULT_CONFIG_PATH = resolve(DEFAULT_PROJECT_ROOT, '.pi/clawa-discord/config.env');

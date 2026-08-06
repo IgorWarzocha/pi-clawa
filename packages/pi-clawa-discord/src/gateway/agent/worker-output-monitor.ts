@@ -50,7 +50,7 @@ export function stopWorkerOutputMonitors(): void {
   workers.clear();
 }
 
-export function ensureWorkerOutputMonitor(workerId: string): void {
+function ensureWorkerOutputMonitor(workerId: string): void {
   if (!running) return;
   if (workers.has(workerId)) return;
   const state: WorkerOutputState = {

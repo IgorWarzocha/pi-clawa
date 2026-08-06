@@ -10,7 +10,7 @@ export type FinalRouteTarget =
 	| { kind: 'main-clawa' }
 	| { kind: 'quiet' };
 
-export interface FinalRouteBlock {
+interface FinalRouteBlock {
 	target: FinalRouteTarget;
 	text: string;
 }

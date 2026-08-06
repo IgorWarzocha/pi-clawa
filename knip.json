@@ -1,17 +1,18 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "includeEntryExports": true,
   "workspaces": {
     ".": {
       "entry": ["tests/*.test.ts", "src/**/*.test.ts"],
       "project": ["src/**/*.ts", "tests/**/*.ts"]
+    },
+    "packages/pi-clawa-discord": {
+      "entry": ["*.test.ts", "src/gateway/cli/index.ts"],
+      "project": ["*.test.ts", "src/**/*.ts"],
+      "ignoreDependencies": ["pino-pretty", "tsx"]
+    },
+    "website": {
+      "project": ["src/**/*.{ts,astro}"]
     }
-  },
-  "ignoreIssues": {
-    "src/config.ts": ["exports"],
-    "src/gui-primitives.ts": ["types"],
-    "src/clawas/**/*.ts": ["exports", "types"],
-    "packages/pi-clawa-discord/index.ts": ["exports"]
-  },
-  "ignore": ["packages/pi-clawa-discord/src/gateway/**"],
-  "ignoreDependencies": ["pino-pretty", "tsx"]
+  }
 }

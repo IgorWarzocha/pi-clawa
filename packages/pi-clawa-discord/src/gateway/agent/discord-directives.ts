@@ -1,4 +1,4 @@
-export interface ParsedDiscordReaction {
+interface ParsedDiscordReaction {
   handle: string;
   emoji: string;
 }

@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
 import { reportError } from './errors.js';
-import { formatHelpText, printHelp } from './help.js';
+import { printHelp } from './help.js';
 import { isDirectExecution, maybeRunFirstTimeSetup } from './startup.js';
 
-export { formatHelpText };
-
-export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
   const [command] = argv;
 
   switch (command) {
@@ -31,7 +29,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
   }
 }
 
-export async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {
+async function runCli(argv: string[] = process.argv.slice(2)): Promise<void> {
   const command = argv[0];
 
   try {

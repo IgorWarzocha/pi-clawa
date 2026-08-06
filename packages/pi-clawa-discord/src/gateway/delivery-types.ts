@@ -1,4 +1,4 @@
-export type DiscordButtonStyle = 'primary' | 'secondary' | 'success' | 'danger'
+type DiscordButtonStyle = 'primary' | 'secondary' | 'success' | 'danger'
 
 export interface DiscordFileInput {
   path: string
@@ -6,7 +6,7 @@ export interface DiscordFileInput {
   spoiler?: boolean | undefined
 }
 
-export interface DiscordModalInput {
+interface DiscordModalInput {
   title: string
   label: string
   prompt?: string | undefined
@@ -22,7 +22,7 @@ export interface DiscordActionInput {
   modal?: DiscordModalInput | undefined
 }
 
-export interface DiscordSelectOptionInput {
+interface DiscordSelectOptionInput {
   label: string
   prompt?: string | undefined
   description?: string | undefined
@@ -42,7 +42,7 @@ export interface DiscordPollInput {
   allowMultiselect?: boolean | undefined
 }
 
-export interface DiscordReactionInput {
+interface DiscordReactionInput {
   channelJid: string
   messageId: string
   emoji: string

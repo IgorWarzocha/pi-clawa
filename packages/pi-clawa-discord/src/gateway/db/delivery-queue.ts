@@ -76,7 +76,7 @@ export function markDiscordDeliveryDone(rowid: number, result: DiscordDeliveryRe
 	markDiscordDeliveryDoneInDb(getDb(), rowid, result);
 }
 
-export function markDiscordDeliveryDoneInDb(
+function markDiscordDeliveryDoneInDb(
 	db: Database.Database,
 	rowid: number,
 	result: DiscordDeliveryResult,
@@ -210,6 +210,6 @@ export function deliveryNonceForKey(deliveryKey: string): string {
 	return createHash("sha256").update(deliveryKey).digest("hex").slice(0, 24);
 }
 
-export function discordDeliveryRetryDelayMs(attempt: number): number {
+function discordDeliveryRetryDelayMs(attempt: number): number {
 	return Math.min(30_000, 1_000 * 2 ** Math.max(0, attempt - 1));
 }

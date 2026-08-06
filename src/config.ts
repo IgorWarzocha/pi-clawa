@@ -13,7 +13,7 @@ export interface ClawaConfig {
 }
 
 export type ClawaWorkerThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
-export type ClawaWorkerReportMode = 'auto' | 'explicit' | 'off'
+type ClawaWorkerReportMode = 'auto' | 'explicit' | 'off'
 
 export interface ClawaWorkerConfig {
   id: string
@@ -45,7 +45,7 @@ export interface ClawaDefaults {
   memoryPass: ClawaMemoryPassConfig
 }
 
-export const DEFAULT_CLAWA_MEMORY_PASS_CONFIG: ClawaMemoryPassConfig = {
+const DEFAULT_CLAWA_MEMORY_PASS_CONFIG: ClawaMemoryPassConfig = {
   enabled: true,
   triggerPercent: 90,
 }
@@ -297,10 +297,6 @@ export function ensureClawEnvironmentConfig(repoRoot: string): {
   return { path, config: DEFAULT_CONFIG, created: true }
 }
 
-export function isClawEnvironmentBootstrapped(repoRoot: string): boolean {
-  return ensureClawEnvironmentConfig(repoRoot).config.bootstrapped === true
-}
-
 export function markClawEnvironmentBootstrapped(repoRoot: string): {
   path: string
   config: ClawEnvironmentConfig
@@ -311,7 +307,7 @@ export function markClawEnvironmentBootstrapped(repoRoot: string): {
   return { path, config: next }
 }
 
-export function saveClawEnvironmentConfig(repoRoot: string, config: ClawEnvironmentConfig): string {
+function saveClawEnvironmentConfig(repoRoot: string, config: ClawEnvironmentConfig): string {
   const path = getClawEnvironmentConfigPath(repoRoot)
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, 'utf8')

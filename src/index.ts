@@ -30,6 +30,7 @@ process.env['PI_CLAW_EXTENSION_PATH'] = extensionPath
 // Leave false by default. Turn on only when tracing hydration, then turn it back off.
 const DEBUG_HYDRATION_PROBE = false
 
+/** @public Pi loads the package extension through this default export. */
 export default function howabouaClaw(pi: ExtensionAPI): void {
   const clawasRuntime = new ClawasRuntime()
   const pulseRuntime = new PulseRuntime(pi, clawasRuntime)

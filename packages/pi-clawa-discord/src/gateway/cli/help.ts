@@ -1,4 +1,4 @@
-export function formatHelpText(): string {
+function formatHelpText(): string {
   return [
     'pi-clawa-discord - Clawa Discord gateway internals',
     '',

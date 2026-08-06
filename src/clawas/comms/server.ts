@@ -27,12 +27,7 @@ import {
   shouldTriggerTurn,
 } from './server-messages.js'
 
-export {
-  buildClawasMailContext,
-  buildMessageDetails,
-  buildWorkerUserMessage,
-  shouldDeliverClawasMailAsUserMessage,
-}
+export { buildMessageDetails, buildWorkerUserMessage, shouldDeliverClawasMailAsUserMessage }
 
 import type { ClawasCommsCommand, ClawasRpcResponse, ClawasSendCommand } from './types.js'
 
