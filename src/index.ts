@@ -7,8 +7,6 @@ import {
   registerSteerCommand,
 } from './clawas/steer-command.js'
 import { registerClawasTools } from './clawas/tool-surface.js'
-import { createCompactionPolicyState, registerCompactionPolicy } from './compaction-policy.js'
-import { registerCompactionSidecar } from './compaction-sidecar.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
 import { registerContextOverflowNormalization } from './context-overflow.js'
 import { registerClawCommand } from './extension/claw-command.js'
@@ -19,6 +17,7 @@ import { registerClawaRenderers } from './extension/renderers.js'
 import { ClawaRuntimeState } from './extension/runtime-state.js'
 import { registerClawaSessionEvents } from './extension/session-events.js'
 import { registerRememberTool } from './memory.js'
+import { registerMemoryPass } from './memory-pass.js'
 import { registerNestedAgentsAutoload } from './nested-agents.js'
 import { registerPulseCommand } from './pulses/command.js'
 import { PulseRuntime } from './pulses/runtime.js'
@@ -33,19 +32,9 @@ const DEBUG_HYDRATION_PROBE = false
 
 export default function howabouaClaw(pi: ExtensionAPI): void {
   const clawasRuntime = new ClawasRuntime()
-  const compactionPolicyState = createCompactionPolicyState()
-  const pulseRuntime = new PulseRuntime(
-    pi,
-    clawasRuntime,
-    undefined,
-    compactionPolicyState.waitUntilReady,
-  )
+  const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
   const runtime = new ClawaRuntimeState()
-  const commsServer = new ClawasCommsServer(
-    pi,
-    () => getWorkerAlias(),
-    compactionPolicyState.waitUntilReady,
-  )
+  const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias())
   let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
 
   const setDefaults = (defaults: typeof DEFAULT_CLAWA_DEFAULTS) => {
@@ -56,11 +45,9 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerRememberTool(pi)
   registerRecallTool(pi)
   registerContextOverflowNormalization(pi)
-  registerCompactionSidecar(pi, () => currentClawaDefaults.compaction)
-  registerCompactionPolicy(pi, () => currentClawaDefaults.compaction, compactionPolicyState)
+  registerMemoryPass(pi, () => currentClawaDefaults.memoryPass)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)
-  registerHydrationContext(pi, runtime, { debugProbe: DEBUG_HYDRATION_PROBE })
   registerClawaRenderers(pi, () => currentClawaDefaults)
 
   if (!IS_CLAWAS_WORKER) {
@@ -71,5 +58,7 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   }
 
   registerClawaSessionEvents(pi, { runtime, clawasRuntime, pulseRuntime, commsServer, setDefaults })
+  // Session setup/bootstrap arms hydration before this later handler persists it.
+  registerHydrationContext(pi, runtime, { debugProbe: DEBUG_HYDRATION_PROBE })
   registerClawCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
 }

@@ -34,18 +34,15 @@ export class PulseRuntime {
   private readonly pi: ExtensionAPI
   private readonly clawasRuntime: ClawasRuntime
   private readonly sendWorkerSessionMessage: PulseWorkerSender
-  private readonly waitUntilReady: () => Promise<boolean>
 
   constructor(
     pi: ExtensionAPI,
     clawasRuntime: ClawasRuntime,
     sendWorkerSessionMessage: PulseWorkerSender = sendClawasSessionMessage,
-    waitUntilReady: () => Promise<boolean> = () => Promise.resolve(true),
   ) {
     this.pi = pi
     this.clawasRuntime = clawasRuntime
     this.sendWorkerSessionMessage = sendWorkerSessionMessage
-    this.waitUntilReady = waitUntilReady
   }
 
   attach(context: ExtensionContext): void {
@@ -134,9 +131,6 @@ export class PulseRuntime {
     forced: boolean,
     nowMs: number,
   ): Promise<void> {
-    if (!(await this.waitUntilReady())) {
-      throw new Error('Clawa session changed before pulse delivery')
-    }
     const ctx = this.requireContext()
     const queued = !ctx.isIdle()
     const instruction = buildPulseInstruction(pulse, { forced, queued, nowMs })
