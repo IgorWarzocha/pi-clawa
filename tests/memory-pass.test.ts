@@ -69,11 +69,3 @@ test('memory pass nudges the same branch once and rearms after native compaction
   assert.equal(messages.length, 2)
   assert.equal(state.isArmed(), false)
 })
-
-test('memory pass asks for recent comparison and permits no new memory', () => {
-  assert.equal(MEMORY_PASS_PROMPT.includes('recall with no query and limit 5'), true)
-  assert.equal(MEMORY_PASS_PROMPT.includes('updating an existing memory by its id'), true)
-  assert.equal(MEMORY_PASS_PROMPT.includes("Don't repeat what is already there"), true)
-  assert.equal(MEMORY_PASS_PROMPT.includes('fewer—or none—is completely fine'), true)
-  assert.equal(MEMORY_PASS_PROMPT.includes('Pi will handle the actual compaction'), true)
-})

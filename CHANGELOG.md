@@ -6,6 +6,10 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
+No changes recorded yet.
+
+## [0.2.0] - 2026-08-06
+
 ### Changed
 
 - Pi is now the sole compaction owner. At 90% of the active model's context window, Clawa gets one
@@ -66,5 +70,6 @@ The first public release of pi-clawa.
 - Bootstrap protects existing homes rather than merging them. Any existing core home document
   blocks automatic setup.
 
-[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.2.0
 [0.1.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.1.0
