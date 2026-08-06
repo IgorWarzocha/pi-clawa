@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { scoreText } from './scoring.js'
+import { createReadStream, existsSync } from 'node:fs'
+import { createInterface } from 'node:readline'
+import { compareResults, scoreText } from './scoring.js'
 import type { RecallResult, SessionRole } from './types.js'
 
 type SessionEntryRecord = Record<string, unknown> & {
@@ -7,8 +8,6 @@ type SessionEntryRecord = Record<string, unknown> & {
   id?: string
   timestamp?: string
 }
-
-const LINE_SPLIT_REGEX = /\r?\n/
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
@@ -86,30 +85,52 @@ function sessionTimestamp(entry: SessionEntryRecord): number {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
-export function searchSessionFile(file: string, tokens: readonly string[]): RecallResult[] {
-  if (!existsSync(file)) return []
-  const lines = readFileSync(file, 'utf8').split(LINE_SPLIT_REGEX)
-  const results: RecallResult[] = []
+function buildRecallResult(
+  entry: SessionEntryRecord,
+  file: string,
+  line: number,
+  tokens: readonly string[],
+): RecallResult | undefined {
+  const extracted = extractSessionText(entry)
+  if (!extracted) return undefined
+  const score = scoreText(extracted.text, tokens)
+  if (score <= 0) return undefined
+  return {
+    source: 'session',
+    score: score + (extracted.role === 'compaction' ? 1 : 0),
+    timestamp: sessionTimestamp(entry),
+    text: extracted.text,
+    sessionFile: file,
+    line,
+    entryId: typeof entry.id === 'string' ? entry.id : undefined,
+    role: extracted.role,
+    label: `session ${extracted.role}`,
+  }
+}
 
-  for (const [index, line] of lines.entries()) {
+export async function searchSessionFile(
+  file: string,
+  tokens: readonly string[],
+  limit: number,
+): Promise<RecallResult[]> {
+  if (!existsSync(file)) return []
+  const results: RecallResult[] = []
+  const lines = createInterface({
+    input: createReadStream(file, 'utf8'),
+    crlfDelay: Number.POSITIVE_INFINITY,
+  })
+  let index = 0
+
+  for await (const line of lines) {
+    index += 1
     if (!line.trim()) continue
     const entry = parseSessionLine(line)
     if (!entry) continue
-    const extracted = extractSessionText(entry)
-    if (!extracted) continue
-    const score = scoreText(extracted.text, tokens)
-    if (score <= 0) continue
-    results.push({
-      source: 'session',
-      score: score + (extracted.role === 'compaction' ? 1 : 0),
-      timestamp: sessionTimestamp(entry),
-      text: extracted.text,
-      sessionFile: file,
-      line: index + 1,
-      entryId: typeof entry.id === 'string' ? entry.id : undefined,
-      role: extracted.role,
-      label: `session ${extracted.role}`,
-    })
+    const result = buildRecallResult(entry, file, index, tokens)
+    if (!result) continue
+    results.push(result)
+    results.sort(compareResults)
+    if (results.length > limit) results.length = limit
   }
 
   return results

@@ -10,7 +10,7 @@ import {
 import { publishClawasDeliveryMessage } from './comms/outbound.js'
 import { shouldSkipAutoMainClawStatusRelay } from './comms/report-back-helpers.js'
 import type { ClawasDiscordContext } from './comms/types.js'
-import { getClawasConfigPath, loadClawasConfig } from './config-loader.js'
+import { loadClawasConfig } from './config-loader.js'
 import type { ClawasRuntime } from './runtime.js'
 import type { WorkerDefinition } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
@@ -42,16 +42,21 @@ function manualSessionError(title: string, clawasName: string) {
   }
 }
 
+export function formatClawaDeliveryReceipt(title: string): string {
+  return `Delivered private note to ${title}.`
+}
+
 export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): void {
-  const configPath = getClawasConfigPath(process.cwd())
   if (process.env['PI_CLAWAS_ROLE'] === 'worker') {
     pi.registerTool({
       name: 'message_main_claw',
-      label: 'Message Clawa',
-      description: `Private route to ${runtime.getClawaDefaults().mainClawName}. Use it for internal-only notes, clawa handoffs, and private coordination. Send at most one private status per turn.`,
+      label: 'Message main Clawa',
+      description:
+        'Send a private note to the main Clawa for internal coordination or a handoff. Send at most one private status per turn.',
+      promptSnippet: 'Send a private note to the main Clawa',
       parameters: Type.Object({
         message: Type.String({
-          description: `Private note for ${runtime.getClawaDefaults().mainClawName}. This is delivered only through the private Clawas lane.`,
+          description: 'Private note delivered only through the Clawas lane',
         }),
       }),
       async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -123,13 +128,15 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
   pi.registerTool({
     name: 'message_clawa',
     label: 'Message Clawa',
-    description: `Private sideband route to another Clawas worker by claw name or title from ${configPath}. Use this for worker-to-worker coordination inside the clawa.`,
+    description:
+      'Send a private coordination note to another configured Clawa by name or title. Use when that Clawa should act or reply in its own lane.',
+    promptSnippet: 'Send a private note to another Clawa',
     parameters: Type.Object({
       claw: Type.String({
-        description: `Target worker name or title from ${configPath}, like tech-a-clawa or job-a-clawa.`,
+        description: 'Configured Clawa name or title',
       }),
       message: Type.String({
-        description: 'The private coordination note you want to send to that worker inside Clawas.',
+        description: 'Private coordination note',
       }),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
@@ -141,7 +148,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
             content: [
               {
                 type: 'text',
-                text: `Unknown ${runtime.getClawaDefaults().clawasName} claw: ${params.claw}`,
+                text: `Unknown ${runtime.getClawaDefaults().clawasName} claw: ${params.claw}. Use a configured Clawa name or title.`,
               },
             ],
             details: { workerId: params.claw },
@@ -171,7 +178,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
           content: [
             {
               type: 'text',
-              text: `Delivered to ${definition.title}:\n\n${params.message}`,
+              text: formatClawaDeliveryReceipt(definition.title),
             },
           ],
           details: { workerId: definition.id },

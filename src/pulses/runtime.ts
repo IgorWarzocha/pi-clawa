@@ -84,6 +84,7 @@ export class PulseRuntime {
       const duePulses = collectDuePulses(pulses, state, nowMs)
       const delayedHeyPulses = findHeyClawaCollisions(duePulses)
       changed = delayHeyClawaPulses(state, delayedHeyPulses, nowMs) || changed
+      if (changed) await writePulseState(ctx.cwd, state)
 
       for (const { pulse, dueKey } of duePulses) {
         if (delayedHeyPulses.has(pulse)) continue
@@ -96,10 +97,9 @@ export class PulseRuntime {
           lastDueKey: dueKey ?? entry?.lastDueKey,
           deferUntil: undefined,
         }
-        changed = true
+        // Checkpoint each successful delivery so a later pulse failure cannot replay it.
+        await writePulseState(ctx.cwd, state)
       }
-
-      if (changed) await writePulseState(ctx.cwd, state)
     } finally {
       this.running = false
     }

@@ -22,8 +22,8 @@ export interface ClawaWorkerConfig {
   cwd: string
   discordEnabled?: boolean | undefined
   extensions?: string[] | undefined
-  enabled?: boolean | undefined
-  autostart?: boolean | undefined
+  enabled: boolean
+  autostart: boolean
   startupPrompt?: string | undefined
   model?: string | undefined
   thinking?: ClawaWorkerThinkingLevel | undefined
@@ -90,8 +90,10 @@ function asString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
-function asBoolean(value: unknown): boolean | undefined {
-  return typeof value === 'boolean' ? value : undefined
+function asBoolean(value: unknown, label: string): boolean | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== 'boolean') throw new Error(`${label} must be a boolean`)
+  return value
 }
 
 function asRecord(value: unknown, label: string): Record<string, unknown> {
@@ -101,15 +103,19 @@ function asRecord(value: unknown, label: string): Record<string, unknown> {
   return value as Record<string, unknown>
 }
 
-function asStringArray(value: unknown): string[] | undefined {
-  if (!Array.isArray(value)) return undefined
-  const items = value
-    .map((entry) => asString(entry))
-    .filter((entry): entry is string => Boolean(entry))
-  return items.length > 0 ? items : undefined
+function asStringArray(value: unknown, label: string): string[] | undefined {
+  if (value === undefined) return undefined
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array of strings`)
+  const items = value.map((entry) => asString(entry))
+  if (items.some((entry) => entry === undefined)) {
+    throw new Error(`${label} must contain non-empty strings`)
+  }
+  const strings = items.filter((entry): entry is string => entry !== undefined)
+  return strings.length > 0 ? strings : undefined
 }
 
-function asThinkingLevel(value: unknown): ClawaWorkerThinkingLevel | undefined {
+function asThinkingLevel(value: unknown, label: string): ClawaWorkerThinkingLevel | undefined {
+  if (value === undefined) return undefined
   if (
     value === 'off' ||
     value === 'minimal' ||
@@ -120,12 +126,13 @@ function asThinkingLevel(value: unknown): ClawaWorkerThinkingLevel | undefined {
   ) {
     return value
   }
-  return undefined
+  throw new Error(`${label} must be off, minimal, low, medium, high, or xhigh`)
 }
 
-function asReportMode(value: unknown): ClawaWorkerReportMode | undefined {
+function asReportMode(value: unknown, label: string): ClawaWorkerReportMode | undefined {
+  if (value === undefined) return undefined
   if (value === 'auto' || value === 'explicit' || value === 'off') return value
-  return undefined
+  throw new Error(`${label} must be auto, explicit, or off`)
 }
 
 function normalizeWorker(item: unknown, index: number): ClawaWorkerConfig {
@@ -134,25 +141,33 @@ function normalizeWorker(item: unknown, index: number): ClawaWorkerConfig {
   const cwd = asString(rec['cwd']) ?? asString(rec['workspace'])
   if (!id) throw new Error(`clawas.workers[${index}] is missing a string id`)
   if (!cwd) throw new Error(`clawas.workers[${index}] is missing a string cwd`)
+  const label = `clawas.workers[${index}]`
   return {
     id,
     title: asString(rec['title']) ?? id,
     emoji: asString(rec['emoji']),
     cwd,
-    discordEnabled: asBoolean(rec['discordEnabled']),
-    extensions: asStringArray(rec['extensions']),
-    enabled: asBoolean(rec['enabled']),
-    autostart: asBoolean(rec['autostart']),
+    discordEnabled: asBoolean(rec['discordEnabled'], `${label}.discordEnabled`) ?? false,
+    extensions: asStringArray(rec['extensions'], `${label}.extensions`),
+    enabled: asBoolean(rec['enabled'], `${label}.enabled`) ?? true,
+    autostart: asBoolean(rec['autostart'], `${label}.autostart`) ?? true,
     startupPrompt: asString(rec['startupPrompt']) ?? asString(rec['initialPrompt']),
     model: asString(rec['model']),
-    thinking: asThinkingLevel(rec['thinking']),
-    reportMode: asReportMode(rec['reportMode']),
+    thinking: asThinkingLevel(rec['thinking'], `${label}.thinking`),
+    reportMode: asReportMode(rec['reportMode'], `${label}.reportMode`),
   }
 }
 
 function normalizeWorkers(input: unknown): ClawaWorkerConfig[] {
   if (!Array.isArray(input)) throw new Error('clawas.workers must be an array')
-  return input.map(normalizeWorker)
+  const workers = input.map(normalizeWorker)
+  const ids = new Set<string>()
+  for (const worker of workers) {
+    const normalizedId = worker.id.toLowerCase()
+    if (ids.has(normalizedId)) throw new Error(`Duplicate Clawas worker id: ${worker.id}`)
+    ids.add(normalizedId)
+  }
+  return workers
 }
 
 function normalizeMemoryPassConfig(input: unknown): ClawaMemoryPassConfig {

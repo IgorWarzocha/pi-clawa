@@ -2,7 +2,7 @@ import type { RecallResult } from './types.js'
 
 export const DEFAULT_RECALL_LIMIT = 10
 export const MAX_RECALL_LIMIT = 25
-export const MAX_SESSION_FILES = 20
+export const MAX_SESSION_FILES = 5
 
 const WORD_REGEX = /[\p{L}\p{N}_-]+/gu
 

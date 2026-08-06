@@ -1,5 +1,7 @@
 import * as net from 'node:net'
+import { isRpcResponse } from '../rpc-guards.js'
 import { resolveSocketPath } from './paths.js'
+import { parseLastMessageData, parseSessionStatusData } from './protocol.js'
 import type {
   ClawasCommsCommand,
   ClawasDiscordContext,
@@ -21,6 +23,23 @@ interface SendCommandOptions {
   kind?: ClawasMessageKind
   intent?: ClawasMessageIntent
   visibility?: ClawasMessageVisibility
+}
+
+function takeJsonLines(buffer: string): { lines: string[]; rest: string } {
+  const parts = buffer.split('\n')
+  return { lines: parts.slice(0, -1).map((line) => line.trim()), rest: parts.at(-1) ?? '' }
+}
+
+function parseResponseLine(
+  line: string,
+  expectedCommand: ClawasCommsCommand['type'],
+): ClawasRpcResponse {
+  const response: unknown = JSON.parse(line)
+  if (!isRpcResponse(response)) throw new Error('response has an invalid shape')
+  if (response.command !== expectedCommand) {
+    throw new Error(`response command ${response.command} does not match ${expectedCommand}`)
+  }
+  return response
 }
 
 async function waitForSocketTarget(target: string, timeoutMs = 3_000): Promise<void> {
@@ -57,9 +76,17 @@ async function sendRpcCommand(
     }, timeout)
 
     let buffer = ''
+    let settled = false
     const cleanup = () => {
       clearTimeout(timeoutHandle)
       socket.removeAllListeners()
+    }
+    const fail = (error: Error) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      socket.destroy()
+      reject(error)
     }
 
     socket.on('connect', () => {
@@ -68,33 +95,31 @@ async function sendRpcCommand(
 
     socket.on('data', (chunk) => {
       buffer += chunk
-      let newlineIndex = buffer.indexOf('\n')
-      while (newlineIndex !== -1) {
-        const line = buffer.slice(0, newlineIndex).trim()
-        buffer = buffer.slice(newlineIndex + 1)
-        newlineIndex = buffer.indexOf('\n')
-        if (!line) {
-          continue
-        }
-
+      const framed = takeJsonLines(buffer)
+      buffer = framed.rest
+      for (const line of framed.lines.filter(Boolean)) {
         try {
-          const response = JSON.parse(line) as ClawasRpcResponse
-          if (response.type === 'response') {
-            cleanup()
-            socket.end()
-            resolve(response)
-            return
-          }
-        } catch {
-          // Ignore parse errors and keep reading.
+          const response = parseResponseLine(line, command.type)
+          settled = true
+          cleanup()
+          socket.end()
+          resolve(response)
+          return
+        } catch (error) {
+          fail(
+            new Error(
+              `Invalid Clawas response from ${target}: ${error instanceof Error ? error.message : String(error)}`,
+            ),
+          )
+          return
         }
       }
     })
 
     socket.on('error', (error) => {
-      cleanup()
-      reject(error)
+      fail(error)
     })
+    socket.on('end', () => fail(new Error(`Clawas session ${target} closed without a response`)))
   })
 }
 
@@ -129,8 +154,7 @@ export async function getClawasLastAssistantMessage(
     throw new Error(response.error ?? `Failed to read Clawas message from ${target}`)
   }
 
-  const data = response.data as { message?: ClawasExtractedMessage | null } | undefined
-  return data?.message ?? null
+  return parseLastMessageData(response.data)
 }
 
 export async function getClawasSessionStatus(
@@ -144,11 +168,11 @@ export async function getClawasSessionStatus(
       return response.error?.includes('manual session') ? { kind: 'manual' } : null
     }
 
-    const data = response.data as { isIdle?: unknown; hasPendingMessages?: unknown } | undefined
+    const data = parseSessionStatusData(response.data)
     return {
       kind: 'managed',
-      isIdle: data?.isIdle === true,
-      hasPendingMessages: data?.hasPendingMessages === true,
+      isIdle: data.isIdle,
+      hasPendingMessages: data.hasPendingMessages,
     }
   } catch {
     return null

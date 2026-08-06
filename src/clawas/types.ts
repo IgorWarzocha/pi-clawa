@@ -1,21 +1,12 @@
-export type WorkerThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+import type {
+  ClawaWorkerConfig,
+  ClawaWorkerReportMode,
+  ClawaWorkerThinkingLevel,
+} from '../config.js'
 
-export type WorkerReportMode = 'auto' | 'explicit' | 'off'
-
-export interface WorkerDefinition {
-  id: string
-  title: string
-  emoji?: string | undefined
-  cwd: string
-  discordEnabled?: boolean | undefined
-  extensions?: string[] | undefined
-  enabled: boolean
-  autostart: boolean
-  startupPrompt?: string | undefined
-  model?: string | undefined
-  thinking?: WorkerThinkingLevel | undefined
-  reportMode?: WorkerReportMode | undefined
-}
+export type WorkerThinkingLevel = ClawaWorkerThinkingLevel
+export type WorkerReportMode = ClawaWorkerReportMode
+export type WorkerDefinition = ClawaWorkerConfig
 
 export interface ClawasConfig {
   workers: WorkerDefinition[]

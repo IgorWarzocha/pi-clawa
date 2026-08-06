@@ -13,6 +13,7 @@ import {
   removeSocket,
   syncSocketAlias,
 } from './paths.js'
+import { parseClawasCommsCommand } from './protocol.js'
 import {
   buildClawasMailContext,
   buildMessageDetails,
@@ -47,11 +48,8 @@ function parseCommand(line: string): {
   error?: string
 } {
   try {
-    const parsed = JSON.parse(line) as ClawasCommsCommand
-    if (!parsed || typeof parsed !== 'object' || typeof parsed.type !== 'string') {
-      return { error: 'Invalid command' }
-    }
-    return { command: parsed }
+    const parsed = parseClawasCommsCommand(JSON.parse(line))
+    return 'value' in parsed ? { command: parsed.value } : { error: parsed.error }
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : 'Failed to parse command',
