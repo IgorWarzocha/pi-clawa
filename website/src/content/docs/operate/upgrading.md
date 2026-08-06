@@ -16,7 +16,7 @@ checkout:
 ```bash
 cd ~/src/pi-clawa
 git fetch --tags origin
-git checkout v0.1.0
+git checkout v0.2.0
 ```
 
 Start the home again with `pi -c`. Clawa reads existing `.pi/claw.jsonc` and living documents. It

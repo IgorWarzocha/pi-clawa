@@ -48,7 +48,7 @@ Keep the package checkout separate from the clean folder that will become the Cl
 releases are the stable update channel.
 
 ```sh
-git clone --branch v0.1.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
+git clone --branch v0.2.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
 mkdir -p ~/clawa-home
 cd ~/clawa-home
 pi -e /absolute/path/to/pi-clawa

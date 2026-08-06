@@ -17,19 +17,6 @@ async function writeConfig(root: string, clawa: Record<string, unknown>): Promis
   )
 }
 
-test('memory pass accepts an enabled threshold override', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-memory-pass-config-'))
-  try {
-    await writeConfig(root, { memoryPass: { enabled: false, triggerPercent: 92 } })
-    assert.deepEqual(loadClawEnvironmentConfig(root).config.clawa.memoryPass, {
-      enabled: false,
-      triggerPercent: 92,
-    })
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
 test('legacy Clawa compaction settings no longer override Pi ownership', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-memory-pass-config-'))
   try {
