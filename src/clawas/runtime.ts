@@ -21,6 +21,18 @@ function fingerprintConfig(config: ClawasConfig): string {
   return JSON.stringify(config.workers)
 }
 
+export async function startClawasDaemon<T extends Pick<ClawasDaemon, 'start' | 'dispose'>>(
+  daemon: T,
+): Promise<T> {
+  try {
+    await daemon.start()
+    return daemon
+  } catch (error) {
+    await daemon.dispose().catch(() => {})
+    throw error
+  }
+}
+
 /**
  * Thin UI/runtime shell around the daemon.
  * It keeps widget lifecycle and repaint timing out of the worker orchestration code.
@@ -29,7 +41,6 @@ export class ClawasRuntime {
   private context: ExtensionContext | null = null
   private daemon: ClawasDaemon | null = null
   private interval: ReturnType<typeof setInterval> | null = null
-  private daemonStarted = false
   private configFingerprint: string | null = null
   private lifecycle: Promise<void> = Promise.resolve()
   private clawaDefaults: ClawaDefaults = DEFAULT_CLAWA_DEFAULTS
@@ -185,7 +196,6 @@ export class ClawasRuntime {
       await this.daemon.dispose()
       this.daemon = null
     }
-    this.daemonStarted = false
     if (this.context?.hasUI) {
       this.ui.clear(this.context)
     }
@@ -218,20 +228,21 @@ export class ClawasRuntime {
       await this.disposeDaemon(true)
     }
 
-    if (this.daemonStarted && this.daemon) {
+    if (this.daemon) {
       if (this.configFingerprint === nextFingerprint) {
         return
       }
       await this.disposeDaemon(false)
     }
 
-    this.createDaemon(context, config)
-    this.configFingerprint = nextFingerprint
-
+    const daemon = this.createDaemon(context, config)
     try {
-      const daemon = this.requireDaemon()
-      await daemon.start()
-      this.notifyDaemonStarted(configPath)
+      await startClawasDaemon(daemon)
+      this.daemon = daemon
+      this.configFingerprint = nextFingerprint
+      this.ensureStarted()
+      this.showMonitor(context)
+      this.notifyDaemonStarted(configPath, daemon)
     } catch (error) {
       this.notifyDaemonFailed(error)
       throw error
@@ -260,10 +271,11 @@ export class ClawasRuntime {
     if (this.context?.hasUI) this.ui.clear(this.context)
   }
 
-  private createDaemon(context: ExtensionContext, config: ClawasConfig): void {
-    this.daemon = new ClawasDaemon(context.cwd, config, () => this.render(), this.clawaDefaults)
-    this.daemonStarted = true
-    this.ensureStarted()
+  private createDaemon(context: ExtensionContext, config: ClawasConfig): ClawasDaemon {
+    return new ClawasDaemon(context.cwd, config, () => this.render(), this.clawaDefaults)
+  }
+
+  private showMonitor(context: ExtensionContext): void {
     this.ui.showMonitor(
       context,
       () => this.daemon?.getState(),
@@ -272,9 +284,9 @@ export class ClawasRuntime {
     )
   }
 
-  private notifyDaemonStarted(configPath: string): void {
-    if (!(this.context?.hasUI && this.daemon)) return
-    const workerCount = this.daemon.getState().workers.length
+  private notifyDaemonStarted(configPath: string, daemon: ClawasDaemon): void {
+    if (!this.context?.hasUI) return
+    const workerCount = daemon.getState().workers.length
     this.context.ui.notify(
       `${this.clawaDefaults.clawasName} loaded ${workerCount} worker${workerCount === 1 ? '' : 's'} from ${configPath}.`,
       'info',
@@ -282,7 +294,6 @@ export class ClawasRuntime {
   }
 
   private notifyDaemonFailed(error: unknown): void {
-    this.daemonStarted = false
     if (!this.context?.hasUI) return
     this.context.ui.notify(
       `${this.clawaDefaults.clawasName} daemon failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -318,7 +329,6 @@ export class ClawasRuntime {
       await this.daemon.dispose()
       this.daemon = null
     }
-    this.daemonStarted = false
     this.configFingerprint = null
   }
 

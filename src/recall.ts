@@ -15,13 +15,18 @@ import type { RecallResult, RecallSearchInput } from './recall/types.js'
 
 export type { RecallResult, RecallSearchInput } from './recall/types.js'
 
-export function searchRecall(input: RecallSearchInput): RecallResult[] {
+export async function searchRecall(input: RecallSearchInput): Promise<RecallResult[]> {
   const tokens = tokenize(input.query)
   const limit = normalizeLimit(input.limit)
-  const memoryResults = searchMemory(input, tokens)
-  const sessionResults = dedupeFiles(input.sessionFiles ?? []).flatMap((file) =>
-    searchSessionFile(file, tokens),
-  )
+  const memoryResults = searchMemory(input, tokens, limit)
+  if (tokens.length === 0 && memoryResults.length >= limit) return memoryResults
+
+  const sessionResults: RecallResult[] = []
+  for (const file of dedupeFiles(input.sessionFiles ?? [])) {
+    sessionResults.push(...(await searchSessionFile(file, tokens, limit)))
+    sessionResults.sort(compareResults)
+    if (sessionResults.length > limit) sessionResults.length = limit
+  }
   return [...memoryResults, ...sessionResults].sort(compareResults).slice(0, limit)
 }
 
@@ -59,7 +64,7 @@ export function registerRecallTool(pi: ExtensionAPI): void {
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
       try {
-        const results = searchRecall({
+        const results = await searchRecall({
           cwd: ctx.cwd,
           query: typeof params.query === 'string' ? params.query : undefined,
           tags: Array.isArray(params.tags) ? params.tags : undefined,

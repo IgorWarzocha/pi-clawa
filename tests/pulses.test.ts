@@ -27,6 +27,7 @@ const WAKE_TIME_PATTERN =
   /Wake time: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC[+-]\d{2}:\d{2} \([^)]+\)/u
 const QUIET_HOURS_PATTERN = /Quiet hours: 23:00-08:00 local time/u
 const MANUAL_QUIET_BYPASS_PATTERN = /Quiet hours: 23:00-08:00 local time \(manual run-now bypass\)/u
+const BETA_DELIVERY_ERROR_PATTERN = /beta delivery failed/u
 
 function stubClawasRuntime() {
   return {
@@ -175,6 +176,51 @@ test('pulse runtime dispatches due main-home pulse as custom message', async () 
     await pulseRuntime.runNow('manual-note')
     assert.equal(messages.length, 2)
     assert.match(messages[1]?.content ?? '', MANUAL_PULSE_FILE_PATTERN)
+    pulseRuntime.dispose()
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('successful pulse deliveries stay checkpointed when a later pulse fails', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-checkpoint-'))
+  try {
+    await mkdir(join(root, '.git'))
+    for (const id of ['alpha', 'beta']) {
+      await mkdir(join(root, 'pulses', id), { recursive: true })
+      await writeFile(
+        join(root, 'pulses', id, 'PULSE.md'),
+        ['---', `title: ${id}`, 'schedule: every 1m', '---', '', `# ${id}`].join('\n'),
+        'utf8',
+      )
+    }
+
+    const delivered: string[] = []
+    let failBeta = true
+    const pulseRuntime = new PulseRuntime(
+      {
+        sendMessage: (message: { content?: string }) => {
+          const content = message.content ?? ''
+          if (failBeta && content.includes('pulses/beta/PULSE.md')) {
+            throw new Error('beta delivery failed')
+          }
+          delivered.push(content)
+        },
+      } as never,
+      stubClawasRuntime() as never,
+    )
+    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+
+    await pulseRuntime.scanAndRunDue(1_000)
+    await assert.rejects(() => pulseRuntime.scanAndRunDue(62_000), BETA_DELIVERY_ERROR_PATTERN)
+    const afterFailure = await readPulseState(root)
+    assert.equal(afterFailure.pulses['main:alpha']?.lastRunAt, 62_000)
+    assert.equal(afterFailure.pulses['main:beta']?.lastRunAt, undefined)
+
+    failBeta = false
+    await pulseRuntime.scanAndRunDue(62_000)
+    assert.equal(delivered.filter((message) => message.includes('pulses/alpha/PULSE.md')).length, 1)
+    assert.equal(delivered.filter((message) => message.includes('pulses/beta/PULSE.md')).length, 1)
     pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
