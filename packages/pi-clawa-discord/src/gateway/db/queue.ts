@@ -115,15 +115,6 @@ export function markMessageFailedInDb(db: Database.Database, rowid: number): boo
 	);
 }
 
-export function clearPendingMessages(channelJid: string): number {
-	const result = getDb()
-		.prepare(
-			"delete from message_queue where channel_jid = ? and status = 'pending'",
-		)
-		.run(channelJid);
-	return result.changes;
-}
-
 export function updatePendingDiscordMessage(
 	channelJid: string,
 	sourceMessageId: string,

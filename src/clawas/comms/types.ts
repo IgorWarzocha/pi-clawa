@@ -42,14 +42,14 @@ export interface ClawasSendCommand {
   id?: string | undefined
 }
 
-export interface ClawasGetMessageCommand {
+interface ClawasGetMessageCommand {
   type: 'get_message'
   afterTimestamp?: number | undefined
   afterContent?: string | undefined
   id?: string | undefined
 }
 
-export interface ClawasGetStatusCommand {
+interface ClawasGetStatusCommand {
   type: 'get_status'
   id?: string | undefined
 }

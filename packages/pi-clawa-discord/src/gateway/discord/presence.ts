@@ -7,7 +7,7 @@ const ONLINE_STATUSES = new Set(['online', 'idle', 'dnd']);
 const MAX_LISTED_MEMBERS = 12;
 const MEMBER_FETCH_BATCH_SIZE = 100;
 
-export interface PresenceSnapshotEntry {
+interface PresenceSnapshotEntry {
   name: string;
   status: string;
 }
@@ -33,7 +33,7 @@ export function buildGatewayIntents(currentConfig: Config = config): GatewayInte
   return intents;
 }
 
-export function formatPresenceContext(entries: PresenceSnapshotEntry[]): string {
+function formatPresenceContext(entries: PresenceSnapshotEntry[]): string {
   if (entries.length === 0) {
     return '';
   }

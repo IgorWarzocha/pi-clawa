@@ -19,20 +19,7 @@ export {
 export { createAction } from './gui-primitives/list.js'
 export { runPicker } from './gui-primitives/picker.js'
 export type {
-  ActionOptions,
-  Align,
-  Cell,
-  Col,
-  ComposerOptions,
-  Ctx,
   Intent,
-  Line,
-  ListOptions,
-  PickerItem,
-  PickerOptions,
   Primitive,
   RunAppConfig,
-  Slot,
-  Theme,
-  Tone,
 } from './gui-primitives/types.js'

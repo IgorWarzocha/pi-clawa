@@ -183,7 +183,7 @@ async function resolveClawasSocketPath(target: string): Promise<string | null> {
   }
 }
 
-export async function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+async function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return await new Promise((resolvePromise, reject) => {
     const timeout = setTimeout(() => {
       signal?.removeEventListener('abort', onAbort);

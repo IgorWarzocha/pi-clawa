@@ -50,11 +50,8 @@ import { sendDiscordDeliveryWithClient } from "./delivery-renderer.js";
 import {
 	buildTriggerAliasPattern,
 	escapeRegExp,
-	shouldAcceptTriggeredMessage,
 	shouldIgnoreExcludedGuildChannel,
 } from "./policy.js";
-
-export { shouldAcceptTriggeredMessage, shouldIgnoreExcludedGuildChannel };
 
 let client: Client | null = null;
 let triggerPattern: RegExp;

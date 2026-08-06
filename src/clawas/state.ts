@@ -20,7 +20,7 @@ export function createInitialState(
   }
 }
 
-export function resolveWorkerCwd(rootCwd: string, configuredCwd: string): string {
+function resolveWorkerCwd(rootCwd: string, configuredCwd: string): string {
   if (configuredCwd.startsWith('/')) {
     return configuredCwd
   }

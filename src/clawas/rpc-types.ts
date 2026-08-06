@@ -1,4 +1,4 @@
-import type { AgentEvent, ThinkingLevel } from '@earendil-works/pi-agent-core'
+import type { ThinkingLevel } from '@earendil-works/pi-agent-core'
 
 export type ClawasRpcCommandInput =
   | { type: 'prompt'; message: string }
@@ -28,5 +28,3 @@ export interface ClawasRpcResponse {
   data?: unknown
   error?: string | undefined
 }
-
-export type ClawasWorkerEvent = AgentEvent

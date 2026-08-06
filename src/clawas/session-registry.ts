@@ -85,7 +85,7 @@ function getRegistryPath(rootDir: string): string {
   return path.join(rootDir, 'session-registry.json')
 }
 
-export function getClawaSessionRoot(cwd: string): string {
+function getClawaSessionRoot(cwd: string): string {
   return path.join(cwd, '.pi')
 }
 

@@ -37,9 +37,9 @@ export interface AttachmentLimits {
 	maxTotalBytes: number;
 }
 
-export type AttachmentRejectionReason = 'file-too-large' | 'total-too-large';
+type AttachmentRejectionReason = 'file-too-large' | 'total-too-large';
 
-export interface RejectedAttachment {
+interface RejectedAttachment {
 	attachment: AttachmentMeta;
 	reason: AttachmentRejectionReason;
 	limitBytes: number;
@@ -163,7 +163,7 @@ export async function cacheDiscordAttachments(
 	);
 }
 
-export function extractDiscordLinks(content: string): string[] {
+function extractDiscordLinks(content: string): string[] {
 	const links: string[] = [];
 	const seen = new Set<string>();
 	const matches = content.matchAll(/https?:\/\/[^\s<>()]+/giu);
@@ -204,7 +204,7 @@ export function buildLinkMetas(content: string, embeds: readonly DiscordEmbedLik
 	});
 }
 
-export function buildLinkReferenceBlock(links: LinkMeta[]): string {
+function buildLinkReferenceBlock(links: LinkMeta[]): string {
 	if (links.length === 0) return '';
 	return [
 		'Message links:',
@@ -227,7 +227,7 @@ function attachmentSummary(attachment: AttachmentMeta, index: number): string {
 	return `[a${index + 1}] ${name} — ${contentType} — ${formatBytes(attachment.size)}`;
 }
 
-export function buildAttachmentReferenceBlock(
+function buildAttachmentReferenceBlock(
 	attachments: AttachmentMeta[],
 ): string {
 	if (attachments.length === 0) {

@@ -11,7 +11,6 @@ import { logger } from "../logger.js";
 import {
 	channelsWithPending,
 	claimNextMessage,
-	clearPendingMessages,
 	recoverStuckMessages,
 } from "../db.js";
 import { processQueuedMessage } from "./queue-processing.js";
@@ -26,23 +25,6 @@ const activeChannelControllers = new Map<string, AbortController>();
 let running = false;
 let pollTimer: NodeJS.Timeout | undefined;
 let stopPromise: Promise<void> | null = null;
-
-export function isChannelProcessing(jid: string): boolean {
-	return activeChannels.has(jid);
-}
-
-export function abortChannelTask(jid: string): {
-	aborted: boolean;
-	cleared: number;
-} {
-	const controller = activeChannelControllers.get(jid);
-	const aborted = Boolean(controller);
-	if (controller) {
-		controller.abort();
-	}
-	const cleared = clearPendingMessages(jid);
-	return { aborted, cleared };
-}
 
 export function startProcessingLoop(): void {
 	if (running) return;

@@ -6,9 +6,9 @@ export const CLAWAS_MAIL_MESSAGE_TYPE = 'clawas-mail'
 export const CLAWAS_DELIVERY_MESSAGE_TYPE = 'clawas-delivery'
 
 export type ClawasOutboundMode = 'prompt' | 'steer' | 'followUp'
-export type ClawasDeliveryRoute = 'discord' | 'main-claw'
+type ClawasDeliveryRoute = 'discord' | 'main-claw'
 
-export interface ClawasOutboundDetails {
+interface ClawasOutboundDetails {
   workerId: string
   workerTitle: string
   mode: ClawasOutboundMode

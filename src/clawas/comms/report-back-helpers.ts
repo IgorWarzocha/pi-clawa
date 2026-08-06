@@ -1,4 +1,3 @@
-export const NOTHING_FOR_DISCORD_SENTINEL = '[quiet]'
 const STANDALONE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s*(?:\n+([\s\S]*))?$/i
 const INLINE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s+([\s\S]+)$/i
 const QUIET_DIRECTIVE_REGEX = /^\[quiet\]:?$/i
@@ -85,7 +84,7 @@ export function shouldSkipAutoMainClawStatusRelay(options: {
   return lastDelivery.timestamp >= (lastMailTimestamp ?? 0)
 }
 
-export function isHydrationPreloadText(content: string | null | undefined): boolean {
+function isHydrationPreloadText(content: string | null | undefined): boolean {
   const trimmed = content?.trim()
   return Boolean(trimmed?.startsWith('## Claw Continuity Refresh (auto-loaded)'))
 }

@@ -5,13 +5,9 @@ import { config } from './config.js';
 import { getAllChannels, getChannel } from './db.js';
 import type { RegisteredChannel } from './types.js';
 
-export interface DiscordRoute {
+interface DiscordRoute {
   channel: string;
   worker: string;
-}
-
-export interface DiscordRoutesFile {
-  routes: DiscordRoute[];
 }
 
 export function ensureDiscordRoutesFile(): void {
@@ -33,7 +29,7 @@ export function ensureDiscordRoutesFile(): void {
   );
 }
 
-export function readDiscordRoutes(): DiscordRoute[] {
+function readDiscordRoutes(): DiscordRoute[] {
   ensureDiscordRoutesFile();
   const value = parseJsonc(readFileSync(config.routesPath, 'utf8'));
   const root = asRecord(value, 'Discord routes file');

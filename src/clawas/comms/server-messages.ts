@@ -7,8 +7,8 @@ import type {
   ClawasSenderInfo,
 } from './types.js'
 
-export const LEGACY_SESSION_MESSAGE_TYPE = 'clawas-session'
-export const LEGACY_REPORT_MESSAGE_TYPE = 'clawas-report'
+const LEGACY_SESSION_MESSAGE_TYPE = 'clawas-session'
+const LEGACY_REPORT_MESSAGE_TYPE = 'clawas-report'
 
 const OBSERVED_MESSAGES_START = 'Recent channel context:'
 const OBSERVED_MESSAGES_END = 'End recent channel context.'

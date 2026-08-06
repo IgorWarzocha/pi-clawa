@@ -1,11 +1,10 @@
 import * as net from 'node:net'
 import { isRpcResponse } from '../rpc-guards.js'
 import { resolveSocketPath } from './paths.js'
-import { parseLastMessageData, parseSessionStatusData } from './protocol.js'
+import { parseSessionStatusData } from './protocol.js'
 import type {
   ClawasCommsCommand,
   ClawasDiscordContext,
-  ClawasExtractedMessage,
   ClawasMessageIntent,
   ClawasMessageKind,
   ClawasMessageVisibility,
@@ -144,17 +143,6 @@ export async function sendClawasSessionMessage(
   if (!response.success) {
     throw new Error(response.error ?? `Failed to send Clawas message to ${target}`)
   }
-}
-
-export async function getClawasLastAssistantMessage(
-  target: string,
-): Promise<ClawasExtractedMessage | null> {
-  const response = await sendRpcCommand(target, { type: 'get_message' })
-  if (!response.success) {
-    throw new Error(response.error ?? `Failed to read Clawas message from ${target}`)
-  }
-
-  return parseLastMessageData(response.data)
 }
 
 export async function getClawasSessionStatus(

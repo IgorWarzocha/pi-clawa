@@ -12,31 +12,31 @@ import {
 } from "../db.js";
 import { extractDiscordDirectives } from "../agent/discord-directives.js";
 
-export const NOTHING_FOR_DISCORD_SENTINEL = "[quiet]";
+const NOTHING_FOR_DISCORD_SENTINEL = "[quiet]";
 const DELIVERY_CONFIRMATION_TIMEOUT_MS = 10_000;
 
-export interface PreparedSendText {
+interface PreparedSendText {
 	text?: string | undefined;
 }
 
-export function isNothingForDiscord(text?: string): boolean {
+function isNothingForDiscord(text?: string): boolean {
 	return text?.trim().toLowerCase() === NOTHING_FOR_DISCORD_SENTINEL;
 }
 
-export function normalizeSendText(text?: string): string | undefined {
+function normalizeSendText(text?: string): string | undefined {
 	const trimmed = text?.trim();
 	if (!trimmed || isNothingForDiscord(trimmed)) return undefined;
 	return trimmed;
 }
 
-export function prepareSendText(text?: string): PreparedSendText {
+function prepareSendText(text?: string): PreparedSendText {
 	const trimmed = text?.trim();
 	if (!trimmed) return { text: undefined };
 	const parsed = extractDiscordDirectives(trimmed);
 	return { text: normalizeSendText(parsed.text) };
 }
 
-export function normalizeChannelJid(input: string): string {
+function normalizeChannelJid(input: string): string {
 	const value = input.trim();
 	return value.startsWith("dc:") ? value : `dc:${value}`;
 }
