@@ -19,6 +19,11 @@ The gateway receives Discord events, stores bounded delivery/context state in SQ
 follow-up to the mapped worker with recent channel context and message handles. The worker decides
 whether and where a response belongs.
 
+With Discord's **Server Members Intent** and `ENABLE_GUILD_MEMBERS_INTENT=true`, exact joins and
+leaves become durable worker turns in each configured channel the member can view. Bots are ignored,
+replayed events are deduplicated, and any welcome is sent as a normal channel message rather than a
+reply to a synthetic event.
+
 ## Explicit final routing
 
 Normal final text from the Discord worker is **not delivered**. Public output must use known route

@@ -16,7 +16,14 @@ In the bot settings:
 
 1. Find **Privileged Gateway Intents**.
 2. Enable **Message Content Intent**.
-3. Save changes.
+3. To let Clawa notice real server joins and leaves, also enable **Server Members Intent**.
+4. Save changes.
+
+Membership events also need this line in `.pi/clawa-discord/config.env`:
+
+```env
+ENABLE_GUILD_MEMBERS_INTENT=true
+```
 
 ## 3. Copy the bot token
 

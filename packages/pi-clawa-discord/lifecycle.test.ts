@@ -14,6 +14,7 @@ import {
   recoverStuckDiscordDeliveriesInDb,
 } from './src/gateway/db/delivery-queue.js'
 import { enqueueDiscordInteractionTurnInDb } from './src/gateway/db/interactions.js'
+import { enqueueDiscordMembershipEventInDb } from './src/gateway/db/membership-events.js'
 import {
   getMessageStatusInDb,
   markMessageAwaitingInDb,
@@ -23,6 +24,10 @@ import {
 } from './src/gateway/db/queue.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
 import { sendDiscordDeliveryWithClient } from './src/gateway/discord/delivery-renderer.js'
+import {
+  handleGuildMembershipEvent,
+  type MembershipEventDependencies,
+} from './src/gateway/discord/membership-events.js'
 import { splitDiscordMessage } from './src/gateway/discord/text.js'
 import { parseBooleanSetting, parseEnumSetting, parseIntegerSetting } from './src/shared/env.js'
 import { acquireGatewayLock, readGatewayLock } from './src/shared/gateway-lock.js'
@@ -64,6 +69,100 @@ test('Discord inbox settles only after the worker turn and preserves awaiting wo
         .status,
       'failed',
     )
+  } finally {
+    db.close()
+  }
+})
+
+test('Discord membership events reach only routed channels visible to the member', () => {
+  const enqueued: Record<string, string>[] = []
+  const channel = (id: string, options: { text?: boolean; visible?: boolean } = {}) => ({
+    id,
+    isTextBased: () => options.text !== false,
+    permissionsFor: (memberId: string) => {
+      assert.equal(memberId, 'member-one')
+      return { has: () => options.visible !== false }
+    },
+  })
+  const dependencies: MembershipEventDependencies = {
+    getChannel: (jid) =>
+      jid === 'dc:unknown'
+        ? undefined
+        : { jid, name: `Guild #${jid.slice(3)}`, requiresTrigger: true },
+    resolveWorker: (jid) => (jid === 'dc:unrouted' ? undefined : 'discord-clawa'),
+    enqueue: (event) => {
+      enqueued.push(event)
+      return true
+    },
+    excludedChannels: new Set(['excluded']),
+  }
+  const member = {
+    id: 'member-one',
+    displayName: 'Max',
+    joinedAt: new Date('2026-08-07T12:00:00.000Z'),
+    joinedTimestamp: 1_786_104_000_000,
+    user: { bot: false, displayName: 'max', username: 'max' },
+    guild: {
+      id: 'guild-one',
+      channels: {
+        cache: new Map([
+          ['visible', channel('visible')],
+          ['hidden', channel('hidden', { visible: false })],
+          ['excluded', channel('excluded')],
+          ['unknown', channel('unknown')],
+          ['unrouted', channel('unrouted')],
+          ['voice', channel('voice', { text: false })],
+        ]),
+      },
+    },
+  }
+
+  handleGuildMembershipEvent(member as never, 'joined', { dependencies })
+
+  assert.deepEqual(enqueued, [
+    {
+      channelJid: 'dc:visible',
+      eventId: 'discord-membership:guild-one:member-one:1786104000000:joined',
+      content: 'Discord membership event: Max joined this server at 2026-08-07T12:00:00.000Z.',
+      timestamp: '2026-08-07T12:00:00.000Z',
+    },
+  ])
+})
+
+test('Discord membership turns are durable, deduplicated, and never fabricate a reply target', () => {
+  const db = new Database(':memory:')
+  try {
+    runSchemaMigrations(db)
+    const event = {
+      channelJid: 'dc:one',
+      eventId: 'discord-membership:guild-one:member-one:1786104000000:joined',
+      content: 'Discord membership event: Max joined this server at 2026-08-07T12:00:00.000Z.',
+      timestamp: '2026-08-07T12:00:00.000Z',
+    }
+
+    assert.equal(enqueueDiscordMembershipEventInDb(db, event), true)
+    assert.equal(enqueueDiscordMembershipEventInDb(db, event), false)
+    assert.deepEqual(
+      db
+        .prepare(`
+          select sender, sender_name, source_message_id, reply_to_message_id, content, status
+          from message_queue
+        `)
+        .get(),
+      {
+        sender: 'discord-gateway',
+        sender_name: 'Discord',
+        source_message_id: event.eventId,
+        reply_to_message_id: null,
+        content: event.content,
+        status: 'pending',
+      },
+    )
+    assert.deepEqual(db.prepare('select sender_id, sender_name, content from message_log').get(), {
+      sender_id: 'discord-gateway',
+      sender_name: 'Discord',
+      content: event.content,
+    })
   } finally {
     db.close()
   }

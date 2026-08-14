@@ -6,7 +6,10 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
-No changes recorded yet.
+### Added
+
+- The Discord adapter can turn exact server joins and leaves into durable, deduplicated worker turns
+  for routed channels visible to the member when the Server Members intent is enabled.
 
 ## [0.2.0] - 2026-08-06
 

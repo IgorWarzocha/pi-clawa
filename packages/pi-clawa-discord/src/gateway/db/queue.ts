@@ -20,6 +20,10 @@ export function enqueueMessage(msg: {
 	timestamp: string;
 	attachments?: string | null;
 }): boolean {
+	const replyToMessageId =
+		msg.replyToMessageId === undefined
+			? (msg.sourceMessageId ?? null)
+			: msg.replyToMessageId;
 	const result = getDb().prepare(`
     insert or ignore into message_queue (channel_jid, sender, sender_name, source_message_id, reply_to_message_id, reply_context, log_rowid, content, timestamp, attachments)
     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -28,7 +32,7 @@ export function enqueueMessage(msg: {
 		msg.sender,
 		msg.senderName,
 		msg.sourceMessageId ?? null,
-		msg.replyToMessageId ?? msg.sourceMessageId ?? null,
+		replyToMessageId,
 		msg.replyContext ?? null,
 		msg.logRowId ?? null,
 		msg.content,
