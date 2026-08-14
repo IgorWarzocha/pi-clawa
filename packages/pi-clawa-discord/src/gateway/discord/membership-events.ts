@@ -71,7 +71,9 @@ export function handleGuildMembershipEvent(
 		const jid = `dc:${channel.id}`;
 		if (!dependencies.getChannel(jid)) continue;
 		if (!dependencies.resolveWorker(jid)) continue;
-		if (!channel.permissionsFor(member.id)?.has(PermissionFlagsBits.ViewChannel)) {
+		if (
+			!channel.permissionsFor(member as GuildMember)?.has(PermissionFlagsBits.ViewChannel)
+		) {
 			continue;
 		}
 

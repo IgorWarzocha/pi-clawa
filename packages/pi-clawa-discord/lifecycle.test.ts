@@ -79,8 +79,8 @@ test('Discord membership events reach only routed channels visible to the member
   const channel = (id: string, options: { text?: boolean; visible?: boolean } = {}) => ({
     id,
     isTextBased: () => options.text !== false,
-    permissionsFor: (memberId: string) => {
-      assert.equal(memberId, 'member-one')
+    permissionsFor: (permissionMember: { id: string }) => {
+      assert.equal(permissionMember.id, 'member-one')
       return { has: () => options.visible !== false }
     },
   })
@@ -117,14 +117,17 @@ test('Discord membership events reach only routed channels visible to the member
     },
   }
 
-  handleGuildMembershipEvent(member as never, 'joined', { dependencies })
+  handleGuildMembershipEvent(member as never, 'left', {
+    dependencies,
+    now: new Date('2026-08-07T15:00:00.000Z'),
+  })
 
   assert.deepEqual(enqueued, [
     {
       channelJid: 'dc:visible',
-      eventId: 'discord-membership:guild-one:member-one:1786104000000:joined',
-      content: 'Discord membership event: Max joined this server at 2026-08-07T12:00:00.000Z.',
-      timestamp: '2026-08-07T12:00:00.000Z',
+      eventId: 'discord-membership:guild-one:member-one:1786104000000:left',
+      content: 'Discord membership event: Max left this server at 2026-08-07T15:00:00.000Z.',
+      timestamp: '2026-08-07T15:00:00.000Z',
     },
   ])
 })
