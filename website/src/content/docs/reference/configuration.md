@@ -64,6 +64,7 @@ comments.
 | `startupPrompt` | Prompt used when starting its lane. Legacy `initialPrompt` is accepted. |
 | `model` | Optional Pi model selector for this worker. |
 | `thinking` | `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`. |
+| `fastMode` | Optionally force Fast Mode on or off for this worker when supported by its provider extension. |
 | `reportMode` | `auto`, `explicit`, or `off`. |
 | `extensions` | Extra extension paths passed to this worker. |
 | `discordEnabled` | Marks Discord behavior for that worker. |

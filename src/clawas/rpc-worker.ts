@@ -60,6 +60,9 @@ function buildWorkerEnvironment(options: WorkerProcessOptions): NodeJS.ProcessEn
   if (options.definition.reportMode) {
     env['PI_CLAWAS_REPORT_MODE'] = options.definition.reportMode
   }
+  if (options.definition.fastMode !== undefined) {
+    env['PI_CODEX_FAST'] = options.definition.fastMode ? '1' : '0'
+  }
   return env
 }
 

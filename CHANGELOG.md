@@ -8,6 +8,7 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Added
 
+- Workers can opt into or out of provider Fast Mode independently with `fastMode`.
 - The Discord adapter can turn exact server joins and leaves into durable, deduplicated worker turns
   for routed channels visible to the member when the Server Members intent is enabled.
 

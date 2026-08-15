@@ -43,6 +43,7 @@ test('setup and runtime derive workers from one normalized config contract', asy
       startupPrompt: undefined,
       model: undefined,
       thinking: undefined,
+      fastMode: undefined,
       reportMode: undefined,
     })
     assert.equal((await loadClawasConfig(root))?.workers.length, 1)
