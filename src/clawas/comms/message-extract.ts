@@ -192,9 +192,13 @@ function findPrecedingUserIndex(
     const entry = getRecord(branch[index])
     if (!entry) continue
     if (entry['type'] !== 'message') continue
-    const role = getRecord(entry['message'])?.['role']
+    const message = getRecord(entry['message'])
+    const role = message?.['role']
     if (role === 'user') return index
-    if (role === 'assistant') return undefined
+    if (role === 'assistant' && message) {
+      if (messageContentHasToolCall(message['content'])) continue
+      return undefined
+    }
   }
   return undefined
 }

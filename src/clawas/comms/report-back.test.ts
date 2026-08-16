@@ -190,6 +190,63 @@ test('assistant output stays paired with the Discord mail that preceded its turn
   assert.equal(turn?.mailDetails?.['channelJid'], 'dc:dm-a')
 })
 
+test('assistant output keeps Discord context across tool calls in the same turn', () => {
+  const details = {
+    workerId: 'discord-gateway',
+    sourceMessageId: 'current-trigger',
+    channelJid: 'dc:channel-a',
+    queueRowId: 540,
+    messageHandles: {
+      m7: { channelJid: 'dc:channel-a', messageId: 'issue-message' },
+      m8: { channelJid: 'dc:channel-a', messageId: 'current-trigger' },
+    },
+  }
+  const turn = getLastAssistantTurn(
+    ctxWithBranch([
+      {
+        type: 'custom_message',
+        customType: CLAWAS_MAIL_MESSAGE_TYPE,
+        details,
+      },
+      {
+        type: 'message',
+        message: { role: 'user', content: 'wut?', timestamp: 1 },
+      },
+      {
+        type: 'message',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'toolCall', id: 'call-1', name: 'inspect', arguments: {} }],
+          timestamp: 2,
+          stopReason: 'toolUse',
+        },
+      },
+      {
+        type: 'message',
+        message: {
+          role: 'toolResult',
+          toolCallId: 'call-1',
+          toolName: 'inspect',
+          content: [{ type: 'text', text: 'evidence' }],
+          timestamp: 3,
+        },
+      },
+      {
+        type: 'message',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: '[#channel-a]: final reply' }],
+          timestamp: 4,
+          stopReason: 'stop',
+        },
+      },
+    ]),
+  )
+
+  assert.equal(turn?.message.content, '[#channel-a]: final reply')
+  assert.deepEqual(turn?.mailDetails, details)
+})
+
 test('assistant turn history preserves every queued Discord output in order', () => {
   const mail = (queueRowId: number) => ({
     type: 'custom_message',

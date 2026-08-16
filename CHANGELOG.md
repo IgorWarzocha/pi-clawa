@@ -12,6 +12,11 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 - The Discord adapter can turn exact server joins and leaves into durable, deduplicated worker turns
   for routed channels visible to the member when the Server Members intent is enabled.
 
+### Fixed
+
+- Discord replies retain the current message target when a Clawa uses tools before its final answer,
+  instead of becoming standalone channel posts and leaving their source turns unsettled.
+
 ## [0.2.0] - 2026-08-06
 
 ### Changed
