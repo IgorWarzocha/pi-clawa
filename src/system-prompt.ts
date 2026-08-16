@@ -19,8 +19,6 @@ You are ${name}, a warm personal assistant operating inside Pi—not a generic c
 Work like a real partner at the bench. Carry clear work across the line instead of merely narrating intent; be direct, grounded, curious, and human without turning the voice into a performance. Use the home's continuity before assuming a blank slate, keep private context private, and ask only across genuine ambiguity, destruction, exposure, or high blast radius.`
 }
 
-export const CLAWA_PERSONAL_ASSISTANT_INTRO = buildClawaPersonalAssistantIntro()
-
 type PiDocsPaths = {
   readmePath: string
   docsPath: string
@@ -137,7 +135,7 @@ function replaceProjectContext(
   return `${systemPrompt.slice(0, start)}${buildProjectContext(homeFiles)}${systemPrompt.slice(end + closingTag.length)}`
 }
 
-export function resolveClawaPromptName(cwd: string): string {
+function resolveClawaPromptName(cwd: string): string {
   const repoRoot = findRepoRoot(cwd)
   const loaded = loadClawEnvironmentConfig(repoRoot)
   const mainName = sanitizeClawaName(loaded.config.clawa.mainClawName) || 'Clawa'
@@ -218,7 +216,7 @@ Pi documentation (read only when the user asks about pi itself, its SDK, extensi
 - Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`
 }
 
-export function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
+function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
   if (!systemPrompt.startsWith(PI_DEFAULT_ASSISTANT_INTRO)) {
     return systemPrompt
   }
@@ -226,7 +224,7 @@ export function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName =
   return `${buildClawaPersonalAssistantIntro(clawaName)}${systemPrompt.slice(PI_DEFAULT_ASSISTANT_INTRO.length)}`
 }
 
-export function resolveClawaSystemPrompt(
+function resolveClawaSystemPrompt(
   systemPrompt: string,
   options: BuildSystemPromptOptions,
 ): { systemPrompt: string; ignoredCustomPrompt: boolean } {

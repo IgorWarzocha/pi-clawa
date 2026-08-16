@@ -9,6 +9,6 @@
 - Use repo-local `.pi/skills/agent-native-hardening` for structural cleanup and `.pi/skills/gh-issue-pr-flow` for GitHub flow.
 - Keep README/user copy warm and user-facing; avoid dev-note-first framing.
 - Discord adapter is WIP and belongs in the Discord section of TODO, not mixed into core runtime polish.
-- Do not add performative tests. Keep tests for behavior that typechecking or code shape does not already cover.
+- Tests are a contract spine, not a feature inventory: keep deterministic boundary, persistence, ordering, and failure-state checks; reject type-shape, UI/copy/registration, and external-API simulation tests.
 - Release gate: `bun run ai:check:strict`. Do not add broad ignores to make it pass.
 - Package install is git-first for now; npm publishing remains later.

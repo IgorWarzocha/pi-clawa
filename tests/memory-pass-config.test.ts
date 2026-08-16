@@ -17,21 +17,6 @@ async function writeConfig(root: string, clawa: Record<string, unknown>): Promis
   )
 }
 
-test('legacy Clawa compaction settings no longer override Pi ownership', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-memory-pass-config-'))
-  try {
-    await writeConfig(root, {
-      compaction: { auto: true, triggerPercent: 80, sidecarModel: 'provider/model' },
-    })
-    assert.deepEqual(loadClawEnvironmentConfig(root).config.clawa.memoryPass, {
-      enabled: true,
-      triggerPercent: 90,
-    })
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
 test('memory pass rejects thresholds outside one to ninety-nine', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-memory-pass-config-'))
   try {

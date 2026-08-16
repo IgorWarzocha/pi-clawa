@@ -1,9 +1,9 @@
 import type { ContextUsage, ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import type { ClawaMemoryPassConfig } from './config.js'
 
-export const MEMORY_PASS_MESSAGE_TYPE = 'clawa-memory-pass'
+const MEMORY_PASS_MESSAGE_TYPE = 'clawa-memory-pass'
 
-export const MEMORY_PASS_PROMPT = `Hey Clawa — this session is getting rather full. Before Pi folds it down, take a little memory pass.
+const MEMORY_PASS_PROMPT = `Hey Clawa — this session is getting rather full. Before Pi folds it down, take a little memory pass.
 
 Use recall with no query and limit 5 to revisit your latest shared memories. Then look back over what genuinely mattered in this run and use remember for only the pieces worth carrying forward.
 
@@ -17,7 +17,7 @@ export type MemoryPassState = {
   rearm: () => void
 }
 
-export function createMemoryPassState(): MemoryPassState {
+function createMemoryPassState(): MemoryPassState {
   let armed = true
   return {
     claim: () => {

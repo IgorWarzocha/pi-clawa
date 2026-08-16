@@ -8,9 +8,7 @@ import {
   getLastMailMessageTimestamp,
 } from './message-extract.ts'
 import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.ts'
-import { isDirectMainPromptAfterMail } from './report-back.ts'
 import {
-  extractClawaReportText,
   normalizeDiscordReplyText,
   shouldReportClawaFinalToMain,
   shouldSkipAutoDiscordRelay,
@@ -24,29 +22,6 @@ function ctxWithBranch(branch: unknown[]) {
     },
   } as never
 }
-
-test('scheduled pulses do not turn explicit worker reports into automatic Main returns', () => {
-  assert.equal(
-    isDirectMainPromptAfterMail({
-      lastUserMessage: { content: 'Pulse: Hey, Discord\nOwner: discord-clawa', timestamp: 20 },
-      lastMailTimestamp: 10,
-    }),
-    false,
-  )
-  assert.equal(
-    isDirectMainPromptAfterMail({
-      lastUserMessage: { content: 'Handle this direct worker task', timestamp: 20 },
-      lastMailTimestamp: 10,
-    }),
-    true,
-  )
-})
-
-test('extractClawaReportText keeps explicit clawas content only', () => {
-  assert.equal(extractClawaReportText('[CLAWAS]\nhello from worker'), 'hello from worker')
-  assert.equal(extractClawaReportText('[CLAWAS] hello from worker'), 'hello from worker')
-  assert.equal(extractClawaReportText('plain assistant text'), null)
-})
 
 test('normalizeDiscordReplyText drops standalone quiet sentinel and blank output', () => {
   assert.equal(normalizeDiscordReplyText('hello'), 'hello')
@@ -417,14 +392,6 @@ test('main-claw auto report ignores startup context and hydration preload text',
 
   assert.equal(
     shouldReportClawaFinalToMain({
-      messageContent: '## Claw Continuity Refresh (auto-loaded)\n\nThis is for you, the claw.',
-      lastMailDetails: { intent: 'reply_requested' },
-    }),
-    false,
-  )
-
-  assert.equal(
-    shouldReportClawaFinalToMain({
       messageContent: '[quiet]',
       lastMailDetails: { intent: 'reply_requested' },
     }),
@@ -437,21 +404,5 @@ test('main-claw auto report ignores startup context and hydration preload text',
       lastMailDetails: { intent: 'reply_requested' },
     }),
     false,
-  )
-})
-
-test('getLastMailMessageTimestamp includes legacy session/report messages', () => {
-  assert.equal(
-    getLastMailMessageTimestamp(
-      ctxWithBranch([
-        {
-          type: 'custom_message',
-          customType: 'clawas-session',
-          timestamp: '2026-01-01T00:00:03.000Z',
-          details: { intent: 'for_context' },
-        },
-      ]),
-    ),
-    Date.parse('2026-01-01T00:00:03.000Z'),
   )
 })

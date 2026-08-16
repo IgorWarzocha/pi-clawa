@@ -42,7 +42,7 @@ function manualSessionError(title: string, clawasName: string) {
   }
 }
 
-export function formatClawaDeliveryReceipt(title: string): string {
+function formatClawaDeliveryReceipt(title: string): string {
   return `${title} received the note.`
 }
 

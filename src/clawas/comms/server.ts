@@ -27,8 +27,6 @@ import {
   shouldTriggerTurn,
 } from './server-messages.js'
 
-export { buildMessageDetails, buildWorkerUserMessage, shouldDeliverClawasMailAsUserMessage }
-
 import type { ClawasCommsCommand, ClawasRpcResponse, ClawasSendCommand } from './types.js'
 
 const IS_MANUAL_SESSION = process.env['PI_CLAWAS_MANUAL_SESSION'] === '1'

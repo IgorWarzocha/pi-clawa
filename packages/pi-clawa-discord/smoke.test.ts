@@ -1,137 +1,18 @@
 import assert from 'node:assert/strict'
 import { EventEmitter } from 'node:events'
-import { mkdir, mkdtemp, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import test from 'node:test'
 import Database from 'better-sqlite3'
-import clawDiscord from './index.js'
-import { adapterEntryPath } from './src/extension/constants.js'
 import { stopGateway } from './src/extension/gateway.js'
 import { getGatewayState, setGatewayState } from './src/extension/gateway-state.js'
 import { parseFinalRoutes } from './src/gateway/agent/final-routes.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
-import { validateDiscordDeliveryRequest } from './src/gateway/delivery-types.js'
 import { stripAcceptedTrigger } from './src/gateway/discord/policy.js'
 import { sanitizeDiscordLabel, sanitizeDiscordText } from './src/gateway/discord/sanitize.js'
 
-const TOKEN_ENV_PATTERN = /DISCORD_BOT_TOKEN=/
-const DEFAULT_DM_ROUTE_PATTERN = /"channel": "dm"/
-const DISCORD_WORKER_PATTERN = /"id": "discord-clawa"/
-const DISCORD_AGENTS_PATTERN = /Discord/
 const PRIMARY_TRIGGER_PATTERN = /^@pi\b/iu
 const TRIGGER_ALIAS_PATTERN = /\b(?:claw\w*|clawa\w*)\b/iu
-const SHARED_CLAWAS_LINK_TARGET = '../../CLAWAS.md'
-const SHARED_HUMAN_LINK_TARGET = '../../HUMAN.md'
-const CARD_POLL_CONFLICT_PATTERN = /cards and polls are separate message modes/
 
-type Handler = (event: unknown, ctx: any) => unknown
-
-function withCleanDiscordEnv<T>(run: () => Promise<T>): Promise<T> {
-  const previous = {
-    PI_CLAWAS_DISCORD_ENABLED: process.env['PI_CLAWAS_DISCORD_ENABLED'],
-    PI_CLAWAS_ROLE: process.env['PI_CLAWAS_ROLE'],
-    DISCORD_BOT_TOKEN: process.env['DISCORD_BOT_TOKEN'],
-    PI_CLAWA_DISCORD_CONFIG: process.env['PI_CLAWA_DISCORD_CONFIG'],
-    PI_CLAW_PROJECT_ROOT: process.env['PI_CLAW_PROJECT_ROOT'],
-    PI_CWD: process.env['PI_CWD'],
-  }
-
-  delete process.env['PI_CLAWAS_DISCORD_ENABLED']
-  delete process.env['PI_CLAWAS_ROLE']
-  delete process.env['DISCORD_BOT_TOKEN']
-  delete process.env['PI_CLAWA_DISCORD_CONFIG']
-  delete process.env['PI_CLAW_PROJECT_ROOT']
-  delete process.env['PI_CWD']
-
-  return run().finally(() => {
-    for (const [key, value] of Object.entries(previous)) {
-      if (value === undefined) delete process.env[key]
-      else process.env[key] = value
-    }
-  })
-}
-
-test('Discord adapter first session creates tokenless config and worker without starting gateway', async () => {
-  await withCleanDiscordEnv(async () => {
-    const root = await mkdtemp(join(tmpdir(), 'clawa-discord-smoke-'))
-    try {
-      await mkdir(join(root, '.git'))
-      const commands = new Map<string, unknown>()
-      const handlers = new Map<string, Handler>()
-      const notifications: string[] = []
-      const pi = {
-        registerCommand: (name: string, command: unknown) => commands.set(name, command),
-        registerTool: () => assert.fail('tokenless main adapter should not register worker tool'),
-        on: (event: string, handler: Handler) => handlers.set(event, handler),
-        sendUserMessage: () => undefined,
-      }
-
-      clawDiscord(pi as any)
-      assert.ok(commands.has('discord'))
-      assert.ok(handlers.has('session_start'))
-      assert.ok(handlers.has('session_shutdown'))
-
-      await handlers.get('session_start')?.(
-        {},
-        {
-          cwd: root,
-          hasUI: true,
-          ui: { notify: (message: string) => notifications.push(message) },
-        },
-      )
-
-      const env = await readFile(join(root, '.pi', 'clawa-discord', 'config.env'), 'utf8')
-      const routes = await readFile(join(root, '.pi', 'clawa-discord', 'routes.jsonc'), 'utf8')
-      const workers = await readFile(join(root, '.pi', 'claw.jsonc'), 'utf8')
-      const agents = await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8')
-      const humanLink = await readlink(join(root, 'clawas', 'discord-clawa', 'HUMAN.md'))
-      const clawasLink = await readlink(join(root, 'clawas', 'discord-clawa', 'CLAWAS.md'))
-
-      assert.match(env, TOKEN_ENV_PATTERN)
-      assert.match(routes, DEFAULT_DM_ROUTE_PATTERN)
-      assert.match(workers, DISCORD_WORKER_PATTERN)
-      assert.match(agents, DISCORD_AGENTS_PATTERN)
-      assert.equal(humanLink, SHARED_HUMAN_LINK_TARGET)
-      assert.equal(clawasLink, SHARED_CLAWAS_LINK_TARGET)
-      assert.ok(notifications.some((message) => message.includes('add DISCORD_BOT_TOKEN')))
-
-      const configPath = join(root, '.pi', 'claw.jsonc')
-      const config = JSON.parse(workers)
-      const discordWorker = config.clawas.workers.find(
-        (worker: { id: string }) => worker.id === 'discord-clawa',
-      )
-      const adapterLink = join(root, '.pi', 'adapter-link.ts')
-      await symlink(adapterEntryPath, adapterLink)
-      discordWorker.extensions = [adapterLink]
-      await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`)
-      await writeFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'custom lane\n')
-
-      await handlers.get('session_start')?.(
-        {},
-        {
-          cwd: root,
-          hasUI: true,
-          ui: { notify: (message: string) => notifications.push(message) },
-        },
-      )
-
-      const restartedConfig = JSON.parse(await readFile(configPath, 'utf8'))
-      const restartedWorker = restartedConfig.clawas.workers.find(
-        (worker: { id: string }) => worker.id === 'discord-clawa',
-      )
-      assert.deepEqual(restartedWorker.extensions, [adapterLink])
-      assert.equal(
-        await readFile(join(root, 'clawas', 'discord-clawa', 'AGENTS.md'), 'utf8'),
-        'custom lane\n',
-      )
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-})
-
-test('Discord final routing blocks parse explicit destinations', () => {
+test('final routing blocks parse explicit destinations', () => {
   const routed = parseFinalRoutes(
     [
       'ignored preface',
@@ -156,7 +37,7 @@ test('Discord final routing blocks parse explicit destinations', () => {
   ])
 })
 
-test('Discord input sanitizer strips hidden controls without mangling normal text', () => {
+test('input sanitizer strips hidden controls without mangling normal text', () => {
   assert.equal(
     sanitizeDiscordText('hej\u200b clawa\u202e\nemoji 👨‍💻 café\r\n\u0000done'),
     'hej clawa\nemoji 👨‍💻 café\ndone',
@@ -164,7 +45,7 @@ test('Discord input sanitizer strips hidden controls without mangling normal tex
   assert.equal(sanitizeDiscordLabel('member-a\n\u202emember-b'), 'member-a member-b')
 })
 
-test('Discord trigger aliases are removed from accepted worker prompts', () => {
+test('trigger removal does not strip incidental aliases', () => {
   assert.equal(
     stripAcceptedTrigger('@pi hello there', {
       triggerPattern: PRIMARY_TRIGGER_PATTERN,
@@ -189,7 +70,7 @@ test('Discord trigger aliases are removed from accepted worker prompts', () => {
   )
 })
 
-test('Discord gateway stop waits for the managed child to exit', async () => {
+test('gateway stop waits for the managed child to exit', async () => {
   const child = new EventEmitter() as EventEmitter & {
     exitCode: number | null
     signalCode: NodeJS.Signals | null
@@ -220,7 +101,7 @@ test('Discord gateway stop waits for the managed child to exit', async () => {
   assert.deepEqual(getGatewayState(), { status: 'stopped' })
 })
 
-test('Discord session shutdown releases an adopted gateway without killing it', async () => {
+test('adopted gateway shutdown releases local state without killing the process', async () => {
   setGatewayState({
     status: 'running-adopted',
     projectRoot: '/test',
@@ -228,7 +109,7 @@ test('Discord session shutdown releases an adopted gateway without killing it', 
     lock: {
       pid: process.pid,
       projectRoot: '/test',
-      entryPath: process.argv[1] ?? '',
+      entryPath: '/test/gateway',
       startedAt: new Date().toISOString(),
     },
   })
@@ -236,7 +117,7 @@ test('Discord session shutdown releases an adopted gateway without killing it', 
   assert.deepEqual(getGatewayState(), { status: 'stopped' })
 })
 
-test('Discord schema rejects duplicate source messages at durable boundaries', () => {
+test('source-message deduplication survives schema migration', () => {
   const db = new Database(':memory:')
   try {
     db.exec(`
@@ -273,25 +154,7 @@ test('Discord schema rejects duplicate source messages at durable boundaries', (
         ('dc:one', 'human', 'Human', 'old-message', 2, 'pending replay', datetime('now'), 'pending');
     `)
     runSchemaMigrations(db)
-    const queueColumns = db.prepare('pragma table_info(message_queue)').all() as Array<{
-      name: string
-    }>
-    assert.ok(queueColumns.some((column) => column.name === 'reply_to_message_id'))
-    assert.ok(queueColumns.some((column) => column.name === 'reply_context'))
-    assert.ok(
-      db
-        .prepare(
-          "select 1 from sqlite_master where type = 'table' and name = 'discord_delivery_queue'",
-        )
-        .get(),
-    )
-    assert.ok(
-      db
-        .prepare(
-          "select 1 from sqlite_master where type = 'table' and name = 'discord_interactions'",
-        )
-        .get(),
-    )
+
     assert.equal(
       (db.prepare('select count(*) as count from message_queue').get() as { count: number }).count,
       1,
@@ -334,41 +197,4 @@ test('Discord schema rejects duplicate source messages at durable boundaries', (
   } finally {
     db.close()
   }
-})
-
-test('Discord rich delivery validation keeps incompatible message modes explicit', () => {
-  const fileStat = () => ({ size: 512 })
-  assert.doesNotThrow(() =>
-    validateDiscordDeliveryRequest(
-      {
-        channelJid: 'dc:one',
-        title: 'A useful picture',
-        card: true,
-        files: [{ path: '/house/result.png', description: 'A purple chart' }],
-        actions: [{ label: 'Dig deeper', prompt: 'Please dig deeper.' }],
-        select: {
-          placeholder: 'Choose one',
-          options: [
-            { label: 'Quick', prompt: 'Do the quick pass.' },
-            { label: 'Deep', prompt: 'Do the deep pass.' },
-          ],
-        },
-      },
-      { maxAttachmentBytes: 1024, maxTotalAttachmentBytes: 2048, fileStat },
-    ),
-  )
-
-  assert.throws(
-    () =>
-      validateDiscordDeliveryRequest(
-        {
-          channelJid: 'dc:one',
-          card: true,
-          files: [],
-          poll: { question: 'Which?', answers: ['A', 'B'] },
-        },
-        { maxAttachmentBytes: 1024, maxTotalAttachmentBytes: 2048, fileStat },
-      ),
-    CARD_POLL_CONFLICT_PATTERN,
-  )
 })

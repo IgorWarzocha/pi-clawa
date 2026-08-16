@@ -9,7 +9,10 @@
     "packages/pi-clawa-discord": {
       "entry": ["*.test.ts", "src/gateway/cli/index.ts"],
       "project": ["*.test.ts", "src/**/*.ts"],
-      "ignoreDependencies": ["pino-pretty", "tsx"]
+      "ignoreDependencies": ["pino-pretty", "tsx"],
+      "ignoreIssues": {
+        "index.ts": ["exports"]
+      }
     },
     "website": {
       "project": ["src/**/*.{ts,astro}"]
