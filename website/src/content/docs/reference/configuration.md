@@ -51,7 +51,7 @@ Clawa config.
 JSON with comments is accepted. Saving through Clawa rewrites normalized JSON without preserving
 comments.
 
-Worker session history and panel handles share `.pi/clawas/session-registry.json` by default. Panel
+Worker session history and terminal handles share `.pi/clawas/session-registry.json` by default. Tab
 location is runtime state, not another setting.
 
 ## Worker fields
@@ -59,10 +59,10 @@ location is runtime state, not another setting.
 | Field | Meaning |
 | --- | --- |
 | `id` | Required stable routing ID. |
-| `title` | Display name; defaults to the ID. |
+| `title` | Display name and tab label; defaults to the ID. |
 | `cwd` | Required worker home, usually relative to project root. Legacy `workspace` is accepted. |
 | `enabled` | Whether the worker is available to the runtime. |
-| `autostart` | Whether the main session should open its panel in the background. |
+| `autostart` | Whether the main session should open its tab in the background. |
 | `startupPrompt` | Prompt used when starting its lane. Legacy `initialPrompt` is accepted. |
 | `model` | Optional Pi model selector for this worker. |
 | `thinking` | `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`. |

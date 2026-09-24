@@ -15,7 +15,7 @@ import { ClawasPanelLauncher } from './panel-launcher.js'
 import { ClawasUiBridge } from './runtime-ui.js'
 import type { ClawasState, WorkerDefinition, WorkerState } from './types.js'
 
-/** Main-session configuration and UI lifecycle. Reloading reconnects, never kills panels. */
+/** Main-session configuration and UI lifecycle. Reloading reconnects, never closes worker tabs. */
 export class ClawasRuntime {
   private context: ExtensionContext | null = null
   private controller: ClawasController | null = null
@@ -113,14 +113,11 @@ export class ClawasRuntime {
     this.render()
   }
 
-  async openWorkerPanel(workerId: string): Promise<string> {
-    return await this.requireController().focusWorker(workerId, 'panel')
+  async openWorkerTab(workerId: string): Promise<void> {
+    await this.requireController().focusWorker(workerId)
   }
-  canOpenPanel(): boolean {
-    return this.launcher.canOpenPanel()
-  }
-  getPanelHostLabel(): string | null {
-    return this.launcher.getHostLabel()
+  canOpenTab(): boolean {
+    return this.launcher.canOpenTab()
   }
 
   async dispose(): Promise<void> {
@@ -150,7 +147,7 @@ export class ClawasRuntime {
         if (context.hasUI) this.ui.clear(context)
         return
       }
-      await this.launcher.captureCurrentHostPane()
+      await this.launcher.captureCurrentHost()
       const controller = new ClawasController(
         context.cwd,
         config,

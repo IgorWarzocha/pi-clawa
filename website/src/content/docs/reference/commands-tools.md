@@ -16,7 +16,7 @@ order: 100
 | `/pulse run <target>` | Queue by Pulse ID, `owner:id`, or title. |
 | `/steer <message>` | Send an internal steer to the selected monitor worker. |
 | `/steer <slot\|worker> <message>` | Target a worker by monitor slot, ID, or title. |
-| `/jump [slot\|worker]` | Focus an existing worker panel or reopen its session through Herdr or tmux. |
+| `/jump [slot\|worker]` | Open or focus a worker's named Herdr tab or tmux window. |
 | `/discord` | Optional adapter: create config/worker as needed and open Discord setup. |
 
 Pi's own commands—including `/compact`, `/model`, `/resume`, and `/reload`—remain available.
@@ -39,7 +39,7 @@ pass uses `limit: 5` to compare against recent shared memory before saving anyth
 ### `message_clawa`
 
 Main-only coordination route to a worker by ID or title. It refreshes config, opens a stopped worker
-panel if needed, and sends a reply-requested steer.
+tab if needed, and sends a reply-requested steer.
 Success returns only a named receipt—`Research Clawa received the note.` It does not repeat the
 outgoing note in the tool result.
 

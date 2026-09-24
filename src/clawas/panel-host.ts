@@ -6,7 +6,6 @@ export type PanelHandle =
       terminalId: string
       agentName: string
       sessionFile: string
-      window: boolean
       session: string
     }
   | {
@@ -31,8 +30,7 @@ export function parsePanelHandle(value: unknown): PanelHandle {
     data['host'] === 'herdr' &&
     ['paneId', 'tabId', 'terminalId', 'agentName', 'sessionFile', 'session'].every(
       (key) => typeof data[key] === 'string' && (data[key] as string).length > 0,
-    ) &&
-    typeof data['window'] === 'boolean'
+    )
   ) {
     return data as PanelHandle
   }

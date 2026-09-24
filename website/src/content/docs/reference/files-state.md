@@ -28,7 +28,7 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | `.pi/claw.jsonc` | Bootstrap flag, worker definitions, naming, sockets, and memory-pass settings. |
 | `.pi/clawa-memory.sqlite` | Shared raw memory database. |
 | `.pi/pulses.json` | First-seen, last-run, due-key, and deferral state per Pulse. |
-| `.pi/clawas/session-registry.json` | Worker session history and panel location records. |
+| `.pi/clawas/session-registry.json` | Worker session history and terminal location records. |
 | `<worker-home>/.pi/sessions/` | Each worker's Pi session history. |
 | `.pi/clawa-discord/` | Optional adapter token config, routes, channel snapshot, DB, delivery state, logs. |
 

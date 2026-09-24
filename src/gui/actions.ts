@@ -56,9 +56,9 @@ async function runWorkerActionPicker(
         searchableText: 'steer follow up',
       },
       {
-        label: 'Jump to worker panel',
+        label: 'Open or focus tab',
         value: 'jump',
-        searchableText: 'jump worker panel focus',
+        searchableText: 'jump worker tab open focus',
       },
     ],
     search: false,
@@ -76,9 +76,8 @@ export async function runWorkerAction(
   if (!action) return
 
   if (action === 'jump') {
-    const handle = await runtime.openWorkerPanel(worker.id)
-    const host = runtime.getPanelHostLabel() ?? 'worker'
-    const status = `Focused ${worker.title} in a ${host} panel: ${handle}`
+    await runtime.openWorkerTab(worker.id)
+    const status = `Focused ${worker.title}'s tab.`
     setStatus(status)
     ctx.ui.notify(status, 'info')
     return
@@ -138,7 +137,7 @@ export async function runControlAction(options: {
   }
   if (item.kind === 'restart') {
     await runtime.restart()
-    const status = `${clawasName} worker state refreshed. Running panels were left open.`
+    const status = `${clawasName} worker state refreshed. Running tabs were left open.`
     setStatus(status)
     ctx.ui.notify(status, 'info')
     return

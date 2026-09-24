@@ -22,7 +22,7 @@ On every startup, reload, new session, resume, or fork, the extension:
 7. attaches Clawas and the Pulse timer in a UI-bearing main session;
 8. queues invisible conversational onboarding after the first successful bootstrap.
 
-`session_shutdown` drains the current comms alias maintenance and Pulse work. Worker panels remain
+`session_shutdown` drains the current comms alias maintenance and Pulse work. Worker tabs remain
 open after main quits or reloads.
 
 ## Prompt shaping
@@ -67,7 +67,7 @@ happen during a long tool run before the settlement hook is reached.
 hydration, prompt shaping, the memory pass, comms, and private reporting, but not the main monitor,
 `/steer`, `/jump`, or Pulse GUI.
 
-Workers are ordinary Pi sessions in Herdr tabs or tmux windows. The main runtime opens or adopts
-panels; `.pi/clawas/session-registry.json` keeps both session history and panel location. Closing a
-panel stops its worker until a message or `/jump` reopens it. Local newline-delimited socket messaging
+Workers are ordinary Pi sessions, each in a named Herdr tab or tmux window. The main runtime opens or
+adopts these tabs; `.pi/clawas/session-registry.json` keeps both session history and terminal location.
+Closing a tab stops its worker until a message or `/jump` reopens it. Local newline-delimited socket messaging
 carries private coordination without using Pi subprocess RPC or placing messages on a public adapter.

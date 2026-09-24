@@ -85,7 +85,7 @@ Use the `provider/model-id` style that Pi prints or accepts for `--model`. Pick 
 - Append or update the one worker entry you mean to touch.
 - Preserve existing workers and home defaults.
 - Keep disabled workers if their history or naming lesson may matter later.
-- Verify runtime state after model, thinking, extension, or startup changes. Config edits apply when a worker panel next launches, not to a running session.
+- Verify runtime state after model, thinking, extension, or startup changes. Config edits apply when a worker tab next launches, not to a running session.
 
 ## Home defaults
 
@@ -101,8 +101,8 @@ The `clawa` object controls names and runtime directories shared by the home:
 - `memoryPass.triggerPercent` — active-model context percentage that starts the memory pass; defaults to `90` and must be an integer from 1 to 99.
 
 Keep defaults unless the home deliberately uses another naming or control-plane shape.
-Worker session history and panel handles live together in `.pi/clawas/session-registry.json` by
-default. Panel location is runtime state, not another configuration field.
+Worker session history and terminal handles live together in `.pi/clawas/session-registry.json` by
+default. Tab location is runtime state, not another configuration field.
 
 The threshold follows each active model's own context window. It is not a universal token count. At the threshold, Clawa gets one warm turn on the same branch: recall the latest shared memories, update what has genuinely changed, and remember only new texture worth carrying. The pass may save nothing. Pi remains the sole owner of compaction threshold, overflow recovery, retries, and canonical session continuity. The memory pass rearms after Pi compacts or a new session starts.
 

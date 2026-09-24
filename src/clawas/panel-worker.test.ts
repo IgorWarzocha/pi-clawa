@@ -14,7 +14,7 @@ import { ClawasPanelWorker } from './panel-worker.js'
 import { readWorkerSession, recordWorkerSession } from './session-registry.js'
 import type { WorkerState } from './types.js'
 
-const UNAVAILABLE_PATTERN = /panel is open but its Clawa connection is unavailable/u
+const UNAVAILABLE_PATTERN = /tab is open but its Clawa connection is unavailable/u
 const DEFINITION = { id: 'helper', title: 'Helper', cwd: '.', enabled: true, autostart: true }
 
 function panelHandle(sessionFile: string): PanelHandle {
@@ -77,7 +77,7 @@ async function serveSession(cwd: string, sessionFile: string): Promise<() => Pro
   }
 }
 
-test('concurrent launch and main shutdown preserve one panel for the next main session', async () => {
+test('concurrent launch and main shutdown preserve one tab for the next main session', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clp-'))
   const previousRoot = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
   process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = root
@@ -134,7 +134,7 @@ test('concurrent launch and main shutdown preserve one panel for the next main s
 
     await next.connect(false)
     assert.equal(adoptedState.status, 'idle')
-    assert.equal(await next.focus('panel'), '%2')
+    await next.focus()
     assert.equal(focused, '%2')
     assert.equal(launches, 1)
     assert.equal(closes, 0)
@@ -148,7 +148,7 @@ test('concurrent launch and main shutdown preserve one panel for the next main s
   }
 })
 
-test('an existing live panel without control does not launch a duplicate or get closed', async () => {
+test('an existing live tab without control does not launch a duplicate or get closed', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clp-'))
   const previousRoot = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
   process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = root
@@ -167,7 +167,7 @@ test('an existing live panel without control does not launch a duplicate or get 
         return assert.fail('duplicate launch')
       },
       async close() {
-        assert.fail('closed a previously owned panel')
+        assert.fail('closed a previously owned tab')
       },
       async focus() {},
       async isAlive() {

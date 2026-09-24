@@ -8,7 +8,7 @@ import { ClawasPanelWorker } from './panel-worker.js'
 import { createInitialState, getWorkerState, pushEvent } from './state.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 
-/** Composes configured panels and their monitor. Terminal hosts own their processes. */
+/** Composes configured worker tabs and their monitor. Terminal hosts own their processes. */
 export class ClawasController {
   private readonly state: ClawasState
   private readonly workers = new Map<string, ClawasPanelWorker>()
@@ -78,7 +78,7 @@ export class ClawasController {
       pushEvent(
         this.state,
         'clawas',
-        `Panel discovery failed: ${error.message}. Reconnect Clawas to retry.`,
+        `Worker discovery failed: ${error.message}. Reconnect Clawas to retry.`,
         Date.now(),
       )
       this.onChange()
@@ -110,8 +110,8 @@ export class ClawasController {
     return await this.requireWorker(workerId).getLastAssistantText()
   }
 
-  async focusWorker(workerId: string, mode: 'panel' | 'window'): Promise<string> {
-    return await this.requireWorker(workerId).focus(mode)
+  async focusWorker(workerId: string): Promise<void> {
+    await this.requireWorker(workerId).focus()
   }
 
   async dispose(): Promise<void> {

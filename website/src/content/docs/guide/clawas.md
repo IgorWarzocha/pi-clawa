@@ -22,15 +22,17 @@ Open `/claw` and use the creation flow, or give `/claw` a purpose in text. Creat
 The worker's local `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, nested instructions, vault work, and session
 history can diverge around its lane. Shared human and crew files keep handoffs grounded.
 
-## Worker panels
+## Worker tabs
 
-An enabled, autostart worker opens a native Pi session in a background Herdr tab or tmux window. The
-runtime adopts an existing panel instead of opening a second session. The session registry records
-both history and panel location so workers can resume when possible. Model, thinking level, extension
-paths, Discord enablement, and reporting mode are supplied from the worker definition at panel launch.
+Each Clawa gets a Herdr tab or tmux window named after its title, never a split pane. An enabled,
+autostart worker opens in the background when the main session connects. With autostart off, an
+enabled worker opens when needed. The runtime adopts an existing tab instead of opening a second
+session. The session registry records both history and tab location so workers can resume when
+possible. Model, thinking level, extension paths, Discord enablement, and reporting mode are supplied
+from the worker definition at launch.
 Editing config does not change a running Pi session.
 
-Main reloads, exits, and config refreshes leave worker panels running. Closing a worker panel stops
+Main reloads, exits, and config refreshes leave worker tabs running. Closing a worker tab stops
 that worker. The next message or `/jump` can reopen its existing session; a crash does not trigger
 automatic respawn.
 
@@ -42,7 +44,7 @@ automatic respawn.
 - A worker can use `message_main_claw` once per turn for an internal handoff or status.
 
 Private messages use project-scoped Unix sockets, not Pi subprocess RPC. Messages and reports remain
-available while you type directly in the worker's panel. A steer to an active worker becomes a
+available while you type directly in the worker's tab. A steer to an active worker becomes a
 follow-up; a steer or follow-up to an inactive worker becomes a new prompt. Delivery failures surface
 an error rather than pretending the handoff landed. A successful
 `message_clawa` call acknowledges the named recipient without echoing the outgoing note back into the
@@ -59,7 +61,7 @@ Each worker can set `reportMode`:
 Report-back is fingerprinted to avoid duplicates. Recent explicit mail and route-aware Discord work
 also affect whether an automatic status is useful.
 
-## Monitor and panels
+## Monitor and tabs
 
 The main TUI shows worker state and task summaries. Keyboard controls:
 
@@ -69,8 +71,9 @@ The main TUI shows worker state and task summaries. Keyboard controls:
 | `Alt+Shift+Q` | Select the previous worker. |
 | `Alt+Shift+E` | Select the next worker. |
 
-`/jump [slot|worker]` focuses an existing panel or opens the stopped worker's session. It requires
-Herdr or tmux. In an ordinary standalone terminal it warns and does nothing.
+`/jump [slot|worker]` opens or focuses the worker's tab. In `/claw`, select a worker and choose
+**Open or focus tab** for the same action. Both require Herdr or tmux; neither creates a split pane.
+In an ordinary standalone terminal, `/jump` warns and does nothing.
 
 ## Settings scope
 

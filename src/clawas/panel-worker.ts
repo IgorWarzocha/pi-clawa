@@ -47,16 +47,16 @@ export class ClawasPanelWorker {
     return getWorkerSocketAlias(this.state.definition)
   }
 
-  async connect(launch: boolean, mode: 'panel' | 'window' = 'window'): Promise<void> {
+  async connect(launch: boolean): Promise<void> {
     if (!this.active) throw new Error(`Clawa ${this.alias} is disconnected from the main session`)
     if (this.subscription) return
     if (this.pending) {
       await this.pending
-      if (launch && !this.subscription && this.active) await this.connect(true, mode)
+      if (launch && !this.subscription && this.active) await this.connect(true)
       return
     }
     // Reserve before the first lookup. Autostart, a pulse, and /jump can arrive together.
-    const operation = Promise.resolve().then(() => this.connectSession(launch, mode))
+    const operation = Promise.resolve().then(() => this.connectSession(launch))
     this.pending = operation
     try {
       await operation
@@ -68,7 +68,7 @@ export class ClawasPanelWorker {
     }
   }
 
-  private async connectSession(launch: boolean, mode: 'panel' | 'window'): Promise<void> {
+  private async connectSession(launch: boolean): Promise<void> {
     const record = await readWorkerSession(this.options.controlPlaneRoot, this.alias)
     this.state.panel = record?.panel
     const live = await getClawasSessionStatus(this.alias)
@@ -76,7 +76,7 @@ export class ClawasPanelWorker {
     if (live) {
       this.validateSession(live)
       if (record?.cwd && record.cwd !== this.state.cwd) {
-        throw new Error(`Close ${this.alias}'s existing panel before changing its home`)
+        throw new Error(`Close ${this.alias}'s existing tab before changing its home`)
       }
       await this.subscribe()
       return
@@ -84,15 +84,15 @@ export class ClawasPanelWorker {
     if (!launch) return
     if (record?.panel && (await this.options.launcher.isAlive(record.panel))) {
       throw new Error(
-        `${this.alias}'s panel is open but its Clawa connection is unavailable. Check that panel before reopening it.`,
+        `${this.alias}'s tab is open but its Clawa connection is unavailable. Check that tab before reopening it.`,
       )
     }
     this.state.panel = undefined
     if (!this.active) return
-    await this.launch(mode)
+    await this.launch()
   }
 
-  private async launch(mode: 'panel' | 'window'): Promise<void> {
+  private async launch(): Promise<void> {
     const { state, controlPlaneRoot, launcher } = this.options
     const sessionFile = await resolveWorkerSessionFile(
       controlPlaneRoot,
@@ -104,18 +104,14 @@ export class ClawasPanelWorker {
       { status: 'starting', sessionFile, lastError: undefined },
       `${state.definition.title} opening`,
     )
-    const panel = await launcher.open(
-      {
-        definition: state.definition,
-        cwd: state.cwd,
-        projectRoot: this.options.projectRoot,
-        extensionPaths: this.options.extensionPaths,
-        clawaDefaults: this.options.clawaDefaults,
-        sessionFile,
-      },
-      mode,
-      false,
-    )
+    const panel = await launcher.open({
+      definition: state.definition,
+      cwd: state.cwd,
+      projectRoot: this.options.projectRoot,
+      extensionPaths: this.options.extensionPaths,
+      clawaDefaults: this.options.clawaDefaults,
+      sessionFile,
+    })
     this.state.panel = panel
     try {
       await this.persistSession(sessionFile, panel)
@@ -129,7 +125,7 @@ export class ClawasPanelWorker {
       } catch (cleanupError) {
         throw new AggregateError(
           [error, cleanupError],
-          `Failed to start ${this.alias} and close its new panel: ${String(error)}; ${String(cleanupError)}`,
+          `Failed to start ${this.alias} and close its new tab: ${String(error)}; ${String(cleanupError)}`,
         )
       }
       throw error
@@ -156,7 +152,7 @@ export class ClawasPanelWorker {
       }
       await delay(100)
     }
-    throw new Error(`Timed out waiting for ${this.alias}'s panel to load Clawa`)
+    throw new Error(`Timed out waiting for ${this.alias}'s tab to load Clawa`)
   }
 
   private validateSession(status: ClawasSessionStatus): void {
@@ -257,13 +253,12 @@ export class ClawasPanelWorker {
     }
   }
 
-  async focus(mode: 'panel' | 'window'): Promise<string> {
-    await this.connect(true, mode)
+  async focus(): Promise<void> {
+    await this.connect(true)
     if (!this.active) throw new Error('Main Clawa session changed before focus')
     const panel = this.state.panel
-    if (!panel) throw new Error(`${this.alias} is running without a recorded panel location`)
+    if (!panel) throw new Error(`${this.alias} is running without a recorded tab location`)
     await this.options.launcher.focus(panel)
-    return panel.paneId
   }
 
   async getLastAssistantText(): Promise<string | null> {

@@ -13,7 +13,6 @@ test('persisted handles cannot authorize closing a pane without its launch ident
     agentName: 'clawa-unique',
     session: '/tmp/herdr.sock',
     sessionFile: '/tmp/worker.jsonl',
-    window: true,
   }
   assert.deepEqual(parsePanelHandle(herdr), herdr)
   const { agentName: _agentName, ...missingName } = herdr

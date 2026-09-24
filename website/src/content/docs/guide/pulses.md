@@ -52,7 +52,7 @@ fire a stale interval.
 Delivery respects current work:
 
 - a main Pulse queues as a Pi follow-up while the main session is busy;
-- a worker receives a prompt or follow-up according to its activity, even while someone types in its panel.
+- a worker receives a prompt or follow-up according to its activity, even while someone types in its tab.
 
 Each successful scheduled delivery is checkpointed immediately. If a later due Pulse fails in the
 same scan, work that already landed is not replayed on the next scan.

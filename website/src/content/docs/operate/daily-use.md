@@ -19,7 +19,7 @@ branch is genuinely wedged or its compacted history has stopped being useful—n
 ## Keep the main room alive
 
 Run the main Clawa inside Herdr, tmux, or another persistent terminal if ambient behavior matters.
-The computer being awake is not enough: Pulses need a UI-bearing main Pi session. Worker panels stay
+The computer being awake is not enough: Pulses need a UI-bearing main Pi session. Worker tabs stay
 open through main reloads and exits; Pulses stop when the main session exits.
 
 Main sessions use Pi's normal session store. Worker sessions are registered from their own
@@ -31,10 +31,10 @@ The Clawas monitor and Pulse tab are the first operational surfaces:
 
 - `/claw` shows crew configuration, state, and creation controls;
 - `/pulse` shows valid and broken Pulse definitions;
-- monitor state distinguishes running, busy, stopped, and failed panels;
+- monitor state distinguishes running, busy, stopped, and failed workers;
 - Pulse runs appear as custom messages in the owning session.
 
-If a worker looks stale, first distinguish config drift, a closed panel, a stale socket,
+If a worker looks stale, first distinguish config drift, a closed tab, a stale socket,
 session registry trouble, and model authentication failure. Repeatedly editing the worker entry can
 make the actual state harder to see.
 

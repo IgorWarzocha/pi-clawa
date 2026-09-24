@@ -22,9 +22,9 @@ git checkout v0.3.0
 Start the home again with `pi -c`. Clawa reads existing `.pi/claw.jsonc` and living documents. It
 does not recopy the template over a bootstrapped home.
 
-When moving from 0.3 to the native-panel version, stop the old main Pi session before starting the
+When moving from 0.3 to the native-tab version, stop the old main Pi session before starting the
 new version. That shuts down the old managed RPC workers. Session history stays in place; the new
-runtime opens worker panels in Herdr or tmux without a home-state migration.
+runtime opens Herdr tabs or tmux windows without a home-state migration.
 
 For a full checkout rather than a shallow tagged clone, move between releases with
 `git switch --detach vX.Y.Z`. A detached tag is expected for an installed package. Do not make local
@@ -44,7 +44,7 @@ migration system; state compatibility remains a release responsibility.
 
 ## Remove the extension
 
-1. Stop the main Pi session and any worker panels you want to close. Worker panels remain open when
+1. Stop the main Pi session and any worker tabs you want to close. Worker tabs remain open when
    the main session exits.
 2. Remove the pi-clawa package path from the home's `.pi/settings.json`.
 3. Start Pi once without the package if you want to verify plain-Pi behavior.

@@ -30,8 +30,8 @@ export function buildDetails(model: ClawGuiModel): Record<string, Primitive> {
     }),
     'restart-clawas': createDetail({
       title: 'restart-clawas',
-      meta: [`refreshes ${model.clawa.clawasName} worker state without closing panels`],
-      body: ['Worker configuration changes apply the next time a panel launches.'],
+      meta: [`refreshes ${model.clawa.clawasName} worker state without closing tabs`],
+      body: ['Worker configuration changes apply the next time a tab launches.'],
     }),
   }
 
@@ -94,7 +94,7 @@ function buildClawMeta(item: ClawItem): string[] {
     `bootstrapped: ${yesNo(item.status.bootstrapped)}`,
     `worker configured: ${yesNo(Boolean(worker))}`,
     `worker status: ${worker?.status ?? 'not configured'}`,
-    `panel: ${worker?.panel ? `${worker.panel.host} ${worker.panel.paneId}` : '(closed)'} (/jump to open)`,
+    `tab: ${worker?.panel ? `${worker.panel.host} ${worker.panel.paneId}` : '(closed)'} (/jump to open)`,
   ]
 }
 

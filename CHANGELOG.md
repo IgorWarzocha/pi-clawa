@@ -8,11 +8,11 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Changed
 
-- Specialist Clawas now run in ordinary Pi panels under Herdr or tmux instead of managed RPC
-  subprocesses. `/jump` focuses the existing panel or reopens a stopped worker's session. Typing
-  directly never disconnects private messaging or reporting. Main reloads and exits leave panels
-  running; closing a worker panel stops it until the next message or jump. Worker config changes take
-  effect at the next panel launch, not in a running session.
+- Specialist Clawas now run in named Herdr tabs or tmux windows instead of managed RPC
+  subprocesses. `/jump` and `/claw` open or focus the same worker tab; split-pane launches are gone.
+  Typing directly never disconnects private messaging or reporting. Main reloads and exits leave
+  tabs running; closing a worker tab stops it until the next message or jump. Worker config changes
+  take effect at the next tab launch, not in a running session.
 - Upgrading from 0.3 requires stopping the old main session before starting this version so its
   legacy subprocess workers can stop. Worker session history is preserved.
 

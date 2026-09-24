@@ -69,10 +69,10 @@ adapting an existing OpenClaw or Hermes home.
 
 ## The useful entrances
 
-- `/claw` — inspect the crew or create a specialist Clawa.
+- `/claw` — inspect the crew, open a Clawa's tab, or create a specialist.
 - `/steer` — send an internal nudge to a specialist.
-- `/jump` — focus a specialist's Herdr or tmux panel. That same panel stays messageable and
-  reporting while you type there.
+- `/jump` — open or focus a specialist's named Herdr tab (or tmux window). The same session stays
+  messageable and reporting while you type there.
 - `/pulse` — inspect Pulses or run one manually.
 - `remember` / `recall` — carry small raw memories and search recent session history.
 

@@ -13,8 +13,8 @@ import {
 const exec = promisify(execFile)
 
 type Host =
-  | { host: 'herdr'; paneId: string; workspaceId: string; session: string }
-  | { host: 'tmux'; paneId: string; socket: string; serverPid: string }
+  | { host: 'herdr'; workspaceId: string; session: string }
+  | { host: 'tmux'; socket: string; serverPid: string }
 
 const herdrBin = () => process.env['HERDR_BIN_PATH']?.trim() || 'herdr'
 
@@ -57,11 +57,11 @@ async function rollback(undo: () => Promise<void>, error: unknown): Promise<neve
   throw error
 }
 
-/** Native terminal hosts own placement, process lifetime, and user focus. */
+/** One named Herdr tab or tmux window per Clawa; the host owns its process lifetime. */
 export class ClawasPanelLauncher {
   private context: Host | null = null
 
-  async captureCurrentHostPane(): Promise<void> {
+  async captureCurrentHost(): Promise<void> {
     this.context = null
     const paneId = process.env['HERDR_PANE_ID']?.trim()
     if (process.env['HERDR_ENV'] === '1' && paneId) {
@@ -73,7 +73,6 @@ export class ClawasPanelLauncher {
       )
       this.context = {
         host: 'herdr',
-        paneId: herdrId(pane, 'pane_id'),
         workspaceId: herdrId(pane, 'workspace_id'),
         session,
       }
@@ -81,32 +80,22 @@ export class ClawasPanelLauncher {
     }
     const socket = process.env['TMUX']?.split(',')[0]
     if (!socket) return
-    const [currentPane, serverPid] = (
-      await tmux(socket, ['display-message', '-p', '#{pane_id}\n#{pid}'])
-    ).split('\n')
-    if (!(currentPane && serverPid)) throw new Error('tmux did not identify the current pane')
-    this.context = { host: 'tmux', paneId: currentPane, socket, serverPid }
+    const serverPid = await this.tmuxServer(socket)
+    if (!serverPid) throw new Error('tmux did not identify the current server')
+    this.context = { host: 'tmux', socket, serverPid }
   }
 
-  canOpenPanel(): boolean {
+  canOpenTab(): boolean {
     return this.context !== null
   }
 
-  getHostLabel(): string | null {
-    return this.context?.host === 'herdr' ? 'Herdr' : this.context ? 'tmux' : null
-  }
-
-  async open(
-    options: LaunchOptions,
-    mode: 'panel' | 'window',
-    focus = false,
-  ): Promise<PanelHandle> {
+  async open(options: LaunchOptions): Promise<PanelHandle> {
     const context = this.context
     if (!context) throw new Error(`${options.clawaDefaults.clawasName} requires Herdr or tmux`)
     const args = panelArgs(options)
     const env = panelEnvironment(options)
-    if (context.host === 'herdr') return this.openHerdr(context, options, args, env, mode, focus)
-    return this.openTmux(context, options, args, env, mode, focus)
+    if (context.host === 'herdr') return this.openHerdr(context, options, args, env)
+    return this.openTmux(context, options, args, env)
   }
 
   private async openHerdr(
@@ -114,53 +103,28 @@ export class ClawasPanelLauncher {
     options: LaunchOptions,
     args: string[],
     env: Record<string, string>,
-    mode: 'panel' | 'window',
-    focus: boolean,
   ): Promise<PanelHandle> {
     const environment = Object.entries(env).flatMap(([key, value]) => ['--env', `${key}=${value}`])
-    const created =
-      mode === 'window'
-        ? await herdr(
-            [
-              'tab',
-              'create',
-              '--workspace',
-              context.workspaceId,
-              '--cwd',
-              options.cwd,
-              '--label',
-              options.definition.title,
-              ...environment,
-              focus ? '--focus' : '--no-focus',
-            ],
-            context.session,
-          )
-        : await herdr(
-            [
-              'pane',
-              'split',
-              '--pane',
-              context.paneId,
-              '--direction',
-              'right',
-              '--cwd',
-              options.cwd,
-              ...environment,
-              focus ? '--focus' : '--no-focus',
-            ],
-            context.session,
-          )
-    const pane = herdrObject(created[mode === 'window' ? 'root_pane' : 'pane'], 'created pane')
+    const created = await herdr(
+      [
+        'tab',
+        'create',
+        '--workspace',
+        context.workspaceId,
+        '--cwd',
+        options.cwd,
+        '--label',
+        options.definition.title,
+        ...environment,
+        '--no-focus',
+      ],
+      context.session,
+    )
+    const pane = herdrObject(created['root_pane'], 'created pane')
     const paneId = herdrId(pane, 'pane_id')
-    const tabId =
-      mode === 'window'
-        ? herdrId(herdrObject(created['tab'], 'created tab'), 'tab_id')
-        : herdrId(pane, 'tab_id')
+    const tabId = herdrId(herdrObject(created['tab'], 'created tab'), 'tab_id')
     const undo = async () => {
-      await herdr(
-        mode === 'window' ? ['tab', 'close', tabId] : ['pane', 'close', paneId],
-        context.session,
-      )
+      await herdr(['tab', 'close', tabId], context.session)
     }
     try {
       // Herdr waits for Pi to become interactive and supplies its own process supervision.
@@ -179,7 +143,6 @@ export class ClawasPanelLauncher {
         terminalId: herdrId(agent, 'terminal_id'),
         agentName: name,
         sessionFile: options.sessionFile,
-        window: mode === 'window',
         session: context.session,
       }
     } catch (error) {
@@ -196,58 +159,33 @@ export class ClawasPanelLauncher {
     options: LaunchOptions,
     args: string[],
     env: Record<string, string>,
-    mode: 'panel' | 'window',
-    focus: boolean,
   ): Promise<PanelHandle> {
     if ((await this.tmuxServer(context.socket)) !== context.serverPid)
       throw new Error('tmux server changed')
     const command = `${Object.entries(env)
       .map(([key, value]) => `${key}=${shellQuote(value)}`)
       .join(' ')} exec pi ${args.map(shellQuote).join(' ')}`
-    const create =
-      mode === 'window'
-        ? [
-            'new-window',
-            '-d',
-            '-c',
-            options.cwd,
-            '-n',
-            options.definition.title,
-            '-P',
-            '-F',
-            '#{pane_id} #{pane_pid}',
-            command,
-          ]
-        : [
-            'split-window',
-            '-d',
-            '-t',
-            context.paneId,
-            '-c',
-            options.cwd,
-            '-P',
-            '-F',
-            '#{pane_id} #{pane_pid}',
-            command,
-          ]
-    const output = await tmux(context.socket, create)
+    const output = await tmux(context.socket, [
+      'new-window',
+      '-d',
+      '-c',
+      options.cwd,
+      '-n',
+      options.definition.title,
+      '-P',
+      '-F',
+      '#{pane_id} #{pane_pid}',
+      command,
+    ])
     const [paneId, panePid] = output.split(' ')
     if (!(paneId && panePid)) throw new Error(`tmux did not identify created pane: ${output}`)
-    const handle: PanelHandle = {
+    return {
       host: 'tmux',
       paneId,
       panePid,
       socket: context.socket,
       serverPid: context.serverPid,
       sessionFile: options.sessionFile,
-    }
-    try {
-      if (focus) await this.focus(handle)
-      return handle
-    } catch (error) {
-      return rollback(async () => {
-        await this.close(handle)
-      }, error)
     }
   }
 
@@ -285,7 +223,7 @@ export class ClawasPanelLauncher {
   }
 
   async focus(handle: PanelHandle): Promise<void> {
-    if (!(await this.isAlive(handle))) throw new Error('Clawa panel is no longer running')
+    if (!(await this.isAlive(handle))) throw new Error('Clawa tab is no longer running')
     if (handle.host === 'herdr') {
       await herdr(['agent', 'focus', handle.paneId], handle.session)
     } else {
@@ -304,12 +242,12 @@ export class ClawasPanelLauncher {
   async close(handle: PanelHandle): Promise<void> {
     if (!(await this.isAlive(handle))) return
     if (handle.host === 'herdr') {
-      // A window may have acquired other panes since launch; close only our occupant then.
+      // The user may have split the tab since launch; preserve any other occupants.
       const tab = herdrObject(
         (await herdr(['tab', 'get', handle.tabId], handle.session))['tab'],
         'tab',
       )
-      if (handle.window && tab['pane_count'] === 1) {
+      if (tab['pane_count'] === 1) {
         await herdr(['tab', 'close', handle.tabId], handle.session)
       } else {
         await herdr(['pane', 'close', handle.paneId], handle.session)
