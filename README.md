@@ -44,8 +44,8 @@ states the actual trust boundaries without pretending the extension is a sandbox
 
 ## Install
 
-Keep the package checkout separate from the clean folder that will become the Clawa home. Tagged
-releases are the stable update channel.
+Use Pi 0.87.1 or newer. Keep the package checkout separate from the clean folder that will become
+the Clawa home. Tagged releases are the stable update channel.
 
 ```sh
 git clone --branch v0.2.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git

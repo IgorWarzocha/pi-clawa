@@ -94,7 +94,7 @@ test('successful pulse deliveries stay checkpointed when a later pulse fails', a
     failBeta = false
     await pulseRuntime.scanAndRunDue(62_000)
     assert.equal(delivered.length, 2)
-    pulseRuntime.dispose()
+    await pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -158,8 +158,128 @@ test('Hey Clawa defers when another pulse for the same owner is due', async () =
     await pulseRuntime.scanAndRunDue(962_000)
     assert.equal(deliveries, 2)
     assert.equal((await readPulseState(root)).pulses['main:hey-clawa']?.lastRunAt, 962_000)
-    pulseRuntime.dispose()
+    await pulseRuntime.dispose()
   } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('disposal drains a delivered pulse, checkpoints it, and skips remaining stale deliveries', {
+  timeout: 5_000,
+}, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-dispose-'))
+  let releaseDelivery: () => void = () => {}
+  let runtime: PulseRuntime | undefined
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, '.pi'))
+    await writeFile(
+      join(root, '.pi', 'claw.jsonc'),
+      JSON.stringify({ clawas: { workers: [{ id: 'helper', cwd: 'clawas/helper' }] }, clawa: {} }),
+    )
+    for (const id of ['alpha', 'beta']) {
+      await mkdir(join(root, 'clawas', 'helper', 'pulses', id), { recursive: true })
+      await writeFile(
+        join(root, 'clawas', 'helper', 'pulses', id, 'PULSE.md'),
+        ['---', `title: ${id}`, 'schedule: every 1m', '---', '', `# ${id}`].join('\n'),
+      )
+    }
+
+    let deliveryStarted!: () => void
+    const started = new Promise<void>((resolve) => (deliveryStarted = resolve))
+    const blocked = new Promise<void>((resolve) => (releaseDelivery = resolve))
+    const delivered: string[] = []
+    runtime = new PulseRuntime(
+      {
+        sendMessage: () => {
+          throw new Error('unexpected main delivery')
+        },
+      } as never,
+      {
+        refreshFromConfig: async () => {},
+        getState: () => ({ workers: [] }),
+        sendPrompt: async (owner: string) => {
+          delivered.push(owner)
+          deliveryStarted()
+          if (delivered.length === 1) await blocked
+        },
+      } as never,
+    )
+    runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+    await runtime.scanAndRunDue(1_000)
+    const scan = runtime.scanAndRunDue(62_000)
+    await started
+    let stopped = false
+    const stopping = runtime.dispose().then(() => (stopped = true))
+    await Promise.resolve()
+    assert.equal(stopped, false)
+    releaseDelivery()
+    await Promise.all([scan, stopping])
+    assert.deepEqual(delivered, ['helper'])
+    assert.equal((await readPulseState(root)).pulses['helper:alpha']?.lastRunAt, 62_000)
+    assert.equal((await readPulseState(root)).pulses['helper:beta']?.lastRunAt, undefined)
+    runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+    await runtime.scanAndRunDue(62_000)
+    assert.deepEqual(delivered, ['helper', 'helper'])
+    await runtime.dispose()
+  } finally {
+    releaseDelivery()
+    await runtime?.dispose()
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('a scan waiting on a worker cannot deliver into a reattached session', {
+  timeout: 5_000,
+}, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-reattach-'))
+  let releaseRefresh: () => void = () => {}
+  let runtime: PulseRuntime | undefined
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, '.pi'))
+    await writeFile(
+      join(root, '.pi', 'claw.jsonc'),
+      JSON.stringify({ clawas: { workers: [{ id: 'helper', cwd: 'clawas/helper' }] }, clawa: {} }),
+    )
+    await mkdir(join(root, 'clawas', 'helper', 'pulses', 'check'), { recursive: true })
+    await writeFile(
+      join(root, 'clawas', 'helper', 'pulses', 'check', 'PULSE.md'),
+      ['---', 'title: Check', 'schedule: every 1m', '---', '', '# Check'].join('\n'),
+    )
+    let refreshStarted!: () => void
+    const started = new Promise<void>((resolve) => (refreshStarted = resolve))
+    const blocked = new Promise<void>((resolve) => (releaseRefresh = resolve))
+    let deliveries = 0
+    runtime = new PulseRuntime(
+      {} as never,
+      {
+        refreshFromConfig: async () => {
+          refreshStarted()
+          await blocked
+        },
+        getState: () => ({ workers: [] }),
+        sendPrompt: async () => {
+          deliveries++
+        },
+      } as never,
+    )
+    const ctx = { cwd: root, hasUI: false, isIdle: () => true } as never
+    runtime.attach(ctx)
+    await runtime.scanAndRunDue(1_000)
+    const scan = runtime.scanAndRunDue(62_000)
+    await started
+    const stopping = runtime.dispose()
+    runtime.attach(ctx)
+    releaseRefresh()
+    await Promise.all([scan, stopping])
+    assert.equal(deliveries, 0)
+    assert.equal((await readPulseState(root)).pulses['helper:check']?.lastRunAt, undefined)
+    await runtime.scanAndRunDue(62_000)
+    assert.equal(deliveries, 1)
+  } finally {
+    releaseRefresh()
+    await runtime?.dispose()
     await rm(root, { recursive: true, force: true })
   }
 })

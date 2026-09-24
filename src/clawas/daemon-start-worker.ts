@@ -35,6 +35,7 @@ export async function startWorkerProcess(options: {
   streamBuffers: Map<string, string>
   controlPlaneRoot: string
   workerId: string
+  shouldStart: () => boolean
   createWorker: (cwd: string, definition: WorkerDefinition, sessionFile?: string) => ClawasRpcWorker
   attachWorkerListeners: (workerId: string, worker: ClawasRpcWorker) => void
   nameWorkerSession: (worker: ClawasRpcWorker) => Promise<void>
@@ -64,6 +65,7 @@ export async function startWorkerProcess(options: {
     definition,
     workerState.cwd,
   )
+  if (!options.shouldStart()) return
   const worker = options.createWorker(workerState.cwd, definition, sessionFile)
 
   options.workers.set(options.workerId, worker)
@@ -94,7 +96,7 @@ export async function startWorkerProcess(options: {
     await options.nameWorkerSession(worker)
     await options.markWorkerReady(options.workerId, worker, workerState.lastSummary)
 
-    if (definition.startupPrompt) {
+    if (definition.startupPrompt && options.shouldStart()) {
       await options.sendStartupPrompt(options.workerId, definition)
     }
   } catch (error) {

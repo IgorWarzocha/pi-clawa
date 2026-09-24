@@ -1,6 +1,6 @@
 import type { ClawaDefaults } from '../config'
 import { sendClawasSessionMessage } from './comms/client.js'
-import { ClawasRpcWorker } from './rpc-worker.js'
+import type { ClawasRpcWorker } from './rpc-worker.js'
 import { patchWorkerState, pushEvent } from './state.js'
 import { summarizeAssistantText, summarizeError } from './summaries.js'
 import type { ClawasState, WorkerDefinition } from './types.js'
@@ -28,21 +28,6 @@ export async function sendStartupContextMessage(options: {
   } catch {
     await options.fallbackPrompt()
   }
-}
-
-export function createRpcWorker(options: {
-  definition: WorkerDefinition
-  cwd: string
-  extensionPaths: string[]
-  sessionFile?: string | undefined
-}): ClawasRpcWorker {
-  return new ClawasRpcWorker({
-    definition: options.definition,
-    cwd: options.cwd,
-    extensionPaths: options.extensionPaths,
-    reportSessionId: 'main-claw',
-    sessionFile: options.sessionFile,
-  })
 }
 
 export async function markWorkerReadyState(options: {

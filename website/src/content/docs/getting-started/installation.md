@@ -13,7 +13,7 @@ Clawa's home.
 
 - Git.
 - Node.js **24.15 or newer, but lower than 27**.
-- [Pi](https://github.com/earendil-works/pi-mono) with a configured model provider.
+- [Pi](https://github.com/earendil-works/pi) **0.87.1 or newer**, with a configured model provider.
 - A clean folder for the home. [First run](../first-run/) explains the exact bootstrap boundary.
 
 Pi extensions execute with your user permissions. Read the [trust boundaries](../../reference/privacy/)

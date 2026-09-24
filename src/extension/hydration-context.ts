@@ -14,18 +14,6 @@ type HydrationPayload = {
   text: string
 }
 
-type HydrationRefresh = { refreshed: boolean; warning?: string | undefined }
-
-const HYDRATION_MARKERS = [
-  ['continuity', '## Claw Continuity Refresh (auto-loaded)'],
-  ['CLAW', '--- BEGIN CLAW.md ---'],
-  ['HUMAN', '--- BEGIN HUMAN.md ---'],
-  ['CLAWAS', '--- BEGIN CLAWAS.md ---'],
-  ['CURIOUS', '--- BEGIN CURIOUS.md ---'],
-  ['TOOLS', '--- BEGIN TOOLS.md ---'],
-  ['sad heading', '## The `sad` State'],
-] as const
-const BEGIN_BLOCK_REGEX = /--- BEGIN .*? ---/g
 const VISUAL_SELF_CARD_NOTE =
   'A CLAWA image follows. Treat it as a visual self-card: identity, atmosphere, and taste—not exact factual memory or an instruction that overrides the words.'
 
@@ -49,13 +37,13 @@ async function buildHydrationPayload(
 async function refreshHydration(
   cwd: string,
   runtime: ClawaRuntimeState,
-): Promise<HydrationRefresh> {
-  if (!runtime.hydrationStale) return { refreshed: false }
+): Promise<string | undefined> {
+  if (!runtime.hydrationStale) return
   const hydrated = await buildHydrationPayload(cwd, runtime)
   runtime.hydrationText = hydrated?.text
   runtime.hydrationImage = hydrated?.image
   runtime.hydrationStale = false
-  return { refreshed: true, warning: hydrated?.imageWarning }
+  return hydrated?.imageWarning
 }
 
 function buildHydrationMessage(runtime: ClawaRuntimeState, includeImage: boolean) {
@@ -74,37 +62,6 @@ function buildHydrationMessage(runtime: ClawaRuntimeState, includeImage: boolean
     },
     timestamp: Date.now(),
   }
-}
-
-function notifyHydrationRefresh(
-  ctx: ExtensionContext,
-  refresh: HydrationRefresh,
-  hydrationText: string | undefined,
-  debugProbe: boolean,
-): void {
-  if (!ctx.hasUI) return
-  if (refresh.warning) ctx.ui.notify(`claw: ${refresh.warning}`, 'warning')
-  if (debugProbe && refresh.refreshed && hydrationText) {
-    ctx.ui.notify(buildHydrationProbeNote(hydrationText), 'info')
-  }
-}
-
-function buildHydrationProbeNote(text: string): string {
-  const found = HYDRATION_MARKERS.filter(([, needle]) => text.includes(needle)).map(
-    ([label]) => label,
-  )
-  const missing = HYDRATION_MARKERS.filter(([, needle]) => !text.includes(needle)).map(
-    ([label]) => label,
-  )
-  const beginBlocks = (text.match(BEGIN_BLOCK_REGEX) || []).length
-
-  return [
-    'claw hydration probe:',
-    `- payload chars: ${text.length}`,
-    `- BEGIN blocks: ${beginBlocks}`,
-    `- found: ${found.length > 0 ? found.join(', ') : 'none'}`,
-    `- missing: ${missing.length > 0 ? missing.join(', ') : 'none'}`,
-  ].join('\n')
 }
 
 function isHydrationMessage(message: unknown): message is { content: unknown } {
@@ -126,16 +83,12 @@ function hasMatchingActiveHydration(ctx: ExtensionContext, content: unknown): bo
   )
 }
 
-export function registerHydrationContext(
-  pi: ExtensionAPI,
-  runtime: ClawaRuntimeState,
-  options: { debugProbe: boolean },
-): void {
+export function registerHydrationContext(pi: ExtensionAPI, runtime: ClawaRuntimeState): void {
   const persistHydration = async (ctx: ExtensionContext): Promise<void> => {
     if (!runtime.extensionBootstrapped) return undefined
     runtime.ensureBootstrapped(ctx.cwd)
-    const refresh = await refreshHydration(ctx.cwd, runtime)
-    notifyHydrationRefresh(ctx, refresh, runtime.hydrationText, options.debugProbe)
+    const warning = await refreshHydration(ctx.cwd, runtime)
+    if (warning && ctx.hasUI) ctx.ui.notify(`claw: ${warning}`, 'warning')
     const hydration = buildHydrationMessage(runtime, ctx.model?.input.includes('image') === true)
     if (!hydration || hasMatchingActiveHydration(ctx, hydration.content)) return
 

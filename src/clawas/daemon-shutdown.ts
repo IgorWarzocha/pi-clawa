@@ -5,26 +5,35 @@ import type { ClawasState } from './types.js'
 export async function stopAllWorkers(options: {
   state: ClawasState
   workers: Map<string, ClawasRpcWorker>
+  workerStarts: Map<string, Promise<void>>
   streamBuffers: Map<string, string>
-  getFallbackId: () => string
   getNow: () => number
 }): Promise<void> {
-  const runningWorkers = [...options.workers.values()]
-  const results = await Promise.allSettled(
-    runningWorkers.map(async (worker) => await worker.stop()),
-  )
-  for (const [index, result] of results.entries()) {
-    if (result.status === 'fulfilled') {
-      continue
-    }
-    const worker = runningWorkers[index]
-    pushEvent(
-      options.state,
-      worker?.definition.id ?? options.getFallbackId(),
-      `shutdown warning: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
-      options.getNow(),
+  const stopWorkers = async (workers: ClawasRpcWorker[]): Promise<void> => {
+    await Promise.all(
+      workers.map(async (worker) => {
+        try {
+          await worker.stop()
+        } catch (error) {
+          pushEvent(
+            options.state,
+            worker.definition.id,
+            `shutdown warning: ${error instanceof Error ? error.message : String(error)}`,
+            options.getNow(),
+          )
+        }
+      }),
     )
   }
+
+  // Closing registered workers releases RPCs that their startup paths may be awaiting.
+  const registered = new Set(options.workers.values())
+  await Promise.all([
+    stopWorkers([...registered]),
+    Promise.allSettled([...options.workerStarts.values()]),
+  ])
+  // A start reserved before shutdown may register its child after the first snapshot.
+  await stopWorkers([...options.workers.values()].filter((worker) => !registered.has(worker)))
 
   options.workers.clear()
   options.streamBuffers.clear()

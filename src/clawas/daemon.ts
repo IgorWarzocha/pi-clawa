@@ -10,16 +10,16 @@ import {
   resetStateForRestart,
 } from './daemon-state.js'
 import {
-  createRpcWorker,
   handleWorkerStartFailureState,
   markWorkerReadyState,
   nameWorkerSession,
   sendStartupContextMessage,
 } from './daemon-worker-lifecycle.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
-import type { ClawasRpcWorker } from './rpc-worker.js'
+import { ClawasRpcWorker } from './rpc-worker.js'
 import { resolveWorkerSessionFile } from './session-registry.js'
-import { createInitialState, getWorkerState } from './state.js'
+import { createInitialState, getWorkerState, patchWorkerState, pushEvent } from './state.js'
+import { summarizeError } from './summaries.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 import { ClawasWorkerEventRouter } from './worker-event-router.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
@@ -37,6 +37,8 @@ export class ClawasDaemon {
   private readonly workerStarts = new Map<string, Promise<void>>()
   private readonly streamBuffers = new Map<string, string>()
   private readonly intentionalStops = new Set<string>()
+  private readonly stoppingWorkers = new Set<string>()
+  private readonly stopVersions = new Map<string, number>()
   private readonly extensionPaths: string[]
   private readonly projectRoot: string
   private readonly controlPlaneRoot: string
@@ -44,8 +46,9 @@ export class ClawasDaemon {
   private readonly config: ClawasConfig
   private readonly onStateChange: () => void
   private readonly clawaDefaults?: ClawaDefaults | undefined
-  private started = false
-  private stopping = false
+  private phase: 'idle' | 'running' | 'stopping' = 'idle'
+  private shutdown: Promise<void> | null = null
+  private lifecycleVersion = 0
 
   constructor(
     projectRoot: string,
@@ -134,19 +137,22 @@ export class ClawasDaemon {
   }
 
   async start(): Promise<void> {
-    if (this.started) {
+    if (this.phase !== 'idle') {
       return
     }
 
-    this.started = true
+    const version = this.lifecycleVersion
+    this.phase = 'running'
     this.state.daemonStarted = true
     this.notifyChanged()
 
     for (const definition of this.config.workers) {
-      await this.adoptLiveManualSession(definition.id)
+      if (version !== this.lifecycleVersion) return
+      await this.adoptLiveManualSession(definition.id, version)
     }
 
     for (const definition of this.config.workers) {
+      if (version !== this.lifecycleVersion) return
       if (!definition.autostart) {
         continue
       }
@@ -158,25 +164,33 @@ export class ClawasDaemon {
   }
 
   async restart(): Promise<void> {
+    const version = ++this.lifecycleVersion
     await this.stopAll()
-    this.started = false
+    if (version !== this.lifecycleVersion) return
     resetStateForRestart(this.state, now())
     await this.start()
   }
 
   async dispose(): Promise<void> {
+    ++this.lifecycleVersion
     await this.stopAll()
     this.state.daemonStarted = false
     this.notifyChanged()
   }
 
   async stopWorker(workerId: string): Promise<void> {
-    const worker = this.workers.get(workerId)
-    if (!worker) {
-      return
+    // Invalidate a close-triggered restart that is waiting for startup to settle.
+    this.stopVersions.set(workerId, (this.stopVersions.get(workerId) ?? 0) + 1)
+    this.stoppingWorkers.add(workerId)
+    try {
+      await this.workerStarts.get(workerId)?.catch(() => {})
+      const worker = this.workers.get(workerId)
+      if (!worker) return
+      this.intentionalStops.add(workerId)
+      await worker.stop()
+    } finally {
+      this.stoppingWorkers.delete(workerId)
     }
-    this.intentionalStops.add(workerId)
-    await worker.stop()
   }
 
   async ensureWorkerRunning(workerId: string): Promise<void> {
@@ -206,7 +220,10 @@ export class ClawasDaemon {
 
     const definition = this.getWorkerDefinition(workerId)
     if (definition.enabled && definition.autostart) {
-      void this.startWorker(workerId)
+      const version = this.lifecycleVersion
+      void this.startWorker(workerId).catch((error: unknown) => {
+        this.reportBackgroundStartFailure(workerId, version, error)
+      })
     }
   }
 
@@ -228,9 +245,10 @@ export class ClawasDaemon {
     })
   }
 
-  private async adoptLiveManualSession(workerId: string): Promise<boolean> {
+  private async adoptLiveManualSession(workerId: string, version: number): Promise<boolean> {
     const definition = this.getWorkerDefinition(workerId)
     const status = await getClawasSessionStatus(getWorkerSocketAlias(definition))
+    if (this.phase !== 'running' || version !== this.lifecycleVersion) return false
     if (status?.kind !== 'manual') {
       return false
     }
@@ -241,12 +259,16 @@ export class ClawasDaemon {
       (await resolveWorkerSessionFile(this.controlPlaneRoot, definition, workerState.cwd).catch(
         () => undefined,
       ))
+    if (this.phase !== 'running' || version !== this.lifecycleVersion) return false
     markWorkerDetachedState(this.state, workerId, 'manual session', now(), sessionFile)
     this.notifyChanged()
     return true
   }
 
   private async startWorker(workerId: string): Promise<void> {
+    if (this.phase !== 'running' || this.stoppingWorkers.has(workerId)) {
+      throw new Error(`Worker ${workerId} cannot start while stopping`)
+    }
     await coalesceWorkerStart(this.workerStarts, workerId, async () => {
       await startWorkerProcess({
         state: this.state,
@@ -254,8 +276,15 @@ export class ClawasDaemon {
         streamBuffers: this.streamBuffers,
         controlPlaneRoot: this.controlPlaneRoot,
         workerId,
+        shouldStart: () => this.phase === 'running' && !this.stoppingWorkers.has(workerId),
         createWorker: (cwd, definition, sessionFile) =>
-          this.createWorker(cwd, definition, sessionFile),
+          new ClawasRpcWorker({
+            definition,
+            cwd,
+            extensionPaths: this.getWorkerExtensionPaths(definition.id),
+            reportSessionId: 'main-claw',
+            sessionFile,
+          }),
         attachWorkerListeners: (id, worker) => this.attachWorkerListeners(id, worker),
         nameWorkerSession: async (worker) => await nameWorkerSession(worker, this.clawaDefaults),
         markWorkerReady: async (id, worker, fallbackSummary) =>
@@ -279,20 +308,11 @@ export class ClawasDaemon {
       definition,
       message,
       getMainClawName: () => this.getMainClawName(),
-      fallbackPrompt: async () => await this.sendPrompt(workerId, message, 'prompt'),
-    })
-  }
-
-  private createWorker(
-    cwd: string,
-    definition: WorkerDefinition,
-    sessionFile?: string,
-  ): ClawasRpcWorker {
-    return createRpcWorker({
-      definition,
-      cwd,
-      extensionPaths: this.getWorkerExtensionPaths(definition.id),
-      sessionFile,
+      fallbackPrompt: async () => {
+        // A dead worker must not await its own startup reservation through sendPrompt.
+        if (!this.workers.has(workerId)) throw new Error(`Worker ${workerId} exited during startup`)
+        await this.sendPrompt(workerId, message, 'prompt')
+      },
     })
   }
 
@@ -341,20 +361,28 @@ export class ClawasDaemon {
   }
 
   private async stopAll(): Promise<void> {
+    if (this.shutdown) return await this.shutdown
     // Shutdown should be best-effort across the whole clawas. One unhappy worker
     // should not prevent the rest from being torn down cleanly.
-    this.stopping = true
+    this.phase = 'stopping'
+    this.shutdown = (async () => {
+      try {
+        await stopAllWorkers({
+          state: this.state,
+          workers: this.workers,
+          workerStarts: this.workerStarts,
+          streamBuffers: this.streamBuffers,
+          getNow: now,
+        })
+      } finally {
+        this.phase = 'idle'
+        this.notifyChanged()
+      }
+    })()
     try {
-      await stopAllWorkers({
-        state: this.state,
-        workers: this.workers,
-        streamBuffers: this.streamBuffers,
-        getFallbackId: () => this.getClawasId(),
-        getNow: now,
-      })
+      await this.shutdown
     } finally {
-      this.stopping = false
-      this.notifyChanged()
+      this.shutdown = null
     }
   }
 
@@ -370,20 +398,45 @@ export class ClawasDaemon {
     }
     const stderr = worker?.getStderr() ?? ''
     const intentional = this.intentionalStops.delete(workerId)
+    const stopVersion = this.stopVersions.get(workerId) ?? 0
+    const version = this.lifecycleVersion
     const definition = getWorkerState(this.state, workerId).definition
     this.workers.delete(workerId)
-    this.eventRouter.handleClose(workerId, code, signal, stderr, this.stopping || intentional)
+    this.eventRouter.handleClose(
+      workerId,
+      code,
+      signal,
+      stderr,
+      this.phase === 'stopping' || intentional,
+    )
 
-    if (!(this.stopping || intentional) && definition.enabled && definition.autostart) {
+    if (
+      this.phase === 'running' &&
+      !(intentional || this.stoppingWorkers.has(workerId)) &&
+      definition.enabled &&
+      definition.autostart
+    ) {
       // If the process died while its startup path was still settling, wait for
       // that reservation to clear before replacing it.
-      void this.restartWorkerAfterClose(workerId)
+      void this.restartWorkerAfterClose(workerId, version, stopVersion).catch((error: unknown) => {
+        this.reportBackgroundStartFailure(workerId, version, error)
+      })
     }
   }
 
-  private async restartWorkerAfterClose(workerId: string): Promise<void> {
+  private async restartWorkerAfterClose(
+    workerId: string,
+    version: number,
+    stopVersion: number,
+  ): Promise<void> {
     await this.workerStarts.get(workerId)?.catch(() => {})
-    if (this.stopping || this.workers.has(workerId)) {
+    if (
+      this.phase !== 'running' ||
+      version !== this.lifecycleVersion ||
+      stopVersion !== (this.stopVersions.get(workerId) ?? 0) ||
+      this.stoppingWorkers.has(workerId) ||
+      this.workers.has(workerId)
+    ) {
       return
     }
     const definition = getWorkerState(this.state, workerId).definition
@@ -392,18 +445,26 @@ export class ClawasDaemon {
     }
   }
 
+  private reportBackgroundStartFailure(workerId: string, version: number, error: unknown): void {
+    if (this.phase !== 'running' || version !== this.lifecycleVersion || this.workers.has(workerId))
+      return
+    const detail = error instanceof Error ? error.message : String(error)
+    patchWorkerState(
+      this.state,
+      workerId,
+      { status: 'error', lastError: summarizeError(detail) },
+      now(),
+    )
+    pushEvent(this.state, workerId, `${workerId} failed to restart: ${detail}`, now())
+    this.notifyChanged()
+  }
+
   private getClawasName(): string {
     return this.clawaDefaults?.clawasName ?? 'Clawas'
   }
 
   private getMainClawName(): string {
     return this.clawaDefaults?.mainClawName ?? 'Clawa'
-  }
-
-  private getClawasId(): string {
-    return this.getClawasName()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
   }
 
   private notifyChanged(): void {

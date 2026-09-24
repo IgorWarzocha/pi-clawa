@@ -22,7 +22,8 @@ On every startup, reload, new session, resume, or fork, the extension:
 7. attaches managed Clawas and the Pulse timer in a UI-bearing main session;
 8. queues invisible conversational onboarding after the first successful bootstrap.
 
-`session_shutdown` stops the current comms server, Pulse timer, and managed worker runtime.
+`session_shutdown` drains the current comms alias maintenance and Pulse work, then stops managed
+workers, including any starts still in flight.
 
 ## Prompt shaping
 
@@ -30,9 +31,10 @@ Before an agent starts, Clawa filters Pi context files to the resolved home, rem
 context, and swaps Pi's generic assistant-introduction portion for the configured main or worker
 identity. Pi's tool/runtime prompt remains intact.
 
-Custom `.pi/SYSTEM.md` content is intentionally ignored with a warning. Compatible additions belong
-in `.pi/APPEND_SYSTEM.md`. This prevents a second full system identity from silently fighting the
-home spine.
+Custom `.pi/SYSTEM.md` content and earlier extensions' full-prompt replacements are ignored with a
+warning. An opaque replacement cannot be filtered to the home. Compatible additions belong in
+`.pi/APPEND_SYSTEM.md` or an extension's structured prompt sections. Extensions loaded after Clawa
+can still override its prompt. This is home-scoping behavior, not a sandbox against other extensions.
 
 ## Continuity context
 
@@ -47,16 +49,17 @@ discovery tool results as work reaches governed paths.
 
 ## Settlement and compaction
 
-After an agent run settles, Clawa checks usage against the active model's context window. At the
-configured memory-pass threshold—90% by default—it claims one follow-up on the same branch. The
-model uses `recall` and `remember` normally, with explicit guidance to update rather than duplicate
-and to save nothing when no durable signal emerged.
+Before a successful run settles, Clawa checks usage against the active model's context window.
+At the configured memory-pass threshold, 90% by default, the `agent_before_settle` hook appends one
+hidden instruction and requests a continuation on the same branch. Aborted and failed runs do not
+start a memory pass. The model uses `recall` and `remember` normally, with explicit guidance to
+update rather than duplicate and to save nothing when no durable signal emerged.
 
 That follow-up does not compact or call a detached model. Pi's configured default, custom, or
 provider-native compactor remains the sole owner of canonical history, threshold, retries, overflow
 recovery, and summary shape. The memory pass rearms after `session_compact` or `session_start`.
-Certain opaque provider overflow errors are normalized to Pi's recognized context-length error so
-normal recovery can happen.
+Pi also owns provider overflow recognition. The memory pass does not delay compaction, which can
+happen during a long tool run before the settlement hook is reached.
 
 ## Main and worker roles
 

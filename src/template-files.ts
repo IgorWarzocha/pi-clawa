@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { copyFile, mkdir, readdir } from 'node:fs/promises'
+import { constants, existsSync, readFileSync } from 'node:fs'
+import { copyFile, lstat, mkdir, readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 
 export interface TemplateCopyResult {
@@ -52,7 +52,15 @@ export async function copyTemplateFiles(
     const sourcePath = join(templateDir, file)
     const targetPath = join(targetDir, file)
     await mkdir(dirname(targetPath), { recursive: true })
-    await copyFile(sourcePath, targetPath)
+    try {
+      await copyFile(sourcePath, targetPath, constants.COPYFILE_EXCL)
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'EEXIST') {
+        const existing = await lstat(targetPath)
+        if (existing.isFile() || existing.isSymbolicLink()) continue
+      }
+      throw error
+    }
     copied.push(file)
     loadedFiles.push({ name: file, chars: readFileSync(targetPath, 'utf8').length })
   }

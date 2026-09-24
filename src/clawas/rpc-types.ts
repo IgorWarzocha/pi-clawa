@@ -1,4 +1,4 @@
-import type { ThinkingLevel } from '@earendil-works/pi-agent-core'
+import type { RpcResponse, RpcSessionState } from '@earendil-works/pi-coding-agent'
 
 export type ClawasRpcCommandInput =
   | { type: 'prompt'; message: string }
@@ -11,14 +11,11 @@ export type ClawasRpcCommandInput =
 
 export type ClawasRpcCommand = ClawasRpcCommandInput & { id: string }
 
-export interface ClawasRpcSessionState {
-  isStreaming: boolean
-  sessionFile?: string | undefined
-  sessionId: string
-  sessionName?: string | undefined
-  thinkingLevel: ThinkingLevel
-  pendingMessageCount: number
-}
+export type ClawasRpcSessionState = Pick<RpcSessionState, 'sessionFile'>
+export type ClawasRpcAssistantText = Extract<
+  RpcResponse,
+  { command: 'get_last_assistant_text'; success: true }
+>['data']['text']
 
 export interface ClawasRpcResponse {
   id?: string | undefined

@@ -66,6 +66,8 @@ export class ClawasCommsServer {
   private server: Server | null = null
   private socketPath: string | null = null
   private aliasTimer: ReturnType<typeof setInterval> | null = null
+  private aliasSync: Promise<void> | null = null
+  private transition: Promise<void> = Promise.resolve()
   private context: ExtensionContext | null = null
   private readonly pi: ExtensionAPI
   private readonly getAlias: () => string | undefined
@@ -75,36 +77,72 @@ export class ClawasCommsServer {
     this.getAlias = getAlias
   }
 
-  async start(ctx: ExtensionContext): Promise<void> {
+  start(ctx: ExtensionContext): Promise<void> {
+    return this.serialize(() => this.startServer(ctx))
+  }
+
+  private async startServer(ctx: ExtensionContext): Promise<void> {
     await ensureControlDir()
     const sessionId = ctx.sessionManager.getSessionId()
     const socketPath = getSocketPath(sessionId)
 
     if (this.socketPath === socketPath && this.server) {
       this.context = ctx
-      await syncSocketAlias(sessionId, this.getAlias())
+      try {
+        await this.syncAlias(sessionId)
+      } catch (error) {
+        await this.stopServer()
+        throw error
+      }
       return
     }
 
-    await this.stop()
+    await this.stopServer()
     await removeSocket(socketPath)
     this.context = ctx
     this.socketPath = socketPath
-    this.server = await this.createServer()
-    await syncSocketAlias(sessionId, this.getAlias())
+    try {
+      this.server = await this.createServer()
+      await this.syncAlias(sessionId)
+    } catch (error) {
+      await this.stopServer()
+      throw error
+    }
 
     if (!this.aliasTimer) {
       this.aliasTimer = setInterval(() => {
-        if (!this.context) {
-          return
-        }
-        void syncSocketAlias(this.context.sessionManager.getSessionId(), this.getAlias())
+        if (!this.context || this.aliasSync) return
+        const currentSessionId = this.context.sessionManager.getSessionId()
+        void this.syncAlias(currentSessionId).catch((error: unknown) => {
+          console.error('Clawas socket alias sync failed:', error)
+        })
       }, 1_000)
       this.aliasTimer.unref?.()
     }
   }
 
-  async stop(): Promise<void> {
+  stop(): Promise<void> {
+    return this.serialize(() => this.stopServer())
+  }
+
+  private serialize(operation: () => Promise<void>): Promise<void> {
+    const work = this.transition.catch(() => {}).then(operation)
+    this.transition = work
+    return work
+  }
+
+  private async syncAlias(sessionId: string): Promise<void> {
+    if (this.aliasSync) await this.aliasSync
+    const work = syncSocketAlias(sessionId, this.getAlias())
+    this.aliasSync = work
+    try {
+      await work
+    } finally {
+      if (this.aliasSync === work) this.aliasSync = null
+    }
+  }
+
+  private async stopServer(): Promise<void> {
     if (this.aliasTimer) {
       clearInterval(this.aliasTimer)
       this.aliasTimer = null
@@ -113,10 +151,15 @@ export class ClawasCommsServer {
     const socketPath = this.socketPath
     this.socketPath = null
     this.context = null
+    if (this.aliasSync) {
+      // The periodic sync reports its own failure. Cleanup must still run.
+      await this.aliasSync.catch(() => {})
+    }
 
-    if (this.server) {
-      await new Promise<void>((resolve) => this.server?.close(() => resolve()))
-      this.server = null
+    const server = this.server
+    this.server = null
+    if (server) {
+      await new Promise<void>((resolve) => server.close(() => resolve()))
     }
 
     await removeAliasesForSocket(socketPath)

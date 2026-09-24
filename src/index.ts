@@ -8,7 +8,6 @@ import {
 } from './clawas/steer-command.js'
 import { registerClawasTools } from './clawas/tool-surface.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
-import { registerContextOverflowNormalization } from './context-overflow.js'
 import { registerClawCommand } from './extension/claw-command.js'
 import { extensionPath, IS_CLAWAS_WORKER } from './extension/constants.js'
 import { getWorkerAlias } from './extension/environment.js'
@@ -26,10 +25,6 @@ import { registerClawaSystemPrompt } from './system-prompt.js'
 
 process.env['PI_CLAW_EXTENSION_PATH'] = extensionPath
 
-// TEMP DEBUG PROBE.
-// Leave false by default. Turn on only when tracing hydration, then turn it back off.
-const DEBUG_HYDRATION_PROBE = false
-
 /** @public Pi loads the package extension through this default export. */
 export default function howabouaClaw(pi: ExtensionAPI): void {
   const clawasRuntime = new ClawasRuntime()
@@ -45,7 +40,6 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerClawasTools(pi, clawasRuntime)
   registerRememberTool(pi)
   registerRecallTool(pi)
-  registerContextOverflowNormalization(pi)
   registerMemoryPass(pi, () => currentClawaDefaults.memoryPass)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)
@@ -60,6 +54,6 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
 
   registerClawaSessionEvents(pi, { runtime, clawasRuntime, pulseRuntime, commsServer, setDefaults })
   // Session setup/bootstrap arms hydration before this later handler persists it.
-  registerHydrationContext(pi, runtime, { debugProbe: DEBUG_HYDRATION_PROBE })
+  registerHydrationContext(pi, runtime)
   registerClawCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
 }

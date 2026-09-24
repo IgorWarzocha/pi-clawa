@@ -31,6 +31,8 @@ export class PulseRuntime {
   private context: ExtensionContext | null = null
   private timer: ReturnType<typeof setInterval> | null = null
   private running = false
+  private epoch = 0
+  private readonly active = new Set<Promise<unknown>>()
   private readonly pi: ExtensionAPI
   private readonly clawasRuntime: ClawasRuntime
   private readonly sendWorkerSessionMessage: PulseWorkerSender
@@ -46,14 +48,17 @@ export class PulseRuntime {
   }
 
   attach(context: ExtensionContext): void {
+    this.epoch += 1
     this.context = context
     this.ensureStarted()
   }
 
-  dispose(): void {
+  async dispose(): Promise<void> {
+    this.epoch += 1
     if (this.timer) clearInterval(this.timer)
     this.timer = null
     this.context = null
+    await Promise.allSettled([...this.active])
   }
 
   async list(): Promise<PulseDefinition[]> {
@@ -61,24 +66,41 @@ export class PulseRuntime {
     return await discoverPulseDefinitions(this.context.cwd)
   }
 
-  async runNow(target: string): Promise<PulseDefinition> {
+  runNow(target: string): Promise<PulseDefinition> {
     const ctx = this.requireContext()
+    const epoch = this.epoch
+    return this.track(this.runForced(ctx, epoch, target))
+  }
+
+  private async runForced(
+    ctx: ExtensionContext,
+    epoch: number,
+    target: string,
+  ): Promise<PulseDefinition> {
     const pulses = await discoverPulseDefinitions(ctx.cwd)
+    if (this.epoch !== epoch) throw new Error('Pulse session changed before delivery')
     const pulse = resolvePulseTarget(pulses, target)
     if (!pulse) throw new Error(`Unknown pulse: ${target}`)
-    await this.dispatchPulse(pulse, 'forced', Date.now())
+    if (!(await this.dispatchPulse(pulse, 'forced', Date.now(), epoch))) {
+      throw new Error('Pulse session changed before delivery')
+    }
     return pulse
   }
 
-  async scanAndRunDue(nowMs = Date.now()): Promise<void> {
-    if (this.running) return
+  scanAndRunDue(nowMs = Date.now()): Promise<void> {
+    if (this.running) return Promise.resolve()
     const ctx = this.context
-    if (!ctx) return
+    if (!ctx) return Promise.resolve()
 
     this.running = true
+    return this.track(this.scanDue(ctx, this.epoch, nowMs))
+  }
+
+  private async scanDue(ctx: ExtensionContext, epoch: number, nowMs: number): Promise<void> {
     try {
       const pulses = await discoverPulseDefinitions(ctx.cwd)
       const state = await readPulseState(ctx.cwd)
+      if (this.epoch !== epoch) return
       let changed = seedNewPulses(state, pulses, nowMs)
 
       const duePulses = collectDuePulses(pulses, state, nowMs)
@@ -87,9 +109,11 @@ export class PulseRuntime {
       if (changed) await writePulseState(ctx.cwd, state)
 
       for (const { pulse, dueKey } of duePulses) {
+        if (this.epoch !== epoch) break
         if (delayedHeyPulses.has(pulse)) continue
         const entry = state.pulses[pulse.key]
-        await this.dispatchPulse(pulse, 'scheduled', nowMs)
+        if (!(await this.dispatchPulse(pulse, 'scheduled', nowMs, epoch))) break
+        // A delivery already in flight may finish during shutdown. Persist it before exiting.
         state.pulses[pulse.key] = {
           ...entry,
           firstSeenAt: entry?.firstSeenAt ?? nowMs,
@@ -105,6 +129,15 @@ export class PulseRuntime {
     }
   }
 
+  private track<T>(work: Promise<T>): Promise<T> {
+    this.active.add(work)
+    void work.then(
+      () => this.active.delete(work),
+      () => this.active.delete(work),
+    )
+    return work
+  }
+
   private ensureStarted(): void {
     if (this.timer) return
     this.timer = setInterval(() => {
@@ -117,13 +150,15 @@ export class PulseRuntime {
     pulse: PulseDefinition,
     mode: PulseRunMode,
     nowMs: number,
-  ): Promise<void> {
+    epoch: number,
+  ): Promise<boolean> {
+    if (this.epoch !== epoch) return false
     const forced = mode === 'forced'
     if (pulse.ownerId === 'main') {
       await this.sendMainPulse(pulse, forced, nowMs)
-      return
+      return true
     }
-    await this.sendWorkerPulse(pulse, forced, nowMs)
+    return await this.sendWorkerPulse(pulse, forced, nowMs, epoch)
   }
 
   private async sendMainPulse(
@@ -149,8 +184,10 @@ export class PulseRuntime {
     pulse: PulseDefinition,
     forced: boolean,
     nowMs: number,
-  ): Promise<void> {
+    epoch: number,
+  ): Promise<boolean> {
     await this.clawasRuntime.refreshFromConfig()
+    if (this.epoch !== epoch) return false
     const worker = findWorker(this.clawasRuntime, pulse.ownerId)
     const queued = isWorkerBusy(worker)
     const instruction = buildPulseInstruction(pulse, { forced, queued, nowMs })
@@ -163,10 +200,11 @@ export class PulseRuntime {
         intent: 'reply_requested',
         visibility: 'worker',
       })
-      return
+      return true
     }
     const mode = queued ? 'followUp' : 'prompt'
     await this.clawasRuntime.sendPrompt(pulse.ownerId, instruction, mode)
+    return true
   }
 
   private requireContext(): ExtensionContext {
