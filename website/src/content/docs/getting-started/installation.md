@@ -25,7 +25,7 @@ Choose where package checkouts live, then clone the release:
 
 ```bash
 mkdir -p ~/src
-git clone --branch v0.2.0 --depth 1 \
+git clone --branch v0.3.0 --depth 1 \
   https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
 ```
 

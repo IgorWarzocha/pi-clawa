@@ -11,4 +11,6 @@
 - Discord adapter is WIP and belongs in the Discord section of TODO, not mixed into core runtime polish.
 - Tests are a contract spine, not a feature inventory: keep deterministic boundary, persistence, ordering, and failure-state checks; reject type-shape, UI/copy/registration, and external-API simulation tests.
 - Release gate: `bun run ai:check:strict`. Do not add broad ignores to make it pass.
+- Follow `website/src/content/docs/project/release-policy.md` when shipping a batch. A merge is not
+  a release: update lockstep versions and dispatch the manual Release workflow for the tagged update.
 - Package install is git-first for now; npm publishing remains later.

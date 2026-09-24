@@ -10,13 +10,13 @@ with a new template.
 
 ## Upgrade to a tagged release
 
-Read the [changelog](../../../changelog/) first, stop the main Pi session cleanly, then update the
-checkout:
+Read the [changelog](../../../changelog/) first. Clawa 0.3.0 requires Pi 0.87.1 or newer and does not
+require a home-state migration. Stop the main Pi session cleanly, then update the checkout:
 
 ```bash
 cd ~/src/pi-clawa
 git fetch --tags origin
-git checkout v0.2.0
+git checkout v0.3.0
 ```
 
 Start the home again with `pi -c`. Clawa reads existing `.pi/claw.jsonc` and living documents. It
