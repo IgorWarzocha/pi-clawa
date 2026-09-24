@@ -154,7 +154,7 @@ export async function resolveSocketPath(target: string): Promise<string | null> 
       return null
     } catch {
       // Alias files can outlive the actual socket after an abrupt pane/session
-      // close. Prune the dead alias here so manual-session recovery can observe
+      // close. Prune the dead alias here so panel reconnection can observe
       // reality instead of getting stuck behind stale control-plane breadcrumbs.
       await fs.unlink(aliasPath).catch(() => {})
       return null

@@ -1,50 +1,50 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
-import type { ThinkingLevel } from '@earendil-works/pi-agent-core'
 import { SessionManager } from '@earendil-works/pi-coding-agent'
-import type { WorkerDefinition } from './types.js'
+import { type PanelHandle, parsePanelHandle } from './panel-host.js'
+import type { WorkerDefinition, WorkerThinkingLevel } from './types.js'
 
-interface WorkerSessionRecord {
+export interface WorkerSessionRecord {
   path: string
   model?: string | undefined
-  thinking?: ThinkingLevel | undefined
+  thinking?: WorkerThinkingLevel | undefined
   cwd?: string | undefined
+  panel?: PanelHandle | undefined
 }
 
 interface SessionRegistry {
-  workers: Record<string, WorkerSessionRecord | string>
+  workers: Record<string, WorkerSessionRecord>
 }
 
-function normalizeWorkerRecord(
-  entry: WorkerSessionRecord | string | undefined,
-  workerId: string,
-): WorkerSessionRecord | null {
-  if (!entry) {
-    return null
-  }
+const writes = new Map<string, Promise<unknown>>()
+const THINKING_LEVELS = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const
 
-  if (typeof entry === 'string') {
-    if (!entry) throw new Error(`Clawas session registry entry for ${workerId} is empty`)
-    return { path: entry }
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
 
-  if (typeof entry.path !== 'string' || !entry.path) {
+function optionalString(entry: Record<string, unknown>, key: string): string | undefined {
+  const value = entry[key]
+  if (value === undefined) return undefined
+  if (typeof value !== 'string') throw new Error(`Session registry ${key} must be a string`)
+  return value
+}
+
+function normalizeWorkerRecord(entry: unknown, workerId: string): WorkerSessionRecord {
+  if (typeof entry === 'string' && entry) return { path: entry }
+  if (!isRecord(entry) || typeof entry['path'] !== 'string' || !entry['path']) {
     throw new Error(`Clawas session registry entry for ${workerId} is missing a path`)
   }
-
-  return entry
-}
-
-function buildWorkerRecord(
-  definition: WorkerDefinition,
-  pathValue: string,
-  cwd: string,
-): WorkerSessionRecord {
+  const thinking = optionalString(entry, 'thinking')
+  if (thinking !== undefined && !THINKING_LEVELS.some((level) => level === thinking)) {
+    throw new Error(`Invalid thinking level in session registry for ${workerId}`)
+  }
   return {
-    path: pathValue,
-    model: definition.model,
-    thinking: definition.thinking,
-    cwd,
+    path: entry['path'],
+    model: optionalString(entry, 'model'),
+    thinking: THINKING_LEVELS.find((level) => level === thinking),
+    cwd: optionalString(entry, 'cwd'),
+    panel: entry['panel'] === undefined ? undefined : parsePanelHandle(entry['panel']),
   }
 }
 
@@ -53,68 +53,95 @@ async function readSessionCwd(sessionFile: string): Promise<string | undefined> 
     const content = await fs.readFile(sessionFile, 'utf8')
     const firstLine = content.split('\n', 1)[0]
     if (!firstLine) return undefined
-    const entry = parseSessionEntry(firstLine)
-    return entry?.['type'] === 'session' && typeof entry['cwd'] === 'string'
+    const entry: unknown = JSON.parse(firstLine)
+    return isRecord(entry) && entry['type'] === 'session' && typeof entry['cwd'] === 'string'
       ? entry['cwd']
       : undefined
   } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code
-    if (code === 'ENOENT') return undefined
+    if (isMissing(error)) return undefined
     throw error
   }
 }
 
-function parseSessionEntry(line: string): Record<string, unknown> | null {
-  try {
-    const entry = JSON.parse(line)
-    return entry && typeof entry === 'object' ? (entry as Record<string, unknown>) : null
-  } catch {
-    return null
-  }
-}
-
-async function sessionBelongsToWorker(record: WorkerSessionRecord, cwd: string): Promise<boolean> {
-  if (record.cwd && record.cwd !== cwd) {
-    return false
-  }
-  const sessionCwd = await readSessionCwd(record.path)
-  return !sessionCwd || sessionCwd === cwd
-}
-
-function getRegistryPath(rootDir: string): string {
-  return path.join(rootDir, 'session-registry.json')
-}
-
-function getClawaSessionRoot(cwd: string): string {
-  return path.join(cwd, '.pi')
+function isMissing(error: unknown): boolean {
+  return isRecord(error) && error['code'] === 'ENOENT'
 }
 
 export function getClawaSessionsDir(cwd: string): string {
-  return path.join(getClawaSessionRoot(cwd), 'sessions')
+  return path.join(cwd, '.pi', 'sessions')
 }
 
 async function readRegistry(rootDir: string): Promise<SessionRegistry> {
   try {
-    const content = await fs.readFile(getRegistryPath(rootDir), 'utf8')
-    const parsed = JSON.parse(content) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new Error('Clawas session registry must be a JSON object')
-    }
-    const workers = (parsed as Record<string, unknown>)['workers']
-    if (!workers || typeof workers !== 'object' || Array.isArray(workers)) {
+    const content = await fs.readFile(path.join(rootDir, 'session-registry.json'), 'utf8')
+    const parsed: unknown = JSON.parse(content)
+    if (!(isRecord(parsed) && isRecord(parsed['workers']))) {
       throw new Error('Clawas session registry must contain a workers object')
     }
-    return { workers: workers as SessionRegistry['workers'] }
+    const workers: Record<string, WorkerSessionRecord> = {}
+    for (const [id, record] of Object.entries(parsed['workers'])) {
+      workers[id] = normalizeWorkerRecord(record, id)
+    }
+    return { workers }
   } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code
-    if (code === 'ENOENT') return { workers: {} }
+    if (isMissing(error)) return { workers: {} }
     throw error
   }
 }
 
-async function writeRegistry(rootDir: string, registry: SessionRegistry): Promise<void> {
-  await fs.mkdir(rootDir, { recursive: true })
-  await fs.writeFile(getRegistryPath(rootDir), `${JSON.stringify(registry, null, 2)}\n`, 'utf8')
+async function updateRegistry<T>(
+  rootDir: string,
+  update: (registry: SessionRegistry) => Promise<T> | T,
+): Promise<T> {
+  // Every worker shares this file. Serialize read-modify-write, including failed predecessors.
+  const operation = (writes.get(rootDir) ?? Promise.resolve())
+    .catch(() => {})
+    .then(async () => {
+      const registry = await readRegistry(rootDir)
+      const result = await update(registry)
+      await fs.mkdir(rootDir, { recursive: true })
+      const target = path.join(rootDir, 'session-registry.json')
+      const temporary = `${target}.${process.pid}.tmp`
+      try {
+        await fs.writeFile(temporary, `${JSON.stringify(registry, null, 2)}\n`, 'utf8')
+        await fs.rename(temporary, target)
+      } finally {
+        await fs.rm(temporary, { force: true })
+      }
+      return result
+    })
+  writes.set(rootDir, operation)
+  try {
+    return await operation
+  } finally {
+    if (writes.get(rootDir) === operation) writes.delete(rootDir)
+  }
+}
+
+export async function readWorkerSession(
+  rootDir: string,
+  workerId: string,
+): Promise<WorkerSessionRecord | undefined> {
+  await writes.get(rootDir)
+  return (await readRegistry(rootDir)).workers[workerId]
+}
+
+export async function recordWorkerSession(
+  rootDir: string,
+  definition: WorkerDefinition,
+  cwd: string,
+  sessionFile: string,
+  panel: PanelHandle | undefined,
+): Promise<void> {
+  await updateRegistry(rootDir, (registry) => {
+    registry.workers[definition.id] = {
+      path: sessionFile,
+      cwd,
+      model: definition.model,
+      thinking: definition.thinking,
+      panel,
+    }
+  })
 }
 
 export async function resolveWorkerSessionFile(
@@ -122,36 +149,33 @@ export async function resolveWorkerSessionFile(
   definition: WorkerDefinition,
   cwd: string,
 ): Promise<string> {
-  const registry = await readRegistry(rootDir)
-  const workerId = definition.id
-  const knownRecord = normalizeWorkerRecord(registry.workers[workerId], workerId)
-  if (knownRecord) {
-    try {
-      await fs.access(knownRecord.path)
-      // Model and thinking are runtime choices, not worker identity. Pi can
-      // change both while resuming the same session; rotating the file here
-      // silently amputates the worker's continuity.
-      if (await sessionBelongsToWorker(knownRecord, cwd)) {
-        registry.workers[workerId] = buildWorkerRecord(definition, knownRecord.path, cwd)
-        await writeRegistry(rootDir, registry)
-        return knownRecord.path
+  return await updateRegistry(rootDir, async (registry) => {
+    const known = registry.workers[definition.id]
+    if (known && (!known.cwd || known.cwd === cwd)) {
+      const sessionCwd = await readSessionCwd(known.path)
+      // SessionManager may not have flushed a new empty session yet. Keep its reserved
+      // path rather than allocating a second session during a concurrent panel start.
+      if (!sessionCwd || sessionCwd === cwd) {
+        registry.workers[definition.id] = {
+          ...known,
+          model: definition.model,
+          thinking: definition.thinking,
+          cwd,
+        }
+        return known.path
       }
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code
-      if (code !== 'ENOENT') throw error
-      // Missing session file: create a replacement and update the registry.
     }
-  }
 
-  const sessionsDir = getClawaSessionsDir(cwd)
-  await fs.mkdir(sessionsDir, { recursive: true })
-  const sessionManager = SessionManager.create(cwd, sessionsDir)
-  const sessionFile = sessionManager.getSessionFile()
-  if (!sessionFile) {
-    throw new Error(`Failed to create Clawas session for ${workerId}`)
-  }
-
-  registry.workers[workerId] = buildWorkerRecord(definition, sessionFile, cwd)
-  await writeRegistry(rootDir, registry)
-  return sessionFile
+    const sessionsDir = getClawaSessionsDir(cwd)
+    await fs.mkdir(sessionsDir, { recursive: true })
+    const sessionFile = SessionManager.create(cwd, sessionsDir).getSessionFile()
+    if (!sessionFile) throw new Error(`Failed to create Clawas session for ${definition.id}`)
+    registry.workers[definition.id] = {
+      path: sessionFile,
+      cwd,
+      model: definition.model,
+      thinking: definition.thinking,
+    }
+    return sessionFile
+  })
 }

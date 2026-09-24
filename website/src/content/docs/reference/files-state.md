@@ -28,21 +28,21 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | `.pi/claw.jsonc` | Bootstrap flag, worker definitions, naming, sockets, and memory-pass settings. |
 | `.pi/clawa-memory.sqlite` | Shared raw memory database. |
 | `.pi/pulses.json` | First-seen, last-run, due-key, and deferral state per Pulse. |
-| `.pi/clawas/session-registry.json` | Managed worker session records. |
-| `.pi/clawas/sessions/` | Managed worker session material where applicable. |
+| `.pi/clawas/session-registry.json` | Worker session history and panel location records. |
+| `<worker-home>/.pi/sessions/` | Each worker's Pi session history. |
 | `.pi/clawa-discord/` | Optional adapter token config, routes, channel snapshot, DB, delivery state, logs. |
 
 The main Clawa's ordinary sessions use Pi's normal session store. Do not assume they live beside
-managed worker sessions.
+worker sessions.
 
 ## Ephemeral control state
 
 Clawas comms uses project-scoped Unix sockets under `$XDG_RUNTIME_DIR` or the OS temp directory. The
 project root is hashed to avoid collisions, then `controlSocketDir` names the inner directory.
-Aliases are refreshed while sessions live.
+Each worker's alias points to its current Pi session.
 
 Socket files and stale process locks are runtime artifacts, not memory. They can be recreated after
-all owning processes stop. Do not delete them under a live main or manual worker session.
+all owning processes stop. Do not delete them under a live main or worker session.
 
 ## What to back up
 

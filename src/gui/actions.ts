@@ -21,8 +21,8 @@ export function buildControlActions(model: ClawGuiModel): ActionItem[] {
       kind: 'create',
     },
     {
-      label: 'restart clawas',
-      summary: `Restart the ${model.clawa.clawasName} daemon`,
+      label: 'refresh clawas',
+      summary: `Refresh ${model.clawa.clawasName} worker state`,
       detailKey: 'restart-clawas',
       kind: 'restart',
     },
@@ -56,9 +56,9 @@ async function runWorkerActionPicker(
         searchableText: 'steer follow up',
       },
       {
-        label: 'Jump into manual panel',
+        label: 'Jump to worker panel',
         value: 'jump',
-        searchableText: 'jump manual panel takeover',
+        searchableText: 'jump worker panel focus',
       },
     ],
     search: false,
@@ -77,8 +77,8 @@ export async function runWorkerAction(
 
   if (action === 'jump') {
     const handle = await runtime.openWorkerPanel(worker.id)
-    const host = runtime.getManualPanelHostLabel() ?? 'manual'
-    const status = `Jumped into ${worker.title} in a ${host} panel: ${handle}`
+    const host = runtime.getPanelHostLabel() ?? 'worker'
+    const status = `Focused ${worker.title} in a ${host} panel: ${handle}`
     setStatus(status)
     ctx.ui.notify(status, 'info')
     return
@@ -138,7 +138,7 @@ export async function runControlAction(options: {
   }
   if (item.kind === 'restart') {
     await runtime.restart()
-    const status = `${clawasName} daemon restarted.`
+    const status = `${clawasName} worker state refreshed. Running panels were left open.`
     setStatus(status)
     ctx.ui.notify(status, 'info')
     return

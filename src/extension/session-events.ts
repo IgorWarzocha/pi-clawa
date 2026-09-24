@@ -57,6 +57,7 @@ export function registerClawaSessionEvents(
   })
 
   pi.on('agent_end', async (event, ctx) => {
+    options.commsServer.publishStatus()
     if (!IS_CLAWAS_WORKER) return
 
     await reportFinalAssistantMessageToMain(pi, ctx, {
@@ -65,6 +66,22 @@ export function registerClawaSessionEvents(
       targetSessionId: process.env['PI_CLAWAS_REPORT_SESSION_ID'],
       agentMessages: event.messages,
     })
+  })
+
+  pi.on('agent_start', () => options.commsServer.agentStart())
+  pi.on('agent_settled', () => options.commsServer.agentSettled())
+  pi.on('tool_execution_start', (event) =>
+    options.commsServer.toolStart(event.toolCallId, event.toolName),
+  )
+  pi.on('tool_execution_end', (event) =>
+    options.commsServer.toolEnd(event.toolCallId, event.toolName, event.isError),
+  )
+  pi.on('message_end', (event) => {
+    if (event.message.role !== 'assistant') return
+    options.commsServer.assistantMessage(
+      event.message.content,
+      event.message.stopReason === 'error' ? event.message.errorMessage : undefined,
+    )
   })
 
   pi.on('session_shutdown', async () => {

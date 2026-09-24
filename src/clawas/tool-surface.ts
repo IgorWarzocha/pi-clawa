@@ -29,19 +29,6 @@ async function resolveClawDefinition(cwd: string, claw: string): Promise<WorkerD
   )
 }
 
-function manualSessionError(title: string, clawasName: string) {
-  return {
-    content: [
-      {
-        type: 'text' as const,
-        text: `${title} is in a manual session and disconnected from ${clawasName}.`,
-      },
-    ],
-    details: { workerId: title },
-    isError: true,
-  }
-}
-
 function formatClawaDeliveryReceipt(title: string): string {
   return `${title} received the note.`
 }
@@ -154,10 +141,6 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
             details: { workerId: params.claw },
             isError: true,
           }
-        }
-
-        if (runtime.isWorkerManual(definition.id)) {
-          return manualSessionError(definition.title, runtime.getClawaDefaults().clawasName)
         }
 
         await runtime.ensureWorkerRunning(definition.id)

@@ -113,6 +113,59 @@ test('pulse state corruption fails instead of resetting scheduler history', asyn
   }
 })
 
+test('worker pulses queue behind active work and use the same route while a panel is open', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-worker-panel-'))
+  try {
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, '.pi'))
+    await writeFile(
+      join(root, '.pi', 'claw.jsonc'),
+      JSON.stringify({ clawas: { workers: [{ id: 'helper', cwd: 'clawas/helper' }] }, clawa: {} }),
+    )
+    await mkdir(join(root, 'clawas', 'helper', 'pulses', 'check'), { recursive: true })
+    await writeFile(
+      join(root, 'clawas', 'helper', 'pulses', 'check', 'PULSE.md'),
+      ['---', 'title: Check', 'schedule: manual', '---', '', '# Check'].join('\n'),
+    )
+
+    let status = 'streaming'
+    const modes: string[] = []
+    const runtime = new PulseRuntime(
+      {} as never,
+      {
+        refreshFromConfig: async () => {},
+        getState: () => ({
+          workers: [
+            {
+              definition: { id: 'helper' },
+              status,
+              panel: {
+                host: 'tmux',
+                paneId: '%1',
+                panePid: '123',
+                socket: '/tmp/tmux',
+                serverPid: '456',
+                sessionFile: '/tmp/session.jsonl',
+              },
+            },
+          ],
+        }),
+        sendPrompt: async (_id: string, _message: string, mode: string) => {
+          modes.push(mode)
+        },
+      } as never,
+    )
+    runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+    await runtime.runNow('helper:check')
+    status = 'idle'
+    await runtime.runNow('helper:check')
+    assert.deepEqual(modes, ['followUp', 'prompt'])
+    await runtime.dispose()
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test('Hey Clawa defers when another pulse for the same owner is due', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-hey-collision-'))
   try {

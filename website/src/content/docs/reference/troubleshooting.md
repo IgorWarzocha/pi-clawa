@@ -5,7 +5,7 @@ section: Reference
 order: 150
 ---
 
-Start with the owning layer. A package-load problem, home-shape problem, worker daemon problem, model
+Start with the owning layer. A package-load problem, home-shape problem, worker panel problem, model
 auth problem, and Discord gateway problem can look similar from the final conversation.
 
 ## Clawa did not appear
@@ -25,12 +25,12 @@ to a clean home; setting `bootstrapped: true` only turns the blockage into a hal
 
 - Validate `.pi/claw.jsonc`: every worker needs an ID and cwd.
 - Check `enabled`, `autostart`, model name, and provider auth.
-- See whether the monitor marks it manual. Managed delivery intentionally disconnects then.
+- Check whether its Herdr tab or tmux window is still open. `/jump` can reopen a stopped session.
 - Confirm the worker cwd still belongs to the session recorded in `.pi/clawas/session-registry.json`.
-- Stop duplicate manual Pi processes before removing stale runtime sockets.
+- Check the worker's panel location in the same session registry before touching stale runtime sockets.
 
-Use `/steer` and watch the reported error. The runtime restores prior state when delivery fails, so a
-worker that still says “busy” may indicate another owner rather than a swallowed steer.
+Use `/steer` and watch the reported error. Config edits take effect when the panel next launches, not
+in a running session. Private messages still work while someone types directly in the panel.
 
 ## Pulses are silent
 

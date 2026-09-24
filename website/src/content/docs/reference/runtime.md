@@ -19,11 +19,11 @@ On every startup, reload, new session, resume, or fork, the extension:
 4. performs protective bootstrap when needed;
 5. starts a per-session local comms socket;
 6. refreshes and persists the current home snapshot as a hidden session message;
-7. attaches managed Clawas and the Pulse timer in a UI-bearing main session;
+7. attaches Clawas and the Pulse timer in a UI-bearing main session;
 8. queues invisible conversational onboarding after the first successful bootstrap.
 
-`session_shutdown` drains the current comms alias maintenance and Pulse work, then stops managed
-workers, including any starts still in flight.
+`session_shutdown` drains the current comms alias maintenance and Pulse work. Worker panels remain
+open after main quits or reloads.
 
 ## Prompt shaping
 
@@ -67,6 +67,7 @@ happen during a long tool run before the settlement hook is reached.
 hydration, prompt shaping, the memory pass, comms, and private reporting, but not the main monitor,
 `/steer`, `/jump`, or Pulse GUI.
 
-Managed workers are separate Pi RPC processes. The main daemon owns starting, adoption, restart,
-prompt normalization, session registry, and status. Local newline-delimited socket RPC carries
-private messages without placing them on a public adapter.
+Workers are ordinary Pi sessions in Herdr tabs or tmux windows. The main runtime opens or adopts
+panels; `.pi/clawas/session-registry.json` keeps both session history and panel location. Closing a
+panel stops its worker until a message or `/jump` reopens it. Local newline-delimited socket messaging
+carries private coordination without using Pi subprocess RPC or placing messages on a public adapter.

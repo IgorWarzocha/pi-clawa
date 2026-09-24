@@ -14,10 +14,6 @@ export function summarizePrompt(text: string): string {
   return truncate(squashWhitespace(text), 72)
 }
 
-export function summarizeAssistantText(text: string): string {
-  return truncate(squashWhitespace(text), 96)
-}
-
 export function summarizeError(text: string): string {
   return truncate(squashWhitespace(text), 96)
 }

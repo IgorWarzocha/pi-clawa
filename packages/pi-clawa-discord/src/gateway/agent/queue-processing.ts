@@ -9,7 +9,7 @@ import { logger } from '../logger.js';
 import { resolveClawaWorkerForDiscordChannel } from '../channel-routes.js';
 import { buildGatewayPrompt, getReplyAnchorSourceMessageId } from './gateway-prompt.js';
 import { buildClawasDiscordContext } from './invoke-clawas.js';
-import { sendClawasSessionMessage } from './invoke-clawas-rpc.js';
+import { sendClawasSessionMessage } from './invoke-clawas-session.js';
 import { clearTypingLease, startTypingLease } from './typing.js';
 import { primeWorkerOutputMonitor } from './worker-output-monitor.js';
 

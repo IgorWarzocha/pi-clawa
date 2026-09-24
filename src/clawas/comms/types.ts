@@ -54,9 +54,40 @@ interface ClawasGetStatusCommand {
   id?: string | undefined
 }
 
+interface ClawasSubscribeStatusCommand {
+  type: 'subscribe_status'
+  id?: string | undefined
+}
+
+export interface ClawasSessionStatus {
+  workerId?: string | undefined
+  sessionId: string
+  sessionFile?: string | undefined
+  cwd: string
+  isIdle: boolean
+  hasPendingMessages: boolean
+  currentToolName?: string | undefined
+  lastSummary: string
+  lastError?: string | undefined
+  updatedAt: number
+}
+
+export interface ClawasCommsResponse {
+  id?: string | undefined
+  type: 'response'
+  command: string
+  success: boolean
+  data?: unknown
+  error?: string | undefined
+}
+
+export interface ClawasStatusEvent {
+  type: 'status'
+  status: ClawasSessionStatus
+}
+
 export type ClawasCommsCommand =
   | ClawasSendCommand
   | ClawasGetMessageCommand
   | ClawasGetStatusCommand
-
-export type { ClawasRpcResponse } from '../rpc-types.js'
+  | ClawasSubscribeStatusCommand

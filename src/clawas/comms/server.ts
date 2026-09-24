@@ -1,11 +1,11 @@
 import { createServer, type Server, type Socket } from 'node:net'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import { ClawasMailDelivery } from './mail-delivery.js'
 import {
   getAssistantTurns,
   getLastAssistantTurn,
   getLastDeliveryMessage,
 } from './message-extract.js'
-import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.js'
 import {
   ensureControlDir,
   getSocketPath,
@@ -14,22 +14,16 @@ import {
   syncSocketAlias,
 } from './paths.js'
 import { parseClawasCommsCommand } from './protocol.js'
-import {
-  buildClawasMailContext,
-  buildMessageDetails,
-  buildWorkerUserMessage,
-  getLegacyMailCustomType,
-  resolveMessageIntent,
-  resolveMessageKind,
-  resolveMessageVisibility,
-  shouldAllowManualSessionSend,
-  shouldDeliverClawasMailAsUserMessage,
-  shouldTriggerTurn,
-} from './server-messages.js'
+import { ClawasStatusState } from './status.js'
+import type {
+  ClawasCommsCommand,
+  ClawasCommsResponse,
+  ClawasSendCommand,
+  ClawasStatusEvent,
+} from './types.js'
 
-import type { ClawasCommsCommand, ClawasRpcResponse, ClawasSendCommand } from './types.js'
-
-const IS_MANUAL_SESSION = process.env['PI_CLAWAS_MANUAL_SESSION'] === '1'
+const MAX_FRAME_BYTES = 1_048_576
+const MAX_QUEUED_BYTES = 1_048_576
 type CommandResponder = (
   success: boolean,
   commandName: string,
@@ -50,7 +44,7 @@ function parseCommand(line: string): {
   }
 }
 
-function writeResponse(socket: Socket, response: ClawasRpcResponse): void {
+function writeResponse(socket: Socket, response: ClawasCommsResponse): void {
   try {
     socket.write(`${JSON.stringify(response)}\n`)
   } catch {
@@ -58,22 +52,32 @@ function writeResponse(socket: Socket, response: ClawasRpcResponse): void {
   }
 }
 
-/**
- * Minimal embedded session-control server for Clawas.
- * It only supports fire-and-forget sends and reading the last assistant message.
- */
+/** Embedded control and status socket for the active Clawa session. */
 export class ClawasCommsServer {
   private server: Server | null = null
   private socketPath: string | null = null
-  private aliasTimer: ReturnType<typeof setInterval> | null = null
   private aliasSync: Promise<void> | null = null
   private transition: Promise<void> = Promise.resolve()
   private context: ExtensionContext | null = null
-  private readonly pi: ExtensionAPI
+  private readonly mail: ClawasMailDelivery
   private readonly getAlias: () => string | undefined
+  private readonly sockets = new Set<Socket>()
+  private readonly subscribers = new Set<Socket>()
+  private readonly status = new ClawasStatusState()
 
   constructor(pi: ExtensionAPI, getAlias: () => string | undefined) {
-    this.pi = pi
+    this.mail = new ClawasMailDelivery(pi, (error) => {
+      const message = `Clawas mail kickoff failed: ${error.message}`
+      this.status.deliveryFailure(message)
+      this.publishStatus()
+      if (this.context?.hasUI) {
+        try {
+          this.context.ui.notify(message, 'error')
+        } catch (notificationError) {
+          console.error(message, notificationError)
+        }
+      }
+    })
     this.getAlias = getAlias
   }
 
@@ -88,6 +92,8 @@ export class ClawasCommsServer {
 
     if (this.socketPath === socketPath && this.server) {
       this.context = ctx
+      this.mail.reset()
+      this.publishStatus()
       try {
         await this.syncAlias(sessionId)
       } catch (error) {
@@ -100,6 +106,7 @@ export class ClawasCommsServer {
     await this.stopServer()
     await removeSocket(socketPath)
     this.context = ctx
+    this.status.reset()
     this.socketPath = socketPath
     try {
       this.server = await this.createServer()
@@ -107,17 +114,6 @@ export class ClawasCommsServer {
     } catch (error) {
       await this.stopServer()
       throw error
-    }
-
-    if (!this.aliasTimer) {
-      this.aliasTimer = setInterval(() => {
-        if (!this.context || this.aliasSync) return
-        const currentSessionId = this.context.sessionManager.getSessionId()
-        void this.syncAlias(currentSessionId).catch((error: unknown) => {
-          console.error('Clawas socket alias sync failed:', error)
-        })
-      }, 1_000)
-      this.aliasTimer.unref?.()
     }
   }
 
@@ -143,21 +139,20 @@ export class ClawasCommsServer {
   }
 
   private async stopServer(): Promise<void> {
-    if (this.aliasTimer) {
-      clearInterval(this.aliasTimer)
-      this.aliasTimer = null
-    }
+    this.mail.reset()
 
     const socketPath = this.socketPath
     this.socketPath = null
     this.context = null
     if (this.aliasSync) {
-      // The periodic sync reports its own failure. Cleanup must still run.
+      // Cleanup must still run after an in-flight alias sync fails.
       await this.aliasSync.catch(() => {})
     }
 
     const server = this.server
     this.server = null
+    for (const socket of this.sockets) socket.destroy()
+    this.subscribers.clear()
     if (server) {
       await new Promise<void>((resolve) => server.close(() => resolve()))
     }
@@ -172,43 +167,16 @@ export class ClawasCommsServer {
     }
 
     const server = createServer((socket) => {
+      this.sockets.add(socket)
+      socket.on('close', () => {
+        this.sockets.delete(socket)
+        this.subscribers.delete(socket)
+      })
+      socket.on('error', () => socket.destroy())
       socket.setEncoding('utf8')
       let buffer = ''
       socket.on('data', (chunk) => {
-        buffer += chunk
-        let newlineIndex = buffer.indexOf('\n')
-        while (newlineIndex !== -1) {
-          const line = buffer.slice(0, newlineIndex).trim()
-          buffer = buffer.slice(newlineIndex + 1)
-          newlineIndex = buffer.indexOf('\n')
-          if (!line) {
-            continue
-          }
-
-          const parsed = parseCommand(line)
-          if (parsed.error || !parsed.command) {
-            writeResponse(socket, {
-              type: 'response',
-              command: 'parse',
-              success: false,
-              error: parsed.error ?? 'Unknown parse error',
-            })
-            continue
-          }
-
-          void this.handleCommand(parsed.command, socket).catch((error) => {
-            writeResponse(socket, {
-              type: 'response',
-              command: parsed.command?.type ?? 'unknown',
-              success: false,
-              error: error instanceof Error ? error.message : String(error),
-              id:
-                parsed.command && 'id' in parsed.command && typeof parsed.command.id === 'string'
-                  ? parsed.command.id
-                  : undefined,
-            })
-          })
-        }
+        buffer = this.receiveSocketData(socket, buffer, String(chunk))
       })
     })
 
@@ -221,6 +189,54 @@ export class ClawasCommsServer {
     })
 
     return server
+  }
+
+  private receiveSocketData(socket: Socket, buffer: string, chunk: string): string {
+    if (this.subscribers.has(socket)) {
+      socket.destroy()
+      return ''
+    }
+    let pending = buffer + chunk
+    if (Buffer.byteLength(pending) > MAX_FRAME_BYTES) {
+      socket.destroy()
+      return ''
+    }
+    let newlineIndex = pending.indexOf('\n')
+    while (newlineIndex !== -1) {
+      const line = pending.slice(0, newlineIndex).trim()
+      pending = pending.slice(newlineIndex + 1)
+      if (line) this.receiveCommand(line, socket)
+      if (this.subscribers.has(socket)) {
+        if (pending.trim()) socket.destroy()
+        return ''
+      }
+      newlineIndex = pending.indexOf('\n')
+    }
+    return pending
+  }
+
+  private receiveCommand(line: string, socket: Socket): void {
+    const parsed = parseCommand(line)
+    if (parsed.error || !parsed.command) {
+      writeResponse(socket, {
+        type: 'response',
+        command: 'parse',
+        success: false,
+        error: parsed.error ?? 'Unknown parse error',
+      })
+      return
+    }
+
+    const command = parsed.command
+    void this.handleCommand(command, socket).catch((error) => {
+      writeResponse(socket, {
+        type: 'response',
+        command: command.type,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        id: command.id,
+      })
+    })
   }
 
   private async handleCommand(command: ClawasCommsCommand, socket: Socket): Promise<void> {
@@ -252,6 +268,13 @@ export class ClawasCommsServer {
       return
     }
 
+    if (command.type === 'subscribe_status') {
+      // Write the initial snapshot before admitting this socket to event broadcasts.
+      respond(true, 'subscribe_status', this.status.snapshot(ctx, this.mail.hasPendingKickoff))
+      this.subscribers.add(socket)
+      return
+    }
+
     if (command.type === 'send') {
       await this.handleSendRpcCommand(ctx, command, respond, () => !socket.destroyed)
       return
@@ -265,10 +288,6 @@ export class ClawasCommsServer {
     command: Extract<ClawasCommsCommand, { type: 'get_message' }>,
     respond: CommandResponder,
   ): void {
-    if (IS_MANUAL_SESSION) {
-      respond(false, 'get_message', undefined, 'Worker is in a manual session')
-      return
-    }
     const turn = getLastAssistantTurn(ctx)
     const turns = getAssistantTurns(ctx)
     const cursorIndex = turns.findLastIndex(
@@ -289,14 +308,47 @@ export class ClawasCommsServer {
   }
 
   private handleGetStatusCommand(ctx: ExtensionContext, respond: CommandResponder): void {
-    if (IS_MANUAL_SESSION) {
-      respond(false, 'get_status', undefined, 'Worker is in a manual session')
-      return
+    respond(true, 'get_status', this.status.snapshot(ctx, this.mail.hasPendingKickoff))
+  }
+
+  publishStatus(): void {
+    const ctx = this.context
+    if (!ctx) return
+    this.status.changed()
+    const event: ClawasStatusEvent = {
+      type: 'status',
+      status: this.status.snapshot(ctx, this.mail.hasPendingKickoff),
     }
-    respond(true, 'get_status', {
-      isIdle: ctx.isIdle(),
-      hasPendingMessages: ctx.hasPendingMessages(),
-    })
+    const line = `${JSON.stringify(event)}\n`
+    for (const socket of this.subscribers) {
+      if (socket.destroyed || socket.writableLength + Buffer.byteLength(line) > MAX_QUEUED_BYTES) {
+        socket.destroy()
+      } else {
+        socket.write(line)
+      }
+    }
+  }
+
+  agentStart(): void {
+    this.status.agentStart()
+    if (this.context) this.mail.agentStart()
+    this.publishStatus()
+  }
+  agentSettled(): void {
+    if (this.context) this.mail.settled()
+    this.publishStatus()
+  }
+  toolStart(id: string, name: string): void {
+    this.status.toolStart(id, name)
+    this.publishStatus()
+  }
+  toolEnd(id: string, name: string, isError: boolean): void {
+    this.status.toolEnd(id, name, isError)
+    this.publishStatus()
+  }
+  assistantMessage(content: unknown, error?: string): void {
+    this.status.message(content, error)
+    this.publishStatus()
   }
 
   private async handleSendRpcCommand(
@@ -305,68 +357,16 @@ export class ClawasCommsServer {
     respond: CommandResponder,
     isConnected: () => boolean = () => true,
   ): Promise<void> {
-    if (IS_MANUAL_SESSION && !shouldAllowManualSessionSend(command)) {
-      respond(false, 'send', undefined, 'Worker is in a manual session')
-      return
-    }
     if (!isConnected()) return
     if (this.context !== ctx) {
       respond(false, 'send', undefined, 'Session changed before delivery')
       return
     }
-    this.handleSendCommand(ctx, command)
+    this.mail.send(ctx, command, () => this.context === ctx)
+    this.publishStatus()
     respond(true, 'send', {
       delivered: true,
       type: command.messageType ?? 'session',
     })
-  }
-
-  private handleSendCommand(ctx: ExtensionContext, command: ClawasSendCommand): void {
-    const kind = resolveMessageKind(command)
-    const intent = resolveMessageIntent(command, kind)
-    const visibility = resolveMessageVisibility(command, kind)
-    const customType = CLAWAS_MAIL_MESSAGE_TYPE
-    const isReport = command.messageType === 'report'
-    const details = buildMessageDetails(
-      command.sender,
-      command.discordContext,
-      kind,
-      intent,
-      visibility,
-    )
-
-    const deliverAs = isReport
-      ? 'steer'
-      : ctx.isIdle()
-        ? undefined
-        : command.mode === 'followUp'
-          ? 'followUp'
-          : 'steer'
-
-    if (shouldDeliverClawasMailAsUserMessage(details)) {
-      const content = buildWorkerUserMessage(command.message, details)
-      this.pi.appendEntry(customType, {
-        rawContent: command.message,
-        userMessageContent: content,
-        details,
-        messageType: command.messageType ?? 'session',
-        mode: command.mode,
-      })
-
-      this.pi.sendUserMessage(content, deliverAs ? { deliverAs } : {})
-      return
-    }
-
-    this.pi.sendMessage(
-      {
-        customType: getLegacyMailCustomType(command),
-        content: buildClawasMailContext(command.message, details),
-        display: true,
-        details: { ...details, rawContent: command.message },
-      },
-      deliverAs
-        ? { triggerTurn: shouldTriggerTurn(command), deliverAs }
-        : { triggerTurn: shouldTriggerTurn(command) },
-    )
   }
 }

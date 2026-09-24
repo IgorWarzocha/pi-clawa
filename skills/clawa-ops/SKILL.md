@@ -49,7 +49,7 @@ Read only the references needed for the requested operation. For a mixed migrati
 6. **Validate the live shape.**
    - From this skill directory, run `python scripts/doctor.py <clawa-home>` after structural edits; when installed elsewhere, use the script's absolute path.
    - Treat doctor failures as structural blockers; inspect warnings rather than mechanically rewriting around them.
-   - After runtime-affecting config changes, verify the worker or service actually reloaded the intended state. An edited file is not live-process proof.
+   - After runtime-affecting config changes, verify the next panel launch uses the intended state. An edited file does not change a running worker session.
 
 ## Boundaries
 

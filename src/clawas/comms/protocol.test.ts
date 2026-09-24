@@ -6,7 +6,7 @@ import {
   parseSessionStatusData,
 } from './protocol.js'
 
-const BOOLEAN_STATUS_ERROR_PATTERN = /requires boolean/u
+const BOOLEAN_STATUS_ERROR_PATTERN = /boolean isIdle/u
 
 test('Clawas comms rejects malformed commands before delivery', () => {
   assert.deepEqual(parseClawasCommsCommand({ type: 'send' }), {
@@ -31,9 +31,20 @@ test('Clawas comms normalizes valid commands and validates response payloads', (
   assert.ok('value' in parsed)
   assert.equal(parsed.value.type, 'send')
 
-  assert.deepEqual(parseSessionStatusData({ isIdle: true, hasPendingMessages: false }), {
+  const status = {
+    sessionId: 'session',
+    cwd: '/tmp',
     isIdle: true,
     hasPendingMessages: false,
+    lastSummary: '',
+    updatedAt: 42,
+  }
+  assert.deepEqual(parseSessionStatusData(status), {
+    ...status,
+    workerId: undefined,
+    sessionFile: undefined,
+    currentToolName: undefined,
+    lastError: undefined,
   })
   assert.deepEqual(
     parseLastMessageData({
@@ -42,7 +53,7 @@ test('Clawas comms normalizes valid commands and validates response payloads', (
     { role: 'assistant', content: 'done', timestamp: 42, error: undefined },
   )
   assert.throws(
-    () => parseSessionStatusData({ isIdle: 'yes', hasPendingMessages: false }),
+    () => parseSessionStatusData({ ...status, isIdle: 'yes' }),
     BOOLEAN_STATUS_ERROR_PATTERN,
   )
 })

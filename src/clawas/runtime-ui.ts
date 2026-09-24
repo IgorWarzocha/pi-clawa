@@ -8,7 +8,7 @@ const EMPTY_STATE: ClawasState = {
   workers: [],
   events: [],
   nextEventId: 1,
-  daemonStarted: false,
+  connected: false,
 }
 
 /**

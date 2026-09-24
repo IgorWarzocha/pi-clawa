@@ -2,7 +2,7 @@ import type { ClawaDefaults } from '../config'
 import type { WorkerDefinition } from './types.js'
 
 /**
- * Central place for worker-facing names so the daemon, tools, and comms layer
+ * Central place for worker-facing names so panels, tools, and the comms layer
  * all talk about the same worker identity.
  */
 export function getWorkerSessionName(

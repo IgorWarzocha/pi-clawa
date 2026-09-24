@@ -15,7 +15,6 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
   "bootstrapped": true,
   "clawas": {
     "baseDir": "clawas",
-    "tmuxSession": "clawas",
     "workers": [
       {
         "id": "researcher",
@@ -86,7 +85,7 @@ Use the `provider/model-id` style that Pi prints or accepts for `--model`. Pick 
 - Append or update the one worker entry you mean to touch.
 - Preserve existing workers and home defaults.
 - Keep disabled workers if their history or naming lesson may matter later.
-- Verify runtime state after model, thinking, extension, or startup changes. Config text alone does not prove a managed worker respawned with the new identity.
+- Verify runtime state after model, thinking, extension, or startup changes. Config edits apply when a worker panel next launches, not to a running session.
 
 ## Home defaults
 
@@ -95,13 +94,15 @@ The `clawa` object controls names and runtime directories shared by the home:
 - `humanName` — human label used by Clawa-facing surfaces.
 - `mainClawName` — main assistant name.
 - `clawasName` — collective worker name.
-- `workerSessionPrefix` — prefix for managed worker sessions.
+- `workerSessionPrefix` — prefix for worker sessions.
 - `controlPlaneDir` — project-local control-plane state directory.
 - `controlSocketDir` — logical socket directory name; the runtime resolves collision-safe sockets under the system runtime directory.
 - `memoryPass.enabled` — let Clawa tend shared memory once before Pi compacts; defaults to `true`.
 - `memoryPass.triggerPercent` — active-model context percentage that starts the memory pass; defaults to `90` and must be an integer from 1 to 99.
 
 Keep defaults unless the home deliberately uses another naming or control-plane shape.
+Worker session history and panel handles live together in `.pi/clawas/session-registry.json` by
+default. Panel location is runtime state, not another configuration field.
 
 The threshold follows each active model's own context window. It is not a universal token count. At the threshold, Clawa gets one warm turn on the same branch: recall the latest shared memories, update what has genuinely changed, and remember only new texture worth carrying. The pass may save nothing. Pi remains the sole owner of compaction threshold, overflow recovery, retries, and canonical session continuity. The memory pass rearms after Pi compacts or a new session starts.
 

@@ -147,20 +147,10 @@ export function buildClawasMailContext(
   return [`[${title}]`, message].join('\n')
 }
 
-export function shouldDeliverClawasMailAsUserMessage(
-  details: ReturnType<typeof buildMessageDetails>,
-): boolean {
-  return details.workerId === 'discord-gateway' && details.kind !== 'instruction'
-}
-
 export function getLegacyMailCustomType(command: ClawasSendCommand): string {
   return command.messageType === 'report' ? LEGACY_REPORT_MESSAGE_TYPE : LEGACY_SESSION_MESSAGE_TYPE
 }
 
 export function shouldTriggerTurn(command: ClawasSendCommand): boolean {
   return command.intent !== 'for_context'
-}
-
-export function shouldAllowManualSessionSend(command: ClawasSendCommand): boolean {
-  return command.mode === 'followUp' && command.kind === 'instruction'
 }

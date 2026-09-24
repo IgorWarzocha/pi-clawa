@@ -1,4 +1,5 @@
 import type { ClawaWorkerConfig, ClawaWorkerThinkingLevel } from '../config.js'
+import type { PanelHandle } from './panel-host.js'
 
 export type WorkerThinkingLevel = ClawaWorkerThinkingLevel
 export type WorkerDefinition = ClawaWorkerConfig
@@ -7,15 +8,14 @@ export interface ClawasConfig {
   workers: WorkerDefinition[]
 }
 
-export type WorkerStatus = 'starting' | 'idle' | 'streaming' | 'stopped' | 'error'
+type WorkerStatus = 'starting' | 'idle' | 'streaming' | 'stopped' | 'error'
 
 export interface WorkerState {
   definition: WorkerDefinition
   cwd: string
   status: WorkerStatus
-  manualSession?: boolean | undefined
+  panel?: PanelHandle | undefined
   sessionFile?: string | undefined
-  pid?: number | undefined
   currentTask?: string | undefined
   currentToolName?: string | undefined
   lastSummary: string
@@ -34,5 +34,5 @@ export interface ClawasState {
   workers: WorkerState[]
   events: FeedEvent[]
   nextEventId: number
-  daemonStarted: boolean
+  connected: boolean
 }

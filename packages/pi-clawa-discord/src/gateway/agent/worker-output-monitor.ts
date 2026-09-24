@@ -19,7 +19,7 @@ import { parseFinalRoutes, resolveDiscordRouteTarget } from './final-routes.js';
 import {
   getClawasWorkerOutput,
   sendClawasSessionMessage,
-} from './invoke-clawas-rpc.js';
+} from './invoke-clawas-session.js';
 import { clearTypingLease } from './typing.js';
 
 const POLL_MS = 500;

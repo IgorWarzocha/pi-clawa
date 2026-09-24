@@ -8,7 +8,7 @@ import type {
   ClawasMessageIntent,
   ClawasMessageKind,
   ClawasMessageVisibility,
-  ClawasRpcResponse,
+  ClawasCommsResponse,
   ClawasSenderInfo,
 } from '@howaboua/pi-clawa/clawas/comms/types';
 import { config } from '../config.js';
@@ -32,7 +32,7 @@ export async function getClawasWorkerOutput(
   target: string,
   after?: ClawasExtractedMessage | null,
 ): Promise<ClawasWorkerOutput> {
-  const response = await sendRpcCommand(target, {
+  const response = await sendSessionCommand(target, {
     type: 'get_message',
     afterTimestamp: after?.timestamp,
     afterContent: after?.content,
@@ -63,7 +63,7 @@ export async function getClawasWorkerOutput(
 }
 
 export async function getClawasWorkerStatus(target: string): Promise<ClawasWorkerStatus> {
-  const response = await sendRpcCommand(target, { type: 'get_status' });
+  const response = await sendSessionCommand(target, { type: 'get_status' });
   if (!response.success) {
     throw new Error(response.error ?? `Failed to read CLAWAS worker status from ${target}`);
   }
@@ -88,7 +88,7 @@ export async function sendClawasSessionMessage(
     visibility?: ClawasMessageVisibility | undefined;
   },
 ): Promise<void> {
-  const response = await sendRpcCommand(target, {
+  const response = await sendSessionCommand(target, {
     type: 'send',
     message: options.message,
     mode: options.mode,
@@ -104,13 +104,13 @@ export async function sendClawasSessionMessage(
   }
 }
 
-async function sendRpcCommand(target: string, command: Record<string, unknown>): Promise<ClawasRpcResponse> {
+async function sendSessionCommand(target: string, command: Record<string, unknown>): Promise<ClawasCommsResponse> {
   const socketPath = await waitForClawasSocketPath(target);
   if (!socketPath) {
     throw new Error(`Unknown CLAWAS session target: ${target}. Keep the clawa session alive so the worker socket exists.`);
   }
 
-  return await new Promise<ClawasRpcResponse>((resolvePromise, reject) => {
+  return await new Promise<ClawasCommsResponse>((resolvePromise, reject) => {
     const socket = createConnection(socketPath);
     socket.setEncoding('utf8');
 
@@ -138,7 +138,7 @@ async function sendRpcCommand(target: string, command: Record<string, unknown>):
         if (!line) continue;
 
         try {
-          const response = JSON.parse(line) as ClawasRpcResponse;
+          const response = JSON.parse(line) as ClawasCommsResponse;
           if (response.type === 'response') {
             cleanup();
             socket.end();

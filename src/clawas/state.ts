@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import { CLAWAS_EVENT_LIMIT } from './config.js'
 import type { ClawasState, FeedEvent, WorkerDefinition, WorkerState } from './types.js'
 
@@ -9,23 +10,15 @@ export function createInitialState(
   return {
     workers: workers.map((definition) => ({
       definition,
-      cwd: resolveWorkerCwd(rootCwd, definition.cwd),
+      cwd: resolve(rootCwd, definition.cwd),
       status: 'stopped',
       lastSummary: 'not started yet',
       updatedAt: now,
     })),
     events: [],
     nextEventId: 1,
-    daemonStarted: false,
+    connected: false,
   }
-}
-
-function resolveWorkerCwd(rootCwd: string, configuredCwd: string): string {
-  if (configuredCwd.startsWith('/')) {
-    return configuredCwd
-  }
-
-  return `${rootCwd}/${configuredCwd}`.replace(/\/+/g, '/')
 }
 
 export function getWorkerState(state: ClawasState, workerId: string): WorkerState {
@@ -34,16 +27,6 @@ export function getWorkerState(state: ClawasState, workerId: string): WorkerStat
     throw new Error(`Unknown Clawas worker: ${workerId}`)
   }
   return worker
-}
-
-export function patchWorkerState(
-  state: ClawasState,
-  workerId: string,
-  patch: Partial<Omit<WorkerState, 'definition' | 'cwd'>>,
-  now: number,
-): void {
-  const worker = getWorkerState(state, workerId)
-  Object.assign(worker, patch, { updatedAt: now })
 }
 
 export function pushEvent(

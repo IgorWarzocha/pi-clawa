@@ -1,3 +1,4 @@
+import type { PanelHandle } from '../clawas/panel-host.js'
 import type { WorkerState, WorkerThinkingLevel } from '../clawas/types.js'
 import type { ClawaConfig } from '../config.js'
 import type { PulseCatalogItem } from '../pulses/definitions.js'
@@ -14,7 +15,7 @@ export interface ManagedWorker {
   title: string
   cwd: string
   status: WorkerState['status']
-  manualSession: boolean
+  panel?: PanelHandle | undefined
   autostart: boolean
   model?: string | undefined
   thinking?: WorkerThinkingLevel | undefined

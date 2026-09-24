@@ -98,7 +98,7 @@ export function registerSteerCommand(pi: ExtensionAPI, runtime: ClawasRuntime): 
 
 export function registerJumpCommand(pi: ExtensionAPI, runtime: ClawasRuntime): void {
   pi.registerCommand('jump', {
-    description: 'Open the active Clawas claw in a manual panel, or /jump <slot|worker>',
+    description: 'Focus the active Clawas claw panel, or /jump <slot|worker>',
     handler: async (args, ctx) => {
       const target = resolveJumpTarget(runtime, args ?? '')
       if (typeof target === 'string') {
@@ -107,9 +107,9 @@ export function registerJumpCommand(pi: ExtensionAPI, runtime: ClawasRuntime): v
       }
 
       runtime.selectMonitorWorker(target.definition.id)
-      if (!runtime.canOpenManualPanel()) {
+      if (!runtime.canOpenPanel()) {
         ctx.ui.notify(
-          `${runtime.getClawaDefaults().clawasName} manual takeover requires Herdr or tmux`,
+          `${runtime.getClawaDefaults().clawasName} panels require Herdr or tmux`,
           'warning',
         )
         return
@@ -117,11 +117,8 @@ export function registerJumpCommand(pi: ExtensionAPI, runtime: ClawasRuntime): v
 
       try {
         const handle = await runtime.openWorkerPanel(target.definition.id)
-        const host = runtime.getManualPanelHostLabel() ?? 'manual'
-        ctx.ui.notify(
-          `Jumped into ${target.definition.title} in a ${host} panel: ${handle}`,
-          'info',
-        )
+        const host = runtime.getPanelHostLabel() ?? 'worker'
+        ctx.ui.notify(`Focused ${target.definition.title} in a ${host} panel: ${handle}`, 'info')
       } catch (error) {
         ctx.ui.notify(
           `Failed to jump into ${target.definition.title}: ${error instanceof Error ? error.message : String(error)}`,

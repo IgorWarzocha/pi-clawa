@@ -44,7 +44,7 @@ export function matchesQuery(query: string, ...parts: string[]): boolean {
 
 function summarizeWorker(worker: ManagedWorker): string {
   const bits: string[] = [worker.status]
-  if (worker.manualSession) bits.push('manual')
+  if (worker.panel) bits.push(worker.panel.host)
   if (worker.currentTask) bits.push(worker.currentTask)
   else if (worker.lastSummary) bits.push(worker.lastSummary)
   return bits.join(' • ')
@@ -76,7 +76,7 @@ function bindWorker(
       title: definition.title,
       cwd: definition.cwd,
       status: liveWorker?.status ?? 'stopped',
-      manualSession: liveWorker?.manualSession === true,
+      panel: liveWorker?.panel,
       autostart: definition.autostart,
       model: definition.model,
       thinking: definition.thinking,

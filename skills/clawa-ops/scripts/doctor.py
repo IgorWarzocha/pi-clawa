@@ -353,8 +353,6 @@ class Doctor:
             base_dir = 'clawas'
         else:
             self.ok_line('clawas.baseDir is set')
-        if not isinstance(clawas.get('tmuxSession'), str) or not clawas.get('tmuxSession').strip():
-            self.fail('clawas.tmuxSession must be a non-empty string')
         workers = clawas.get('workers')
         if not isinstance(workers, list):
             self.fail('clawas.workers must be an array')

@@ -1,11 +1,13 @@
 import type {
   ClawasCommsCommand,
+  ClawasCommsResponse,
   ClawasDiscordContext,
   ClawasExtractedMessage,
   ClawasMessageIntent,
   ClawasMessageKind,
   ClawasMessageVisibility,
   ClawasSenderInfo,
+  ClawasSessionStatus,
 } from './types.js'
 
 type ParseResult<T> = { value: T } | { error: string }
@@ -89,6 +91,7 @@ export function parseClawasCommsCommand(value: unknown): ParseResult<ClawasComms
     if (!isRecord(value)) throw new Error('command must be an object')
     const id = optionalString(value, 'id')
     if (value['type'] === 'get_status') return { value: { type: 'get_status', id } }
+    if (value['type'] === 'subscribe_status') return { value: { type: 'subscribe_status', id } }
     if (value['type'] === 'get_message') {
       return {
         value: {
@@ -159,16 +162,57 @@ export function parseLastMessageData(value: unknown): ClawasExtractedMessage | n
   }
 }
 
-export function parseSessionStatusData(value: unknown): {
-  isIdle: boolean
-  hasPendingMessages: boolean
-} {
+export function parseCommsResponse(value: unknown): ClawasCommsResponse {
   if (
     !isRecord(value) ||
-    typeof value['isIdle'] !== 'boolean' ||
-    typeof value['hasPendingMessages'] !== 'boolean'
+    value['type'] !== 'response' ||
+    typeof value['command'] !== 'string' ||
+    typeof value['success'] !== 'boolean' ||
+    (value['id'] !== undefined && typeof value['id'] !== 'string') ||
+    (value['error'] !== undefined && typeof value['error'] !== 'string')
   ) {
-    throw new Error('get_status response requires boolean isIdle and hasPendingMessages')
+    throw new Error('response has an invalid shape')
   }
-  return { isIdle: value['isIdle'], hasPendingMessages: value['hasPendingMessages'] }
+  return {
+    type: 'response',
+    command: value['command'],
+    success: value['success'],
+    id: value['id'],
+    data: value['data'],
+    error: value['error'],
+  }
+}
+
+export function parseSessionStatusData(value: unknown): ClawasSessionStatus {
+  if (
+    !isRecord(value) ||
+    typeof value['sessionId'] !== 'string' ||
+    !value['sessionId'] ||
+    typeof value['cwd'] !== 'string' ||
+    typeof value['isIdle'] !== 'boolean' ||
+    typeof value['hasPendingMessages'] !== 'boolean' ||
+    typeof value['lastSummary'] !== 'string' ||
+    typeof value['updatedAt'] !== 'number' ||
+    !Number.isFinite(value['updatedAt']) ||
+    (value['workerId'] !== undefined && typeof value['workerId'] !== 'string') ||
+    (value['sessionFile'] !== undefined && typeof value['sessionFile'] !== 'string') ||
+    (value['currentToolName'] !== undefined && typeof value['currentToolName'] !== 'string') ||
+    (value['lastError'] !== undefined && typeof value['lastError'] !== 'string')
+  ) {
+    throw new Error(
+      'Clawas status is incompatible; upgrade or restart this worker (requires sessionId, cwd, boolean isIdle and hasPendingMessages, lastSummary, updatedAt)',
+    )
+  }
+  return {
+    workerId: value['workerId'],
+    sessionId: value['sessionId'],
+    sessionFile: value['sessionFile'],
+    cwd: value['cwd'],
+    isIdle: value['isIdle'],
+    hasPendingMessages: value['hasPendingMessages'],
+    currentToolName: value['currentToolName'],
+    lastSummary: value['lastSummary'],
+    lastError: value['lastError'],
+    updatedAt: value['updatedAt'],
+  }
 }

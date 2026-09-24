@@ -87,7 +87,7 @@ Start small. Do not make the first message a tour of every file in its home. Let
 
 Let it adjust its local docs as the conversation settles. Keep going until it has enough shape to operate without freezing, then ask it for a short summary of its lane and first useful next move.
 
-After onboarding, run doctor and verify the managed worker is live on its configured model/thinking identity. A successful private reply proves the route; inspect live session identity when the exact model matters.
+After onboarding, run doctor and verify the worker panel is live on its configured model/thinking identity. A successful private reply proves the route; inspect live session identity when the exact model matters. Config edits take effect at the next panel launch.
 
 ## Talk to it later
 

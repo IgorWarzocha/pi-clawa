@@ -4,7 +4,7 @@ import { loadClawasConfig } from '@howaboua/pi-clawa/clawas/config-loader';
 import { resolveClawaDefaults } from '@howaboua/pi-clawa/config';
 import { config } from '../config.js';
 import { getDiscordDeliveryBacklog } from '../db.js';
-import { getClawasWorkerStatus } from './invoke-clawas-rpc.js';
+import { getClawasWorkerStatus } from './invoke-clawas-session.js';
 import { getSessionFileStatus, type ChannelSessionStatus } from './session-status.js';
 
 type ThinkingLevel = 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';

@@ -55,7 +55,6 @@ export interface ClawEnvironmentConfig {
   bootstrapped: boolean
   clawas: {
     baseDir: string
-    tmuxSession: string
     workers: ClawaWorkerConfig[]
   }
   clawa: ClawaDefaults
@@ -81,7 +80,6 @@ const DEFAULT_CONFIG: ClawEnvironmentConfig = {
   bootstrapped: false,
   clawas: {
     baseDir: 'clawas',
-    tmuxSession: 'clawas',
     workers: [],
   },
   clawa: DEFAULT_CLAWA_DEFAULTS,
@@ -272,7 +270,6 @@ export function loadClawEnvironmentConfig(repoRoot: string): {
       bootstrapped: raw['bootstrapped'] === true,
       clawas: {
         baseDir: asString(clawas['baseDir']) ?? DEFAULT_CONFIG.clawas.baseDir,
-        tmuxSession: asString(clawas['tmuxSession']) ?? DEFAULT_CONFIG.clawas.tmuxSession,
         workers: normalizeWorkers(clawas['workers']),
       },
       clawa: clampClawaDefaults(raw['clawa']),

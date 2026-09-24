@@ -32,8 +32,10 @@ function getDetailSegments(worker: WorkerState, theme: Theme): string[] {
         worker.currentTask,
       ),
     )
-  } else if (worker.status === 'stopped' && worker.lastSummary === 'not started yet') {
-    segments.push(theme.fg('dim', 'not started'))
+  } else if (worker.status === 'stopped') {
+    segments.push(
+      theme.fg('dim', worker.lastSummary === 'not started yet' ? 'not started' : 'stopped'),
+    )
   } else {
     segments.push(theme.fg('dim', 'idle'))
   }
@@ -63,12 +65,7 @@ function renderWorkerRow(worker: WorkerState, now: number, theme: Theme): string
 }
 
 function isLive(worker: WorkerState): boolean {
-  return (
-    worker.manualSession === true ||
-    worker.status === 'starting' ||
-    worker.status === 'streaming' ||
-    worker.status === 'idle'
-  )
+  return worker.status === 'starting' || worker.status === 'streaming' || worker.status === 'idle'
 }
 
 function isBusy(worker: WorkerState): boolean {

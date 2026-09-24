@@ -30,8 +30,8 @@ export function buildDetails(model: ClawGuiModel): Record<string, Primitive> {
     }),
     'restart-clawas': createDetail({
       title: 'restart-clawas',
-      meta: [`restarts the ${model.clawa.clawasName} daemon and managed workers`],
-      body: ['Useful after config edits, UI changes, or when a worker gets wedged.'],
+      meta: [`refreshes ${model.clawa.clawasName} worker state without closing panels`],
+      body: ['Worker configuration changes apply the next time a panel launches.'],
     }),
   }
 
@@ -92,9 +92,9 @@ function buildClawMeta(item: ClawItem): string[] {
     `autostart: ${yesNo(item.config.autostart === true)}`,
     `exists: ${yesNo(item.status.exists)}`,
     `bootstrapped: ${yesNo(item.status.bootstrapped)}`,
-    `managed worker: ${yesNo(Boolean(worker))}`,
+    `worker configured: ${yesNo(Boolean(worker))}`,
     `worker status: ${worker?.status ?? 'not configured'}`,
-    `manual: ${yesNo(worker?.manualSession === true)} (/jump to open)`,
+    `panel: ${worker?.panel ? `${worker.panel.host} ${worker.panel.paneId}` : '(closed)'} (/jump to open)`,
   ]
 }
 

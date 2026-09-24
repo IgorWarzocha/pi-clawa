@@ -1,10 +1,8 @@
 import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
-import { type ClawaDefaults, DEFAULT_CLAWA_DEFAULTS, resolveClawaDefaults } from '../config'
+import { type ClawaDefaults, DEFAULT_CLAWA_DEFAULTS, resolveClawaDefaults } from '../config.js'
 import { CLAWAS_SPINNER_TICK_MS } from './config.js'
 import { getClawasConfigPath, loadClawasConfig } from './config-loader.js'
-import { ClawasDaemon } from './daemon.js'
-import { ClawasManualSessionLauncher } from './manual-session-launcher.js'
-import { ManualSessionWatcher } from './manual-session-watcher.js'
+import { ClawasController } from './controller.js'
 import {
   createClawasMonitorState,
   findMonitorWorker,
@@ -13,63 +11,32 @@ import {
   selectMonitorWorker,
   selectRelativeMonitorWorker,
 } from './monitor-state.js'
-import { openWorkerManualSession } from './runtime-manual.js'
+import { ClawasPanelLauncher } from './panel-launcher.js'
 import { ClawasUiBridge } from './runtime-ui.js'
-import type { ClawasConfig, ClawasState, WorkerDefinition, WorkerState } from './types.js'
+import type { ClawasState, WorkerDefinition, WorkerState } from './types.js'
 
-function fingerprintConfig(config: ClawasConfig): string {
-  return JSON.stringify(config.workers)
-}
-
-export async function startClawasDaemon<T extends Pick<ClawasDaemon, 'start' | 'dispose'>>(
-  daemon: T,
-): Promise<T> {
-  try {
-    await daemon.start()
-    return daemon
-  } catch (error) {
-    await daemon.dispose().catch(() => {})
-    throw error
-  }
-}
-
-/**
- * Thin UI/runtime shell around the daemon.
- * It keeps widget lifecycle and repaint timing out of the worker orchestration code.
- */
+/** Main-session configuration and UI lifecycle. Reloading reconnects, never kills panels. */
 export class ClawasRuntime {
   private context: ExtensionContext | null = null
-  private daemon: ClawasDaemon | null = null
+  private controller: ClawasController | null = null
   private interval: ReturnType<typeof setInterval> | null = null
   private configFingerprint: string | null = null
   private lifecycle: Promise<void> = Promise.resolve()
   private clawaDefaults: ClawaDefaults = DEFAULT_CLAWA_DEFAULTS
   private monitorState = createClawasMonitorState()
   private readonly ui = new ClawasUiBridge()
-  private readonly launcher = new ClawasManualSessionLauncher()
-  private readonly manualWatcher = new ManualSessionWatcher(
-    () => this.daemon,
-    () => this.context,
-    () => this.clawaDefaults,
-  )
+  private readonly launcher = new ClawasPanelLauncher()
 
   attach(context: ExtensionContext): void {
     this.context = context
     this.clawaDefaults = resolveClawaDefaults(context.cwd)
-    if (!context.hasUI) {
-      return
-    }
-
-    void this.launcher.captureCurrentHostPane().catch(() => {
-      // Manual takeover stays unavailable until Herdr/tmux context is captured.
-    })
+    if (!context.hasUI) return
     this.ui.clear(context)
-    void this.queueLifecycle(async () => await this.startOrReloadDaemon(context, false)).catch(
-      () => {
-        // User-facing error notification is emitted inside startOrReloadDaemon.
-      },
-    )
-    this.render()
+    void this.queueLifecycle(async () => {
+      if (this.context === context) await this.loadController(context, false)
+    }).catch(() => {
+      /* loadController reports the failure. */
+    })
   }
 
   getClawaDefaults(): ClawaDefaults {
@@ -77,23 +44,16 @@ export class ClawasRuntime {
   }
 
   async restart(): Promise<void> {
-    const context = this.context
-    if (!context) {
-      return
-    }
-
-    await this.queueLifecycle(async () => await this.startOrReloadDaemon(context, true))
-    this.render()
+    await this.refresh(true)
+  }
+  async refreshFromConfig(): Promise<void> {
+    await this.refresh(false)
   }
 
-  async refreshFromConfig(): Promise<void> {
+  private async refresh(reconnect: boolean): Promise<void> {
     const context = this.context
-    if (!context) {
-      return
-    }
-
-    await this.queueLifecycle(async () => await this.startOrReloadDaemon(context, false))
-    this.render()
+    if (!context) return
+    await this.queueLifecycle(() => this.loadController(context, reconnect))
   }
 
   async sendPrompt(
@@ -101,105 +61,76 @@ export class ClawasRuntime {
     message: string,
     mode: 'prompt' | 'steer' | 'followUp' = 'prompt',
   ): Promise<void> {
-    const daemon = this.requireDaemon()
-    await daemon.sendPrompt(workerId, message, mode)
-    this.render()
+    await this.requireController().sendPrompt(workerId, message, mode)
   }
 
   async getLastAssistantText(workerId: string): Promise<string | null> {
-    if (!this.daemon) {
-      return null
-    }
-    return await this.daemon.getLastAssistantText(workerId)
+    return (await this.controller?.getLastAssistantText(workerId)) ?? null
   }
 
   getState(): ClawasState | null {
-    return this.daemon?.getState() ?? null
+    return this.controller?.getState() ?? null
   }
 
   async ensureWorkerRunning(workerId: string): Promise<void> {
-    const daemon = this.requireDaemon()
-    await daemon.ensureWorkerRunning(workerId)
-    this.render()
-  }
-
-  isWorkerManual(workerId: string): boolean {
-    return this.daemon?.isWorkerManual(workerId) ?? false
+    await this.requireController().ensureWorkerRunning(workerId)
   }
 
   getWorkerIds(): string[] {
-    return this.daemon?.getWorkerIds() ?? []
+    return this.controller?.getWorkerIds() ?? []
   }
-
   getWorkerDefinition(workerId: string): WorkerDefinition {
-    return this.requireDaemon().getWorkerDefinition(workerId)
+    return this.requireController().getWorkerDefinition(workerId)
   }
 
   getActiveMonitorWorker(): WorkerState | undefined {
-    return getActiveMonitorWorker(this.daemon?.getState(), this.monitorState)
+    return getActiveMonitorWorker(this.controller?.getState(), this.monitorState)
   }
-
   getMonitorWorkerBySlot(slot: number): WorkerState | undefined {
-    return getMonitorWorkerBySlot(this.daemon?.getState(), slot)
+    return getMonitorWorkerBySlot(this.controller?.getState(), slot)
   }
-
   findMonitorWorker(target: string): WorkerState | undefined {
-    return findMonitorWorker(this.daemon?.getState(), target)
+    return findMonitorWorker(this.controller?.getState(), target)
   }
-
   selectMonitorWorker(workerId: string): void {
-    this.monitorState = selectMonitorWorker(this.daemon?.getState(), this.monitorState, workerId)
+    this.monitorState = selectMonitorWorker(
+      this.controller?.getState(),
+      this.monitorState,
+      workerId,
+    )
     this.render()
   }
-
   selectRelativeMonitorWorker(direction: number): void {
     this.monitorState = selectRelativeMonitorWorker(
-      this.daemon?.getState(),
+      this.controller?.getState(),
       this.monitorState,
       direction,
     )
     this.render()
   }
-
   toggleMonitorFold(): void {
     this.monitorState = { ...this.monitorState, folded: !this.monitorState.folded }
     this.render()
   }
 
   async openWorkerPanel(workerId: string): Promise<string> {
-    return await this.openWorkerManualSession(workerId, 'panel')
+    return await this.requireController().focusWorker(workerId, 'panel')
   }
-
-  async openWorkerWindow(workerId: string): Promise<string> {
-    return await this.openWorkerManualSession(workerId, 'window')
-  }
-
-  canOpenManualPanel(): boolean {
+  canOpenPanel(): boolean {
     return this.launcher.canOpenPanel()
   }
-
-  getManualPanelHostLabel(): string | null {
+  getPanelHostLabel(): string | null {
     return this.launcher.getHostLabel()
   }
 
   async dispose(): Promise<void> {
-    await this.queueLifecycle(async () => await this.disposeNow())
-  }
-
-  private async disposeNow(): Promise<void> {
-    if (this.interval) {
-      clearInterval(this.interval)
-    }
-    this.manualWatcher.stop()
-    this.interval = null
-    if (this.daemon) {
-      await this.daemon.dispose()
-      this.daemon = null
-    }
-    if (this.context?.hasUI) {
-      this.ui.clear(this.context)
-    }
-    this.context = null
+    await this.queueLifecycle(async () => {
+      if (this.interval) clearInterval(this.interval)
+      this.interval = null
+      await this.disconnectController()
+      if (this.context?.hasUI) this.ui.clear(this.context)
+      this.context = null
+    })
   }
 
   private queueLifecycle(operation: () => Promise<void>): Promise<void> {
@@ -208,57 +139,40 @@ export class ClawasRuntime {
     return queued
   }
 
-  private async startOrReloadDaemon(
-    context: ExtensionContext,
-    replaceExisting: boolean,
-  ): Promise<void> {
-    this.clawaDefaults = resolveClawaDefaults(context.cwd)
-    const configPath = getClawasConfigPath(context.cwd)
-    const config = await this.loadConfigOrNotify(context, configPath)
-
-    if (!config) {
-      this.configFingerprint = null
-      await this.clearMissingConfig(replaceExisting)
-      return
-    }
-
-    const nextFingerprint = fingerprintConfig(config)
-
-    if (replaceExisting) {
-      await this.disposeDaemon(true)
-    }
-
-    if (this.daemon) {
-      if (this.configFingerprint === nextFingerprint) {
+  private async loadController(context: ExtensionContext, reconnect: boolean): Promise<void> {
+    try {
+      this.clawaDefaults = resolveClawaDefaults(context.cwd)
+      const config = await loadClawasConfig(context.cwd)
+      const fingerprint = JSON.stringify([context.cwd, config, this.clawaDefaults])
+      if (!reconnect && this.controller && this.configFingerprint === fingerprint) return
+      await this.disconnectController()
+      if (!config) {
+        if (context.hasUI) this.ui.clear(context)
         return
       }
-      await this.disposeDaemon(false)
-    }
-
-    const daemon = this.createDaemon(context, config)
-    try {
-      await startClawasDaemon(daemon)
-      this.daemon = daemon
-      this.configFingerprint = nextFingerprint
-      this.ensureStarted()
-      this.showMonitor(context)
-      this.notifyDaemonStarted(configPath, daemon)
-    } catch (error) {
-      this.notifyDaemonFailed(error)
-      throw error
-    }
-  }
-
-  private async loadConfigOrNotify(
-    context: ExtensionContext,
-    configPath: string,
-  ): Promise<ClawasConfig | null> {
-    try {
-      return await loadClawasConfig(context.cwd)
+      await this.launcher.captureCurrentHostPane()
+      const controller = new ClawasController(
+        context.cwd,
+        config,
+        this.launcher,
+        this.clawaDefaults,
+        () => this.render(),
+      )
+      this.controller = controller
+      try {
+        await controller.start()
+      } catch (error) {
+        await this.disconnectController()
+        throw error
+      }
+      this.configFingerprint = fingerprint
+      this.startRepaint()
+      this.render()
+      this.notifyConnected(context, controller.getState())
     } catch (error) {
       if (context.hasUI) {
         context.ui.notify(
-          `Failed to load ${this.clawaDefaults.clawasName} config from ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
+          `Clawas could not connect: ${error instanceof Error ? error.message : String(error)}`,
           'error',
         )
       }
@@ -266,108 +180,51 @@ export class ClawasRuntime {
     }
   }
 
-  private async clearMissingConfig(replaceExisting: boolean): Promise<void> {
-    await this.disposeDaemon(replaceExisting)
-    if (this.context?.hasUI) this.ui.clear(this.context)
-  }
-
-  private createDaemon(context: ExtensionContext, config: ClawasConfig): ClawasDaemon {
-    return new ClawasDaemon(context.cwd, config, () => this.render(), this.clawaDefaults)
-  }
-
-  private showMonitor(context: ExtensionContext): void {
-    this.ui.showMonitor(
-      context,
-      () => this.daemon?.getState(),
-      () => this.monitorState,
-      this.clawaDefaults,
-    )
-  }
-
-  private notifyDaemonStarted(configPath: string, daemon: ClawasDaemon): void {
-    if (!this.context?.hasUI) return
-    const workerCount = daemon.getState().workers.length
-    this.context.ui.notify(
-      `${this.clawaDefaults.clawasName} loaded ${workerCount} worker${workerCount === 1 ? '' : 's'} from ${configPath}.`,
+  private notifyConnected(context: ExtensionContext, state: ClawasState): void {
+    if (!context.hasUI) return
+    context.ui.notify(
+      `${this.clawaDefaults.clawasName} loaded ${state.workers.length} Clawas from ${getClawasConfigPath(context.cwd)}.`,
       'info',
     )
+    for (const worker of state.workers) {
+      if (worker.lastError)
+        context.ui.notify(`${worker.definition.title}: ${worker.lastError}`, 'error')
+    }
   }
 
-  private notifyDaemonFailed(error: unknown): void {
-    if (!this.context?.hasUI) return
-    this.context.ui.notify(
-      `${this.clawaDefaults.clawasName} daemon failed: ${error instanceof Error ? error.message : String(error)}`,
-      'error',
-    )
-  }
-
-  private ensureStarted(): void {
-    if (!this.interval) {
-      this.interval = setInterval(() => {
-        const workers = this.daemon?.getState().workers ?? []
-        if (
-          workers.some((worker) => worker.status === 'starting' || worker.status === 'streaming')
-        ) {
-          this.render()
-        }
-      }, CLAWAS_SPINNER_TICK_MS)
-      this.interval.unref?.()
-    }
-
-    this.manualWatcher.start()
-  }
-
-  private async disposeDaemon(clearIntervalToo: boolean): Promise<void> {
-    if (clearIntervalToo && this.interval) {
-      clearInterval(this.interval)
-      this.interval = null
-    }
-    if (clearIntervalToo) {
-      this.manualWatcher.stop()
-    }
-    if (this.daemon) {
-      await this.daemon.dispose()
-      this.daemon = null
-    }
+  private async disconnectController(): Promise<void> {
+    const previous = this.controller
+    this.controller = null
     this.configFingerprint = null
+    await previous?.dispose()
+  }
+
+  private startRepaint(): void {
+    if (this.interval) return
+    this.interval = setInterval(() => {
+      if (
+        this.controller
+          ?.getState()
+          .workers.some((worker) => worker.status === 'starting' || worker.status === 'streaming')
+      ) {
+        this.render()
+      }
+    }, CLAWAS_SPINNER_TICK_MS)
+    this.interval.unref?.()
   }
 
   private render(): void {
-    if (!(this.context?.hasUI && this.daemon)) {
-      return
-    }
-
+    if (!(this.context?.hasUI && this.controller)) return
     this.ui.showMonitor(
       this.context,
-      () => this.daemon?.getState(),
+      () => this.controller?.getState(),
       () => this.monitorState,
       this.clawaDefaults,
     )
   }
 
-  private async openWorkerManualSession(
-    workerId: string,
-    mode: 'panel' | 'window',
-  ): Promise<string> {
-    return await openWorkerManualSession({
-      mode,
-      workerId,
-      daemon: this.requireDaemon(),
-      launcher: this.launcher,
-      clawaDefaults: this.clawaDefaults,
-      getExtensionPaths: (id) => this.daemonExtensionPaths(id),
-      render: () => this.render(),
-    })
-  }
-
-  private requireDaemon(): ClawasDaemon {
-    if (!this.daemon) {
-      throw new Error(`${this.clawaDefaults.clawasName} daemon is not running`)
-    }
-    return this.daemon
-  }
-
-  private daemonExtensionPaths(workerId?: string): string[] {
-    return this.requireDaemon().getExtensionPaths(workerId)
+  private requireController(): ClawasController {
+    if (!this.controller) throw new Error(`${this.clawaDefaults.clawasName} is not connected`)
+    return this.controller
   }
 }

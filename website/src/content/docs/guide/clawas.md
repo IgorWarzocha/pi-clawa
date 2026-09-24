@@ -22,15 +22,17 @@ Open `/claw` and use the creation flow, or give `/claw` a purpose in text. Creat
 The worker's local `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, nested instructions, vault work, and session
 history can diverge around its lane. Shared human and crew files keep handoffs grounded.
 
-## Managed sessions
+## Worker panels
 
-An enabled, autostart worker runs as `pi --mode rpc` in its own cwd. The daemon resumes the worker's
-registered session file when possible. Model, thinking level, extension paths, Discord enablement,
-and reporting mode are supplied from the worker definition.
+An enabled, autostart worker opens a native Pi session in a background Herdr tab or tmux window. The
+runtime adopts an existing panel instead of opening a second session. The session registry records
+both history and panel location so workers can resume when possible. Model, thinking level, extension
+paths, Discord enablement, and reporting mode are supplied from the worker definition at panel launch.
+Editing config does not change a running Pi session.
 
-The runtime serializes lifecycle changes, coalesces concurrent starts, adopts already-live manual
-workers, and restarts an enabled managed worker after an unexpected exit. It will not start a second
-managed copy while a human-owned manual session has the lane.
+Main reloads, exits, and config refreshes leave worker panels running. Closing a worker panel stops
+that worker. The next message or `/jump` can reopen its existing session; a crash does not trigger
+automatic respawn.
 
 ## Talk to a Clawa
 
@@ -39,9 +41,10 @@ managed copy while a human-owned manual session has the lane.
 - The main model can use `message_clawa` for private worker coordination.
 - A worker can use `message_main_claw` once per turn for an internal handoff or status.
 
-Messages are carried over project-scoped Unix sockets. A steer to an active worker becomes a
-follow-up; a steer or follow-up to an inactive worker becomes a new prompt. Delivery failures restore
-the prior worker status and surface an error rather than pretending the handoff landed. A successful
+Private messages use project-scoped Unix sockets, not Pi subprocess RPC. Messages and reports remain
+available while you type directly in the worker's panel. A steer to an active worker becomes a
+follow-up; a steer or follow-up to an inactive worker becomes a new prompt. Delivery failures surface
+an error rather than pretending the handoff landed. A successful
 `message_clawa` call acknowledges the named recipient without echoing the outgoing note back into the
 tool result.
 
@@ -56,7 +59,7 @@ Each worker can set `reportMode`:
 Report-back is fingerprinted to avoid duplicates. Recent explicit mail and route-aware Discord work
 also affect whether an automatic status is useful.
 
-## Monitor and takeover
+## Monitor and panels
 
 The main TUI shows worker state and task summaries. Keyboard controls:
 
@@ -66,9 +69,8 @@ The main TUI shows worker state and task summaries. Keyboard controls:
 | `Alt+Shift+Q` | Select the previous worker. |
 | `Alt+Shift+E` | Select the next worker. |
 
-`/jump [slot|worker]` opens the selected worker in a manual panel. It requires Herdr or tmux. In an
-ordinary standalone terminal it warns and does nothing. Once a worker is in a manual session, normal
-managed private delivery is intentionally disconnected until ownership returns.
+`/jump [slot|worker]` focuses an existing panel or opens the stopped worker's session. It requires
+Herdr or tmux. In an ordinary standalone terminal it warns and does nothing.
 
 ## Settings scope
 

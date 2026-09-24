@@ -6,7 +6,7 @@ import { logger } from '../logger.js';
 import type { DiscordMessageHandle } from '../types.js';
 import { extractDiscordDirectives } from './discord-directives.js';
 import { parseFinalRoutes, resolveDiscordRouteTarget } from './final-routes.js';
-import { sendClawasSessionMessage } from './invoke-clawas-rpc.js';
+import { sendClawasSessionMessage } from './invoke-clawas-session.js';
 import { clearTypingLease } from './typing.js';
 
 export async function deliverClawaFinalText(options: {
