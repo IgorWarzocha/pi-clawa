@@ -1,62 +1,53 @@
 ---
 title: Discord adapter
-description: Connect a dedicated Clawa to Discord's routed message lane.
+description: Connect a Clawa home to its own Discord bot.
 section: Operate
 order: 70
 ---
 
-The Discord adapter is an optional package under `packages/pi-clawa-discord`. It is substantial but
-still **work in progress**. Its own README and setup guide own details that are still moving.
+The optional package at `packages/pi-clawa-discord` connects a bot inside the Pi tab for a Clawa
+home. It is **work in progress**. Live Discord compatibility has not yet been verified.
 
-## Shape
+## Connect a home
 
-The adapter uses a dedicated Discord Clawa rather than sending public room traffic straight into the
-main session. On main session startup it ensures the worker and its template exist. When a bot token
-is configured, it starts or adopts a separate gateway process, with logs and delivery state under
-`.pi/clawa-discord/`.
+Follow the [bot setup guide](https://github.com/IgorWarzocha/pi-clawa/blob/master/packages/pi-clawa-discord/DISCORD-BOT-SETUP.md) to
+create an application and invite its bot. Load the adapter beside Clawa in that home's Pi settings,
+open Pi there, run `/discord`, enter its token, and connect. DM the bot or mention it in an allowed
+channel. The message and Clawa's ensuing turn appear in the **same tab**, not in a dedicated
+Discord worker. A specialist can connect its own separate application from its own tab. Keep bot
+tokens distinct; an OS-backed lease rejects a token already in use by another home.
 
-The gateway receives Discord events, stores bounded delivery/context state in SQLite, and queues a
-follow-up to the mapped worker with recent channel context and message handles. The worker decides
-whether and where a response belongs.
+By default, DMs, mentions, and replies to the bot wake the home. `/discord` also controls incoming
+channel policy, allowed and excluded channel IDs, allowed users, optional trigger aliases, a default
+DM recipient, and whether chat intake is armed. Aliases start empty and belong only to that home.
+Bot-authored messages are ignored. Ambient wakes are opt-in: after a per-channel jitter of 8 to 16
+messages, Clawa sees one batch and can decide not to speak. Pausing chat intake does not disconnect
+the bot.
 
-With Discord's **Server Members Intent** and `ENABLE_GUILD_MEMBERS_INTENT=true`, exact joins and
-leaves become durable worker turns in each configured channel the member can view. Bots are ignored,
-replayed events are deduplicated, and any welcome is sent as a normal channel message rather than a
-reply to a synthetic event.
+## Send deliberately
 
-## Explicit final routing
+An incoming turn shows numbered message handles. A final block like `[m1] Thanks for the note`
+replies to that exact message. `[c] I'll look into it` posts in the current channel without a
+reply target. Several blocks can be delivered in order. Unmarked assistant final text stays in Pi.
+Use `discord_send` for rich delivery such as files, reactions, cards, buttons, selects, and polls.
+Use `discord_history` to search local Discord history. Core `recall` and `remember` are unchanged.
 
-Normal final text from the Discord worker is **not delivered**. Public output must use known route
-blocks:
+## Local state and lifecycle
 
-```text
-[#known-channel]: public room reply
-[dm]: private reply to the human
-[main_clawa]: internal handoff to the main Clawa
-[quiet]
-```
+The home owns `.pi/clawa-discord/bot.env`, created with mode `0600`. An empty token keeps Discord
+off. No token or configuration is inherited from the process or parent home. The same directory
+keeps searchable history in `gateway.db`, archive retries in `archive-pending.json`, cached assets
+in `assets/`, and a channel snapshot in `channels.json`. Keep the whole directory private.
 
-The worker must not invent channel tags. `[quiet]` is a real delivery directive: no public message is
-emitted for that final response. Reactions use a source handle such as `[react m1: 👍]`.
+Connection follows Pi start, resume, reload, and shutdown. Config edits restart the connection at
+settlement. Closing a worker tab disconnects that worker's bot; quitting main does not stop bots in
+other open worker tabs. Pending turns and rich action tokens are in memory, so disconnect or reload
+drops them, but archived history remains. The old synthetic join and leave worker turns are gone.
 
-This strictness makes accidental private-status leakage less likely and keeps public speech an
-intentional act.
+## Migrating from the old gateway
 
-## Rich operations
-
-The `message_discord` tool covers explicit sends that route blocks cannot express cleanly:
-
-- local images and files;
-- rich Components V2 cards;
-- buttons, selects, and modals;
-- polls and reactions;
-- messages outside the current turn's final route.
-
-The adapter also handles reply-parent context, attachments, edits and deletions, and Discord's
-**Apps → Ask Clawa** contextual action.
-
-## Process ownership
-
-The gateway uses a lock so another main session can adopt a live process rather than starting a
-duplicate. An adopted gateway is not killed when the adopting Pi session shuts down. Gateway logs
-live at `.pi/clawa-discord/gateway.log`.
+**Before updating**, use the old `/discord` to stop the shared gateway. Then update the checkout,
+open each home that should have a bot, and use its new `/discord` to configure and reconnect it.
+`config.env` and `routes.jsonc` are no longer read. Tokens are not moved automatically. The old
+Discord worker home, Pi session history, and `gateway.db` are not deleted. Do not reuse the same
+token in multiple homes.

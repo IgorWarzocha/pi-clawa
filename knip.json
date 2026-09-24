@@ -7,9 +7,8 @@
       "project": ["src/**/*.ts", "tests/**/*.ts"]
     },
     "packages/pi-clawa-discord": {
-      "entry": ["*.test.ts", "src/gateway/cli/index.ts"],
-      "project": ["*.test.ts", "src/**/*.ts"],
-      "ignoreDependencies": ["pino-pretty", "tsx"]
+      "entry": ["*.test.ts"],
+      "project": ["*.test.ts", "src/**/*.ts"]
     },
     "website": {
       "project": ["src/**/*.{ts,astro}"]

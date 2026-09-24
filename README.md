@@ -94,9 +94,10 @@ The wiki owns the detail:
 
 ## Discord adapter
 
-The optional adapter lives at `packages/pi-clawa-discord/` and is still WIP. Add that package from
-the same checkout, start Pi, and run `/discord`. Its [adapter README](packages/pi-clawa-discord/README.md)
-and [setup guide](packages/pi-clawa-discord/DISCORD-BOT-SETUP.md) own the changing details.
+The optional adapter lives at `packages/pi-clawa-discord/` and is still WIP. Add it from the same
+checkout, open the Pi tab for the home you want to connect, and run `/discord`. That home can have
+its own bot; a specialist can connect a different bot from its own tab. For a first message and
+migration from the old gateway, see the [Discord guide](website/src/content/docs/operate/discord.md).
 
 ## Development
 

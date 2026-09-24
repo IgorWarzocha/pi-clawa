@@ -28,7 +28,6 @@ Clawa config.
         "model": "provider/model-id",
         "thinking": "high",
         "reportMode": "auto",
-        "discordEnabled": false,
         "extensions": []
       }
     ]
@@ -69,7 +68,6 @@ location is runtime state, not another setting.
 | `fastMode` | Optionally force Fast Mode on or off for this worker when supported by its provider extension. |
 | `reportMode` | `auto`, `explicit`, or `off`. |
 | `extensions` | Extra extension paths passed to this worker. |
-| `discordEnabled` | Marks Discord behavior for that worker. |
 
 Malformed worker arrays, duplicate IDs, missing IDs/cwds, and invalid worker or memory-pass values
 throw visible config errors. Optional fields may be omitted, but a present boolean, thinking level,
@@ -108,3 +106,6 @@ pi --no-extensions -e /absolute/path/to/pi-clawa
 
 Workers run from their own cwd, so Pi project settings discovered there can differ from the main
 home. This is useful isolation, but it is also a common source of “works in main, missing in worker.”
+When the Discord adapter is loaded with Clawa, it propagates to worker tabs automatically. Each
+home's optional Discord settings belong in its own `.pi/clawa-discord/bot.env`, not a worker flag
+or the main home's `.pi/claw.jsonc`.

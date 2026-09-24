@@ -101,42 +101,18 @@ export function getLastMailMessageDetails(
 }
 
 export function getLastAssistantMessage(ctx: ExtensionContext): ClawasExtractedMessage | undefined {
-  return getLastAssistantTurn(ctx)?.message
-}
-
-export interface ClawasExtractedTurn {
-  message: ClawasExtractedMessage
-  mailDetails?: Record<string, unknown> | undefined
-}
-
-export function getAssistantTurns(ctx: ExtensionContext): ClawasExtractedTurn[] {
-  const branch = ctx.sessionManager.getBranch()
-  const turns: ClawasExtractedTurn[] = []
-
-  for (let index = 0; index < branch.length; index += 1) {
-    const turn = extractAssistantTurn(branch, index)
-    if (turn) turns.push(turn)
-  }
-
-  return turns
-}
-
-export function getLastAssistantTurn(ctx: ExtensionContext): ClawasExtractedTurn | undefined {
   const branch = ctx.sessionManager.getBranch()
 
   for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const turn = extractAssistantTurn(branch, index)
-    if (turn) return turn
+    const message = extractAssistantMessage(branch[index])
+    if (message) return message
   }
 
   return undefined
 }
 
-function extractAssistantTurn(
-  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
-  index: number,
-): ClawasExtractedTurn | undefined {
-  const entry = getRecord(branch[index])
+function extractAssistantMessage(value: unknown): ClawasExtractedMessage | undefined {
+  const entry = getRecord(value)
   if (entry?.['type'] !== 'message') return undefined
 
   const message = getRecord(entry['message'])
@@ -147,88 +123,20 @@ function extractAssistantTurn(
   const errorMessage = message['errorMessage']
   if (!text && stopReason === 'error' && typeof errorMessage === 'string' && errorMessage.trim()) {
     return {
-      message: {
-        role: 'assistant',
-        content: '',
-        timestamp: getEntryTimestamp(message['timestamp']),
-        error: errorMessage.trim(),
-      },
-      mailDetails: findPrecedingMailDetails(branch, index),
+      role: 'assistant',
+      content: '',
+      timestamp: getEntryTimestamp(message['timestamp']),
+      error: errorMessage.trim(),
     }
   }
 
   if (!text || messageContentHasToolCall(message['content'])) return undefined
 
   return {
-    message: {
-      role: 'assistant',
-      content: text,
-      timestamp: getEntryTimestamp(message['timestamp']),
-    },
-    mailDetails: findPrecedingMailDetails(branch, index),
+    role: 'assistant',
+    content: text,
+    timestamp: getEntryTimestamp(message['timestamp']),
   }
-}
-
-function findPrecedingMailDetails(
-  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
-  assistantIndex: number,
-): Record<string, unknown> | undefined {
-  const userIndex = findPrecedingUserIndex(branch, assistantIndex)
-  if (userIndex === undefined) return findMailBefore(branch, assistantIndex)
-
-  const turnMail = findMailBefore(branch, userIndex)
-  if (turnMail) return turnMail
-
-  // Follow-up mail can be queued while the current turn is still finishing.
-  // Ignore it unless it is an instruction that intentionally caused this turn.
-  return findInstructionMailBetween(branch, userIndex, assistantIndex)
-}
-
-function findPrecedingUserIndex(
-  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
-  assistantIndex: number,
-): number | undefined {
-  for (let index = assistantIndex - 1; index >= 0; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (!entry) continue
-    if (entry['type'] !== 'message') continue
-    const message = getRecord(entry['message'])
-    const role = message?.['role']
-    if (role === 'user') return index
-    if (role === 'assistant' && message) {
-      if (messageContentHasToolCall(message['content'])) continue
-      return undefined
-    }
-  }
-  return undefined
-}
-
-function findMailBefore(
-  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
-  boundaryIndex: number,
-): Record<string, unknown> | undefined {
-  for (let index = boundaryIndex - 1; index >= 0; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (!entry) continue
-    const details = getClawasMailDetails(entry)
-    if (details) return details
-    if (entry['type'] === 'message') break
-  }
-  return undefined
-}
-
-function findInstructionMailBetween(
-  branch: ReturnType<ExtensionContext['sessionManager']['getBranch']>,
-  userIndex: number,
-  assistantIndex: number,
-): Record<string, unknown> | undefined {
-  for (let index = assistantIndex - 1; index > userIndex; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (!entry) continue
-    const details = getClawasMailDetails(entry)
-    if (details?.['kind'] === 'instruction') return details
-  }
-  return undefined
 }
 
 export function getLastUserMessage(ctx: ExtensionContext): ClawasExtractedUserMessage | undefined {
@@ -277,7 +185,7 @@ export function getLastDeliveryMessage(ctx: ExtensionContext): ClawasExtractedDe
         ? (entry['details'] as Record<string, unknown>)
         : null
     const route = details?.['route']
-    if (route !== 'discord' && route !== 'main-claw') {
+    if (route !== 'main-claw') {
       continue
     }
 
@@ -307,81 +215,6 @@ export function getLastMailMessageTimestamp(ctx: ExtensionContext): number | und
     }
 
     return getEntryTimestamp(entry['timestamp'])
-  }
-
-  return undefined
-}
-
-export function getLastDiscordSourceMessageId(ctx: ExtensionContext): string | undefined {
-  const branch = ctx.sessionManager.getBranch()
-
-  for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (!entry) continue
-    const details = getClawasMailDetails(entry)
-    if (!details) {
-      continue
-    }
-
-    if (typeof details?.['sourceMessageId'] === 'string' && details['sourceMessageId'].trim()) {
-      return details['sourceMessageId']
-    }
-
-    return undefined
-  }
-
-  return undefined
-}
-
-export function getLastDiscordChannelJid(ctx: ExtensionContext): string | undefined {
-  const branch = ctx.sessionManager.getBranch()
-
-  for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (!entry) continue
-    const details = getClawasMailDetails(entry)
-    if (!details) {
-      continue
-    }
-
-    if (typeof details?.['channelJid'] === 'string' && details['channelJid'].trim()) {
-      return details['channelJid']
-    }
-
-    return undefined
-  }
-
-  return undefined
-}
-
-export function getLastDiscordMessageHandles(
-  ctx: ExtensionContext,
-): Record<string, { channelJid: string; messageId: string }> | undefined {
-  const branch = ctx.sessionManager.getBranch()
-
-  for (let index = branch.length - 1; index >= 0; index -= 1) {
-    const entry = getRecord(branch[index])
-    if (!entry) continue
-    const details = getClawasMailDetails(entry)
-    if (!details) {
-      continue
-    }
-
-    const handles = getRecord(details['messageHandles'])
-    if (!handles) return undefined
-
-    const out: Record<string, { channelJid: string; messageId: string }> = {}
-    for (const [label, value] of Object.entries(handles)) {
-      const record = getRecord(value)
-      if (typeof record?.['channelJid'] === 'string' && typeof record?.['messageId'] === 'string') {
-        out[label.toLowerCase()] = {
-          channelJid: record['channelJid'],
-          messageId: record['messageId'],
-        }
-      }
-    }
-
-    return out
   }
 
   return undefined

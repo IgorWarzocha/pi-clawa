@@ -3,16 +3,16 @@ import * as path from 'node:path'
 import type { WorkerDefinition } from './types.js'
 
 export function discoverProjectExtensionPaths(_projectRoot: string): string[] {
-  const envExtensionPath = process.env['PI_CLAW_EXTENSION_PATH']?.trim()
-  if (
-    envExtensionPath &&
-    fs.existsSync(envExtensionPath) &&
-    fs.statSync(envExtensionPath).isFile()
-  ) {
-    return [envExtensionPath]
-  }
-
-  return []
+  return [process.env['PI_CLAW_EXTENSION_PATH'], process.env['PI_CLAW_DISCORD_EXTENSION_PATH']]
+    .map((extensionPath) => extensionPath?.trim())
+    .filter((extensionPath): extensionPath is string =>
+      Boolean(
+        extensionPath &&
+          path.isAbsolute(extensionPath) &&
+          fs.existsSync(extensionPath) &&
+          fs.statSync(extensionPath).isFile(),
+      ),
+    )
 }
 
 export function resolveWorkerExtensionPaths(

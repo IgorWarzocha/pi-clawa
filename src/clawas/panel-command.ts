@@ -46,7 +46,6 @@ export function panelEnvironment(options: LaunchOptions): Record<string, string>
   if (process.env['PI_CODING_AGENT_DIR']) {
     env['PI_CODING_AGENT_DIR'] = process.env['PI_CODING_AGENT_DIR']
   }
-  if (options.definition.discordEnabled) env['PI_CLAWAS_DISCORD_ENABLED'] = '1'
   if (options.definition.reportMode) env['PI_CLAWAS_REPORT_MODE'] = options.definition.reportMode
   if (options.definition.fastMode !== undefined) {
     env['PI_CODEX_FAST'] = options.definition.fastMode ? '1' : '0'

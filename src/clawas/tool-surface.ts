@@ -1,15 +1,9 @@
-import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import { Type } from 'typebox'
 import { sendClawasSessionMessage } from './comms/client.js'
-import {
-  getLastDeliveryMessage,
-  getLastDiscordChannelJid,
-  getLastDiscordSourceMessageId,
-  getLastMailMessageTimestamp,
-} from './comms/message-extract.js'
+import { getLastDeliveryMessage, getLastMailMessageTimestamp } from './comms/message-extract.js'
 import { publishClawasDeliveryMessage } from './comms/outbound.js'
 import { shouldSkipAutoMainClawStatusRelay } from './comms/report-back-helpers.js'
-import type { ClawasDiscordContext } from './comms/types.js'
 import { loadClawasConfig } from './config-loader.js'
 import type { ClawasRuntime } from './runtime.js'
 import type { WorkerDefinition } from './types.js'
@@ -71,7 +65,6 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
           await sendClawasSessionMessage('main-claw', {
             message: params.message,
             messageType: 'report',
-            ...withDiscordContext(ctx),
             sender: {
               workerId: workerId ?? 'worker',
               workerTitle,
@@ -148,7 +141,6 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
           message: params.message,
           messageType: 'session',
           mode: 'steer',
-          ...withDiscordContext(ctx),
           sender: {
             workerId: 'main-claw',
             workerTitle: runtime.getClawaDefaults().mainClawName,
@@ -180,24 +172,4 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
       }
     },
   })
-}
-
-function getCurrentDiscordContext(ctx: ExtensionContext): ClawasDiscordContext | undefined {
-  const sourceMessageId = getLastDiscordSourceMessageId(ctx)
-  const channelJid = getLastDiscordChannelJid(ctx)
-  if (!(sourceMessageId || channelJid)) {
-    return undefined
-  }
-
-  return {
-    ...(sourceMessageId ? { sourceMessageId } : {}),
-    ...(channelJid ? { channelJid } : {}),
-  }
-}
-
-function withDiscordContext(
-  ctx: ExtensionContext,
-): { discordContext: ClawasDiscordContext } | Record<string, never> {
-  const discordContext = getCurrentDiscordContext(ctx)
-  return discordContext ? { discordContext } : {}
 }

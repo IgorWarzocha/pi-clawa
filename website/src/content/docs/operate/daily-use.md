@@ -47,5 +47,5 @@ python ~/src/pi-clawa/skills/clawa-ops/scripts/doctor.py ~/clawa-home
 ```
 
 It checks core documents, config shape, worker homes, Pulse frontmatter, and rough context sizes. It
-does not prove that a model provider, live worker socket, or Discord gateway is healthy, but it catches
+does not prove that a model provider, live worker socket, or Discord connection is healthy, but it catches
 many filesystem-level mistakes quickly.

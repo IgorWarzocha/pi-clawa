@@ -60,8 +60,11 @@ Common:
 - `thinking` — `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`.
 - `fastMode` — optionally force Fast Mode on or off for this worker when its provider extension supports `PI_CODEX_FAST`.
 - `extensions` — optional extra Pi extensions for that worker.
-- `discordEnabled` — optional adapter-facing flag for Discord-owned workers; most workers omit it.
 - `reportMode` — `auto`, `explicit`, or `off`.
+
+The optional Discord adapter propagates to worker tabs alongside Clawa. To connect a worker home,
+run `/discord` in that worker's tab and give it a distinct bot token. There is no worker enablement
+flag; Discord settings live in that home's `.pi/clawa-discord/bot.env`.
 
 Less common:
 

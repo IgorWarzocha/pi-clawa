@@ -6,7 +6,6 @@ export const CLAWAS_MAIL_MESSAGE_TYPE = 'clawas-mail'
 export const CLAWAS_DELIVERY_MESSAGE_TYPE = 'clawas-delivery'
 
 export type ClawasOutboundMode = 'prompt' | 'steer' | 'followUp'
-type ClawasDeliveryRoute = 'discord' | 'main-claw'
 
 interface ClawasOutboundDetails {
   workerId: string
@@ -20,7 +19,7 @@ const OUTBOUND_CONTEXT_MARKER =
   'Display-only Clawa routing marker. The main Clawa sent an internal note to another Clawa; do not answer this marker in the main chat.'
 
 export interface ClawasDeliveryDetails {
-  route: ClawasDeliveryRoute
+  route: 'main-claw'
   workerId?: string | undefined
   workerTitle?: string | undefined
 }

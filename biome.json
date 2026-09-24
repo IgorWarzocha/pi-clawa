@@ -6,13 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "**",
-      "!**/dist",
-      "!**/node_modules",
-      "!**/vendor",
-      "!packages/pi-clawa-discord/src/gateway"
-    ],
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/vendor"],
     "ignoreUnknown": true
   },
   "formatter": {

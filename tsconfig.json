@@ -35,5 +35,5 @@
     }
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "packages/pi-clawa-discord/src/gateway", "website"]
+  "exclude": ["node_modules", "website"]
 }

@@ -12,7 +12,6 @@ test('native Pi launch keeps session identity and worker reporting without RPC o
       enabled: true,
       autostart: true,
       fastMode: false,
-      discordEnabled: true,
       reportMode: 'explicit' as const,
     },
     cwd: '/tmp',
@@ -34,7 +33,7 @@ test('native Pi launch keeps session identity and worker reporting without RPC o
   const env = panelEnvironment(options)
   assert.equal(env['PI_CLAW_PROJECT_ROOT'], options.projectRoot)
   assert.equal(env['PI_CLAWAS_REPORT_SESSION_ID'], 'main-claw')
-  assert.equal(env['PI_CLAWAS_DISCORD_ENABLED'], '1')
+  assert.equal(env['PI_CLAWAS_DISCORD_ENABLED'], undefined)
   assert.equal(env['PI_CLAWAS_REPORT_MODE'], 'explicit')
   assert.equal(env['PI_CODEX_FAST'], '0')
   assert.equal(env['PI_CLAWAS_MANUAL_SESSION'], undefined)

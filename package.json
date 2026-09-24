@@ -22,7 +22,7 @@
     "docs:build": "bun --cwd website build",
     "ai:check": "bun run check",
     "ai:check:strict": "bun run check",
-    "check": "bun run lint:strict && bun run typecheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && bun run knip && bun run test && bun run docs:build"
+    "check": "bun run lint:strict && bun run typecheck && bun run knip && bun run test && bun run docs:build"
   },
   "pi": {
     "extensions": [
@@ -75,11 +75,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
-    "./jsonc": "./src/jsonc.ts",
-    "./clawas/comms/message-extract": "./src/clawas/comms/message-extract.ts",
-    "./clawas/comms/outbound": "./src/clawas/comms/outbound.ts",
-    "./clawas/comms/report-back-helpers": "./src/clawas/comms/report-back-helpers.ts",
-    "./clawas/comms/types": "./src/clawas/comms/types.ts",
-    "./clawas/config-loader": "./src/clawas/config-loader.ts"
+    "./jsonc": "./src/jsonc.ts"
   }
 }

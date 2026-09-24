@@ -6,12 +6,12 @@ export interface ClawasExtractedMessage {
 }
 
 export interface ClawasExtractedDelivery {
-  route: 'discord' | 'main-claw'
+  route: 'main-claw'
   content: string
   timestamp: number
 }
 
-export type ClawasMessageKind = 'mail' | 'report' | 'coordination' | 'relay' | 'instruction'
+export type ClawasMessageKind = 'mail' | 'report' | 'coordination' | 'instruction'
 
 export type ClawasMessageIntent = 'reply_requested' | 'for_context' | 'handoff' | 'status'
 
@@ -22,19 +22,11 @@ export interface ClawasSenderInfo {
   workerTitle?: string | undefined
 }
 
-export interface ClawasDiscordContext {
-  sourceMessageId?: string | undefined
-  channelJid?: string | undefined
-  queueRowId?: number | undefined
-  messageHandles?: Record<string, { channelJid: string; messageId: string }> | undefined
-}
-
 export interface ClawasSendCommand {
   type: 'send'
   message: string
   mode?: 'steer' | 'followUp' | undefined
   messageType?: 'session' | 'report' | undefined
-  discordContext?: ClawasDiscordContext | undefined
   sender?: ClawasSenderInfo | undefined
   kind?: ClawasMessageKind | undefined
   intent?: ClawasMessageIntent | undefined
@@ -44,8 +36,6 @@ export interface ClawasSendCommand {
 
 interface ClawasGetMessageCommand {
   type: 'get_message'
-  afterTimestamp?: number | undefined
-  afterContent?: string | undefined
   id?: string | undefined
 }
 

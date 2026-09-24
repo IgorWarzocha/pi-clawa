@@ -1,16 +1,7 @@
 const STANDALONE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s*(?:\n+([\s\S]*))?$/i
 const INLINE_CLAWAS_DIRECTIVE_REGEX = /^\[CLAWAS\]\s+([\s\S]+)$/i
-const QUIET_DIRECTIVE_REGEX = /^\[quiet\]:?$/i
-const REACTION_DIRECTIVE_REGEX = /^\[react\s+m\d+:\s*.+?\]$/i
-const LINE_SPLIT_REGEX = /\r?\n/u
-
-export interface DiscordRelayCandidate {
-  content: string
-  timestamp?: number | undefined
-}
-
-export interface LastDiscordDelivery {
-  route: 'discord' | 'main-claw'
+export interface LastMainClawDelivery {
+  route: 'main-claw'
   content: string
   timestamp: number
 }
@@ -34,43 +25,8 @@ export function extractClawaReportText(content: string): string | null {
   return null
 }
 
-export function normalizeDiscordReplyText(content: string | null | undefined): string | null {
-  const trimmed = content?.trim()
-  if (!trimmed) {
-    return null
-  }
-
-  if (hasStandaloneQuietDiscordDirective(trimmed)) {
-    return null
-  }
-
-  return trimmed
-}
-
-function hasStandaloneQuietDiscordDirective(content: string): boolean {
-  const meaningfulLines = content
-    .split(LINE_SPLIT_REGEX)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => !REACTION_DIRECTIVE_REGEX.test(line))
-  return meaningfulLines.some((line) => QUIET_DIRECTIVE_REGEX.test(line))
-}
-
-export function shouldSkipAutoDiscordRelay(options: {
-  message: DiscordRelayCandidate
-  lastDelivery?: LastDiscordDelivery | undefined
-}): boolean {
-  const { message, lastDelivery } = options
-  if (lastDelivery?.route !== 'discord') {
-    return false
-  }
-
-  const messageTimestamp = message.timestamp ?? 0
-  return lastDelivery.timestamp >= messageTimestamp
-}
-
 export function shouldSkipAutoMainClawStatusRelay(options: {
-  lastDelivery?: LastDiscordDelivery | undefined
+  lastDelivery?: LastMainClawDelivery | undefined
   lastMailTimestamp?: number | undefined
 }): boolean {
   const { lastDelivery, lastMailTimestamp } = options
@@ -95,7 +51,7 @@ export function shouldReportClawaFinalToMain(options: {
   messageTimestamp?: number | undefined
   lastMailTimestamp?: number | undefined
 }): boolean {
-  if (normalizeDiscordReplyText(options.messageContent) === null) {
+  if (!options.messageContent.trim()) {
     return false
   }
 

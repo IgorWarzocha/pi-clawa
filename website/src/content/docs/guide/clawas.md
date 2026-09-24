@@ -28,8 +28,9 @@ Each Clawa gets a Herdr tab or tmux window named after its title, never a split 
 autostart worker opens in the background when the main session connects. With autostart off, an
 enabled worker opens when needed. The runtime adopts an existing tab instead of opening a second
 session. The session registry records both history and tab location so workers can resume when
-possible. Model, thinking level, extension paths, Discord enablement, and reporting mode are supplied
-from the worker definition at launch.
+possible. Model, thinking level, extension paths, and reporting mode are supplied from the worker
+definition at launch. A loaded Discord adapter travels with Clawa into worker tabs; `/discord` in a
+worker tab controls only that worker home's separate bot.
 Editing config does not change a running Pi session.
 
 Main reloads, exits, and config refreshes leave worker tabs running. Closing a worker tab stops
@@ -58,8 +59,8 @@ Each worker can set `reportMode`:
 - `explicit` — report only through an explicit private message;
 - `off` — no automatic report-back.
 
-Report-back is fingerprinted to avoid duplicates. Recent explicit mail and route-aware Discord work
-also affect whether an automatic status is useful.
+Report-back is fingerprinted to avoid duplicates. Recent explicit mail also affects whether an
+automatic status is useful.
 
 ## Monitor and tabs
 

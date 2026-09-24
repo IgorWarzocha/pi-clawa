@@ -26,6 +26,11 @@ When moving from 0.3 to the native-tab version, stop the old main Pi session bef
 new version. That shuts down the old managed RPC workers. Session history stays in place; the new
 runtime opens Herdr tabs or tmux windows without a home-state migration.
 
+If you used the old Discord gateway, **before updating** use the old `/discord` to stop it. After
+updating, open each home that should connect and set its own distinct bot token through the new
+`/discord`. Old `config.env` and `routes.jsonc` are not read or migrated; old worker homes, Pi
+sessions, and `gateway.db` remain yours. See [Discord](../discord/) for the new behavior.
+
 For a full checkout rather than a shallow tagged clone, move between releases with
 `git switch --detach vX.Y.Z`. A detached tag is expected for an installed package. Do not make local
 product edits there unless you intentionally maintain a fork.

@@ -8,6 +8,16 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Changed
 
+- The optional Discord adapter now connects each bot inside its own main or specialist Pi tab.
+  `/discord` configures that home's token, intake, and connection; there is no required Discord
+  worker, shared gateway process, route file, or `discordEnabled` worker flag. Replies use exact
+  `[mN]` handles, channel posts use `[c]`, and unmarked final text stays in Pi. Rich sends use
+  `discord_send`; local searchable history uses `discord_history`.
+- Discord bot tokens now live in each home's `.pi/clawa-discord/bot.env`. Existing `config.env`
+  and `routes.jsonc` are not read or migrated. Stop the old gateway with the old `/discord` before
+  updating, then reconnect each desired home through the new `/discord`. Existing worker homes,
+  session history, and Discord archive data remain untouched. Live Discord compatibility is not
+  yet verified; pending turns and rich action tokens do not survive disconnect or reload.
 - Specialist Clawas now run in named Herdr tabs or tmux windows instead of managed RPC
   subprocesses. `/jump` and `/claw` open or focus the same worker tab; split-pane launches are gone.
   Typing directly never disconnects private messaging or reporting. Main reloads and exits leave

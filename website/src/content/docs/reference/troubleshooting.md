@@ -6,7 +6,7 @@ order: 150
 ---
 
 Start with the owning layer. A package-load problem, home-shape problem, worker tab problem, model
-auth problem, and Discord gateway problem can look similar from the final conversation.
+auth problem, and Discord connection problem can look similar from the final conversation.
 
 ## Clawa did not appear
 
@@ -54,8 +54,12 @@ python /absolute/path/to/pi-clawa/skills/clawa-ops/scripts/doctor.py /path/to/ho
 
 ## Discord is connected but does not reply
 
-- Untagged final text is intentionally not delivered.
-- The worker must use a known `[#channel]`, `[dm]`, `[main_clawa]`, or `[quiet]` route.
-- Check `.pi/clawa-discord/routes.jsonc` names and the gateway channel snapshot.
-- Inspect `.pi/clawa-discord/gateway.log`.
-- Determine whether this Pi session owns or merely adopted the gateway before killing processes.
+- Look in the owning home's Pi tab for the incoming message and connection status. Another home's
+  tab cannot receive this bot's messages.
+- By default the bot accepts DMs, mentions, and replies to itself. Check `/discord` chat intake,
+  channel policy, allowed or excluded channel IDs, and allowed users.
+- Unmarked final text stays in Pi. Reply with a shown `[mN]` handle, or use `[c]` for a channel post.
+- Check the bot token in this home's `.pi/clawa-discord/bot.env`. A missing token leaves it off;
+  a token already in use by another home is rejected. Do not paste the token into a bug report.
+- A reload or disconnect drops pending turns and rich action tokens. Search archived messages with
+  `discord_history` if you need earlier context.

@@ -30,7 +30,8 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | `.pi/pulses.json` | First-seen, last-run, due-key, and deferral state per Pulse. |
 | `.pi/clawas/session-registry.json` | Worker session history and terminal location records. |
 | `<worker-home>/.pi/sessions/` | Each worker's Pi session history. |
-| `.pi/clawa-discord/` | Optional adapter token config, routes, channel snapshot, DB, delivery state, logs. |
+| `<home>/.pi/clawa-discord/bot.env` | Optional per-home bot token and intake settings, created mode `0600`. |
+| `<home>/.pi/clawa-discord/gateway.db`, `archive-pending.json`, `assets/`, `channels.json` | Local searchable Discord history, pending archive writes, cached media, and channel snapshot. |
 
 The main Clawa's ordinary sessions use Pi's normal session store. Do not assume they live beside
 worker sessions.
@@ -47,5 +48,6 @@ all owning processes stop. Do not delete them under a live main or worker sessio
 ## What to back up
 
 Back up living documents, vault, worker homes, config, memory, and any Pulse/Discord state you care
-about. Logs, sockets, caches, and generated channel snapshots are usually diagnostic or recreatable.
+about. Pending Discord turns and rich action tokens live only in memory; the archive remains across
+disconnects. Sockets, caches, and generated channel snapshots are usually recreatable.
 Session histories are valuable when continuity matters; inspect Pi's actual session paths first.

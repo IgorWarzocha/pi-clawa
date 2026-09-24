@@ -41,9 +41,14 @@ Onboarding calibrates local notes, private chat, and external action in ordinary
 result guides model judgment. It is not a separate permission engine that technically prevents every
 send or command.
 
-A Pulse may perform external work when its own `PULSE.md` explicitly authorizes that work. Public
-Discord output requires explicit route blocks, which is a stronger delivery guard on that adapter,
-but the Discord worker and gateway still operate with local process permissions.
+A Pulse may perform external work when its own `PULSE.md` explicitly authorizes that work. Discord
+final output requires an exact `[mN]` reply or `[c]` channel block; unmarked text stays in Pi.
+`discord_send` can also send explicitly. The adapter shares the owning Pi tab's local process
+permissions, not an isolated sandbox.
+
+Connect only trusted rooms and people. Allowed Discord input can start a normal agent turn with
+the home's tools and private context. Channel and user restrictions limit intake; explicit output
+markers are not a defense against malicious instructions in a message or attachment.
 
 ## Secrets and git
 
@@ -51,9 +56,9 @@ Keep these out of public repositories and bug reports:
 
 - `.pi/clawa-memory.sqlite`;
 - `.pi/claw.jsonc` when worker paths or names are private;
-- `.pi/clawa-discord/`, especially `config.env`;
+- every connected home's `.pi/clawa-discord/`, especially `bot.env` and its Discord archive;
 - private living documents, worker notes, vault pages, and sessions;
-- gateway logs containing room or delivery context.
+- Discord messages or cached attachments that contain private room context.
 
 When reporting a problem, reduce it to the behavior, redacted config shape, and relevant log lines.
 Do not attach the whole home.

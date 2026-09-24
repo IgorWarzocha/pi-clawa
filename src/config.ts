@@ -20,7 +20,6 @@ export interface ClawaWorkerConfig {
   title: string
   emoji?: string | undefined
   cwd: string
-  discordEnabled?: boolean | undefined
   extensions?: string[] | undefined
   enabled: boolean
   autostart: boolean
@@ -146,7 +145,6 @@ function normalizeWorker(item: unknown, index: number): ClawaWorkerConfig {
     title: asString(rec['title']) ?? id,
     emoji: asString(rec['emoji']),
     cwd,
-    discordEnabled: asBoolean(rec['discordEnabled'], `${label}.discordEnabled`) ?? false,
     extensions: asStringArray(rec['extensions'], `${label}.extensions`),
     enabled: asBoolean(rec['enabled'], `${label}.enabled`) ?? true,
     autostart: asBoolean(rec['autostart'], `${label}.autostart`) ?? true,

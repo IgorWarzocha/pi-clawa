@@ -4,7 +4,6 @@ import { parseCommsResponse, parseLastMessageData, parseSessionStatusData } from
 import type {
   ClawasCommsCommand,
   ClawasCommsResponse,
-  ClawasDiscordContext,
   ClawasExtractedMessage,
   ClawasMessageIntent,
   ClawasMessageKind,
@@ -18,7 +17,6 @@ interface SendCommandOptions {
   message: string
   mode?: 'steer' | 'followUp'
   messageType?: 'session' | 'report'
-  discordContext?: ClawasDiscordContext
   sender?: ClawasSenderInfo
   kind?: ClawasMessageKind
   intent?: ClawasMessageIntent
@@ -121,7 +119,6 @@ export async function sendClawasSessionMessage(
     message: options.message,
     mode: options.mode,
     messageType: options.messageType,
-    discordContext: options.discordContext,
     sender: options.sender,
     kind: options.kind,
     intent: options.intent,

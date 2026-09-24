@@ -17,7 +17,7 @@ order: 100
 | `/steer <message>` | Send an internal steer to the selected monitor worker. |
 | `/steer <slot\|worker> <message>` | Target a worker by monitor slot, ID, or title. |
 | `/jump [slot\|worker]` | Open or focus a worker's named Herdr tab or tmux window. |
-| `/discord` | Optional adapter: create config/worker as needed and open Discord setup. |
+| `/discord` | Optional adapter: configure and connect this home's bot in its Pi tab. |
 
 Pi's own commands—including `/compact`, `/model`, `/resume`, and `/reload`—remain available.
 Clawa customizes their surrounding lifecycle rather than replacing Pi's command system.
@@ -48,10 +48,15 @@ outgoing note in the tool result.
 Worker-only internal handoff to the main Clawa. Duplicate status relays in one turn are
 suppressed.
 
-### `message_discord`
+### `discord_send`
 
-Optional adapter tool for explicit Discord sends, files, rich UI, polls, and reactions. Ordinary final
-Discord replies should still use the worker's required route blocks.
+Optional adapter tool for explicit sends, files, rich UI, polls, and reactions. For an ordinary
+reply to a displayed message use `[mN]` in the final answer; use `[c]` for a channel post.
+Unmarked text stays in Pi.
+
+### `discord_history`
+
+Searches the current home's local Discord history. It does not replace core `recall` or `remember`.
 
 ## Keyboard shortcuts
 

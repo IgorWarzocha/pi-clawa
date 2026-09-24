@@ -87,25 +87,17 @@ Blocks: clean-room runtime test.
 
 ## D. Optional adapters
 
-Status: Discord exists and is a core first surface, but adapter seam and product polish are still rough.
+Status: In-process per-home Pi adapter replacing the shared gateway. Live Discord compatibility is
+not verified yet.
 
-- [x] Discord package exists at `packages/pi-clawa-discord/`
-- [x] copied gateway source into adapter package
-- [x] core no longer owns direct Discord delivery tool
-- [x] `/discord` GUI exists
-- [x] `/discord` can save token and channel id
-- [x] `/discord` can start/restart/stop gateway
-- [x] setup guide doc exists inside adapter package
-- [x] GUI helper action sends setup-guidance prompt with doc/source paths
-- [ ] review Discord adapter boundary: only use exported root APIs, write config through intended helpers, and avoid private runtime/path coupling
-- [ ] polish `/discord` states and copy
-- [ ] validate gateway process lifecycle under Pi shutdown/restart
-- [ ] decide Discord DM support shape for first release
-- [ ] decide multi-channel support now vs later; one Discord Clawa should own Discord as a surface unless we choose otherwise
-- [ ] calibrate Discord autonomy: free safe/on-brand posting, ask only for doxxing/secrets/money/commitments/impersonation/high-stakes
-- [ ] decide whether to generate invite URL or keep manual instructions
-- [x] add adapter smoke test that does not require a real Discord token
-- [x] queue exact Discord member joins/leaves without fabricating reply targets
+- [x] Optional adapter package and `/discord` home setup
+- [x] Per-home token, in-tab turns, explicit `[mN]` and `[c]` delivery, and local history
+- [x] No forced Discord worker, router, subprocess, or `discordEnabled` flag
+- [ ] Verify first connection, DM and mention replies, attachments, rich interactions, and search with real Discord bots
+- [ ] Verify distinct bot tokens across main and worker tabs, duplicate-token lease rejection, tab close, reload, resume, and config restart at settlement
+- [ ] Polish `/discord` states and copy after live use
+- [ ] Calibrate ambient posting in real rooms; default remains opt-in and never requires a reply
+- [ ] Decide whether to generate invite URL or keep manual instructions
 
 Depends on: C runtime surfaces.
 Blocks: full clean-room test if Discord is included in first release.

@@ -3,7 +3,6 @@ import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.js'
 import {
   buildClawasMailContext,
   buildMessageDetails,
-  buildWorkerUserMessage,
   getLegacyMailCustomType,
   resolveMessageIntent,
   resolveMessageKind,
@@ -66,7 +65,6 @@ export class ClawasMailDelivery {
     const intent = resolveMessageIntent(command, kind)
     const details = buildMessageDetails(
       command.sender,
-      command.discordContext,
       kind,
       intent,
       resolveMessageVisibility(command, kind),
@@ -81,7 +79,7 @@ export class ClawasMailDelivery {
           : 'steer'
 
     if (!isReport && shouldTriggerTurn(command)) {
-      const content = buildWorkerUserMessage(command.message, details)
+      const content = buildClawasMailContext(command.message, details)
       this.pi.appendEntry(CLAWAS_MAIL_MESSAGE_TYPE, {
         rawContent: command.message,
         userMessageContent: content,

@@ -164,7 +164,7 @@ function isDirectMainPromptAfterMail(options: {
     return false
   }
   const content = options.lastUserMessage?.content
-  if (content?.startsWith('[Discord room update]') || content?.startsWith('Pulse:')) {
+  if (content?.startsWith('Pulse:')) {
     return false
   }
   return options.lastMailTimestamp === undefined || messageTimestamp > options.lastMailTimestamp
