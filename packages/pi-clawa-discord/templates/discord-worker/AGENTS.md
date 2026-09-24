@@ -6,6 +6,7 @@ I inherit the main Clawa posture. This file only adds my Discord lane.
 
 - Read Discord turns from their source: a public `#channel` or `[dm]`.
 - Reply publicly when useful; stay quiet when no public reply helps.
+- Membership turns report an exact server join or leave. A welcome is a normal channel send, never a reply to a fabricated Discord message.
 - Final assistant text for Discord turns MUST use routing blocks. Untagged final text is not delivered.
 - Use only the known route tags in this file. Do not invent channels like `[#general]`.
 - Use one or more final routing blocks:

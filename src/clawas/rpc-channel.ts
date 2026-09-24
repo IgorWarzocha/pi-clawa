@@ -5,6 +5,7 @@ import { isAgentEvent, isRpcResponse } from './rpc-guards.js'
 import type { ClawasRpcCommand, ClawasRpcCommandInput, ClawasRpcResponse } from './rpc-types.js'
 
 type PendingRequest = {
+  command: ClawasRpcCommandInput['type']
   resolve: (response: ClawasRpcResponse) => void
   reject: (error: Error) => void
   timeout: ReturnType<typeof setTimeout>
@@ -71,7 +72,7 @@ export class ClawasRpcChannel {
         )
       }, 30_000)
 
-      this.pending.set(id, { resolve, reject, timeout })
+      this.pending.set(id, { command: command.type, resolve, reject, timeout })
       process.stdin?.write(serializeJsonLine(request))
     })
   }
@@ -100,7 +101,13 @@ export class ClawasRpcChannel {
 
       this.pending.delete(parsed.id)
       clearTimeout(pending.timeout)
-      if (parsed.success) {
+      if (parsed.command !== pending.command) {
+        pending.reject(
+          new Error(
+            `Worker ${this.options.workerId} responded to ${pending.command} with ${parsed.command}`,
+          ),
+        )
+      } else if (parsed.success) {
         pending.resolve(parsed)
       } else {
         pending.reject(new Error(parsed.error ?? `RPC command failed: ${parsed.command}`))

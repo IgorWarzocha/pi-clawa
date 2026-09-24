@@ -1,11 +1,11 @@
 import { readFile, rm, stat, symlink, writeFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import type { ExtensionAPI, ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
-import { bootstrapClawWorkspace } from '../bootstrap.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import type { WorkerDefinition } from '../clawas/types.js'
 import { findRepoRoot, loadClawEnvironmentConfig, upsertClawaWorkerConfig } from '../config.js'
 import type { CreateClawRequest } from '../gui.js'
+import { copyTemplateFiles } from '../template-files.js'
 import { workerTemplatesDir } from './constants.js'
 import { sendDimNote } from './ui-notes.js'
 
@@ -28,7 +28,7 @@ export async function createNewClaw(
   const relativePath = join(loaded.config.clawas.baseDir, seedId)
   const absolutePath = resolve(repoRoot, relativePath)
 
-  await bootstrapClawWorkspace(absolutePath, workerTemplatesDir)
+  await copyTemplateFiles(workerTemplatesDir, absolutePath)
   await symlinkSharedFile(repoRoot, absolutePath, 'HUMAN.md')
   await symlinkSharedFile(repoRoot, absolutePath, 'CLAWAS.md')
 

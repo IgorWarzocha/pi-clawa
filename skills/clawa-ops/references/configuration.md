@@ -59,6 +59,7 @@ Common:
 - `autostart` — start with the Clawas runtime.
 - `model` — optional Pi model ref.
 - `thinking` — `off`, `minimal`, `low`, `medium`, `high`, or `xhigh`.
+- `fastMode` — optionally force Fast Mode on or off for this worker when its provider extension supports `PI_CODEX_FAST`.
 - `extensions` — optional extra Pi extensions for that worker.
 - `discordEnabled` — optional adapter-facing flag for Discord-owned workers; most workers omit it.
 - `reportMode` — `auto`, `explicit`, or `off`.

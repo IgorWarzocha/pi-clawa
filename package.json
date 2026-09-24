@@ -10,8 +10,8 @@
     "clawa"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit --noCheck",
-    "typecheck:strict": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "typecheck:strict": "bun run typecheck",
     "test": "node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
@@ -20,9 +20,9 @@
     "deadcode": "knip",
     "docs:dev": "bun --cwd website dev",
     "docs:build": "bun --cwd website build",
-    "ai:check": "biome check . && tsc --noEmit --noCheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts && bun run docs:build",
-    "ai:check:strict": "biome check --error-on-warnings . && tsc --noEmit && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && knip && node --import tsx --test tests/*.test.ts src/clawas/*.test.ts src/clawas/comms/*.test.ts packages/pi-clawa-discord/*.test.ts && bun run docs:build",
-    "check": "bun run ai:check"
+    "ai:check": "bun run check",
+    "ai:check:strict": "bun run check",
+    "check": "bun run lint:strict && bun run typecheck && (cd packages/pi-clawa-discord && bun run typecheck:gateway) && bun run knip && bun run test && bun run docs:build"
   },
   "pi": {
     "extensions": [
@@ -53,15 +53,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.3",
-    "@earendil-works/pi-agent-core": "0.84.0",
-    "@earendil-works/pi-coding-agent": "0.84.0",
-    "@earendil-works/pi-tui": "0.84.0",
+    "@earendil-works/pi-agent-core": "0.87.1",
+    "@earendil-works/pi-coding-agent": "0.87.1",
+    "@earendil-works/pi-tui": "0.87.1",
     "@types/node": "26.1.1",
     "tsx": "^4.23.1",
-    "typebox": "1.3.6",
+    "typebox": "1.3.27",
     "typescript": "7.0.2",
     "knip": "6.26.0",
-    "@earendil-works/pi-ai": "0.84.0"
+    "@earendil-works/pi-ai": "0.87.1"
   },
   "publishConfig": {
     "access": "public"

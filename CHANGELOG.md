@@ -6,7 +6,29 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
-No changes recorded yet.
+### Added
+
+- Workers can opt into or out of provider Fast Mode independently with `fastMode`.
+- The Discord adapter can turn exact server joins and leaves into durable, deduplicated worker turns
+  for routed channels visible to the member when the Server Members intent is enabled.
+
+### Changed
+
+- Clawa now targets Pi 0.87.1. Prompt shaping uses Pi's live structured options instead of a copied
+  prompt builder, preserving current tool policies and extension sections. Earlier opaque prompt
+  replacements are ignored with a warning because they cannot be filtered to the home.
+- The memory pass uses Pi's actionable pre-settlement boundary rather than starting another run
+  after settlement. It no longer starts after cancellation or a failed run.
+- All check commands now use the same strict gate. The default typecheck no longer skips checking.
+
+### Fixed
+
+- Shutdown drains pending worker starts, Pulse deliveries, and socket alias maintenance instead of
+  leaving background work behind. Malformed worker RPC results fail at the process boundary.
+- Bootstrap preserves existing nested home files and only marks in-memory success after saving
+  the configuration.
+- Discord replies retain the current message target when a Clawa uses tools before its final answer,
+  instead of becoming standalone channel posts and leaving their source turns unsettled.
 
 ## [0.2.0] - 2026-08-06
 

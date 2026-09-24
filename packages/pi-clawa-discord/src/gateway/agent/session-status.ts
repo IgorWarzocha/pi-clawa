@@ -39,7 +39,7 @@ function readSessionCreatedAt(sessionFile: string): string | undefined {
   }
 }
 
-export function readSessionTokensFromJsonl(sessionFile: string): SessionTokenUsage {
+function readSessionTokensFromJsonl(sessionFile: string): SessionTokenUsage {
   const totals: SessionTokenUsage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 };
   const lines = readFileSync(sessionFile, 'utf-8').split(/\r?\n/u);
 

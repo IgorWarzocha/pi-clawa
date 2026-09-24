@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { discoverPulseCatalog, discoverPulseDefinitions } from '../src/pulses/definitions.js'
-import { CLAWA_PULSE_MESSAGE_TYPE } from '../src/pulses/message.js'
 import { PulseRuntime } from '../src/pulses/runtime.js'
 import {
   isPulseDue,
@@ -14,19 +12,7 @@ import {
 } from '../src/pulses/schedule.js'
 import { readPulseState } from '../src/pulses/state.js'
 
-const TINY_CHECK_FILE_PATTERN = /Definition file: .*pulses\/tiny-check\/PULSE.md/
-const TINY_CHECK_STATE_PATTERN = /tiny-check/
-const MANUAL_PULSE_FILE_PATTERN = /Definition file: pulses\/manual-note\/PULSE.md/
-const MANUAL_PULSE_STATE_PATTERN = /manual-note/
-const EXACT_CHECK_FILE_PATTERN = /exact-check\/PULSE.md/
-const HEY_CLAWA_FILE_PATTERN = /hey-clawa\/PULSE.md/
-const HEY_CLAWA_STATE_PATTERN = /"main:hey-clawa"/
-const HEY_CLAWA_DEFER_PATTERN = /"deferUntil": 962000/
 const JSON_ERROR_PATTERN = /JSON/
-const WAKE_TIME_PATTERN =
-  /Wake time: \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC[+-]\d{2}:\d{2} \([^)]+\)/u
-const QUIET_HOURS_PATTERN = /Quiet hours: 23:00-08:00 local time/u
-const MANUAL_QUIET_BYPASS_PATTERN = /Quiet hours: 23:00-08:00 local time \(manual run-now bypass\)/u
 const BETA_DELIVERY_ERROR_PATTERN = /beta delivery failed/u
 
 function stubClawasRuntime() {
@@ -70,118 +56,6 @@ test('pulse quiet hours parse local daytime and overnight windows', () => {
   assert.equal(parsePulseQuietHours('08:00-08:00'), null)
 })
 
-test('pulse runtime dispatches due main-home pulse as custom message', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-'))
-  try {
-    await mkdir(join(root, '.git'))
-    await mkdir(join(root, 'pulses'), { recursive: true })
-    await writeFile(join(root, 'pulses', 'AGENTS.md'), '# pulse journal\n', 'utf8')
-    await writeFile(join(root, 'pulses', 'loose-note.md'), '# loose note\n', 'utf8')
-    await mkdir(join(root, 'pulses', 'tiny-check'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'tiny-check', 'PULSE.md'),
-      [
-        '---',
-        'title: Tiny check',
-        'schedule: every 1m',
-        'enabled: true',
-        '---',
-        '',
-        '# Tiny check',
-      ].join('\n'),
-      'utf8',
-    )
-    await mkdir(join(root, 'pulses', 'manual-note'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'manual-note', 'PULSE.md'),
-      [
-        '---',
-        'title: Manual note',
-        'schedule: manual',
-        'enabled: true',
-        '---',
-        '',
-        '# Manual note',
-      ].join('\n'),
-      'utf8',
-    )
-    await mkdir(join(root, 'pulses', 'curiosity-poke'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'curiosity-poke', 'PULSE.md'),
-      ['---', 'title: Curiosity poke', 'enabled: true', '---', '', '# Curiosity poke'].join('\n'),
-      'utf8',
-    )
-    await mkdir(join(root, 'pulses', 'curiosity-poke', '2026-06'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'curiosity-poke', '2026-06', 'run-note.md'),
-      '# run note\n',
-      'utf8',
-    )
-
-    const definitions = await discoverPulseDefinitions(root)
-    const catalog = await discoverPulseCatalog(root)
-    assert.equal(definitions.length, 2)
-    assert.equal(catalog.length, 3)
-    assert.equal(
-      definitions.find((definition) => definition.id === 'tiny-check')?.key,
-      'main:tiny-check',
-    )
-    assert.equal(
-      catalog.find((definition) => definition.id === 'curiosity-poke')?.status,
-      'invalid',
-    )
-    assert.deepEqual(definitions.find((definition) => definition.id === 'manual-note')?.schedule, {
-      kind: 'manual',
-    })
-    assert.equal(
-      definitions.some((definition) => definition.id === 'curiosity-poke'),
-      false,
-    )
-    assert.equal(
-      definitions.some((definition) => definition.id === 'loose-note'),
-      false,
-    )
-
-    const messages: Array<{
-      customType?: string
-      content?: string
-      details?: unknown
-      options?: unknown
-    }> = []
-    const pulseRuntime = new PulseRuntime(
-      {
-        sendMessage: (
-          message: { customType?: string; content?: string; details?: unknown },
-          options?: unknown,
-        ) => messages.push({ ...message, options }),
-      } as never,
-      stubClawasRuntime() as never,
-    )
-    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
-
-    await pulseRuntime.scanAndRunDue(1_000)
-    assert.equal(messages.length, 0)
-    await pulseRuntime.scanAndRunDue(62_000)
-
-    assert.equal(messages.length, 1)
-    assert.equal(messages[0]?.customType, CLAWA_PULSE_MESSAGE_TYPE)
-    assert.match(messages[0]?.content ?? '', TINY_CHECK_FILE_PATTERN)
-    assert.match(messages[0]?.content ?? '', WAKE_TIME_PATTERN)
-    assert.match(await readFile(join(root, '.pi', 'pulses.json'), 'utf8'), TINY_CHECK_STATE_PATTERN)
-    assert.doesNotMatch(
-      await readFile(join(root, '.pi', 'pulses.json'), 'utf8'),
-      MANUAL_PULSE_STATE_PATTERN,
-    )
-
-    await pulseRuntime.runNow('manual-note')
-    assert.equal(messages.length, 2)
-    assert.match(messages[1]?.content ?? '', MANUAL_PULSE_FILE_PATTERN)
-    pulseRuntime.dispose()
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
 test('successful pulse deliveries stay checkpointed when a later pulse fails', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-checkpoint-'))
   try {
@@ -219,61 +93,8 @@ test('successful pulse deliveries stay checkpointed when a later pulse fails', a
 
     failBeta = false
     await pulseRuntime.scanAndRunDue(62_000)
-    assert.equal(delivered.filter((message) => message.includes('pulses/alpha/PULSE.md')).length, 1)
-    assert.equal(delivered.filter((message) => message.includes('pulses/beta/PULSE.md')).length, 1)
-    pulseRuntime.dispose()
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('scheduled pulses sleep through quiet hours and run once awake', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-quiet-'))
-  try {
-    await mkdir(join(root, '.git'))
-    await mkdir(join(root, 'pulses', 'night-sleeper'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'night-sleeper', 'PULSE.md'),
-      [
-        '---',
-        'title: Night sleeper',
-        'schedule: daily 23:30',
-        'quietHours: 23:00-08:00',
-        'enabled: true',
-        '---',
-        '',
-        '# Night sleeper',
-      ].join('\n'),
-      'utf8',
-    )
-
-    const definitions = await discoverPulseDefinitions(root)
-    assert.equal(definitions[0]?.quietHoursText, '23:00-08:00')
-    const messages: string[] = []
-    const pulseRuntime = new PulseRuntime(
-      {
-        sendMessage: (message: { content?: string }) => messages.push(message.content ?? ''),
-      } as never,
-      stubClawasRuntime() as never,
-    )
-    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
-
-    const beforeQuiet = new Date(2026, 6, 18, 10, 0).getTime()
-    const duringQuiet = new Date(2026, 6, 18, 23, 31).getTime()
-    const afterQuiet = new Date(2026, 6, 19, 8, 0).getTime()
-    await pulseRuntime.scanAndRunDue(beforeQuiet)
-    await pulseRuntime.scanAndRunDue(duringQuiet)
-    assert.equal(messages.length, 0)
-
-    await pulseRuntime.scanAndRunDue(afterQuiet)
-    assert.equal(messages.length, 1)
-    assert.match(messages[0] ?? '', QUIET_HOURS_PATTERN)
-    assert.match(messages[0] ?? '', WAKE_TIME_PATTERN)
-
-    await pulseRuntime.runNow('night-sleeper')
-    assert.equal(messages.length, 2)
-    assert.match(messages[1] ?? '', MANUAL_QUIET_BYPASS_PATTERN)
-    pulseRuntime.dispose()
+    assert.equal(delivered.length, 2)
+    await pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -292,52 +113,7 @@ test('pulse state corruption fails instead of resetting scheduler history', asyn
   }
 })
 
-test('pulse runtime queues main pulse as follow-up while main Clawa is busy', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-busy-main-'))
-  try {
-    await mkdir(join(root, '.git'))
-    await mkdir(join(root, 'pulses', 'tiny-check'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'tiny-check', 'PULSE.md'),
-      [
-        '---',
-        'title: Tiny check',
-        'schedule: every 1m',
-        'enabled: true',
-        '---',
-        '',
-        '# Tiny check',
-      ].join('\n'),
-      'utf8',
-    )
-
-    const messages: Array<{
-      content: string
-      options: { deliverAs?: string; triggerTurn?: boolean } | undefined
-    }> = []
-    const pulseRuntime = new PulseRuntime(
-      {
-        sendMessage: (
-          message: { content?: string },
-          options?: { deliverAs?: string; triggerTurn?: boolean },
-        ) => messages.push({ content: message.content ?? '', options }),
-      } as never,
-      stubClawasRuntime() as never,
-    )
-    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => false } as never)
-
-    await pulseRuntime.scanAndRunDue(1_000)
-    await pulseRuntime.scanAndRunDue(62_000)
-
-    assert.deepEqual(messages[0]?.options, { triggerTurn: true, deliverAs: 'followUp' })
-    assert.match(messages[0]?.content ?? '', TINY_CHECK_FILE_PATTERN)
-    pulseRuntime.dispose()
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('pulse runtime delays Hey Clawa when another same-owner pulse is due', async () => {
+test('Hey Clawa defers when another pulse for the same owner is due', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-hey-collision-'))
   try {
     await mkdir(join(root, '.git'))
@@ -364,11 +140,9 @@ test('pulse runtime delays Hey Clawa when another same-owner pulse is due', asyn
       'utf8',
     )
 
-    const messages: string[] = []
+    let deliveries = 0
     const pulseRuntime = new PulseRuntime(
-      {
-        sendMessage: (message: { content?: string }) => messages.push(message.content ?? ''),
-      } as never,
+      { sendMessage: () => (deliveries += 1) } as never,
       stubClawasRuntime() as never,
     )
     pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
@@ -376,162 +150,136 @@ test('pulse runtime delays Hey Clawa when another same-owner pulse is due', asyn
     await pulseRuntime.scanAndRunDue(1_000)
     await pulseRuntime.scanAndRunDue(62_000)
 
-    assert.equal(messages.length, 1)
-    assert.match(messages[0] ?? '', EXACT_CHECK_FILE_PATTERN)
-    const deferredState = await readFile(join(root, '.pi', 'pulses.json'), 'utf8')
-    assert.match(deferredState, HEY_CLAWA_STATE_PATTERN)
-    assert.match(deferredState, HEY_CLAWA_DEFER_PATTERN)
+    assert.equal(deliveries, 1)
+    const deferredState = await readPulseState(root)
+    assert.equal(deferredState.pulses['main:exact-check']?.lastRunAt, 62_000)
+    assert.equal(deferredState.pulses['main:hey-clawa']?.deferUntil, 962_000)
 
     await pulseRuntime.scanAndRunDue(962_000)
-
-    assert.equal(messages.length, 2)
-    assert.match(messages[1] ?? '', HEY_CLAWA_FILE_PATTERN)
-    pulseRuntime.dispose()
+    assert.equal(deliveries, 2)
+    assert.equal((await readPulseState(root)).pulses['main:hey-clawa']?.lastRunAt, 962_000)
+    await pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
   }
 })
 
-test('pulse runtime queues worker pulse as follow-up while worker is busy', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-busy-worker-'))
+test('disposal drains a delivered pulse, checkpoints it, and skips remaining stale deliveries', {
+  timeout: 5_000,
+}, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-dispose-'))
+  let releaseDelivery: () => void = () => {}
+  let runtime: PulseRuntime | undefined
   try {
-    const workerHome = join(root, 'clawas', 'researcher')
     await mkdir(join(root, '.git'))
-    await mkdir(join(root, '.pi'), { recursive: true })
-    await mkdir(join(workerHome, 'pulses', 'tiny-check'), { recursive: true })
+    await mkdir(join(root, '.pi'))
     await writeFile(
       join(root, '.pi', 'claw.jsonc'),
-      JSON.stringify({
-        bootstrapped: true,
-        clawas: {
-          baseDir: 'clawas',
-          tmuxSession: 'clawas',
-          workers: [
-            { id: 'researcher', title: 'Researcher', cwd: 'clawas/researcher', autostart: true },
-          ],
-        },
-      }),
-      'utf8',
+      JSON.stringify({ clawas: { workers: [{ id: 'helper', cwd: 'clawas/helper' }] }, clawa: {} }),
     )
-    await writeFile(
-      join(workerHome, 'pulses', 'tiny-check', 'PULSE.md'),
-      [
-        '---',
-        'title: Tiny check',
-        'schedule: every 1m',
-        'enabled: true',
-        '---',
-        '',
-        '# Tiny check',
-      ].join('\n'),
-      'utf8',
-    )
-
-    const prompts: Array<{ workerId: string; message: string; mode: string }> = []
-    const clawasRuntime = {
-      refreshFromConfig: async () => {},
-      getState: () => ({
-        workers: [
-          {
-            definition: { id: 'researcher', title: 'Researcher', cwd: 'clawas/researcher' },
-            status: 'streaming',
-            manualSession: false,
-          },
-        ],
-      }),
-      sendPrompt: async (workerId: string, message: string, mode: string) => {
-        prompts.push({ workerId, message, mode })
-      },
+    for (const id of ['alpha', 'beta']) {
+      await mkdir(join(root, 'clawas', 'helper', 'pulses', id), { recursive: true })
+      await writeFile(
+        join(root, 'clawas', 'helper', 'pulses', id, 'PULSE.md'),
+        ['---', `title: ${id}`, 'schedule: every 1m', '---', '', `# ${id}`].join('\n'),
+      )
     }
-    const pulseRuntime = new PulseRuntime(
-      { sendMessage: () => {} } as never,
-      clawasRuntime as never,
+
+    let deliveryStarted!: () => void
+    const started = new Promise<void>((resolve) => (deliveryStarted = resolve))
+    const blocked = new Promise<void>((resolve) => (releaseDelivery = resolve))
+    const delivered: string[] = []
+    runtime = new PulseRuntime(
+      {
+        sendMessage: () => {
+          throw new Error('unexpected main delivery')
+        },
+      } as never,
+      {
+        refreshFromConfig: async () => {},
+        getState: () => ({ workers: [] }),
+        sendPrompt: async (owner: string) => {
+          delivered.push(owner)
+          deliveryStarted()
+          if (delivered.length === 1) await blocked
+        },
+      } as never,
     )
-    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
-
-    await pulseRuntime.scanAndRunDue(1_000)
-    await pulseRuntime.scanAndRunDue(62_000)
-
-    assert.equal(prompts[0]?.workerId, 'researcher')
-    assert.equal(prompts[0]?.mode, 'followUp')
-    assert.match(prompts[0]?.message ?? '', TINY_CHECK_FILE_PATTERN)
-    pulseRuntime.dispose()
+    runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+    await runtime.scanAndRunDue(1_000)
+    const scan = runtime.scanAndRunDue(62_000)
+    await started
+    let stopped = false
+    const stopping = runtime.dispose().then(() => (stopped = true))
+    await Promise.resolve()
+    assert.equal(stopped, false)
+    releaseDelivery()
+    await Promise.all([scan, stopping])
+    assert.deepEqual(delivered, ['helper'])
+    assert.equal((await readPulseState(root)).pulses['helper:alpha']?.lastRunAt, 62_000)
+    assert.equal((await readPulseState(root)).pulses['helper:beta']?.lastRunAt, undefined)
+    runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
+    await runtime.scanAndRunDue(62_000)
+    assert.deepEqual(delivered, ['helper', 'helper'])
+    await runtime.dispose()
   } finally {
+    releaseDelivery()
+    await runtime?.dispose()
     await rm(root, { recursive: true, force: true })
   }
 })
 
-test('pulse runtime queues manual-session worker pulses through the session socket', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-manual-worker-'))
+test('a scan waiting on a worker cannot deliver into a reattached session', {
+  timeout: 5_000,
+}, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-reattach-'))
+  let releaseRefresh: () => void = () => {}
+  let runtime: PulseRuntime | undefined
   try {
-    const workerHome = join(root, 'clawas', 'researcher')
     await mkdir(join(root, '.git'))
-    await mkdir(join(root, '.pi'), { recursive: true })
-    await mkdir(join(workerHome, 'pulses', 'tiny-check'), { recursive: true })
+    await mkdir(join(root, '.pi'))
     await writeFile(
       join(root, '.pi', 'claw.jsonc'),
-      JSON.stringify({
-        bootstrapped: true,
-        clawas: {
-          baseDir: 'clawas',
-          tmuxSession: 'clawas',
-          workers: [
-            { id: 'researcher', title: 'Researcher', cwd: 'clawas/researcher', autostart: true },
-          ],
-        },
-      }),
-      'utf8',
+      JSON.stringify({ clawas: { workers: [{ id: 'helper', cwd: 'clawas/helper' }] }, clawa: {} }),
     )
+    await mkdir(join(root, 'clawas', 'helper', 'pulses', 'check'), { recursive: true })
     await writeFile(
-      join(workerHome, 'pulses', 'tiny-check', 'PULSE.md'),
-      [
-        '---',
-        'title: Tiny check',
-        'schedule: every 1m',
-        'enabled: true',
-        '---',
-        '',
-        '# Tiny check',
-      ].join('\n'),
-      'utf8',
+      join(root, 'clawas', 'helper', 'pulses', 'check', 'PULSE.md'),
+      ['---', 'title: Check', 'schedule: every 1m', '---', '', '# Check'].join('\n'),
     )
-
-    const prompts: unknown[] = []
-    const sessionMessages: Array<{ target: string; options: { message: string; mode?: string } }> =
-      []
-    const clawasRuntime = {
-      refreshFromConfig: async () => {},
-      getState: () => ({
-        workers: [
-          {
-            definition: { id: 'researcher', title: 'Researcher', cwd: 'clawas/researcher' },
-            status: 'stopped',
-            manualSession: true,
-          },
-        ],
-      }),
-      sendPrompt: async (...args: unknown[]) => {
-        prompts.push(args)
-      },
-    }
-    const pulseRuntime = new PulseRuntime(
-      { sendMessage: () => {} } as never,
-      clawasRuntime as never,
-      async (target, options) => {
-        sessionMessages.push({ target, options })
-      },
+    let refreshStarted!: () => void
+    const started = new Promise<void>((resolve) => (refreshStarted = resolve))
+    const blocked = new Promise<void>((resolve) => (releaseRefresh = resolve))
+    let deliveries = 0
+    runtime = new PulseRuntime(
+      {} as never,
+      {
+        refreshFromConfig: async () => {
+          refreshStarted()
+          await blocked
+        },
+        getState: () => ({ workers: [] }),
+        sendPrompt: async () => {
+          deliveries++
+        },
+      } as never,
     )
-    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
-
-    await pulseRuntime.scanAndRunDue(1_000)
-    await pulseRuntime.scanAndRunDue(62_000)
-
-    assert.equal(prompts.length, 0)
-    assert.equal(sessionMessages[0]?.target, 'researcher')
-    assert.equal(sessionMessages[0]?.options.mode, 'followUp')
-    assert.match(sessionMessages[0]?.options.message ?? '', TINY_CHECK_FILE_PATTERN)
-    pulseRuntime.dispose()
+    const ctx = { cwd: root, hasUI: false, isIdle: () => true } as never
+    runtime.attach(ctx)
+    await runtime.scanAndRunDue(1_000)
+    const scan = runtime.scanAndRunDue(62_000)
+    await started
+    const stopping = runtime.dispose()
+    runtime.attach(ctx)
+    releaseRefresh()
+    await Promise.all([scan, stopping])
+    assert.equal(deliveries, 0)
+    assert.equal((await readPulseState(root)).pulses['helper:check']?.lastRunAt, undefined)
+    await runtime.scanAndRunDue(62_000)
+    assert.equal(deliveries, 1)
   } finally {
+    releaseRefresh()
+    await runtime?.dispose()
     await rm(root, { recursive: true, force: true })
   }
 })

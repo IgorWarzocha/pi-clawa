@@ -155,7 +155,7 @@ export async function reportFinalAssistantMessageToMain(
   })
 }
 
-export function isDirectMainPromptAfterMail(options: {
+function isDirectMainPromptAfterMail(options: {
   lastUserMessage?: { content: string; timestamp?: number | undefined } | undefined
   lastMailTimestamp?: number | undefined
 }): boolean {

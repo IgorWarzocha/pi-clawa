@@ -52,15 +52,17 @@ Pi's configured default, custom, or provider-native compactor carries the canoni
 Clawa does not replace or merge that result. Pi cannot compose competing compaction summaries, so
 there is one history owner rather than two summaries racing by extension load order.
 
-Before that boundary, Clawa can run one ordinary in-branch memory pass at 90% of the active model's
-context window. A hidden follow-up asks the resident Clawa to recall its five latest shared memories,
-update any whose truth has changed, and remember at most five genuinely new pieces from the current
-run. Routine completion, temporary work, and truth already owned by living documents should not be
-stored again. Zero new memories is a good result when nothing deserves promotion.
+Near that boundary, Clawa can run one ordinary in-branch memory pass at 90% of the active model's
+context window. Before a successful run settles, a hidden continuation asks the resident Clawa to
+recall its five latest shared memories, update any whose truth has changed, and remember at most
+five genuinely new pieces from the current run. Routine completion, temporary work, and truth
+already owned by living documents should not be stored again. Zero new memories is a good result
+when nothing deserves promotion.
 
 The pass uses the current session, model, tools, and provider continuation. It is not a detached
 sidecar and does not stage a competing compaction result. It fires once per compaction cycle and
-rearms after Pi compacts or a new session starts. Pi alone decides when and how compaction happens.
+rearms after Pi compacts or a new session starts. Cancelled or failed runs do not trigger it.
+Pi alone decides when and how compaction happens, including during long runs before the pass can start.
 
 ## The practical hierarchy
 

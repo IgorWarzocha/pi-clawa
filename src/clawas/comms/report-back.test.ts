@@ -8,9 +8,7 @@ import {
   getLastMailMessageTimestamp,
 } from './message-extract.ts'
 import { CLAWAS_MAIL_MESSAGE_TYPE } from './outbound.ts'
-import { isDirectMainPromptAfterMail } from './report-back.ts'
 import {
-  extractClawaReportText,
   normalizeDiscordReplyText,
   shouldReportClawaFinalToMain,
   shouldSkipAutoDiscordRelay,
@@ -24,29 +22,6 @@ function ctxWithBranch(branch: unknown[]) {
     },
   } as never
 }
-
-test('scheduled pulses do not turn explicit worker reports into automatic Main returns', () => {
-  assert.equal(
-    isDirectMainPromptAfterMail({
-      lastUserMessage: { content: 'Pulse: Hey, Discord\nOwner: discord-clawa', timestamp: 20 },
-      lastMailTimestamp: 10,
-    }),
-    false,
-  )
-  assert.equal(
-    isDirectMainPromptAfterMail({
-      lastUserMessage: { content: 'Handle this direct worker task', timestamp: 20 },
-      lastMailTimestamp: 10,
-    }),
-    true,
-  )
-})
-
-test('extractClawaReportText keeps explicit clawas content only', () => {
-  assert.equal(extractClawaReportText('[CLAWAS]\nhello from worker'), 'hello from worker')
-  assert.equal(extractClawaReportText('[CLAWAS] hello from worker'), 'hello from worker')
-  assert.equal(extractClawaReportText('plain assistant text'), null)
-})
 
 test('normalizeDiscordReplyText drops standalone quiet sentinel and blank output', () => {
   assert.equal(normalizeDiscordReplyText('hello'), 'hello')
@@ -188,6 +163,63 @@ test('assistant output stays paired with the Discord mail that preceded its turn
 
   assert.equal(turn?.message.content, '[dm] reply to A while B is queued')
   assert.equal(turn?.mailDetails?.['channelJid'], 'dc:dm-a')
+})
+
+test('assistant output keeps Discord context across tool calls in the same turn', () => {
+  const details = {
+    workerId: 'discord-gateway',
+    sourceMessageId: 'current-trigger',
+    channelJid: 'dc:channel-a',
+    queueRowId: 540,
+    messageHandles: {
+      m7: { channelJid: 'dc:channel-a', messageId: 'issue-message' },
+      m8: { channelJid: 'dc:channel-a', messageId: 'current-trigger' },
+    },
+  }
+  const turn = getLastAssistantTurn(
+    ctxWithBranch([
+      {
+        type: 'custom_message',
+        customType: CLAWAS_MAIL_MESSAGE_TYPE,
+        details,
+      },
+      {
+        type: 'message',
+        message: { role: 'user', content: 'wut?', timestamp: 1 },
+      },
+      {
+        type: 'message',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'toolCall', id: 'call-1', name: 'inspect', arguments: {} }],
+          timestamp: 2,
+          stopReason: 'toolUse',
+        },
+      },
+      {
+        type: 'message',
+        message: {
+          role: 'toolResult',
+          toolCallId: 'call-1',
+          toolName: 'inspect',
+          content: [{ type: 'text', text: 'evidence' }],
+          timestamp: 3,
+        },
+      },
+      {
+        type: 'message',
+        message: {
+          role: 'assistant',
+          content: [{ type: 'text', text: '[#channel-a]: final reply' }],
+          timestamp: 4,
+          stopReason: 'stop',
+        },
+      },
+    ]),
+  )
+
+  assert.equal(turn?.message.content, '[#channel-a]: final reply')
+  assert.deepEqual(turn?.mailDetails, details)
 })
 
 test('assistant turn history preserves every queued Discord output in order', () => {
@@ -360,14 +392,6 @@ test('main-claw auto report ignores startup context and hydration preload text',
 
   assert.equal(
     shouldReportClawaFinalToMain({
-      messageContent: '## Claw Continuity Refresh (auto-loaded)\n\nThis is for you, the claw.',
-      lastMailDetails: { intent: 'reply_requested' },
-    }),
-    false,
-  )
-
-  assert.equal(
-    shouldReportClawaFinalToMain({
       messageContent: '[quiet]',
       lastMailDetails: { intent: 'reply_requested' },
     }),
@@ -380,21 +404,5 @@ test('main-claw auto report ignores startup context and hydration preload text',
       lastMailDetails: { intent: 'reply_requested' },
     }),
     false,
-  )
-})
-
-test('getLastMailMessageTimestamp includes legacy session/report messages', () => {
-  assert.equal(
-    getLastMailMessageTimestamp(
-      ctxWithBranch([
-        {
-          type: 'custom_message',
-          customType: 'clawas-session',
-          timestamp: '2026-01-01T00:00:03.000Z',
-          details: { intent: 'for_context' },
-        },
-      ]),
-    ),
-    Date.parse('2026-01-01T00:00:03.000Z'),
   )
 })

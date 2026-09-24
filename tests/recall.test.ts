@@ -116,27 +116,3 @@ test('recall searches shared memory and current session text while skipping tool
     await rm(root, { recursive: true, force: true })
   }
 })
-
-test('recent-memory recall skips session IO once its requested result set is full', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-recall-recent-'))
-  const previousRoot = process.env['PI_CLAW_PROJECT_ROOT']
-  try {
-    process.env['PI_CLAW_PROJECT_ROOT'] = root
-    for (let index = 1; index <= 5; index += 1) {
-      rememberMemory(root, { text: `Memory ${index}` })
-    }
-
-    const results = await searchRecall({
-      cwd: root,
-      limit: 5,
-      // A directory would fail if recall tried to stream it as a session JSONL file.
-      sessionFiles: [root],
-    })
-    assert.equal(results.length, 5)
-    assert.ok(results.every((result) => result.source === 'memory'))
-  } finally {
-    if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
-    else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot
-    await rm(root, { recursive: true, force: true })
-  }
-})

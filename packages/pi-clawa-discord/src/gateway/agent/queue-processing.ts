@@ -31,7 +31,6 @@ export async function processQueuedMessage(params: {
     rowid,
     sender,
     senderName,
-    sourceMessageId,
     replyToMessageId,
     replyContext,
     content,
@@ -56,7 +55,7 @@ export async function processQueuedMessage(params: {
       content,
       mappedWorker,
       logRowId,
-      sourceMessageId: replyToMessageId ?? sourceMessageId,
+      sourceMessageId: replyToMessageId,
       replyContext,
     });
 
@@ -67,7 +66,7 @@ export async function processQueuedMessage(params: {
         'This Discord channel is known, but it is not routed to a Clawa yet.',
         rowid,
         'unrouted',
-        sourceMessageId,
+        replyToMessageId ?? null,
       );
       logger.warn({ jid, rowid }, 'Discord message had no Clawa route');
       return;
@@ -84,7 +83,7 @@ export async function processQueuedMessage(params: {
       discordContext: buildClawasDiscordContext({
         sourceMessageId: getReplyAnchorSourceMessageId(
           sender,
-          replyToMessageId ?? sourceMessageId,
+          replyToMessageId ?? null,
         ),
         sourceChannelJid: jid,
         queueRowId: rowid,
@@ -122,7 +121,7 @@ export async function processQueuedMessage(params: {
         `⚠️ Internal error: ${err.message?.slice(0, 200)}`,
         rowid,
         'error',
-        sourceMessageId,
+        replyToMessageId ?? null,
       );
     } catch {
       clearTypingLease(jid);

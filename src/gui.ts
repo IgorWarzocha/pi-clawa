@@ -19,12 +19,13 @@ import {
   staticPrimitive,
 } from './gui-primitives.js'
 import type { PulseRuntime } from './pulses/runtime.js'
+import type { TemplateCopyResult } from './template-files.js'
 
 export type { CreateClawRequest } from './gui/types.js'
 
 export async function runClawGui(
   ctx: ExtensionCommandContext,
-  performBootstrap: () => Promise<import('./bootstrap.js').BootstrapResult | null>,
+  performBootstrap: () => Promise<TemplateCopyResult | null>,
   performCreate: (
     request: CreateClawRequest,
   ) => Promise<{ name: string; path: string; workerId: string }>,
@@ -152,7 +153,7 @@ function buildManageScreen(
   ctx: ExtensionCommandContext,
   runtime: ClawasRuntime,
   model: Awaited<ReturnType<typeof loadClawGuiModel>>,
-  performBootstrap: () => Promise<import('./bootstrap.js').BootstrapResult | null>,
+  performBootstrap: () => Promise<TemplateCopyResult | null>,
   performCreate: (
     request: CreateClawRequest,
   ) => Promise<{ name: string; path: string; workerId: string }>,

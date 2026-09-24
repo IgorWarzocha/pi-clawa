@@ -4,58 +4,15 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import {
-  CLAWA_PERSONAL_ASSISTANT_INTRO,
-  filterClawaHomeContextFiles,
-  registerClawaSystemPrompt,
-  replacePiDefaultAssistantIntro,
-  resolveClawaPromptName,
-  resolveClawaSystemPrompt,
-} from '../src/system-prompt.js'
+  createAgentSession,
+  DefaultResourceLoader,
+  ModelRuntime,
+  SessionManager,
+  SettingsManager,
+} from '@earendil-works/pi-coding-agent'
+import { filterClawaHomeContextFiles, registerClawaSystemPrompt } from '../src/system-prompt.js'
 
-const options = {
-  cwd: '/repo',
-  selectedTools: ['read'],
-  toolSnippets: { read: 'read files' },
-  promptGuidelines: ['Use read for text files'],
-}
-
-const piDefault = [
-  'You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.',
-  '',
-  'Available tools:',
-  '- read: read files',
-].join('\n')
-
-const GLOBAL_SPINE_PATTERN = /GLOBAL SPINE/u
-const PARENT_SPINE_PATTERN = /PARENT SPINE/u
-const HOME_SPINE_PATTERN = /HOME SPINE/u
-const WORKER_LANE_PATTERN = /WORKER LANE/u
-
-test('replacePiDefaultAssistantIntro preserves Pi tool section', () => {
-  const replaced = replacePiDefaultAssistantIntro(piDefault)
-
-  assert.ok(replaced.startsWith(CLAWA_PERSONAL_ASSISTANT_INTRO))
-  assert.ok(replaced.includes('\nAvailable tools:\n- read: read files'))
-  assert.equal(replaced.includes('expert coding assistant operating inside pi'), false)
-})
-
-test('resolveClawaSystemPrompt ignores custom prompts and rebuilds Pi defaults', () => {
-  const customPrompt = '# Custom prompt\n\nBe weird.'
-  const suffix = '\n\n<project_context>keep me</project_context>\nCurrent date: 2026-06-19'
-  const result = resolveClawaSystemPrompt(`${customPrompt}${suffix}`, {
-    ...options,
-    customPrompt,
-  })
-
-  assert.equal(result.ignoredCustomPrompt, true)
-  assert.ok(result.systemPrompt.startsWith(CLAWA_PERSONAL_ASSISTANT_INTRO))
-  assert.ok(result.systemPrompt.includes('\nAvailable tools:\n- read: read files'))
-  assert.ok(result.systemPrompt.includes('- Use read for text files'))
-  assert.ok(result.systemPrompt.endsWith(suffix))
-  assert.equal(result.systemPrompt.includes('Be weird.'), false)
-})
-
-test('Clawa keeps AGENTS context inside its own home and drops global and parent context', async () => {
+test('Clawa context excludes global and parent instructions outside its home', async () => {
   const parent = await mkdtemp(join(tmpdir(), 'clawa-contained-context-'))
   const root = join(parent, 'home')
   const worker = join(root, 'clawas', 'worker')
@@ -64,42 +21,16 @@ test('Clawa keeps AGENTS context inside its own home and drops global and parent
     await mkdir(join(root, '.pi'), { recursive: true })
     await mkdir(worker, { recursive: true })
     await writeFile(join(root, '.pi', 'settings.json'), '{}', 'utf8')
-    const globalFile = { path: join(parent, 'global', 'AGENTS.MD'), content: 'GLOBAL SPINE' }
-    const parentFile = { path: join(parent, 'AGENTS.md'), content: 'PARENT SPINE' }
-    const rootFile = { path: join(root, 'AGENTS.md'), content: 'HOME SPINE' }
-    const workerFile = { path: join(worker, 'AGENTS.md'), content: 'WORKER LANE' }
+    const globalFile = { path: join(parent, 'global', 'AGENTS.MD'), content: 'GLOBAL' }
+    const parentFile = { path: join(parent, 'AGENTS.md'), content: 'PARENT' }
+    const rootFile = { path: join(root, 'AGENTS.md'), content: 'HOME' }
+    const workerFile = { path: join(worker, 'AGENTS.md'), content: 'WORKER' }
     const contextFiles = [globalFile, parentFile, rootFile, workerFile]
     await mkdir(join(parent, 'global'), { recursive: true })
     for (const file of contextFiles) await writeFile(file.path, file.content, 'utf8')
     process.env['PI_CLAW_PROJECT_ROOT'] = root
 
     assert.deepEqual(filterClawaHomeContextFiles(contextFiles, worker), [rootFile, workerFile])
-
-    const projectContext = [
-      '<project_context>',
-      '',
-      'Project-specific instructions and guidelines:',
-      '',
-      ...contextFiles.map(
-        (file) =>
-          `<project_instructions path="${file.path}">\n${file.content}\n</project_instructions>\n`,
-      ),
-      '</project_context>',
-    ].join('\n')
-    const reformattedContext = projectContext.replace(
-      'GLOBAL SPINE',
-      'GLOBAL REFORMATTED BY PRIOR EXTENSION',
-    )
-    const result = resolveClawaSystemPrompt(`${piDefault}\n\n${reformattedContext}\n`, {
-      ...options,
-      cwd: worker,
-      contextFiles,
-    })
-
-    assert.doesNotMatch(result.systemPrompt, GLOBAL_SPINE_PATTERN)
-    assert.doesNotMatch(result.systemPrompt, PARENT_SPINE_PATTERN)
-    assert.match(result.systemPrompt, HOME_SPINE_PATTERN)
-    assert.match(result.systemPrompt, WORKER_LANE_PATTERN)
   } finally {
     if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
     else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot
@@ -107,7 +38,7 @@ test('Clawa keeps AGENTS context inside its own home and drops global and parent
   }
 })
 
-test('global agent context stays excluded even when the Clawa home contains the agent dir', async () => {
+test('global agent context stays excluded when its directory is inside the home', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-global-agent-dir-'))
   try {
     const globalAgentDir = join(root, '.pi', 'agent')
@@ -153,75 +84,80 @@ test('missing and dangling context paths fail closed', async () => {
   }
 })
 
-test('registered prompt filtering remains effective across turns without mutating Pi options', async () => {
-  const parent = await mkdtemp(join(tmpdir(), 'clawa-context-turns-'))
-  const root = join(parent, 'home')
+test('native Pi prompt shaping isolates home context without losing tool policies or sections', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-native-prompt-'))
+  const cwd = join(root, 'home')
+  const agentDir = join(root, 'agent')
+  let session: Awaited<ReturnType<typeof createAgentSession>>['session'] | undefined
   try {
-    await mkdir(join(root, '.pi'), { recursive: true })
-    await writeFile(join(root, '.pi', 'settings.json'), '{}', 'utf8')
-    const globalFile = { path: join(parent, 'AGENTS.MD'), content: 'GLOBAL SPINE' }
-    const homeFile = { path: join(root, 'AGENTS.md'), content: 'HOME SPINE' }
-    await writeFile(globalFile.path, globalFile.content, 'utf8')
-    await writeFile(homeFile.path, homeFile.content, 'utf8')
-    const contextFiles = [globalFile, homeFile]
-    const projectContext = [
-      '<project_context>',
-      '',
-      'Project-specific instructions and guidelines:',
-      '',
-      ...contextFiles.map(
-        (file) =>
-          `<project_instructions path="${file.path}">\n${file.content}\n</project_instructions>\n`,
-      ),
-      '</project_context>',
-    ].join('\n')
-    const systemPromptOptions = { ...options, cwd: root, contextFiles }
-    const handlers = new Map<string, (event: never) => { systemPrompt?: string } | undefined>()
-    registerClawaSystemPrompt({
-      on: (name: string, handler: (event: never) => { systemPrompt?: string } | undefined) => {
-        handlers.set(name, handler)
-      },
-      sendMessage: () => undefined,
-    } as never)
-    const beforeAgentStart = handlers.get('before_agent_start')
-    assert.ok(beforeAgentStart)
+    await mkdir(join(cwd, '.pi'), { recursive: true })
+    await mkdir(agentDir)
+    await writeFile(join(cwd, '.pi', 'settings.json'), '{}')
+    const home = { path: join(cwd, 'AGENTS.md'), content: 'HOME_ONLY </project_context> text' }
+    const outside = { path: join(root, 'AGENTS.md'), content: 'OUTSIDE_CONTEXT' }
+    for (const file of [home, outside]) await writeFile(file.path, file.content)
 
-    for (let turn = 0; turn < 2; turn += 1) {
-      const result = beforeAgentStart({
-        systemPrompt: `${piDefault}\n\n${projectContext}\n`,
-        systemPromptOptions,
-      } as never)
-      assert.doesNotMatch(result?.systemPrompt ?? '', GLOBAL_SPINE_PATTERN)
-      assert.match(result?.systemPrompt ?? '', HOME_SPINE_PATTERN)
+    const settingsManager = SettingsManager.inMemory()
+    const resourceLoader = new DefaultResourceLoader({
+      cwd,
+      agentDir,
+      settingsManager,
+      noExtensions: true,
+      noSkills: true,
+      noThemes: true,
+      noPromptTemplates: true,
+      extensionFactories: [registerClawaSystemPrompt],
+    })
+    await resourceLoader.reload()
+    const modelRuntime = await ModelRuntime.create({
+      authPath: join(agentDir, 'auth.json'),
+      modelsPath: null,
+      modelsStorePath: join(agentDir, 'models-store.json'),
+      allowModelNetwork: false,
+      refreshOnCreate: false,
+    })
+    const created = await createAgentSession({
+      cwd,
+      agentDir,
+      settingsManager,
+      resourceLoader,
+      modelRuntime,
+      sessionManager: SessionManager.inMemory(cwd),
+    })
+    session = created.session
+    const errors: string[] = []
+    session.extensionRunner.onError((error) => errors.push(error.error))
+    // Exercise Pi's real mutable-options getter, without credentials or a model request.
+    const result = await session.extensionRunner.emitBeforeAgentStart('hello', undefined, {
+      cwd,
+      customPrompt: 'IGNORED_CUSTOM_PROMPT',
+      forceSystemPrompt: 'OPAQUE_OVERRIDE OUTSIDE_CONTEXT',
+      contextFiles: [outside, home],
+      selectedTools: ['read'],
+      toolSnippets: { read: 'READ_DESCRIPTION' },
+      toolGuidelines: { read: ['READ_POLICY'] },
+      appendSystemPrompt: 'APPENDED_INSTRUCTION',
+      sections: { extra: 'EXTRA_SECTION' },
+    })
+    assert.deepEqual(errors, [])
+    assert.deepEqual(result.systemPromptOptions.contextFiles, [home])
+    const prompt = result.systemPromptOptions.forceSystemPrompt
+    assert.ok(prompt)
+    assert.ok(prompt.startsWith('# Clawa personal assistant'))
+    for (const value of [
+      home.content,
+      'READ_DESCRIPTION',
+      'READ_POLICY',
+      'APPENDED_INSTRUCTION',
+      'EXTRA_SECTION',
+    ]) {
+      assert.ok(prompt.includes(value), value)
     }
-    assert.equal(systemPromptOptions.contextFiles, contextFiles)
+    for (const value of ['IGNORED_CUSTOM_PROMPT', 'OPAQUE_OVERRIDE', outside.content]) {
+      assert.equal(prompt.includes(value), false, value)
+    }
   } finally {
-    await rm(parent, { recursive: true, force: true })
-  }
-})
-
-test('resolveClawaPromptName uses project and worker JSON names', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-prompt-name-'))
-  try {
-    await mkdir(join(root, '.pi'), { recursive: true })
-    await mkdir(join(root, 'clawas', 'gremlin-clawa'), { recursive: true })
-    await writeFile(
-      join(root, '.pi', 'claw.jsonc'),
-      JSON.stringify({
-        bootstrapped: true,
-        clawas: {
-          baseDir: 'clawas',
-          tmuxSession: 'clawas',
-          workers: [{ id: 'gremlin-clawa', title: 'Gremlin Clawa', cwd: 'clawas/gremlin-clawa' }],
-        },
-        clawa: { mainClawName: 'Howaclawa' },
-      }),
-      'utf8',
-    )
-
-    assert.equal(resolveClawaPromptName(root), 'Howaclawa')
-    assert.equal(resolveClawaPromptName(join(root, 'clawas', 'gremlin-clawa')), 'Gremlin Clawa')
-  } finally {
+    session?.dispose()
     await rm(root, { recursive: true, force: true })
   }
 })

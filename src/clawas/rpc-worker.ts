@@ -1,6 +1,7 @@
 import { type ChildProcess, spawn } from 'node:child_process'
 import type { AgentEvent } from '@earendil-works/pi-agent-core'
 import { ClawasRpcChannel } from './rpc-channel.js'
+import { readRpcAssistantText, readRpcSessionState } from './rpc-guards.js'
 import type { ClawasRpcCommandInput, ClawasRpcSessionState } from './rpc-types.js'
 import type { WorkerDefinition } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
@@ -59,6 +60,9 @@ function buildWorkerEnvironment(options: WorkerProcessOptions): NodeJS.ProcessEn
   }
   if (options.definition.reportMode) {
     env['PI_CLAWAS_REPORT_MODE'] = options.definition.reportMode
+  }
+  if (options.definition.fastMode !== undefined) {
+    env['PI_CODEX_FAST'] = options.definition.fastMode ? '1' : '0'
   }
   return env
 }
@@ -132,53 +136,63 @@ export class ClawasRpcWorker {
       reportSessionId: this.reportSessionId,
       sessionFile: this.sessionFile,
     }
-    this.process = spawn('pi', buildWorkerProcessArgs(options), {
+    const child = spawn('pi', buildWorkerProcessArgs(options), {
       cwd: this.cwd,
       env: buildWorkerEnvironment(options),
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
-    this.process.stderr?.on('data', (chunk) => {
+    this.process = child
+    let spawnError: Error | undefined
+    child.on('error', (error) => {
+      spawnError = error
+    })
+    child.stderr?.on('data', (chunk) => {
       this.stderr += chunk.toString()
     })
-    this.channel.attach(this.process)
-    this.process.on('close', (code, signal) => {
+    this.channel.attach(child)
+    child.on('close', (code, signal) => {
       this.channel.detachWithError(`exit code ${code ?? 'unknown'}`)
-      this.process = null
+      if (this.process === child) this.process = null
       for (const listener of this.closeListeners) {
         listener(code, signal)
       }
     })
 
     await new Promise((resolve) => setTimeout(resolve, 150))
-    if (this.process.exitCode !== null) {
+    if (spawnError) throw spawnError
+    if (this.process !== child || child.exitCode !== null || child.signalCode !== null) {
       throw new Error(
-        `Worker ${this.definition.id} exited immediately with code ${this.process.exitCode}`,
+        `Worker ${this.definition.id} exited immediately with code ${child.exitCode ?? child.signalCode ?? 'unknown'}`,
       )
     }
   }
 
   async stop(): Promise<void> {
-    if (!this.process) {
+    const child = this.process
+    if (!child) {
       return
     }
 
     const abortAttempt = this.abort().catch(() => {})
     await Promise.race([abortAttempt, wait(500)])
 
-    const child = this.process
-    child.kill('SIGTERM')
-
-    await new Promise<void>((resolve) => {
-      const timeout = setTimeout(() => {
-        child.kill('SIGKILL')
+    if (this.process !== child) return
+    await new Promise<void>((resolve, reject) => {
+      const onClose = () => {
+        clearTimeout(termTimeout)
+        clearTimeout(killTimeout)
         resolve()
+      }
+      child.once('close', onClose)
+      const termTimeout = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
       }, 1_000)
-
-      child.once('exit', () => {
-        clearTimeout(timeout)
-        resolve()
-      })
+      const killTimeout = setTimeout(() => {
+        child.off('close', onClose)
+        reject(new Error(`Worker ${this.definition.id} did not close after SIGKILL`))
+      }, 2_000)
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM')
     })
   }
 
@@ -200,13 +214,12 @@ export class ClawasRpcWorker {
 
   async getState(): Promise<ClawasRpcSessionState> {
     const response = await this.send({ type: 'get_state' })
-    return response.data as ClawasRpcSessionState
+    return readRpcSessionState(response.data)
   }
 
   async getLastAssistantText(): Promise<string | null> {
     const response = await this.send({ type: 'get_last_assistant_text' })
-    const data = response.data as { text: string | null }
-    return data.text
+    return readRpcAssistantText(response.data)
   }
 
   async setSessionName(name: string): Promise<void> {

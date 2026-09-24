@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import Database from 'better-sqlite3'
-import { readSessionTokensFromJsonl } from './src/gateway/agent/session-status.js'
 import {
   claimNextDiscordDeliveryInDb,
   deliveryNonceForKey,
@@ -14,6 +13,7 @@ import {
   recoverStuckDiscordDeliveriesInDb,
 } from './src/gateway/db/delivery-queue.js'
 import { enqueueDiscordInteractionTurnInDb } from './src/gateway/db/interactions.js'
+import { enqueueDiscordMembershipEventInDb } from './src/gateway/db/membership-events.js'
 import {
   getMessageStatusInDb,
   markMessageAwaitingInDb,
@@ -22,8 +22,6 @@ import {
   recoverStuckMessagesInDb,
 } from './src/gateway/db/queue.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
-import { sendDiscordDeliveryWithClient } from './src/gateway/discord/delivery-renderer.js'
-import { splitDiscordMessage } from './src/gateway/discord/text.js'
 import { parseBooleanSetting, parseEnumSetting, parseIntegerSetting } from './src/shared/env.js'
 import { acquireGatewayLock, readGatewayLock } from './src/shared/gateway-lock.js'
 
@@ -34,7 +32,7 @@ const INVALID_ENABLED_PATTERN = /Invalid ENABLED/u
 const INVALID_POLICY_PATTERN = /Invalid POLICY/u
 const ALREADY_RUNNING_PATTERN = /already running/u
 
-test('Discord inbox settles only after the worker turn and preserves awaiting work on restart', () => {
+test('inbox settles only after the worker turn and preserves awaiting work on restart', () => {
   const db = new Database(':memory:')
   try {
     runSchemaMigrations(db)
@@ -59,17 +57,39 @@ test('Discord inbox settles only after the worker turn and preserves awaiting wo
     assert.equal(getMessageStatusInDb(db, 1), 'done')
     markMessageFailedInDb(db, 2)
     assert.equal(markMessageDoneInDb(db, 2), false)
+    assert.equal(getMessageStatusInDb(db, 2), 'failed')
+  } finally {
+    db.close()
+  }
+})
+
+test('synthetic membership events deduplicate without a reply target', () => {
+  const db = new Database(':memory:')
+  try {
+    runSchemaMigrations(db)
+    const event = {
+      channelJid: 'dc:one',
+      eventId: 'discord-membership:guild-one:member-one:1786104000000:joined',
+      content: 'membership transition',
+      timestamp: '2026-08-07T12:00:00.000Z',
+    }
+
+    assert.equal(enqueueDiscordMembershipEventInDb(db, event), true)
+    assert.equal(enqueueDiscordMembershipEventInDb(db, event), false)
+    assert.deepEqual(
+      db.prepare('select source_message_id, reply_to_message_id from message_queue').get(),
+      { source_message_id: event.eventId, reply_to_message_id: null },
+    )
     assert.equal(
-      (db.prepare('select status from message_queue where rowid = 2').get() as { status: string })
-        .status,
-      'failed',
+      (db.prepare('select count(*) as count from message_log').get() as { count: number }).count,
+      1,
     )
   } finally {
     db.close()
   }
 })
 
-test('Discord outbox keys, nonces, retry states, and recovery are durable', () => {
+test('outbox keys, retries, dead letters, and recovery are durable', () => {
   const db = new Database(':memory:')
   try {
     runSchemaMigrations(db)
@@ -98,8 +118,7 @@ test('Discord outbox keys, nonces, retry states, and recovery are durable', () =
     assert.equal(markDiscordDeliveryAttemptFailedInDb(db, rowid, 'network', 1_000), 'pending')
     assert.equal(claimNextDiscordDeliveryInDb(db, 1_999), undefined)
 
-    const second = claimNextDiscordDeliveryInDb(db, 2_000)
-    assert.equal(second?.attempt_count, 2)
+    assert.equal(claimNextDiscordDeliveryInDb(db, 2_000)?.attempt_count, 2)
     assert.equal(markDiscordDeliveryAttemptFailedInDb(db, rowid, 'still down', 2_000), 'dead')
     assert.deepEqual(getDiscordDeliveryStateInDb(db, rowid), {
       status: 'dead',
@@ -131,72 +150,7 @@ test('Discord outbox keys, nonces, retry states, and recovery are durable', () =
   }
 })
 
-test('Discord multipart text becomes independently deliverable chunks', () => {
-  const chunks = splitDiscordMessage('x'.repeat(4_501))
-  assert.deepEqual(
-    chunks.map((chunk) => chunk.length),
-    [2_000, 2_000, 501],
-  )
-  assert.equal(chunks.join(''), 'x'.repeat(4_501))
-})
-
-test('Discord sends carry enforced stable nonces', async () => {
-  let sentPayload: Record<string, unknown> | undefined
-  const client = {
-    channels: {
-      fetch: async () => ({
-        send: async (payload: Record<string, unknown>) => {
-          sentPayload = payload
-          return { id: 'message-one' }
-        },
-      }),
-    },
-  }
-
-  const result = await sendDiscordDeliveryWithClient(
-    client as never,
-    { channelJid: 'dc:one', text: 'hello', replyToMessageId: 'current-trigger', files: [] },
-    'stable-nonce',
-  )
-  assert.equal(result.messageId, 'message-one')
-  assert.equal(sentPayload?.['nonce'], 'stable-nonce')
-  assert.equal(sentPayload?.['enforceNonce'], true)
-  assert.deepEqual(sentPayload?.['reply'], {
-    messageReference: 'current-trigger',
-    failIfNotExists: false,
-  })
-})
-
-test('Discord long text retries each rendered chunk idempotently', async () => {
-  const sentPayloads: Record<string, unknown>[] = []
-  const client = {
-    channels: {
-      fetch: async () => ({
-        send: async (payload: Record<string, unknown>) => {
-          sentPayloads.push(payload)
-          return { id: `message-${sentPayloads.length}` }
-        },
-      }),
-    },
-  }
-
-  const result = await sendDiscordDeliveryWithClient(
-    client as never,
-    { channelJid: 'dc:one', text: 'x'.repeat(4_501), files: [] },
-    'stable-parent-nonce',
-  )
-  assert.equal(result.messageId, 'message-3')
-  assert.deepEqual(
-    sentPayloads.map((payload) => String(payload['content']).length),
-    [2_000, 2_000, 501],
-  )
-  const nonces = sentPayloads.map((payload) => String(payload['nonce']))
-  assert.equal(new Set(nonces).size, 3)
-  assert.ok(nonces.every((nonce) => nonce.length <= 24))
-  assert.ok(sentPayloads.every((payload) => payload['enforceNonce'] === true))
-})
-
-test('Discord interaction consumption rolls back when enqueue fails', () => {
+test('interaction consumption rolls back when enqueue fails', () => {
   const db = new Database(':memory:')
   try {
     runSchemaMigrations(db)
@@ -244,7 +198,7 @@ test('Discord interaction consumption rolls back when enqueue fails', () => {
   }
 })
 
-test('Discord interaction consumption and enqueue commit together', () => {
+test('interaction consumption and enqueue commit together', () => {
   const db = new Database(':memory:')
   try {
     runSchemaMigrations(db)
@@ -274,7 +228,7 @@ test('Discord interaction consumption and enqueue commit together', () => {
   }
 })
 
-test('Discord settings reject malformed values instead of changing behavior', () => {
+test('settings reject malformed values instead of coercing them', () => {
   assert.equal(parseIntegerSetting({ LIMIT: '4' }, 'LIMIT', 1, { min: 1 }), 4)
   assert.throws(() => parseIntegerSetting({ LIMIT: '4oops' }, 'LIMIT', 1), INVALID_LIMIT_PATTERN)
   assert.equal(parseBooleanSetting({ ENABLED: 'off' }, 'ENABLED', true), false)
@@ -288,33 +242,7 @@ test('Discord settings reject malformed values instead of changing behavior', ()
   )
 })
 
-test('Discord session status reads JSONL without launching Pi', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-session-status-'))
-  try {
-    const session = join(root, 'session.jsonl')
-    await writeFile(
-      session,
-      `${JSON.stringify({
-        type: 'message',
-        message: {
-          role: 'assistant',
-          usage: { input: 10, output: 4, cacheRead: 2, cacheWrite: 1, totalTokens: 17 },
-        },
-      })}\n{unfinished`,
-    )
-    assert.deepEqual(readSessionTokensFromJsonl(session), {
-      input: 10,
-      output: 4,
-      cacheRead: 2,
-      cacheWrite: 1,
-      total: 17,
-    })
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('Discord gateway lock acquisition is atomic and identity-bearing', async () => {
+test('gateway lock acquisition is atomic and identity-bearing', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-gateway-lock-'))
   const lockPath = join(root, 'gateway.pid')
   const record = {

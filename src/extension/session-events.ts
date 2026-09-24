@@ -2,15 +2,10 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { reportFinalAssistantMessageToMain } from '../clawas/comms/report-back.js'
 import type { ClawasCommsServer } from '../clawas/comms/server.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
-import {
-  type ClawaDefaults,
-  findRepoRoot,
-  markClawEnvironmentBootstrapped,
-  resolveClawaDefaults,
-} from '../config.js'
+import { type ClawaDefaults, resolveClawaDefaults } from '../config.js'
 import type { PulseRuntime } from '../pulses/runtime.js'
-import { copyTemplateFiles, findExistingCoreMarkdownFiles } from '../template-files.js'
-import { IS_CLAWAS_WORKER, mainTemplatesDir } from './constants.js'
+import { bootstrapMainHome } from './bootstrap-actions.js'
+import { IS_CLAWAS_WORKER } from './constants.js'
 import {
   maybeSetWorkerSessionName,
   sendInitialBootstrapPrompt,
@@ -37,8 +32,12 @@ export function registerClawaSessionEvents(
 
     const needsInitialBootstrap = !extensionConfig.bootstrapped
     if (needsInitialBootstrap) {
-      const bootstrapped = await runInitialBootstrap(pi, ctx, options.runtime)
-      if (!bootstrapped) return
+      const bootstrapped = await bootstrapMainHome(ctx.cwd, options.runtime)
+      if (bootstrapped.kind === 'blocked') {
+        reportBootstrapBlocked(pi, ctx, bootstrapped.conflicts)
+        return
+      }
+      notifyInitialBootstrap(ctx, extensionConfig, bootstrapped.copied, bootstrapped.markedPath)
     }
 
     if (ctx.hasUI) ctx.ui.setStatus('clawa', undefined)
@@ -71,26 +70,8 @@ export function registerClawaSessionEvents(
   pi.on('session_shutdown', async () => {
     await options.commsServer.stop()
     if (!IS_CLAWAS_WORKER) {
-      options.pulseRuntime.dispose()
+      await options.pulseRuntime.dispose()
       await options.clawasRuntime.dispose()
     }
   })
-}
-
-async function runInitialBootstrap(
-  pi: ExtensionAPI,
-  ctx: ExtensionContext,
-  runtime: ClawaRuntimeState,
-): Promise<boolean> {
-  const conflicts = findExistingCoreMarkdownFiles(ctx.cwd)
-  if (conflicts.length > 0) {
-    reportBootstrapBlocked(pi, ctx, conflicts)
-    return false
-  }
-
-  const copied = await copyTemplateFiles(mainTemplatesDir, ctx.cwd)
-  const marked = markClawEnvironmentBootstrapped(findRepoRoot(ctx.cwd))
-  runtime.markBootstrapped(ctx.cwd)
-  notifyInitialBootstrap(ctx, runtime.ensureExtensionConfig(ctx.cwd), copied, marked.path)
-  return true
 }

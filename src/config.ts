@@ -27,6 +27,7 @@ export interface ClawaWorkerConfig {
   startupPrompt?: string | undefined
   model?: string | undefined
   thinking?: ClawaWorkerThinkingLevel | undefined
+  fastMode?: boolean | undefined
   reportMode?: ClawaWorkerReportMode | undefined
 }
 
@@ -154,6 +155,7 @@ function normalizeWorker(item: unknown, index: number): ClawaWorkerConfig {
     startupPrompt: asString(rec['startupPrompt']) ?? asString(rec['initialPrompt']),
     model: asString(rec['model']),
     thinking: asThinkingLevel(rec['thinking'], `${label}.thinking`),
+    fastMode: asBoolean(rec['fastMode'], `${label}.fastMode`),
     reportMode: asReportMode(rec['reportMode'], `${label}.reportMode`),
   }
 }

@@ -39,6 +39,7 @@ import {
 	reconcileDiscordMessageDelete,
 	reconcileDiscordMessageUpdate,
 } from "./message-lifecycle.js";
+import { handleGuildMembershipEvent } from "./membership-events.js";
 import {
 	setTypingWithClient,
 } from "./outbound.js";
@@ -79,6 +80,16 @@ export async function startDiscord(): Promise<void> {
 	});
 	client.on(Events.MessageCreate, (message) => {
 		runDiscordEvent("message create", () => handleMessage(message));
+	});
+	client.on(Events.GuildMemberAdd, (member) => {
+		runDiscordEvent("guild member add", () =>
+			handleGuildMembershipEvent(member, "joined"),
+		);
+	});
+	client.on(Events.GuildMemberRemove, (member) => {
+		runDiscordEvent("guild member remove", () =>
+			handleGuildMembershipEvent(member, "left"),
+		);
 	});
 	client.on(Events.MessageReactionAdd, (reaction, user) => {
 		runDiscordEvent("reaction add", () => handleReactionEvent(reaction, user, "added"));

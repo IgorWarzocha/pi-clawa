@@ -48,6 +48,9 @@ export function buildInteractiveCommand(options: LaunchOptions, replaceShell = f
   if (process.env['PI_CLAW_PROJECT_ROOT']) {
     envVars['PI_CLAW_PROJECT_ROOT'] = process.env['PI_CLAW_PROJECT_ROOT']
   }
+  if (options.definition.fastMode !== undefined) {
+    envVars['PI_CODEX_FAST'] = options.definition.fastMode ? '1' : '0'
+  }
 
   const envPrefix = Object.entries(envVars)
     .map(([key, value]) => `${key}=${shellEscape(value)}`)

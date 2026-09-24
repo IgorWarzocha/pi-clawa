@@ -105,6 +105,7 @@ Status: Discord exists and is a core first surface, but adapter seam and product
 - [ ] calibrate Discord autonomy: free safe/on-brand posting, ask only for doxxing/secrets/money/commitments/impersonation/high-stakes
 - [ ] decide whether to generate invite URL or keep manual instructions
 - [x] add adapter smoke test that does not require a real Discord token
+- [x] queue exact Discord member joins/leaves without fabricating reply targets
 
 Depends on: C runtime surfaces.
 Blocks: full clean-room test if Discord is included in first release.

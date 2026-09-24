@@ -1,8 +1,8 @@
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
-import type { BootstrapResult } from '../bootstrap.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import { runComposer, runPicker } from '../gui-primitives.js'
 import type { PulseRuntime } from '../pulses/runtime.js'
+import type { TemplateCopyResult } from '../template-files.js'
 import type { ClawGuiModel } from './model.js'
 import type {
   ActionItem,
@@ -128,7 +128,7 @@ export async function runControlAction(options: {
   runtime: ClawasRuntime
   clawasName: string
   performCreate: CreateClawAction
-  performBootstrap: () => Promise<BootstrapResult | null>
+  performBootstrap: () => Promise<TemplateCopyResult | null>
   setStatus: (message: string) => void
 }): Promise<void> {
   const { ctx, item, runtime, clawasName, performCreate, performBootstrap, setStatus } = options
@@ -145,7 +145,7 @@ export async function runControlAction(options: {
   }
   const result = await performBootstrap()
   if (!result) return
-  const status = `Bootstrap done: ${result.created} created, ${result.overwritten} overwritten.`
+  const status = `Bootstrap done: ${result.copied.length} created.`
   setStatus(status)
   ctx.ui.notify(status, 'info')
 }

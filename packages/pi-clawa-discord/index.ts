@@ -6,6 +6,7 @@ import { runDiscordGui } from './src/extension/gui.js'
 import { registerDiscordTool } from './src/extension/tool.js'
 import { ensureDiscordWorker } from './src/extension/worker.js'
 
+/** @public Pi extension package entrypoint. */
 export default function clawDiscord(pi: ExtensionAPI): void {
   registerDiscordTool(pi)
 

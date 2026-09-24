@@ -1,8 +1,10 @@
 import { existsSync, realpathSync } from 'node:fs'
-import { homedir } from 'node:os'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import type { BuildSystemPromptOptions, ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import {
+  type BuildSystemPromptOptions,
+  type ExtensionAPI,
+  getAgentDir,
+} from '@earendil-works/pi-coding-agent'
 import { findRepoRoot, loadClawEnvironmentConfig } from './config.js'
 
 const PI_DEFAULT_ASSISTANT_INTRO =
@@ -19,23 +21,6 @@ You are ${name}, a warm personal assistant operating inside Pi—not a generic c
 Work like a real partner at the bench. Carry clear work across the line instead of merely narrating intent; be direct, grounded, curious, and human without turning the voice into a performance. Use the home's continuity before assuming a blank slate, keep private context private, and ask only across genuine ambiguity, destruction, exposure, or high blast radius.`
 }
 
-export const CLAWA_PERSONAL_ASSISTANT_INTRO = buildClawaPersonalAssistantIntro()
-
-type PiDocsPaths = {
-  readmePath: string
-  docsPath: string
-  examplesPath: string
-}
-
-const packageRoot = dirname(
-  dirname(fileURLToPath(import.meta.resolve('@earendil-works/pi-coding-agent'))),
-)
-const DEFAULT_PI_DOCS_PATHS: PiDocsPaths = {
-  readmePath: join(packageRoot, 'README.md'),
-  docsPath: join(packageRoot, 'docs'),
-  examplesPath: join(packageRoot, 'examples'),
-}
-
 type ClawaNameCandidate = {
   name: string
   path: string
@@ -49,8 +34,6 @@ function isPathInsideOrSame(childPath: string, parentPath: string): boolean {
   const rel = relative(parentPath, childPath)
   return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel))
 }
-
-const GLOBAL_PI_AGENT_DIR = join(homedir(), '.pi', 'agent')
 
 function realpathExisting(path: string): string | undefined {
   if (!existsSync(path)) return undefined
@@ -77,7 +60,7 @@ type ContextFile = NonNullable<BuildSystemPromptOptions['contextFiles']>[number]
 export function filterClawaHomeContextFiles(
   contextFiles: ContextFile[] | undefined,
   cwd: string,
-  globalAgentDir = GLOBAL_PI_AGENT_DIR,
+  globalAgentDir = getAgentDir(),
 ): ContextFile[] {
   const homeRoot = resolveClawaHomeRoot(cwd)
   const lexicalGlobalAgentDir = resolve(globalAgentDir)
@@ -91,53 +74,7 @@ export function filterClawaHomeContextFiles(
   })
 }
 
-function buildProjectContext(files: ContextFile[]): string {
-  if (files.length === 0) return ''
-  return [
-    '<project_context>',
-    '',
-    'Project-specific instructions and guidelines:',
-    '',
-    ...files.map(
-      (file) =>
-        `<project_instructions path="${file.path}">\n${file.content}\n</project_instructions>\n`,
-    ),
-    '</project_context>',
-  ].join('\n')
-}
-
-function replaceProjectContext(
-  systemPrompt: string,
-  originalFiles: ContextFile[],
-  homeFiles: ContextFile[],
-): string {
-  if (originalFiles.length === 0) return systemPrompt
-
-  const instructionPositions = originalFiles
-    .map((file) => systemPrompt.indexOf(`<project_instructions path="${file.path}">`))
-    .filter((position) => position >= 0)
-  const firstInstruction = instructionPositions.length > 0 ? Math.min(...instructionPositions) : -1
-  const start =
-    firstInstruction >= 0
-      ? systemPrompt.lastIndexOf('<project_context>', firstInstruction)
-      : systemPrompt.lastIndexOf('<project_context>')
-  const closingTag = '</project_context>'
-  const end = systemPrompt.lastIndexOf(closingTag)
-
-  if (start < 0 || end < start) {
-    const leakedFile = originalFiles.find(
-      (file) => !homeFiles.includes(file) && systemPrompt.includes(file.content),
-    )
-    if (leakedFile) {
-      throw new Error(`Clawa could not isolate outside context file: ${leakedFile.path}`)
-    }
-    return systemPrompt
-  }
-
-  return `${systemPrompt.slice(0, start)}${buildProjectContext(homeFiles)}${systemPrompt.slice(end + closingTag.length)}`
-}
-
-export function resolveClawaPromptName(cwd: string): string {
+function resolveClawaPromptName(cwd: string): string {
   const repoRoot = findRepoRoot(cwd)
   const loaded = loadClawEnvironmentConfig(repoRoot)
   const mainName = sanitizeClawaName(loaded.config.clawa.mainClawName) || 'Clawa'
@@ -157,104 +94,12 @@ export function resolveClawaPromptName(cwd: string): string {
   return matching[0]?.name ?? mainName
 }
 
-function buildToolsList(options: BuildSystemPromptOptions): string {
-  const tools = options.selectedTools || ['read', 'bash', 'edit', 'write']
-  const visibleTools = tools.filter((name) => Boolean(options.toolSnippets?.[name]))
-  return visibleTools.length > 0
-    ? visibleTools.map((name) => `- ${name}: ${options.toolSnippets?.[name]}`).join('\n')
-    : '(none)'
-}
-
-function buildGuidelines(options: BuildSystemPromptOptions): string {
-  const tools = options.selectedTools || ['read', 'bash', 'edit', 'write']
-  const guidelines: string[] = []
-  const seen = new Set<string>()
-  const add = (guideline: string) => {
-    const normalized = guideline.trim()
-    if (!normalized || seen.has(normalized)) return
-    seen.add(normalized)
-    guidelines.push(normalized)
-  }
-
-  if (
-    tools.includes('bash') &&
-    !tools.includes('grep') &&
-    !tools.includes('find') &&
-    !tools.includes('ls')
-  ) {
-    add('Use bash for file operations like ls, rg, find')
-  }
-
-  for (const guideline of options.promptGuidelines ?? []) {
-    add(guideline)
-  }
-
-  add('Be concise in your responses')
-  add('Show file paths clearly when working with files')
-  return guidelines.map((guideline) => `- ${guideline}`).join('\n')
-}
-
-function buildPiDefaultSystemPromptBase(
-  options: BuildSystemPromptOptions,
-  docsPaths: PiDocsPaths = DEFAULT_PI_DOCS_PATHS,
-): string {
-  return `${PI_DEFAULT_ASSISTANT_INTRO}
-
-Available tools:
-${buildToolsList(options)}
-
-In addition to the tools above, you may have access to other custom tools depending on the project.
-
-Guidelines:
-${buildGuidelines(options)}
-
-Pi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):
-- Main documentation: ${docsPaths.readmePath}
-- Additional docs: ${docsPaths.docsPath}
-- Examples: ${docsPaths.examplesPath} (extensions, custom tools, SDK)
-- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory
-- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md)
-- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing
-- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`
-}
-
-export function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
+function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
   if (!systemPrompt.startsWith(PI_DEFAULT_ASSISTANT_INTRO)) {
     return systemPrompt
   }
 
   return `${buildClawaPersonalAssistantIntro(clawaName)}${systemPrompt.slice(PI_DEFAULT_ASSISTANT_INTRO.length)}`
-}
-
-export function resolveClawaSystemPrompt(
-  systemPrompt: string,
-  options: BuildSystemPromptOptions,
-): { systemPrompt: string; ignoredCustomPrompt: boolean } {
-  const clawaName = resolveClawaPromptName(options.cwd)
-  const homeContextFiles = filterClawaHomeContextFiles(options.contextFiles, options.cwd)
-  const removedContextFiles = (options.contextFiles ?? []).filter(
-    (file) => !homeContextFiles.includes(file),
-  )
-  const selfContainedPrompt =
-    removedContextFiles.length > 0
-      ? replaceProjectContext(systemPrompt, options.contextFiles ?? [], homeContextFiles)
-      : systemPrompt
-
-  if (options.customPrompt && selfContainedPrompt.startsWith(options.customPrompt)) {
-    const suffix = selfContainedPrompt.slice(options.customPrompt.length)
-    return {
-      systemPrompt: replacePiDefaultAssistantIntro(
-        `${buildPiDefaultSystemPromptBase(options)}${suffix}`,
-        clawaName,
-      ),
-      ignoredCustomPrompt: true,
-    }
-  }
-
-  return {
-    systemPrompt: replacePiDefaultAssistantIntro(selfContainedPrompt, clawaName),
-    ignoredCustomPrompt: false,
-  }
 }
 
 function findCustomSystemPromptFiles(cwd: string, projectTrusted: boolean): string[] {
@@ -264,7 +109,7 @@ function findCustomSystemPromptFiles(cwd: string, projectTrusted: boolean): stri
     paths.push(projectPath)
   }
 
-  const globalPath = join(homedir(), '.pi', 'agent', 'SYSTEM.md')
+  const globalPath = join(getAgentDir(), 'SYSTEM.md')
   if (existsSync(globalPath)) {
     paths.push(globalPath)
   }
@@ -281,7 +126,7 @@ export function registerClawaSystemPrompt(pi: ExtensionAPI): void {
     const suffix = paths && paths.length > 0 ? ` Ignored: ${paths.join(', ')}` : ''
     pi.sendMessage({
       customType: 'claw-dim',
-      content: `Clawa is ignoring custom SYSTEM.md prompts and keeping Pi's default prompt with the Clawa personal-assistant intro. If you need extra custom instructions, move the compatible parts into this project's .pi/APPEND_SYSTEM.md instead.${suffix}`,
+      content: `Clawa is ignoring a full system-prompt replacement and keeping Pi's prompt with the Clawa identity. Put extra instructions in this home's .pi/APPEND_SYSTEM.md or contribute structured prompt sections from an extension.${suffix}`,
       display: true,
     })
   }
@@ -294,14 +139,20 @@ export function registerClawaSystemPrompt(pi: ExtensionAPI): void {
   })
 
   pi.on('before_agent_start', (event) => {
-    const result = resolveClawaSystemPrompt(event.systemPrompt, event.systemPromptOptions)
-    if (result.ignoredCustomPrompt) {
-      warn()
-    }
-    if (result.systemPrompt === event.systemPrompt) {
-      return undefined
-    }
+    const options = event.systemPromptOptions
+    if (options.customPrompt || options.forceSystemPrompt !== undefined) warn()
+    delete options.customPrompt
+    // An opaque earlier override bypasses contextFiles and cannot be home-filtered.
+    delete options.forceSystemPrompt
+    options.contextFiles = filterClawaHomeContextFiles(options.contextFiles, options.cwd)
 
-    return { systemPrompt: result.systemPrompt }
+    // Pi re-renders this getter from the edited options. Keep its tools, guidelines,
+    // docs and extension sections rather than maintaining a second prompt builder.
+    const systemPrompt = event.systemPrompt
+    const clawaPrompt = replacePiDefaultAssistantIntro(
+      systemPrompt,
+      resolveClawaPromptName(options.cwd),
+    )
+    return clawaPrompt === systemPrompt ? undefined : { systemPrompt: clawaPrompt }
   })
 }
