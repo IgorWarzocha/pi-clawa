@@ -6,6 +6,10 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-24
+
+Requires Pi **0.87.1 or newer**. No home-state migration is required.
+
 ### Added
 
 - Workers can opt into or out of provider Fast Mode independently with `fastMode`.
@@ -29,6 +33,10 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
   the configuration.
 - Discord replies retain the current message target when a Clawa uses tools before its final answer,
   instead of becoming standalone channel posts and leaving their source turns unsettled.
+
+### Known limitations
+
+- The optional Discord adapter remains WIP. Live join/leave delivery has not been verified.
 
 ## [0.2.0] - 2026-08-06
 
@@ -92,6 +100,7 @@ The first public release of pi-clawa.
 - Bootstrap protects existing homes rather than merging them. Any existing core home document
   blocks automatic setup.
 
-[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.3.0
 [0.2.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.2.0
 [0.1.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.1.0

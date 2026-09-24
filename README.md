@@ -48,7 +48,7 @@ Use Pi 0.87.1 or newer. Keep the package checkout separate from the clean folder
 the Clawa home. Tagged releases are the stable update channel.
 
 ```sh
-git clone --branch v0.2.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
+git clone --branch v0.3.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
 mkdir -p ~/clawa-home
 cd ~/clawa-home
 pi -e /absolute/path/to/pi-clawa
