@@ -1,5 +1,6 @@
 import {
   buildSessionContext,
+  type CustomMessageEntryDraft,
   type ExtensionAPI,
   type ExtensionContext,
 } from '@earendil-works/pi-coding-agent'
@@ -81,6 +82,18 @@ function hasMatchingActiveHydration(ctx: ExtensionContext, content: unknown): bo
   return activeMessages.some(
     (message) => isHydrationMessage(message) && JSON.stringify(message.content) === expected,
   )
+}
+
+export async function hydrationDraft(
+  ctx: ExtensionContext,
+  runtime: ClawaRuntimeState,
+): Promise<CustomMessageEntryDraft | undefined> {
+  await runtime.armHydration(ctx.cwd)
+  const warning = await refreshHydration(ctx.cwd, runtime)
+  if (warning && ctx.hasUI) ctx.ui.notify(`claw: ${warning}`, 'warning')
+  const message = buildHydrationMessage(runtime, ctx.model?.input.includes('image') === true)
+  if (!message) return
+  return { type: 'custom_message', ...message }
 }
 
 export function registerHydrationContext(pi: ExtensionAPI, runtime: ClawaRuntimeState): void {

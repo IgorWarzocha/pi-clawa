@@ -15,10 +15,10 @@ It keeps raw Pi underneath—your models, tools, extensions, sessions, and termi
 layer:
 
 - living identity and relationship documents;
-- shared memory and session recall;
+- shared Markdown memory, chat-local notes, and searchable Pi history;
 - long-lived specialist Clawas with internal coordination;
 - folder-based scheduled and manual Pulses;
-- an in-branch memory pass before Pi's native compaction boundary;
+- local context checkpoints and fresh windows, or opt-in Pi compaction;
 - an optional Discord adapter.
 
 The result stays open-ended. Add normal Pi packages and extensions when the home needs more.
@@ -34,9 +34,11 @@ Five living documents are rehydrated without accumulating duplicate context: `CL
 `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`. `AGENTS.md` remains the behavior spine. The main Clawa uses
 ordinary Pi sessions; specialists keep independent homes and sessions.
 
-Pi alone owns compaction. Near the boundary—90% of the active model window by default—Clawa gets one
-ordinary follow-up in the same branch to revisit recent shared memories and save only genuinely new
-or updated continuity. There is no detached compaction sidecar or competing history summary.
+Near 90% of the active model window by default, Clawa prompts a checkpoint in chat-local notes before
+starting a fresh window. No summary appears automatically. Choose `clawa.contextManagement: "pi"`
+to use Pi's usual compaction instead. Pi's `/compact` and overflow recovery remain available in
+local mode. Shared files live in `memory/`. The optional
+`/memory remember` command queues a separate memory pass when the session is idle.
 
 The [runtime reference](https://igorwarzocha.github.io/pi-clawa/docs/reference/runtime/) traces the
 full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/docs/reference/privacy/)
@@ -44,8 +46,9 @@ states the actual trust boundaries without pretending the extension is a sandbox
 
 ## Install
 
-Use Pi 0.87.1 or newer. Keep the package checkout separate from the clean folder that will become
-the Clawa home. Tagged releases are the stable update channel.
+Use Pi 0.87.1 or newer on Linux with `flock` available. The local memory toolkit uses Linux's
+no-follow file checks and process locks. Keep the package checkout separate from the clean folder
+that will become the Clawa home. Tagged releases are the stable update channel.
 
 ```sh
 git clone --branch v0.3.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
@@ -74,7 +77,8 @@ adapting an existing OpenClaw or Hermes home.
 - `/jump` — open or focus a specialist's named Herdr tab (or tmux window). The same session stays
   messageable and reporting while you type there.
 - `/pulse` — inspect Pulses or run one manually.
-- `remember` / `recall` — carry small raw memories and search recent session history.
+- `notes` / `history` — write chat checkpoints or shared memory and search earlier Pi windows.
+- `new_context` — start a fresh window after checkpointing; `/memory` shows status and queues consolidation.
 
 The wiki owns the detail:
 

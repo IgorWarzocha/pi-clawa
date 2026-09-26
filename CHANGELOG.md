@@ -6,8 +6,21 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
+### Added
+
+- Afreet-derived local notes, shared Markdown memory, searchable Pi history, and committed-memory
+  revisions. Local context windows checkpoint into notes instead of generating summaries; set
+  `clawa.contextManagement` to `"pi"` to retain normal Pi compaction.
+- `/memory remember` freezes a conversation, starts a fresh one, and queues a durable background
+  memory pass. `/memory` shows status and `/memory retry <id>` retries failures. The private memory
+  bot can edit only memory and living-document owners, with version checks on replacements; it has
+  no shell, network-action, bot, or Git tools.
+
 ### Changed
 
+- `notes` and `history` replace `remember` and `recall`. Existing `vault/` files move automatically
+  into `memory/` without overwriting conflicts. Legacy SQLite rows are imported exactly; the old
+  database stays unchanged as a retired source. The local toolkit requires Linux with `flock`.
 - The optional Discord adapter now connects each bot inside its own main or specialist Pi tab.
   `/discord` configures that home's token, intake, and connection; there is no required Discord
   worker, shared gateway process, route file, or `discordEnabled` worker flag. Replies use exact

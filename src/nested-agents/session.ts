@@ -58,6 +58,9 @@ export class NestedAgentsSession {
   }
 
   mergeRuntimeFromBranch(branchContext: Map<string, string>): void {
+    // A notes-only window drops earlier tool results without cutting the stored branch.
+    this.loadedAgents.clear()
+    this.loadedAgentsContent.clear()
     for (const agentsPath of this.ignoredAgents) this.loadedAgents.add(agentsPath)
     for (const [agentsPath, content] of branchContext.entries()) {
       this.loadedAgents.add(agentsPath)
@@ -66,6 +69,7 @@ export class NestedAgentsSession {
   }
 
   targetsForEvent(event: ToolResultLike): string[] {
+    if (event.toolName === 'notes') return contextToolTargets(event.details)
     const shellInput = getShellInput(event)
     if (!shouldInspectEvent(event, shellInput)) return []
     if (event.toolName === 'read') return readTargets(event, this.currentCwd)
@@ -120,6 +124,13 @@ export class NestedAgentsSession {
 
     return { appendixFiles, failedFiles, loadedNow, persistedFiles }
   }
+}
+
+function contextToolTargets(details: unknown): string[] {
+  if (!details || typeof details !== 'object' || !('contextPaths' in details)) return []
+  return Array.isArray(details.contextPaths)
+    ? details.contextPaths.filter((path): path is string => typeof path === 'string')
+    : []
 }
 
 function getShellInput(event: ToolResultLike): string | undefined {

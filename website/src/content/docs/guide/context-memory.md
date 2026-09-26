@@ -1,75 +1,48 @@
 ---
 title: Context, memory, and continuity
-description: See where current context, raw memory, recall, and compaction each belong.
+description: Find what belongs in the current window, private notes, shared memory, and history.
 section: Core concepts
 order: 40
 ---
 
-Clawa has four continuity mechanisms. They overlap just enough to hand work from one timescale to
-another, but they are not interchangeable.
+Clawa keeps its living documents in the home. At session start, a bounded snapshot of `CLAW.md`,
+`HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md` joins the Pi branch. This is the current shape,
+not a dump of everything the house knows.
 
-## Hydration: the current shape
+## Notes, memory, and history
 
-At session start, Clawa builds one hidden hydration message from five living files and persists it in
-the branch without triggering a turn. After Pi compacts, Clawa refreshes that message only when the
-same payload is no longer active. Provider continuation and native compaction therefore see the same
-model-visible history rather than a separate extension-only overlay.
+`notes` defaults to `scope: "notes"`: private Markdown checkpoints for this chat and agent under
+`.pi/context/notes/`. Use `scope: "memory"` for files shared by all Clawas under `memory/`. List,
+read, search, append, or write files. Keep shaped knowledge in those files and update the nearest
+existing owner rather than creating duplicate pages. `memory/index.md` is the front door.
 
-Limits are intentionally hard:
+`history` reads Pi's canonical JSONL sessions through the house catalog at `.pi/context/chats/`.
+Search prior windows, chats, and tools only when needed. It can also inspect committed revisions of
+shared memory. The catalog is not a second transcript database and a write does not automatically
+create a Git commit.
 
-- 8,000 characters per file;
-- 24,000 characters across the block;
-- only `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`;
-- an optional bounded `CLAWA` image.
+`memory/legacy/` holds Markdown files containing exact JSON objects with `id`, `ts`, `text`, and original
+`tags` from the old SQLite memory database. Clawa imports existing rows on startup. It leaves the database intact as a
+retired source and never creates one when none existed. Promote useful legacy material into shaped
+pages instead of editing the imports. A row larger than the shared file limit stops import visibly
+without truncating or changing the source database.
 
-Hydration is a snapshot of shaped truth. It does not inject the SQLite memory database.
+## A fresh window
 
-## `remember`: small raw memory
+The default `clawa.contextManagement: "local"` mode disables Pi's automatic threshold compaction
+and checks context after completed tools and at settlement. Near 90% of the active model's context
+it prompts a checkpoint. Save what the next window needs into notes, then call `new_context`. The new window
+has no automatic summary; use notes and history to regain bearings. Failed or cancelled work does not
+silently turn into a summary. `/memory` shows status. `/memory remember` queues a separate idle memory
+pass; `/memory retry <jobId>` retries a failed job. The memory bot uses a fresh private Pi session.
+It can edit only shared memory and the living-document owners, and leaves changes uncommitted.
+“Remembered” means that run finished successfully, not that a model's judgment was independently verified.
 
-The `remember` tool creates, updates, and deletes short notes in `.pi/clawa-memory.sqlite`. The
-database is shared by the main Clawa and workers through the project root.
+Local rollover uses a native Pi boundary without a model-written summary and keeps the old JSONL
+history. Pi's `/compact` and overflow recovery remain available as fallbacks. Choose
+`clawa.contextManagement: "pi"` for Pi's usual compaction instead of Clawa's local rollover.
+Notes, shared memory, and history work in either mode.
 
-Memories have numeric IDs and up to 12 normalized tags. Passing an ID updates that memory; passing
-an ID with empty text deletes it. The tool is meant for texture and sparks that matter but do not yet
-deserve a living-document edit.
-
-## `recall`: explicit search
-
-`recall` searches both shared SQLite memory and up to five recent Pi session files discovered for the
-current Clawa. It returns memory IDs for edits and file/line anchors for session matches. Recent
-no-query memory recall takes a direct bounded database path; session files are streamed and only the
-strongest bounded result set is retained. Session search skips tool calls and tool results, which
-reduces noise and avoids treating command output as remembered human intent.
-
-Recall is normally explicit, not ambient. The model should search when prior preference or a decision
-may matter, not on every turn. The one lifecycle exception is the deliberate memory pass near
-compaction. During first-run onboarding recall is specifically discouraged unless you ask or the
-session is resuming after compaction.
-
-## Memory pass and compaction
-
-Pi's configured default, custom, or provider-native compactor carries the canonical session branch.
-Clawa does not replace or merge that result. Pi cannot compose competing compaction summaries, so
-there is one history owner rather than two summaries racing by extension load order.
-
-Near that boundary, Clawa can run one ordinary in-branch memory pass at 90% of the active model's
-context window. Before a successful run settles, a hidden continuation asks the resident Clawa to
-recall its five latest shared memories, update any whose truth has changed, and remember at most
-five genuinely new pieces from the current run. Routine completion, temporary work, and truth
-already owned by living documents should not be stored again. Zero new memories is a good result
-when nothing deserves promotion.
-
-The pass uses the current session, model, tools, and provider continuation. It is not a detached
-sidecar and does not stage a competing compaction result. It fires once per compaction cycle and
-rearms after Pi compacts or a new session starts. Cancelled or failed runs do not trigger it.
-Pi alone decides when and how compaction happens, including during long runs before the pass can start.
-
-## The practical hierarchy
-
-1. **Session history** holds the detailed current branch.
-2. **Pi's compaction boundary** keeps that branch usable when context grows.
-3. **Raw memory** carries small facts and sparks across the crew.
-4. **Living files and vault pages** hold shaped, durable understanding.
-
-Do not copy everything upward. A transcript is not a memory, and a memory is not automatically an
-identity rule.
+The practical rule is simple: current work stays in the window, checkpoints in private notes,
+reusable knowledge in shared memory or living documents, and older conversations in history. Do not
+turn transcripts into shared memory wholesale.

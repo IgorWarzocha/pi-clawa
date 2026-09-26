@@ -23,19 +23,19 @@ These files have different jobs so one giant memory document does not become a m
 When a raw remembered note becomes settled truth, shape it into the owning file rather than keeping
 both copies forever.
 
-## The shared vault
+## Shared memory
 
-`vault/` is the house's second brain: compiled, reusable knowledge that would be costly or ambiguous
-to rebuild. Its `index.md` is the front door. `vault/AGENTS.md` keeps the rules local to the vault.
+`memory/` is the house's second brain: compiled, reusable knowledge that would be costly or ambiguous
+to rebuild. Its `index.md` is the front door. `memory/AGENTS.md` keeps the rules local to memory.
 
-The vault is not a dump for transcripts, search results, or generic facts. One concept should own the
+Shared memory is not a dump for transcripts, search results, or generic facts. One concept should own the
 truth; related pages link to it. The bundled `clawa-vault` skill gives the Clawa the operating pattern
 for finding, integrating, and reorganizing this knowledge.
 
 ## Tiny local instructions
 
 Nested `AGENTS.md` files carry durable context for one directory: a pulse's habits, a worker's lane,
-or a vault area's sharp edges. Clawa does not eagerly inject the whole tree. After successful shell or
+or a memory area's sharp edges. Clawa does not eagerly inject the whole tree. After successful shell or
 file activity touches a path, it discovers relevant nested instructions and appends them to that tool
 result. This keeps the opening context bounded while still loading local rules before deeper work.
 

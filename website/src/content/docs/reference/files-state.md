@@ -14,7 +14,7 @@ Paths below are relative to the main home unless noted.
 | `AGENTS.md` | Main behavior spine. |
 | `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, `TOOLS.md` | Hydrated living documents. |
 | `CLAWA.<image>` | Optional visual identity card. |
-| `vault/` | Shared shaped knowledge. |
+| `memory/` | Shared shaped knowledge and imported legacy memories. |
 | `pulses/<id>/PULSE.md` | Main Pulse definitions. |
 | `clawas/<id>/` | Default specialist homes, including their own Pulses and local files. |
 
@@ -26,7 +26,10 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | --- | --- |
 | `.pi/settings.json` | Pi package and project settings. |
 | `.pi/claw.jsonc` | Bootstrap flag, worker definitions, naming, sockets, and memory-pass settings. |
-| `.pi/clawa-memory.sqlite` | Shared raw memory database. |
+| `.pi/context/notes/` | Private chat and agent checkpoints. |
+| `.pi/context/chats/` | House catalog pointing to canonical Pi JSONL sessions. |
+| `.pi/context/consolidation.sqlite` | Background memory job queue. |
+| `.pi/clawa-memory.sqlite` | Retired legacy database, retained read-only if it existed. |
 | `.pi/pulses.json` | First-seen, last-run, due-key, and deferral state per Pulse. |
 | `.pi/clawas/session-registry.json` | Worker session history and terminal location records. |
 | `<worker-home>/.pi/sessions/` | Each worker's Pi session history. |
@@ -47,7 +50,7 @@ all owning processes stop. Do not delete them under a live main or worker sessio
 
 ## What to back up
 
-Back up living documents, vault, worker homes, config, memory, and any Pulse/Discord state you care
+Back up living documents, memory, private notes, worker homes, config, and any Pulse/Discord state you care
 about. Pending Discord turns and rich action tokens live only in memory; the archive remains across
 disconnects. Sockets, caches, and generated channel snapshots are usually recreatable.
 Session histories are valuable when continuity matters; inspect Pi's actual session paths first.

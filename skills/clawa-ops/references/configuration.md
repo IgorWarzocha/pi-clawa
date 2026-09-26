@@ -35,6 +35,7 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
     "controlSocketDir": "clawas-control",
+    "contextManagement": "local",
     "memoryPass": {
       "enabled": true,
       "triggerPercent": 90
@@ -100,14 +101,15 @@ The `clawa` object controls names and runtime directories shared by the home:
 - `workerSessionPrefix` — prefix for worker sessions.
 - `controlPlaneDir` — project-local control-plane state directory.
 - `controlSocketDir` — logical socket directory name; the runtime resolves collision-safe sockets under the system runtime directory.
-- `memoryPass.enabled` — let Clawa tend shared memory once before Pi compacts; defaults to `true`.
-- `memoryPass.triggerPercent` — active-model context percentage that starts the memory pass; defaults to `90` and must be an integer from 1 to 99.
+- `contextManagement` — `"local"` for checkpoints and fresh windows, or `"pi"` for native Pi compaction; defaults to `"local"`.
+- `memoryPass.enabled` — enable the context threshold reminder; defaults to `true`.
+- `memoryPass.triggerPercent` — active-model context percentage that starts the reminder; defaults to `90` and must be an integer from 1 to 99.
 
 Keep defaults unless the home deliberately uses another naming or control-plane shape.
 Worker session history and terminal handles live together in `.pi/clawas/session-registry.json` by
 default. Tab location is runtime state, not another configuration field.
 
-The threshold follows each active model's own context window. It is not a universal token count. At the threshold, Clawa gets one warm turn on the same branch: recall the latest shared memories, update what has genuinely changed, and remember only new texture worth carrying. The pass may save nothing. Pi remains the sole owner of compaction threshold, overflow recovery, retries, and canonical session continuity. The memory pass rearms after Pi compacts or a new session starts.
+The threshold follows each active model's own context window. It is not a universal token count. `clawa.contextManagement` defaults to `"local"`: checkpoint useful continuity in private `notes`, then call `new_context` for a fresh window without an automatic summary. The native boundary retains Pi JSONL; `/compact` and overflow recovery remain fallbacks. Set `"pi"` for Pi's usual compaction while retaining shared notes and history. `/memory remember` queues a separate idle consolidation; `/memory retry <jobId>` retries a failed job.
 
 ## Project Pi settings
 

@@ -12,6 +12,7 @@ Clawa's home.
 ## What you need
 
 - Git.
+- Linux with `flock` available; local memory uses Linux no-follow file checks and process locks.
 - Node.js **24.15 or newer, but lower than 27**.
 - [Pi](https://github.com/earendil-works/pi) **0.87.1 or newer**, with a configured model provider.
 - A clean folder for the home. [First run](../first-run/) explains the exact bootstrap boundary.

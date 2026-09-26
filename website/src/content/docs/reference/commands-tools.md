@@ -18,35 +18,45 @@ order: 100
 | `/steer <slot\|worker> <message>` | Target a worker by monitor slot, ID, or title. |
 | `/jump [slot\|worker]` | Open or focus a worker's named Herdr tab or tmux window. |
 | `/discord` | Optional adapter: configure and connect this home's bot in its Pi tab. |
+| `/memory` | Show memory and context status. |
+| `/memory remember` | Queue a separate, idle memory consolidation. |
+| `/memory retry <jobId>` | Retry a failed consolidation job. |
 
-Pi's own commands—including `/compact`, `/model`, `/resume`, and `/reload`—remain available.
-Clawa customizes their surrounding lifecycle rather than replacing Pi's command system.
+Pi's `/compact` remains available in both context modes, along with `/model`, `/resume`, and
+`/reload`. Pi's overflow recovery remains a fallback in local mode.
 
 ## Model-facing tools
 
-### `remember`
+### `notes`
 
-Creates a memory with `text` and optional `tags`; updates when `id` is present; deletes when an `id`
-is paired with empty text. Tags are normalized, deduplicated, and capped at 12.
+List, read, search, append, or write Markdown notes. The default `scope: "notes"` belongs to this
+chat and agent; other Clawas can address it by ID. Set `scope: "memory"` for the house's shared
+`memory/` tree. Search before writing and preserve links and local instructions.
 
-### `recall`
+Reads return `file.version`. Pass it as `expected_version` when replacing content, or pass `null`
+to create only if absent. A conflict leaves the newer file intact for rereading and merging.
+Omitting the version deliberately performs an unconditional write; background consolidation never
+uses that shortcut. Appends are serialized across Clawas.
 
-Searches shared memory and the current Clawa's recent session history. Accepts an optional text `query`,
-memory `tags`, and result `limit`. Tags do not filter session results. Tool calls and tool results are
-excluded from session search. Omitting the query returns recent entries; the pre-compaction memory
-pass uses `limit: 5` to compare against recent shared memory before saving anything new.
+### `history`
+
+List windows, items, chats, or revisions; read an item or revision; search past content. Session
+history comes from Pi's JSONL rather than a copied transcript database. Revisions read committed
+shared memory and depend on Git availability.
+
+### `new_context`
+
+Start a fresh context window after checkpointing useful state. It does not automatically summarize.
 
 ### `message_clawa`
 
 Main-only coordination route to a worker by ID or title. It refreshes config, opens a stopped worker
-tab if needed, and sends a reply-requested steer.
-Success returns only a named receipt—`Research Clawa received the note.` It does not repeat the
-outgoing note in the tool result.
+tab if needed, and sends a reply-requested steer. Success returns a named receipt rather than
+repeating the outgoing note.
 
 ### `message_main_claw`
 
-Worker-only internal handoff to the main Clawa. Duplicate status relays in one turn are
-suppressed.
+Worker-only internal handoff to the main Clawa. Duplicate status relays in one turn are suppressed.
 
 ### `discord_send`
 
@@ -56,7 +66,7 @@ Unmarked text stays in Pi.
 
 ### `discord_history`
 
-Searches the current home's local Discord history. It does not replace core `recall` or `remember`.
+Searches the current home's local Discord history. It does not replace house `history`.
 
 ## Keyboard shortcuts
 

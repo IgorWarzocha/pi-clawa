@@ -20,7 +20,13 @@ git checkout v0.3.0
 ```
 
 Start the home again with `pi -c`. Clawa reads existing `.pi/claw.jsonc` and living documents. It
-does not recopy the template over a bootstrapped home.
+does not recopy the template over a bootstrapped home. On the Afreet memory upgrade, startup moves
+an existing `vault/` tree into `memory/`, merging byte-identical files and stopping on any different
+target collision. It does not rewrite custom living documents. An existing
+`.pi/clawa-memory.sqlite` is opened read-only and exported as Markdown files containing exact JSON
+rows in `memory/legacy/`. A row too large for the shared file reader stops migration visibly.
+The old database stays in place as a retired source. If migration stops on a collision, inspect
+both paths before restarting. Nothing overwrites the conflicting target.
 
 When moving from 0.3 to the native-tab version, stop the old main Pi session before starting the
 new version. That shuts down the old managed RPC workers. Session history stays in place; the new

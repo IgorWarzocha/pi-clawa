@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
 import { findRepoRoot, markClawEnvironmentBootstrapped } from '../config.js'
+import { migrateMemory } from '../context-management/migration.js'
 import { copyTemplateFiles, findExistingCoreMarkdownFiles } from '../template-files.js'
 import { mainTemplatesDir } from './constants.js'
 import type { ClawaRuntimeState } from './runtime-state.js'
@@ -11,6 +12,8 @@ export async function bootstrapMainHome(cwd: string, runtime: ClawaRuntimeState)
     return { kind: 'blocked' as const, conflicts }
   }
 
+  // Existing knowledge wins over starter indexes, including a pre-bootstrap vault.
+  await migrateMemory(findRepoRoot(cwd), new AbortController().signal)
   const copied = await copyTemplateFiles(mainTemplatesDir, cwd)
   const marked = markClawEnvironmentBootstrapped(findRepoRoot(cwd))
   runtime.markBootstrapped(cwd)

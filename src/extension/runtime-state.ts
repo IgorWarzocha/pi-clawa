@@ -33,7 +33,8 @@ export class ClawaRuntimeState {
       this.hydrationImage = undefined
     }
     if (!this.bootstrappedKnown) {
-      this.bootstrapped = loadClawEnvironmentConfig(findRepoRoot(cwd)).config.bootstrapped === true
+      const homeRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || findRepoRoot(cwd)
+      this.bootstrapped = loadClawEnvironmentConfig(homeRoot).config.bootstrapped === true
       this.bootstrappedKnown = true
     }
     return this.bootstrapped

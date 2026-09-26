@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure workers, naming, and the memory pass in .pi/claw.jsonc.
+description: Configure workers, naming, and context management in .pi/claw.jsonc.
 section: Reference
 order: 110
 ---
@@ -39,6 +39,7 @@ Clawa config.
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
     "controlSocketDir": "clawas-control",
+    "contextManagement": "local",
     "memoryPass": {
       "enabled": true,
       "triggerPercent": 90
@@ -73,20 +74,22 @@ Malformed worker arrays, duplicate IDs, missing IDs/cwds, and invalid worker or 
 throw visible config errors. Optional fields may be omitted, but a present boolean, thinking level,
 report mode, or extension list must have the documented type.
 
-## Memory pass
+## Context management
 
 `memoryPass.enabled` defaults to `true`. `triggerPercent` defaults to `90` and must be an integer from
 1 to 99. The percentage follows the active model's own context window rather than a fixed token
 count.
 
-At the threshold, Clawa receives one hidden follow-up in the active branch. It revisits up to five
-recent shared memories, updates an existing memory when the truth changed, and adds only new material
-worth carrying. Saving fewer than five—or nothing—is valid. The pass rearms after Pi compacts or a
-new session starts.
+`clawa.contextManagement` defaults to `"local"`. After completed tools and at settlement, the
+local mode checks the threshold, cancels Pi's automatic threshold compaction, and reminds Clawa
+to checkpoint useful state into chat notes before starting a fresh window with `new_context`.
+There is no automatic summary. Local rollover uses a native Pi boundary, and Pi's `/compact` and
+overflow recovery remain available. `"pi"` keeps Pi's usual compaction instead. Shared notes and
+history remain available. The optional `/memory remember` command queues a separate consolidation
+job at idle; `/memory retry <jobId>` retries a failed job.
 
-Pi remains the sole owner of automatic, manual, overflow, custom, and provider-native compaction.
-Legacy `clawa.compaction` settings are ignored; they do not restore Clawa-owned compaction or the old
-detached sidecar.
+In `"pi"` mode, Pi remains the sole owner of native compaction and overflow recovery. Legacy
+`clawa.compaction` settings are ignored.
 
 ## Pi project settings
 

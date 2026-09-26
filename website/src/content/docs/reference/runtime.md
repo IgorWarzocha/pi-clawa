@@ -17,10 +17,11 @@ On every startup, reload, new session, resume, or fork, the extension:
 2. resolves defaults and synchronizes the process environment;
 3. names worker sessions when running in worker role;
 4. performs protective bootstrap when needed;
-5. starts a per-session local comms socket;
-6. refreshes and persists the current home snapshot as a hidden session message;
-7. attaches Clawas and the Pulse timer in a UI-bearing main session;
-8. queues invisible conversational onboarding after the first successful bootstrap.
+5. migrates an existing `vault/` into shared `memory/` and imports legacy SQLite rows without deleting the database;
+6. starts a per-session local comms socket;
+7. refreshes and persists the current home snapshot as a hidden session message;
+8. attaches Clawas and the Pulse timer in a UI-bearing main session;
+9. queues invisible conversational onboarding after the first successful bootstrap.
 
 `session_shutdown` drains the current comms alias maintenance and Pulse work. Worker tabs remain
 open after main quits or reloads.
@@ -47,24 +48,23 @@ model's actual context aligned.
 Nested `AGENTS.md` context remains separate. It arrives progressively through relevant read and
 discovery tool results as work reaches governed paths.
 
-## Settlement and compaction
+## Context threshold and compaction
 
-Before a successful run settles, Clawa checks usage against the active model's context window.
-At the configured memory-pass threshold, 90% by default, the `agent_before_settle` hook appends one
-hidden instruction and requests a continuation on the same branch. Aborted and failed runs do not
-start a memory pass. The model uses `recall` and `remember` normally, with explicit guidance to
-update rather than duplicate and to save nothing when no durable signal emerged.
-
-That follow-up does not compact or call a detached model. Pi's configured default, custom, or
-provider-native compactor remains the sole owner of canonical history, threshold, retries, overflow
-recovery, and summary shape. The memory pass rearms after `session_compact` or `session_start`.
-Pi also owns provider overflow recognition. The memory pass does not delay compaction, which can
-happen during a long tool run before the settlement hook is reached.
+Local mode checks usage after completed tool calls and before a successful run settles. It disables
+Pi's automatic threshold compaction. At the configured threshold, 90% by default, it reminds
+the resident Clawa to checkpoint useful state with `notes` before calling `new_context`.
+That native Pi boundary retains the JSONL history without a model-written summary. Manual
+`/compact` and Pi's overflow recovery remain available. `clawa.contextManagement: "pi"` leaves
+Pi's usual threshold compaction active instead. `/memory remember` queues a separate idle
+consolidation in a fresh private Pi session without live extensions. That session has only a bounded
+memory-file tool for shared memory and the five living-document owners, not shell, network, bot, or
+Git tools. It leaves changes uncommitted. Queued jobs survive restart; interrupted work requeues,
+while ordinary failures stay visible for explicit retry.
 
 ## Main and worker roles
 
-`PI_CLAWAS_ROLE=worker` fixes the worker role at module load. Workers receive memory/recall,
-hydration, prompt shaping, the memory pass, comms, and private reporting, but not the main monitor,
+`PI_CLAWAS_ROLE=worker` fixes the worker role at module load. Workers receive notes and history,
+hydration, prompt shaping, context management, comms, and private reporting, but not the main monitor,
 `/steer`, `/jump`, or Pulse GUI.
 
 Workers are ordinary Pi sessions, each in a named Herdr tab or tmux window. The main runtime opens or

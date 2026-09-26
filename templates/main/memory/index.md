@@ -1,4 +1,4 @@
-# Vault
+# Memory
 
 The house's shared second brain: durable knowledge worth finding, linking, and improving.
 

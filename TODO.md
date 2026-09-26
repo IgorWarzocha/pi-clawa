@@ -11,7 +11,7 @@ Do not start clean-room/end-to-end testing until the feature set below is ready 
 - Own the taste/home layer: living docs, nested context, companion memory, Clawas lanes, and optional surfaces.
 - Keep the low-bloat test as few concepts, not just few files.
 - Clawas are created for real specialized lanes; no default generic worker.
-- Memory should first preserve human texture and curiosity sparks, with shaped truth in docs and raw/simple capture in SQLite.
+- Memory should first preserve human texture and curiosity sparks, with shaped truth in living docs and shared `memory/`.
 - Discord is a core surface, not a toy; DMs and free safe/on-brand posting matter.
 - Heartbeat is gone; Pulse is the Clawa-native scheduled/ambient wake layer.
 
@@ -71,14 +71,14 @@ Status: usable and stricter; remaining work is mostly UX polish from real use.
 - [x] `/steer` targets active/numbered/named claw
 - [x] `/jump` opens active/numbered/named claw
 - [x] `/claw` remains management console
-- [x] custom compaction extracts continuity + durable memories
+- [x] keep local checkpoints separate from Pi's native compaction
 - [x] hydration loads main continuity markdowns
 - [ ] simplify `/claw` remaining screens/actions if real use keeps exposing awkwardness
 - [x] remove or retire parked `/clawas` command code if unused
 - [x] repeated `/jump` and `/claw` recovery tested in playground
-- [x] use shared home SQLite memory at `.pi/clawa-memory.sqlite`
+- [x] retire shared home SQLite memory in favor of `memory/` and chat notes
 - [x] store subclaw Pi sessions in each subclaw home under `.pi/sessions`
-- [x] sharpen the memory loop: notice → store raw/simple memory → promote shaped truth into living docs → recall later
+- [x] sharpen the memory loop: notice → checkpoint privately → promote shaped truth into living docs or shared memory → search later
 - [x] make memory guidance prioritize human texture and curiosity sparks before project bookkeeping
 - [ ] consider Clawa rename/folder/config alignment after a seed grows into a better name
 
@@ -154,7 +154,7 @@ Test once, in this order:
 10. verify `/steer`
 11. verify `/jump`
 12. verify `/claw` management actions
-13. verify compaction writes memory
+13. verify local checkpoint and fresh window preserve useful continuity without an automatic summary
 14. install Discord adapter
 15. run `/discord` setup without token
 16. save fake token/channel and verify config writes only
@@ -217,18 +217,9 @@ Do not block first clean-room test unless we decide work tracking is part of fir
 
 ## Memory tools
 
-Status: first write/read lane exists.
-
-Shared home memory lives at `.pi/clawa-memory.sqlite` for all Clawas.
-
-- [x] `remember` tool creates a short memory and returns its id
-- [x] `remember` with `id` overwrites that memory
-- [x] `remember` with `id` and empty text deletes that memory
-- [x] `recall` searches shared memory plus only the current Clawa's own session file(s)
-- [x] session recall skips tool calls and tool results
-- [x] session recall returns file, line, and entry id anchors for deeper manual reads
-- [x] decide how memories are promoted into `HUMAN.md`, `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, or `AGENTS.md`
-
-Promotion rule: `remember` is quick/raw capture; living docs are shaped truth. Promote by editing the relevant doc when a recalled memory repeats, still matters, or should shape future behavior.
-
-Keep the schema small until recall proves what access patterns matter.
+Shared knowledge lives in `memory/`; chat checkpoints live in `.pi/context/notes/`.
+`notes` writes and searches both scopes. `history` reads canonical Pi JSONL through the house catalog
+and committed memory revisions. `new_context` starts a fresh window after a checkpoint.
+`/memory remember` queues a separate consolidation, and `/memory retry <jobId>` handles failed jobs.
+Existing `vault/` files migrate automatically without overwriting collisions. The old SQLite
+database is retained as a read-only source after exact row export into `memory/legacy/`.

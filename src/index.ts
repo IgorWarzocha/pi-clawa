@@ -8,6 +8,7 @@ import {
 } from './clawas/steer-command.js'
 import { registerClawasTools } from './clawas/tool-surface.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
+import { registerContextManagement } from './context-management/index.js'
 import { registerClawCommand } from './extension/claw-command.js'
 import { extensionPath, IS_CLAWAS_WORKER } from './extension/constants.js'
 import { getWorkerAlias } from './extension/environment.js'
@@ -15,12 +16,9 @@ import { registerHydrationContext } from './extension/hydration-context.js'
 import { registerClawaRenderers } from './extension/renderers.js'
 import { ClawaRuntimeState } from './extension/runtime-state.js'
 import { registerClawaSessionEvents } from './extension/session-events.js'
-import { registerRememberTool } from './memory.js'
-import { registerMemoryPass } from './memory-pass.js'
 import { registerNestedAgentsAutoload } from './nested-agents.js'
 import { registerPulseCommand } from './pulses/command.js'
 import { PulseRuntime } from './pulses/runtime.js'
-import { registerRecallTool } from './recall.js'
 import { registerClawaSystemPrompt } from './system-prompt.js'
 
 process.env['PI_CLAW_EXTENSION_PATH'] = extensionPath
@@ -38,9 +36,6 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   }
 
   registerClawasTools(pi, clawasRuntime)
-  registerRememberTool(pi)
-  registerRecallTool(pi)
-  registerMemoryPass(pi, () => currentClawaDefaults.memoryPass)
   registerClawaSystemPrompt(pi)
   registerNestedAgentsAutoload(pi)
   registerClawaRenderers(pi, () => currentClawaDefaults)
@@ -55,5 +50,6 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
   registerClawaSessionEvents(pi, { runtime, clawasRuntime, pulseRuntime, commsServer, setDefaults })
   // Session setup/bootstrap arms hydration before this later handler persists it.
   registerHydrationContext(pi, runtime)
+  registerContextManagement(pi, runtime)
   registerClawCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
 }

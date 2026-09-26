@@ -31,9 +31,9 @@ When the human says onboarding is done, acknowledge it, give or confirm that sho
 - run Pi inside a persistent terminal environment such as herdr, tmux, or similar
 - use an always-on machine if pulses, Discord, or ambient behavior should keep running
 - treat this home as one continuous Pi session/branch; after stopping, resume with `pi -c` rather than starting fresh
-- start a new session only when something is badly wedged, or when compaction/context has grown so large that continuing the same branch is hurting the session
+- start a new session only when something is badly wedged; use a checkpoint and fresh context window when the current one grows crowded
 
-Then suggest they run `/compact` before continuing so the fresh home shape is carried forward.
+Then suggest a checkpoint in notes followed by `new_context` before continuing. If Pi compaction mode is selected, suggest `/compact` instead.
 
 When updating docs during onboarding, keep the starter placeholders until there is a real answer. Do not replace them with `unknown`, `not confirmed`, or similar filler; future-me needs to see what the placeholder was asking for.
 

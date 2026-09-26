@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { ContextUsage } from '@earendil-works/pi-coding-agent'
-import { MemoryPass, shouldRequestMemoryPass } from '../src/memory-pass.js'
+import { MemoryPass, shouldRequestMemoryPass } from '../src/context-management/memory-pass.js'
 
 const CONFIG = { enabled: true, triggerPercent: 90 }
 

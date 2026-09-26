@@ -29,7 +29,7 @@ falls back to bootstrap rather than opening the GUI.
 
 ## What appears
 
-The main template creates the living documents above, a shared `vault/`, and starter Pulses under
+The main template creates the living documents above, shared `memory/`, and starter Pulses under
 `pulses/`. Runtime state then appears under `.pi/` as features are used.
 
 The first conversation calibrates a small set of things:

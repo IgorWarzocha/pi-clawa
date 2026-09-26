@@ -42,8 +42,8 @@ export function collectBranchContext(
   ignoredAgents: Set<string>,
 ): Map<string, string> {
   const out = new Map<string, string>()
-  const branchEntries = ctx.sessionManager.getBranch()
-  for (const entry of branchEntries) {
+  const projectedEntries = ctx.sessionManager.buildSessionProjection().entries
+  for (const { sourceEntry: entry } of projectedEntries) {
     if (!isMessageEntry(entry)) continue
     const persisted = parsePersistedContextDetails(entry.message.details)
     if (!persisted) continue

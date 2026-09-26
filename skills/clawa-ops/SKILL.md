@@ -14,6 +14,8 @@ Operate a Clawa home through readable files, native runtime paths, and real conv
 - `references/pulses.md` — create, edit, disable, run, or review pulses.
 - `references/import-openclaw-hermes.md` — adapt an existing OpenClaw or Hermes home without copying its runtime wholesale.
 
+Shared house knowledge lives in `memory/`. Per-chat checkpoints belong to `notes` with default scope; `history` reads earlier Pi windows. Use `new_context` only after a checkpoint. Existing `vault/` and `.pi/clawa-memory.sqlite` migrate automatically on startup; a collision is a blocker to resolve, not a reason to overwrite a home file.
+
 Read only the references needed for the requested operation. For a mixed migration or structural repair, read every reference that owns a file you will touch.
 
 ## Workflow

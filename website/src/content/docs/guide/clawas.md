@@ -19,7 +19,7 @@ Open `/claw` and use the creation flow, or give `/claw` a purpose in text. Creat
 4. adds the worker to `.pi/claw.jsonc` and the crew map;
 5. best-effort starts or refreshes the worker.
 
-The worker's local `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, nested instructions, vault work, and session
+The worker's local `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, nested instructions, shared memory work, and session
 history can diverge around its lane. Shared human and crew files keep handoffs grounded.
 
 ## Worker tabs

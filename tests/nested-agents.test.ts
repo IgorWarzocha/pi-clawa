@@ -47,3 +47,33 @@ test('pulse context cannot load the shared pulses root instructions', async () =
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('shared memory instructions can return after rollover drops their old tool result', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-memory-nested-'))
+  try {
+    const target = join(root, 'memory', 'topic.md')
+    const policy = join(root, 'memory', 'AGENTS.md')
+    await mkdir(join(root, '.git'))
+    await mkdir(join(root, 'memory'))
+    await writeFile(policy, 'Keep uncertainty visible')
+    const session = new NestedAgentsSession()
+    session.reset(root)
+    assert.deepEqual(
+      session.targetsForEvent({
+        toolName: 'notes',
+        input: {},
+        content: [],
+        isError: false,
+        details: { contextPaths: [target] },
+      }),
+      [target],
+    )
+    assert.deepEqual(session.agentsForTargets([target]), [policy])
+    session.mergeRuntimeFromBranch(new Map([[policy, 'Keep uncertainty visible']]))
+    assert.ok(session.loadedAgents.has(policy))
+    session.mergeRuntimeFromBranch(new Map())
+    assert.equal(session.loadedAgents.has(policy), false)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

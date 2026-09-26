@@ -42,6 +42,7 @@ export interface ClawaDefaults {
   workerSessionPrefix: string
   controlPlaneDir: string
   controlSocketDir: string
+  contextManagement: 'local' | 'pi'
   memoryPass: ClawaMemoryPassConfig
 }
 
@@ -66,6 +67,7 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
   workerSessionPrefix: 'Clawas',
   controlPlaneDir: 'clawas',
   controlSocketDir: 'clawas-control',
+  contextManagement: 'local',
   memoryPass: DEFAULT_CLAWA_MEMORY_PASS_CONFIG,
 }
 
@@ -195,6 +197,14 @@ function normalizeMemoryPassConfig(input: unknown): ClawaMemoryPassConfig {
   }
 }
 
+function normalizeContextManagement(input: unknown): ClawaDefaults['contextManagement'] {
+  const mode = input ?? DEFAULT_CLAWA_DEFAULTS.contextManagement
+  if (mode !== 'local' && mode !== 'pi') {
+    throw new Error('.pi/claw.jsonc clawa.contextManagement must be local or pi')
+  }
+  return mode
+}
+
 function clampClawaDefaults(input: unknown): ClawaDefaults {
   if (!input || typeof input !== 'object') {
     return DEFAULT_CLAWA_DEFAULTS
@@ -227,6 +237,7 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
       typeof rec['controlSocketDir'] === 'string' && rec['controlSocketDir'].trim()
         ? rec['controlSocketDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
+    contextManagement: normalizeContextManagement(rec['contextManagement']),
     memoryPass: normalizeMemoryPassConfig(rec['memoryPass']),
   }
 }
@@ -276,7 +287,8 @@ export function loadClawEnvironmentConfig(repoRoot: string): {
 }
 
 export function resolveClawaDefaults(startCwd: string): ClawaDefaults {
-  return loadClawEnvironmentConfig(findRepoRoot(startCwd)).config.clawa
+  const homeRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || findRepoRoot(startCwd)
+  return loadClawEnvironmentConfig(homeRoot).config.clawa
 }
 
 export function ensureClawEnvironmentConfig(repoRoot: string): {

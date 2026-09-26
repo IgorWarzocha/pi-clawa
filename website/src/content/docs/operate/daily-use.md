@@ -14,7 +14,8 @@ pi -c
 ```
 
 Use `pi -r` when you need to choose an older main session. Start a new session when the current
-branch is genuinely wedged or its compacted history has stopped being useful—not as a daily reset.
+branch is genuinely wedged or its history has stopped being useful, not as a daily reset. In local
+context mode, checkpoint useful state into notes and use `new_context` when a window grows crowded.
 
 ## Keep the main room alive
 

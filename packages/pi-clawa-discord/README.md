@@ -30,7 +30,7 @@ messages are ignored, so its own posts cannot wake it again.
 Discord messages and agent work appear in that same Pi tab. A final block such as `[m1] Hello`
 replies to that exact displayed message; `[c] Hello` posts to the current channel. Unmarked final
 text stays in Pi. Use `discord_send` for files, reactions, cards, buttons, selects, polls, and other
-rich delivery. `discord_history` searches local Discord history. Core `recall` and `remember` keep
+rich delivery. `discord_history` searches local Discord history. Core `notes` and `history` keep
 their usual meaning.
 
 Each home keeps `.pi/clawa-discord/bot.env` for its token and policy. The file is created with mode
