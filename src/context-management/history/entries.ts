@@ -1,4 +1,5 @@
 import { readFile, stat } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import {
   type ExtensionContext,
   parseSessionEntries,
@@ -99,7 +100,13 @@ export async function readChatEntries(
   chat: ChatRecord,
   ctx: ExtensionContext,
 ): Promise<SessionEntry[]> {
-  if (chat.sessionId === ctx.sessionManager.getSessionId()) return ctx.sessionManager.getBranch()
+  if (chat.sessionId === ctx.sessionManager.getSessionId()) {
+    const manager = ctx.sessionManager
+    const header = manager.getHeader()
+    if (header?.id !== chat.sessionId || resolve(header.cwd) !== resolve(chat.cwd))
+      throw new Error(`Session file no longer matches catalog chat ${chat.sessionId}`)
+    return expandNativeBranch(manager.getEntries(), manager.getLeafId())
+  }
   if ((await stat(chat.sessionFile)).size > 32 * 1024 * 1024)
     throw new Error(`Session too large to read: ${chat.sessionId}`)
   const content = await readFile(chat.sessionFile, 'utf8')
@@ -108,66 +115,115 @@ export async function readChatEntries(
   if (header?.type !== 'session' || header.id !== chat.sessionId || header.cwd !== chat.cwd) {
     throw new Error(`Session file no longer matches catalog chat ${chat.sessionId}`)
   }
-  const byId = new Map<string, SessionEntry>()
-  for (const entry of entries) if (entry.type !== 'session') byId.set(entry.id, entry)
+  const raw = entries.filter((entry): entry is SessionEntry => entry.type !== 'session')
+  return expandNativeBranch(raw, raw.at(-1)?.id ?? null)
+}
+
+/** Raw history follows only parents and explicit native branch_summary source links.
+ * Pi's fromId is the previous leaf, not a private details format or a whole-tree archive.
+ * Emit shared ancestors once and archived paths before their summary. Never substitute
+ * summary prose for missing raw source. Iterative traversal also bounds call-stack use.
+ */
+export function expandNativeBranch(
+  entries: readonly SessionEntry[],
+  leafId: string | null,
+): SessionEntry[] {
+  if (leafId === null) return []
+  const byId = new Map(entries.map((entry) => [entry.id, entry]))
   const branch: SessionEntry[] = []
-  let cursor = [...byId.values()].at(-1)
-  const visited = new Set<string>()
-  while (cursor) {
-    if (visited.has(cursor.id)) throw new Error(`Session parent cycle in chat ${chat.sessionId}`)
-    visited.add(cursor.id)
-    branch.push(cursor)
-    if (cursor.parentId && !byId.has(cursor.parentId))
-      throw new Error(`Session parent missing in chat ${chat.sessionId}`)
-    cursor = cursor.parentId ? byId.get(cursor.parentId) : undefined
+  const emitted = new Set<string>()
+  const visiting = new Set<string>()
+  const pending = [{ id: leafId, finish: false, source: false }]
+  while (pending.length > 0) {
+    const step = pending.pop()
+    if (!step || emitted.has(step.id)) continue
+    const entry = byId.get(step.id)
+    if (!entry)
+      throw new Error(
+        step.source
+          ? `Archived raw source missing: ${step.id}`
+          : `Session parent or leaf missing: ${step.id}`,
+      )
+    if (step.finish) {
+      visiting.delete(step.id)
+      emitted.add(step.id)
+      branch.push(entry)
+      continue
+    }
+    if (visiting.has(step.id)) throw new Error(`Session branch cycle: ${step.id}`)
+    visiting.add(step.id)
+    pending.push({ ...step, finish: true })
+    pending.push(
+      ...nativeBranchLinks(entry, step.source).map((link) => ({ ...link, finish: false })),
+    )
   }
-  return branch.reverse()
+  return branch
+}
+
+function nativeBranchLinks(
+  entry: SessionEntry,
+  archived: boolean,
+): { id: string; source: boolean }[] {
+  const links: { id: string; source: boolean }[] = []
+  // Pi uses "root" when a summary is created with no previous leaf.
+  if (entry.type === 'branch_summary' && entry.fromId !== 'root')
+    links.push({ id: entry.fromId, source: true })
+  // The traversal stack visits parents before the archived source.
+  if (entry.parentId) links.push({ id: entry.parentId, source: archived })
+  return links
 }
 
 export function extractHistory(
   chat: ChatRecord,
   entries: readonly SessionEntry[],
 ): { windows: HistoryWindow[]; items: HistoryItem[] } {
-  const windows: HistoryWindow[] = []
+  const windows = new Map<string, HistoryWindow>()
   const items: HistoryItem[] = []
-  let agentName = chat.agentName
-  let windowId = `${chat.sessionId}:root`
-  let startedAt = entries[0]?.timestamp ?? ''
-  let count = 0
-  const finish = () => {
-    if (count || windows.length === 0)
-      windows.push({
-        chat_id: chat.sessionId,
-        window_id: windowId,
-        agent_name: agentName,
-        started_at: startedAt,
-        item_count: count,
-      })
+  const root: HistoryWindow = {
+    chat_id: chat.sessionId,
+    window_id: `${chat.sessionId}:root`,
+    agent_name: chat.agentName,
+    started_at: entries[0]?.timestamp ?? '',
+    item_count: 0,
   }
-  for (const [index, entry] of entries.entries()) {
-    const next = entries[index + 1]
-    const marker = windowMarker(entry, next, chat)
+  const lineage = new Map<string, HistoryWindow>()
+  const legacyBoundaries = new Set(
+    entries.flatMap((entry) =>
+      entry.type === 'custom' && entry.customType === 'clawa-context-window' && entry.parentId
+        ? [entry.parentId]
+        : [],
+    ),
+  )
+  let owner = root
+  for (const entry of entries) {
+    // Expanded archives are topological, not one conversation chain. A sibling's
+    // compaction must never relabel raw turns recovered through a summary source.
+    owner = (entry.parentId ? lineage.get(entry.parentId) : undefined) ?? root
+    const marker = windowMarker(entry, legacyBoundaries.has(entry.id), chat)
     if (marker) {
-      if (count) finish()
-      windowId = marker.windowId
-      agentName = marker.agentName ?? agentName
-      startedAt = entry.timestamp
-      count = 0
+      owner = windows.get(marker.windowId) ?? {
+        chat_id: chat.sessionId,
+        window_id: marker.windowId,
+        agent_name: marker.agentName ?? owner.agent_name,
+        started_at: entry.timestamp,
+        item_count: 0,
+      }
     }
-    if (entry.type === 'custom' && entry.customType === 'clawa-context-window') continue
-    const item = itemOf(entry, chat, windowId, agentName)
+    lineage.set(entry.id, owner)
+    const item = itemOf(entry, chat, owner.window_id, owner.agent_name)
     if (item) {
       items.push(item)
-      count++
+      const window = windows.get(owner.window_id) ?? owner
+      window.item_count++
+      windows.set(window.window_id, window)
     }
   }
-  finish()
-  return { windows, items }
+  return { windows: windows.size > 0 ? [...windows.values()] : [owner], items }
 }
 
 function windowMarker(
   entry: SessionEntry,
-  next: SessionEntry | undefined,
+  followedByLegacyMarker: boolean,
   chat: ChatRecord,
 ): { windowId: string; agentName?: string } | undefined {
   if (entry.type === 'custom' && entry.customType === 'clawa-context-window') {
@@ -187,10 +243,7 @@ function windowMarker(
         : {}),
     }
   }
-  if (
-    entry.type === 'compaction' &&
-    !(next?.type === 'custom' && next.customType === 'clawa-context-window')
-  )
+  if (entry.type === 'compaction' && !followedByLegacyMarker)
     return { windowId: `${chat.sessionId}:${entry.id}` }
   return undefined
 }

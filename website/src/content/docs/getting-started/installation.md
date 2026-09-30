@@ -5,9 +5,9 @@ section: Start
 order: 10
 ---
 
-Clawa is a Pi package loaded from a git checkout. It is not a standalone agent runtime and it is not
-published to npm yet. Keep the package checkout separate from the folder that will become the
-Clawa's home.
+Clawa is a Pi package loaded from a git checkout, not a standalone agent runtime. Install it per
+home through project settings or an explicit `-e` path, not globally. Keep the package checkout
+separate from the folder that will become the Clawa's home.
 
 ## What you need
 
@@ -61,6 +61,17 @@ an existing settings file. If the home already has Pi settings, merge this entry
 
 Do not use `CLAWA_INSTALL_OVERWRITE=1` casually. It replaces the complete settings file, not only
 the package list.
+
+## Global installs stay out of ordinary projects
+
+Global installation is discouraged. Dormancy is a safety net, not an alternative setup path.
+A globally loaded Clawa activates in an existing home with `.pi/claw.jsonc`. Without that config,
+it stays dormant: no Clawa tools, skills, prompt changes, or running home services.
+
+A project-local install or explicit `pi -e ~/src/pi-clawa` is a deliberate request to make a home.
+These still bootstrap automatically in a clean folder. First run creates files but waits for the
+first human message or task before starting a conversation. Pi Codex is optional, not an install
+requirement.
 
 ## Follow development instead
 

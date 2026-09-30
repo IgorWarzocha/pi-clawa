@@ -25,7 +25,7 @@ function notifyFailed(
   }
 }
 
-export function registerNestedAgentsAutoload(pi: ExtensionAPI): void {
+export function registerNestedAgentsAutoload(pi: ExtensionAPI, isActive: () => boolean): void {
   const session = new NestedAgentsSession()
 
   const handleSessionChange = (_event: unknown, ctx: ExtensionContext): void => {
@@ -36,7 +36,7 @@ export function registerNestedAgentsAutoload(pi: ExtensionAPI): void {
   pi.on('session_tree', handleSessionChange)
 
   pi.on('tool_result', async (event, ctx) => {
-    if (event.isError) return undefined
+    if (!isActive() || event.isError) return undefined
     session.ensure(ctx.cwd)
 
     const targets = session.targetsForEvent(event)

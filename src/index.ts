@@ -10,21 +10,23 @@ import { registerClawasTools } from './clawas/tool-surface.js'
 import { DEFAULT_CLAWA_DEFAULTS } from './config.js'
 import { registerContextManagement } from './context-management/index.js'
 import { registerClawCommand } from './extension/claw-command.js'
-import { extensionPath, IS_CLAWAS_WORKER } from './extension/constants.js'
+import { IS_CLAWAS_WORKER, skillsDir } from './extension/constants.js'
 import { getWorkerAlias } from './extension/environment.js'
 import { registerHydrationContext } from './extension/hydration-context.js'
 import { registerClawaRenderers } from './extension/renderers.js'
 import { ClawaRuntimeState } from './extension/runtime-state.js'
 import { registerClawaSessionEvents } from './extension/session-events.js'
+import {
+  registerClawaCodeModeTools,
+  registerClawaToolAvailability,
+} from './extension/tool-availability.js'
 import { registerNestedAgentsAutoload } from './nested-agents.js'
 import { registerPulseCommand } from './pulses/command.js'
 import { PulseRuntime } from './pulses/runtime.js'
 import { registerClawaSystemPrompt } from './system-prompt.js'
 
-process.env['PI_CLAW_EXTENSION_PATH'] = extensionPath
-
 /** @public Pi loads the package extension through this default export. */
-export default function howabouaClaw(pi: ExtensionAPI): void {
+export default async function howabouaClaw(pi: ExtensionAPI): Promise<void> {
   const clawasRuntime = new ClawasRuntime()
   const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
   const runtime = new ClawaRuntimeState()
@@ -35,21 +37,32 @@ export default function howabouaClaw(pi: ExtensionAPI): void {
     currentClawaDefaults = defaults
   }
 
-  registerClawasTools(pi, clawasRuntime)
-  registerClawaSystemPrompt(pi)
-  registerNestedAgentsAutoload(pi)
+  const isActive = () => runtime.active
+  // Activation is resolved before any home-specific startup hooks.
+  const prepare = registerClawaSessionEvents(pi, {
+    runtime,
+    clawasRuntime,
+    pulseRuntime,
+    commsServer,
+    setDefaults,
+  })
+  const messageTools = registerClawasTools(pi, clawasRuntime, isActive)
+  registerClawaSystemPrompt(pi, isActive)
+  registerNestedAgentsAutoload(pi, isActive)
   registerClawaRenderers(pi, () => currentClawaDefaults)
 
   if (!IS_CLAWAS_WORKER) {
-    registerSteerCommand(pi, clawasRuntime)
-    registerJumpCommand(pi, clawasRuntime)
+    registerSteerCommand(pi, clawasRuntime, prepare)
+    registerJumpCommand(pi, clawasRuntime, prepare)
     registerClawasMonitorShortcuts(pi, clawasRuntime)
-    registerPulseCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
+    registerPulseCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults, prepare })
   }
 
-  registerClawaSessionEvents(pi, { runtime, clawasRuntime, pulseRuntime, commsServer, setDefaults })
-  // Session setup/bootstrap arms hydration before this later handler persists it.
   registerHydrationContext(pi, runtime)
-  registerContextManagement(pi, runtime)
-  registerClawCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults })
+  const memoryTools = registerContextManagement(pi, runtime)
+  registerClawCommand(pi, { runtime, clawasRuntime, pulseRuntime, setDefaults, prepare })
+  pi.on('resources_discover', () => (runtime.active ? { skillPaths: [skillsDir] } : undefined))
+  const tools = [...messageTools, ...memoryTools]
+  registerClawaToolAvailability(pi, tools, isActive)
+  await registerClawaCodeModeTools(pi, tools, isActive)
 }

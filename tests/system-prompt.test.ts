@@ -98,6 +98,7 @@ test('native Pi prompt shaping isolates home context without losing tool policie
     for (const file of [home, outside]) await writeFile(file.path, file.content)
 
     const settingsManager = SettingsManager.inMemory()
+    let prompt = ''
     const resourceLoader = new DefaultResourceLoader({
       cwd,
       agentDir,
@@ -106,7 +107,14 @@ test('native Pi prompt shaping isolates home context without losing tool policie
       noSkills: true,
       noThemes: true,
       noPromptTemplates: true,
-      extensionFactories: [registerClawaSystemPrompt],
+      extensionFactories: [
+        (pi) => {
+          registerClawaSystemPrompt(pi, () => true)
+          pi.on('before_agent_start', (event) => {
+            prompt = event.systemPrompt
+          })
+        },
+      ],
     })
     await resourceLoader.reload()
     const modelRuntime = await ModelRuntime.create({
@@ -130,8 +138,6 @@ test('native Pi prompt shaping isolates home context without losing tool policie
     // Exercise Pi's real mutable-options getter, without credentials or a model request.
     const result = await session.extensionRunner.emitBeforeAgentStart('hello', undefined, {
       cwd,
-      customPrompt: 'IGNORED_CUSTOM_PROMPT',
-      forceSystemPrompt: 'OPAQUE_OVERRIDE OUTSIDE_CONTEXT',
       contextFiles: [outside, home],
       selectedTools: ['read'],
       toolSnippets: { read: 'READ_DESCRIPTION' },
@@ -141,9 +147,8 @@ test('native Pi prompt shaping isolates home context without losing tool policie
     })
     assert.deepEqual(errors, [])
     assert.deepEqual(result.systemPromptOptions.contextFiles, [home])
-    const prompt = result.systemPromptOptions.forceSystemPrompt
-    assert.ok(prompt)
-    assert.ok(prompt.startsWith('# Clawa personal assistant'))
+    assert.equal(result.systemPromptOptions.forceSystemPrompt, undefined)
+    assert.ok(prompt.includes('# Clawa personal assistant'))
     for (const value of [
       home.content,
       'READ_DESCRIPTION',
@@ -153,9 +158,12 @@ test('native Pi prompt shaping isolates home context without losing tool policie
     ]) {
       assert.ok(prompt.includes(value), value)
     }
-    for (const value of ['IGNORED_CUSTOM_PROMPT', 'OPAQUE_OVERRIDE', outside.content]) {
-      assert.equal(prompt.includes(value), false, value)
-    }
+    assert.equal(prompt.includes(outside.content), false)
+    const overridden = await session.extensionRunner.emitBeforeAgentStart('hello', undefined, {
+      cwd,
+      forceSystemPrompt: 'EXTERNAL_PROMPT_OWNER',
+    })
+    assert.equal(overridden.systemPromptOptions.forceSystemPrompt, 'EXTERNAL_PROMPT_OWNER')
   } finally {
     session?.dispose()
     await rm(root, { recursive: true, force: true })

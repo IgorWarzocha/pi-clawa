@@ -5,9 +5,15 @@ section: Start
 order: 20
 ---
 
-The first `session_start` is the setup path. Clawa creates `.pi/claw.jsonc`, copies the main home
-template, marks the home bootstrapped, and queues an invisible onboarding prompt. You should meet a
-Clawa in conversation, not a configuration form.
+A deliberate project install or explicit `pi -e` makes the first `session_start` the setup path.
+Clawa creates `.pi/claw.jsonc`, copies the main home template, and marks the home bootstrapped.
+It waits for your first message or task before starting a conversation. A greeting opens natural
+introductions; a concrete task gets done first, without an onboarding interview in the way.
+No autonomous turn runs while the session opens.
+
+A global install alone does not bootstrap ordinary directories. Without `.pi/claw.jsonc`, Clawa
+stays dormant and adds no tools, skills, prompt, or home services. Existing configured homes activate
+normally.
 
 ## Bootstrap boundary
 
@@ -32,7 +38,7 @@ falls back to bootstrap rather than opening the GUI.
 The main template creates the living documents above, shared `memory/`, and starter Pulses under
 `pulses/`. Runtime state then appears under `.pi/` as features are used.
 
-The first conversation calibrates a small set of things:
+When you want to get acquainted, the conversation calibrates a small set of things:
 
 - the Clawa's name and shape;
 - how it should address you;
@@ -45,7 +51,7 @@ the appropriate living file while the context is warm.
 
 ## A sensible first session
 
-1. Let the opening conversation finish.
+1. Send a first message, then let the opening conversation find its shape.
 2. Read the six root documents. They are meant to be edited.
 3. Run `/claw` and look at the home/Clawas view.
 4. Run `/pulse` and inspect the two starter Pulses before enabling more scheduled work.

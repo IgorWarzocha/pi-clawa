@@ -9,6 +9,7 @@ import {
   SessionManager,
   SettingsManager,
 } from '@earendil-works/pi-coding-agent'
+import { expandNativeBranch } from '../history/entries.js'
 import type { ConsolidationJob } from './index.js'
 import { memoryFileTool } from './tools.js'
 
@@ -49,7 +50,7 @@ export function readSource(
   if (!manager.getEntry(job.leafId)) throw new Error(`Source leaf missing: ${job.leafId}`)
   const transcript: string[] = []
   let bytes = 0
-  for (const entry of manager.getBranch(job.leafId)) {
+  for (const entry of expandNativeBranch(manager.getEntries(), job.leafId)) {
     let role: string | undefined
     let text = ''
     if (

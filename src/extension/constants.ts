@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 export const extensionPath = fileURLToPath(new URL('../index.ts', import.meta.url))
 const extensionDir = dirname(extensionPath)
 const packageRoot = dirname(extensionDir)
+export const skillsDir = join(packageRoot, 'skills')
 export const templatesDir = join(packageRoot, 'templates')
 export const mainTemplatesDir = join(templatesDir, 'main')
 export const workerTemplatesDir = join(templatesDir, 'worker')

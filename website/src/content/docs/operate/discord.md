@@ -30,7 +30,8 @@ An incoming turn shows numbered message handles. A final block like `[m1] Thanks
 replies to that exact message. `[c] I'll look into it` posts in the current channel without a
 reply target. Several blocks can be delivered in order. Unmarked assistant final text stays in Pi.
 Use `discord_send` for rich delivery such as files, reactions, cards, buttons, selects, and polls.
-Use `discord_history` to search local Discord history. Core `notes` and `history` serve private checkpoints, shared memory, and Pi windows.
+Use `discord_history` to search local Discord history. Core `clawa_memory` and `clawa_history`
+serve shared memory, retained chat notes, and house Pi archives.
 
 ## Local state and lifecycle
 

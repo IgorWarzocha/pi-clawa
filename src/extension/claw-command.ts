@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import { type ClawaDefaults, resolveClawaDefaults } from '../config.js'
 import { runClawGui } from '../gui.js'
@@ -17,16 +17,25 @@ export function registerClawCommand(
     clawasRuntime: ClawasRuntime
     pulseRuntime: PulseRuntime
     setDefaults: (defaults: ClawaDefaults) => void
+    prepare: (ctx: ExtensionContext) => Promise<void>
   },
 ): void {
   pi.registerCommand('claw', {
     description: 'Open Clawa GUI or create/bootstrap claws',
     handler: async (args, ctx) => {
+      if (!options.runtime.active) {
+        ctx.ui.notify(
+          'Clawa is dormant here. Open a Clawa home, or load Clawa with pi -e in a new home.',
+          'info',
+        )
+        return
+      }
       if (IS_CLAWAS_WORKER) {
         ctx.ui.notify('/claw belongs in the main Clawa session.', 'warning')
         return
       }
 
+      await options.prepare(ctx)
       options.runtime.ensureExtensionConfig(ctx.cwd)
       options.setDefaults(resolveClawaDefaults(ctx.cwd))
       syncClawaEnvironment(ctx.cwd)

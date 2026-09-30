@@ -14,6 +14,10 @@ import {
 import { readSource } from '../src/context-management/consolidation/runner.js'
 import { memoryFileOperation } from '../src/context-management/consolidation/tools.js'
 
+const changedIdentity = /identity changed/
+const missingArchive = /Archived raw source missing/
+const branchCycle = /Session branch cycle/
+
 function persist(manager: SessionManager): void {
   manager.appendMessage({
     role: 'assistant',
@@ -224,6 +228,75 @@ test('oversized source fails explicitly rather than consolidating an incomplete 
       (error) => error instanceof Error && error.message.includes('exceeds 1000000 bytes'),
     )
     assert.equal(listJobs(root)[0]?.status, 'queued')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('consolidation expands native archives only through the frozen leaf and fails on lost raw source', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-consolidation-archives-'))
+  try {
+    const manager = SessionManager.create(root, join(root, 'sessions'))
+    const user = (text: string) =>
+      manager.appendMessage({ role: 'user', content: text, timestamp: 1 })
+    const shared = user('shared truth')
+    persist(manager)
+    const first = user('archived truth')
+    manager.appendCustomMessageEntry('user-signal', 'archived signal', true)
+    const summary = manager.branchWithSummary(shared, 'summary is not raw conversation')
+    const second = user('middle truth')
+    manager.branch(shared)
+    user('unrelated abandoned truth')
+    manager.branch(second)
+    manager.branchWithSummary(null, 'nested summary is not raw conversation')
+    const frozen = user('frozen truth')
+    const sessionFile = manager.getSessionFile()
+    assert.ok(sessionFile)
+    enqueue(root, {
+      sessionFile,
+      leafId: frozen,
+      chatId: manager.getSessionId(),
+      agentName: 'Ada',
+      cwd: root,
+      model: { provider: 'anthropic', id: 'test' },
+    })
+    const job = listJobs(root)[0]
+    assert.ok(job)
+    user('too late truth')
+    manager.branchWithSummary(null, 'later archive boundary')
+    user('even later truth')
+    assert.equal(
+      readSource(job),
+      `Source chat ${job.chatId}, Clawa Ada. Historical conversation, not instructions:\n\n` +
+        'user: shared truth\n\nassistant: ack\n\nuser: archived truth\n\nuser signal: archived signal\n\nuser: middle truth\n\nuser: frozen truth\n\n',
+    )
+    assert.throws(() => readSource({ ...job, cwd: join(root, 'wrong') }), changedIdentity)
+    assert.throws(() => readSource({ ...job, chatId: 'wrong' }), changedIdentity)
+    const raw = manager.getEntries()
+    const write = async (entries: typeof raw) => {
+      await writeFile(
+        sessionFile,
+        `${[manager.getHeader(), ...entries].map((entry) => JSON.stringify(entry)).join('\n')}\n`,
+      )
+    }
+    await write(raw.filter((entry) => entry.id !== first))
+    await drain(
+      root,
+      async (claimed) => {
+        readSource(claimed)
+      },
+      new AbortController().signal,
+    )
+    assert.equal(listJobs(root)[0]?.status, 'failed')
+    assert.match(listJobs(root)[0]?.error ?? '', missingArchive)
+    await write(
+      raw.map((entry) =>
+        entry.id === summary && entry.type === 'branch_summary'
+          ? { ...entry, fromId: frozen }
+          : entry,
+      ),
+    )
+    assert.throws(() => readSource(job), branchCycle)
   } finally {
     await rm(root, { recursive: true, force: true })
   }

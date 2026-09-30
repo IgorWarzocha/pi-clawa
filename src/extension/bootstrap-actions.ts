@@ -28,7 +28,7 @@ export async function executeBootstrap(
 ) {
   const result = await bootstrapMainHome(ctx.cwd, runtime)
   if (result.kind === 'blocked') {
-    reportBootstrapBlocked(pi, ctx, result.conflicts)
+    reportBootstrapBlocked(ctx, result.conflicts)
     return null
   }
 

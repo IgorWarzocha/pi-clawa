@@ -45,13 +45,9 @@ function buildBootstrapBlockedMessage(files: string[]): string {
   ].join('\n')
 }
 
-export function reportBootstrapBlocked(
-  pi: ExtensionAPI,
-  ctx: ExtensionContext,
-  files: string[],
-): void {
+export function reportBootstrapBlocked(ctx: ExtensionContext, files: string[]): void {
   const message = buildBootstrapBlockedMessage(files)
-  sendDimNote(pi, message)
+  if (!ctx.hasUI) throw new Error(message)
   if (ctx.hasUI) {
     ctx.ui.setStatus('clawa', 'clawa: bootstrap blocked')
     ctx.ui.notify(`Clawa bootstrap blocked by existing files: ${files.join(', ')}`, 'warning')

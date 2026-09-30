@@ -34,12 +34,7 @@ Use it for boot state, home defaults, and subclawa worker definitions. Do not cr
     "clawasName": "Clawas",
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
-    "controlSocketDir": "clawas-control",
-    "contextManagement": "local",
-    "memoryPass": {
-      "enabled": true,
-      "triggerPercent": 90
-    }
+    "controlSocketDir": "clawas-control"
   }
 }
 ```
@@ -101,15 +96,17 @@ The `clawa` object controls names and runtime directories shared by the home:
 - `workerSessionPrefix` — prefix for worker sessions.
 - `controlPlaneDir` — project-local control-plane state directory.
 - `controlSocketDir` — logical socket directory name; the runtime resolves collision-safe sockets under the system runtime directory.
-- `contextManagement` — `"local"` for checkpoints and fresh windows, or `"pi"` for native Pi compaction; defaults to `"local"`.
-- `memoryPass.enabled` — enable the context threshold reminder; defaults to `true`.
-- `memoryPass.triggerPercent` — active-model context percentage that starts the reminder; defaults to `90` and must be an integer from 1 to 99.
 
 Keep defaults unless the home deliberately uses another naming or control-plane shape.
 Worker session history and terminal handles live together in `.pi/clawas/session-registry.json` by
 default. Tab location is runtime state, not another configuration field.
 
-The threshold follows each active model's own context window. It is not a universal token count. `clawa.contextManagement` defaults to `"local"`: checkpoint useful continuity in private `notes`, then call `new_context` for a fresh window without an automatic summary. The native boundary retains Pi JSONL; `/compact` and overflow recovery remain fallbacks. Set `"pi"` for Pi's usual compaction while retaining shared notes and history. `/memory remember` queues a separate idle consolidation; `/memory retry <jobId>` retries a failed job.
+Pi owns compaction, or optional Pi Codex owns its configured continuity. Remove obsolete
+`contextManagement`, `memoryPass`, and `memoryPassThreshold` fields from older Clawa configs.
+Clawa has no context threshold or rollover policy. `clawa_memory` defaults to shared `memory/`;
+explicit `scope: "notes"` accesses stored chat notes. `clawa_history` reads house archives and
+committed memory revisions. `/memory remember` freezes this conversation, starts a fresh one, and
+queues optional idle consolidation. `/memory retry <jobId>` retries a failed job.
 
 ## Project Pi settings
 
@@ -121,7 +118,17 @@ Project Pi settings live at:
 
 Use them for project-local Pi package loading. Keep main Clawa on Pi's normal session store unless the human explicitly wants a custom session directory; do not edit the human's global `~/.pi/agent/settings.json` when tuning this Clawa home.
 
-Clawa filters Pi context files to the active home root. Global and outside-parent `AGENTS.md`/`CLAUDE.md` instructions do not enter Clawa's model context; root, worker, and nested context inside the home still can.
+Use a tagged git checkout through per-home project settings or explicit `pi -e`; discourage global
+Clawa installation. Global dormancy is a safety net: configured homes activate, other directories
+stay untouched. A project install or explicit `pi -e` requests bootstrap in a clean folder.
+Files appear immediately, but no agent
+turn starts until the first human message or task. Codex is optional; Clawa's CodeMode adapter exposes
+namespaced house and message tools when present.
+
+Clawa filters Pi's structured context files to the active home root. Global and outside-parent
+`AGENTS.md`/`CLAUDE.md` files are excluded; root, worker, and nested context inside the home still
+can load. Clawa preserves other extensions' prompt ownership. Opaque full overrides can hide home
+sections and bypass scoping; prefer structured sections or `.pi/APPEND_SYSTEM.md`.
 
 Common Clawa shape:
 

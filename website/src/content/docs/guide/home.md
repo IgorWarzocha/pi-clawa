@@ -39,15 +39,18 @@ or a memory area's sharp edges. Clawa does not eagerly inject the whole tree. Af
 file activity touches a path, it discovers relevant nested instructions and appends them to that tool
 result. This keeps the opening context bounded while still loading local rules before deeper work.
 
-Instructions outside the resolved Clawa home are filtered from Clawa's system prompt. Global Pi
+Context files outside the resolved Clawa home are filtered from Pi's structured prompt. Global Pi
 instructions and parent-project instructions do not silently reshape the resident Clawa. Files inside
-the home remain active.
+the home remain active. An opaque full-prompt override can bypass this scoping and hide home context;
+prefer structured additions when combining extensions.
 
 ## Optional visual identity
 
 Place one image at the home root named `CLAWA.png`, `.jpg`, `.jpeg`, `.webp`, or `.gif`. On models
 that accept images, Clawa loads a bounded version as a visual self-card. Invalid or oversized inputs
-warn instead of being sent blindly.
+warn instead of being sent blindly. The image is deduplicated in native session history on the
+first turn or after Pi compaction, not sent again every turn. After external context rollover,
+the prompt keeps a path reminder for explicit viewing when useful.
 
 ## Editing the home
 

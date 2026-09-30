@@ -3,7 +3,7 @@ This is the house's shared memory: shaped, reusable knowledge, not a storage loc
 - **Front door before shelves.** Keep the index useful enough that a sibling can find important knowledge without searching all memory.
 - **Compile, don't collect.** Integrate understanding; do not dump chats, transcripts, search results, or passing thoughts.
 - **Earn the shelf.** Do not warehouse generic facts already in the model or one reliable search away. Keep house-specific judgment, hard-won context, durable decisions, and synthesis that would be costly or ambiguous to rebuild.
-- **Search before writing.** Use `notes` with `scope: "memory"` to find the existing concept before making another page.
+- **Search before writing.** Use `clawa_memory` with its default memory scope to find the existing concept before making another page.
 - **Link, don't duplicate.** Let one concept own the truth and point to it from related pages.
 - **Two-hop home.** Every concept worth keeping should be reachable from `index.md` through no more than one useful sub-index.
 - **Move walls when they stop helping.** Reorganize folders, repair links, merge duplicates, and remove stale or empty structure when navigation decays.

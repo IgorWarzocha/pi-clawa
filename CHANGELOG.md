@@ -8,9 +8,11 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Added
 
-- Afreet-derived local notes, shared Markdown memory, searchable Pi history, and committed-memory
-  revisions. Local context windows checkpoint into notes instead of generating summaries; set
-  `clawa.contextManagement` to `"pi"` to retain normal Pi compaction.
+- Afreet-derived local notes, shared Markdown memory, searchable house Pi history, and committed-memory
+  revisions through `clawa_memory` and `clawa_history`. Memory defaults to shared home Markdown;
+  explicit `scope: "notes"` accesses retained per-chat notes.
+- An optional CodeMode adapter exposes namespaced house and message tools when CodeMode is present.
+  Codex is not required to use Clawa.
 - `/memory remember` freezes a conversation, starts a fresh one, and queues a durable background
   memory pass. `/memory` shows status and `/memory retry <id>` retries failures. The private memory
   bot can edit only memory and living-document owners, with version checks on replacements; it has
@@ -18,9 +20,28 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Changed
 
-- `notes` and `history` replace `remember` and `recall`. Existing `vault/` files move automatically
+- `clawa_memory` and `clawa_history` replace `remember` and `recall`. Existing `vault/` files move automatically
   into `memory/` without overwriting conflicts. Legacy SQLite rows are imported exactly; the old
   database stays unchanged as a retired source. The local toolkit requires Linux with `flock`.
+- Clawa no longer runs its own rollover engine or MemoryPass threshold. Plain Pi owns compaction;
+  optional Pi Codex owns its configured continuity. Remove obsolete `contextManagement`,
+  `memoryPass`, and `memoryPassThreshold` fields from older Clawa configs. Generic `notes`, `history`,
+  `new_context`, and `get_context_remaining` are not Clawa tools. Existing notes and window archives
+  remain accessible through the house tools.
+- Global installs stay dormant in ordinary directories without `.pi/claw.jsonc`, adding no Clawa
+  tools, skills, prompt, or runtime. This is a safety net, not a recommended install path. Use a
+  tagged git checkout per home through project settings or explicit `pi -e`; global installation
+  is discouraged. Existing configured homes still activate globally.
+- First run creates home files but waits for the first human message or task. There is no autonomous
+  startup turn, and a concrete first task takes priority over introductions. Shepherdr can bind a
+  fresh child through its own spawn flow; Codex sharing handles family context without a Clawa
+  adoption API.
+- Living-document text refreshes in Pi's native structured prompt before each agent turn, including
+  after Pi or Codex continuity. The optional self-card image is deduplicated in native session
+  history rather than repeated every turn.
+- Clawa adds native identity and home sections without replacing Pi's introduction or taking prompt
+  ownership from other extensions. Custom prompts are preserved; opaque full overrides can hide
+  home context, so use structured sections or `.pi/APPEND_SYSTEM.md` for compatible additions.
 - The optional Discord adapter now connects each bot inside its own main or specialist Pi tab.
   `/discord` configures that home's token, intake, and connection; there is no required Discord
   worker, shared gateway process, route file, or `discordEnabled` worker flag. Replies use exact

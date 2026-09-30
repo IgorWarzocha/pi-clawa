@@ -55,7 +55,7 @@ OpenClaw config is usually JSON5. Look for:
 
 - `openclaw.json` — agents, channels, models, heartbeat, skills, MCP, plugins, sessions.
 - agent defaults/list/multi-agent config — map recurring agents into subclawas via `references/subclawas-setup.md`.
-- identity/context/memory files — fold useful parts into `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, `TOOLS.md`, or shared `memory/` through `notes`.
+- identity/context/memory files — fold useful parts into `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, `TOOLS.md`, or shared `memory/` through `clawa_memory`.
 - heartbeat config or `HEARTBEAT.md` — map into `Hey, Clawa` or a named pulse. Do not recreate `HEARTBEAT.md`.
 - cron/scheduled jobs — map into pulse folders, preserving intent and cadence.
 - channel config — map only chosen surfaces. Discord should go through the Clawa Discord adapter shape, not copied OpenClaw channel config.

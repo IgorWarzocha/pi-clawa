@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure workers, naming, and context management in .pi/claw.jsonc.
+description: Configure workers, naming, and home directories in .pi/claw.jsonc.
 section: Reference
 order: 110
 ---
@@ -38,12 +38,7 @@ Clawa config.
     "clawasName": "Clawas",
     "workerSessionPrefix": "Clawas",
     "controlPlaneDir": "clawas",
-    "controlSocketDir": "clawas-control",
-    "contextManagement": "local",
-    "memoryPass": {
-      "enabled": true,
-      "triggerPercent": 90
-    }
+    "controlSocketDir": "clawas-control"
   }
 }
 ```
@@ -70,26 +65,20 @@ location is runtime state, not another setting.
 | `reportMode` | `auto`, `explicit`, or `off`. |
 | `extensions` | Extra extension paths passed to this worker. |
 
-Malformed worker arrays, duplicate IDs, missing IDs/cwds, and invalid worker or memory-pass values
+Malformed worker arrays, duplicate IDs, missing IDs/cwds, and invalid worker values
 throw visible config errors. Optional fields may be omitted, but a present boolean, thinking level,
 report mode, or extension list must have the documented type.
 
-## Context management
+## Continuity settings belong to Pi
 
-`memoryPass.enabled` defaults to `true`. `triggerPercent` defaults to `90` and must be an integer from
-1 to 99. The percentage follows the active model's own context window rather than a fixed token
-count.
+Plain Pi owns compaction and overflow recovery. Optional Pi Codex owns its configured continuity.
+Clawa no longer has `contextManagement`, `memoryPass`, or `memoryPassThreshold` fields. Remove
+those obsolete entries from older configs; do not move them into Pi settings as Clawa options.
 
-`clawa.contextManagement` defaults to `"local"`. After completed tools and at settlement, the
-local mode checks the threshold, cancels Pi's automatic threshold compaction, and reminds Clawa
-to checkpoint useful state into chat notes before starting a fresh window with `new_context`.
-There is no automatic summary. Local rollover uses a native Pi boundary, and Pi's `/compact` and
-overflow recovery remain available. `"pi"` keeps Pi's usual compaction instead. Shared notes and
-history remain available. The optional `/memory remember` command queues a separate consolidation
-job at idle; `/memory retry <jobId>` retries a failed job.
-
-In `"pi"` mode, Pi remains the sole owner of native compaction and overflow recovery. Legacy
-`clawa.compaction` settings are ignored.
+House memory and history remain available through `clawa_memory` and `clawa_history`.
+`/memory remember` freezes this conversation, starts a fresh one, and queues optional consolidation
+at idle. `/memory retry <jobId>` retries a failed job. Consolidation is not a context threshold or
+a rollover policy.
 
 ## Pi project settings
 

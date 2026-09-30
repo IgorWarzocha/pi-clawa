@@ -42,8 +42,6 @@ test('bootstrap preserves existing nested home files and commits the config befo
     assert.ok((await readFile(join(root, 'CLAW.md'), 'utf8')).length > 0)
     assert.equal(loadClawEnvironmentConfig(root).config.bootstrapped, true)
     assert.equal(runtime.bootstrapped, true)
-    assert.equal(runtime.extensionBootstrapped, true)
-    assert.equal(runtime.hydrationStale, true)
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -71,12 +69,9 @@ test('failed config persistence cannot mark in-memory bootstrap success', async 
   try {
     await mkdir(join(root, '.pi', 'claw.jsonc'), { recursive: true })
     const runtime = new ClawaRuntimeState()
-    runtime.extensionBootstrapped = false
     await assert.rejects(bootstrapMainHome(root, runtime))
     assert.ok((await readFile(join(root, 'CLAW.md'), 'utf8')).length > 0)
     assert.equal(runtime.bootstrapped, false)
-    assert.equal(runtime.extensionBootstrapped, false)
-    assert.equal(runtime.hydrationStale, false)
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -109,7 +104,7 @@ test('a directory in place of a template file does not count as a copied home', 
   }
 })
 
-test('worker-local Pi settings do not hide the shared home readiness or context choice', async () => {
+test('worker-local Pi settings do not hide shared home readiness or defaults', async () => {
   const root = await home()
   const previousRoot = process.env['PI_CLAW_PROJECT_ROOT']
   try {
@@ -122,12 +117,12 @@ test('worker-local Pi settings do not hide the shared home readiness or context 
       JSON.stringify({
         bootstrapped: true,
         clawas: { workers: [] },
-        clawa: { contextManagement: 'pi' },
+        clawa: { humanName: 'Igor', contextManagement: 'pi' },
       }),
     )
     process.env['PI_CLAW_PROJECT_ROOT'] = root
     assert.equal(new ClawaRuntimeState().ensureBootstrapped(worker), true)
-    assert.equal(resolveClawaDefaults(worker).contextManagement, 'pi')
+    assert.equal(resolveClawaDefaults(worker).humanName, 'Igor')
   } finally {
     if (previousRoot === undefined) delete process.env['PI_CLAW_PROJECT_ROOT']
     else process.env['PI_CLAW_PROJECT_ROOT'] = previousRoot

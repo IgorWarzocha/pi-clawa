@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -17,6 +17,9 @@ import { parseHistoryInput } from '../src/context-management/tools.js'
 const signal = new AbortController().signal
 const unknownChat = /Unknown chat_id/
 const invalidChat = /Invalid chat_id/
+const mismatchedChat = /no longer matches/
+const missingArchive = /Archived raw source missing/
+const branchCycle = /Session branch cycle/
 
 test('history router validates action-specific required fields without rejecting other actions', () => {
   assert.deepEqual(parseHistoryInput({ action: 'list_chats' }), { action: 'list_chats' })
@@ -180,4 +183,153 @@ test('catalog reads only declared session directories and rejects foreign chat I
     await rm(root, { recursive: true, force: true })
     await rm(foreign, { recursive: true, force: true })
   }
+})
+
+test('native summary links recover nested archives once, live and after restart, without unrelated branches', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clawa-history-archives-'))
+  try {
+    const dir = join(root, 'sessions')
+    const manager = SessionManager.create(root, dir)
+    const user = (text: string) =>
+      manager.appendMessage({ role: 'user', content: text, timestamp: 1 })
+    manager.appendCustomEntry('clawa-context-window', { windowId: 'archived' })
+    const shared = user('shared ancestor')
+    manager.appendMessage({
+      role: 'assistant',
+      content: [],
+      api: 'openai-responses',
+      provider: 'openai',
+      model: 'test',
+      stopReason: 'stop',
+      timestamp: 1,
+      usage: {
+        input: 0,
+        output: 0,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 0,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      },
+    })
+    const first = user('first archived turn')
+    const summary = manager.branchWithSummary(null, 'first boundary', { unrelated: true }, true)
+    manager.appendCustomEntry('clawa-context-window', { windowId: 'middle' })
+    const middle = user('middle turn')
+    manager.branch(shared)
+    const abandoned = user('unrelated abandoned turn')
+    manager.branch(middle)
+    const second = user('second archived turn')
+    manager.branchWithSummary(null, 'second boundary')
+    manager.appendCustomEntry('clawa-context-window', { windowId: 'current' })
+    const current = user('current turn')
+    const file = manager.getSessionFile()
+    assert.ok(file)
+    const chat = {
+      sessionId: manager.getSessionId(),
+      sessionFile: file,
+      cwd: root,
+      agentName: 'main',
+    }
+    const other = context(root, SessionManager.inMemory(root))
+    const expected = [shared, first, middle, second, current]
+    for (const ctx of [
+      context(root, manager),
+      other,
+      context(root, SessionManager.open(file, dir)),
+    ]) {
+      const entries = await readChatEntries(chat, ctx)
+      assert.equal(new Set(entries.map((entry) => entry.id)).size, entries.length)
+      assert.ok(!entries.some((entry) => entry.id === abandoned))
+      const history = extractHistory(chat, entries)
+      assert.deepEqual(
+        history.items.filter((item) => item.role === 'user').map((item) => item.item_id),
+        expected,
+      )
+      assert.deepEqual(
+        history.windows.map((window) => window.window_id),
+        ['archived', `${chat.sessionId}:root`, 'middle', 'current'],
+      )
+    }
+    manager.branch(shared)
+    assert.deepEqual(
+      extractHistory(chat, await readChatEntries(chat, context(root, manager))).items.map(
+        (item) => item.item_id,
+      ),
+      [shared],
+    )
+    await assert.rejects(
+      readChatEntries({ ...chat, cwd: join(root, 'wrong') }, context(root, manager)),
+      mismatchedChat,
+    )
+
+    const raw = manager.getEntries()
+    const write = async (entries: typeof raw) => {
+      await writeFile(
+        file,
+        `${[manager.getHeader(), ...entries].map((entry) => JSON.stringify(entry)).join('\n')}\n`,
+      )
+    }
+    await write(raw.filter((entry) => entry.id !== first))
+    await assert.rejects(readChatEntries(chat, other), missingArchive)
+    await write(
+      raw.map((entry) =>
+        entry.id === summary && entry.type === 'branch_summary'
+          ? { ...entry, fromId: entry.id }
+          : entry,
+      ),
+    )
+    await assert.rejects(readChatEntries(chat, other), branchCycle)
+    await write(
+      raw.map((entry) => (entry.id === current ? { ...entry, parentId: entry.id } : entry)),
+    )
+    await assert.rejects(readChatEntries(chat, other), branchCycle)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('native summaries from an empty branch have no archived raw source', async () => {
+  const manager = SessionManager.inMemory('/tmp')
+  const summary = manager.branchWithSummary(null, 'empty branch')
+  const chat = {
+    sessionId: manager.getSessionId(),
+    sessionFile: '',
+    cwd: '/tmp',
+    agentName: 'main',
+  }
+  assert.deepEqual(
+    (await readChatEntries(chat, context('/tmp', manager))).map((entry) => entry.id),
+    [summary],
+  )
+})
+
+test('archived sibling turns keep their original window when the target branch has compacted', async () => {
+  const manager = SessionManager.inMemory('/tmp')
+  const shared = manager.appendMessage({ role: 'user', content: 'shared', timestamp: 1 })
+  const compaction = manager.appendCompaction('target summary', shared, 10)
+  const target = manager.appendMessage({ role: 'user', content: 'target branch', timestamp: 2 })
+  manager.branch(shared)
+  const source = manager.appendMessage({ role: 'user', content: 'archived sibling', timestamp: 3 })
+  manager.branchWithSummary(target, 'carry sibling forward')
+  const current = manager.appendMessage({ role: 'user', content: 'current', timestamp: 4 })
+  const chat = {
+    sessionId: manager.getSessionId(),
+    sessionFile: '',
+    cwd: '/tmp',
+    agentName: 'main',
+  }
+  const history = extractHistory(chat, await readChatEntries(chat, context('/tmp', manager)))
+  assert.equal(
+    history.items.find((item) => item.item_id === source)?.window_id,
+    `${chat.sessionId}:root`,
+  )
+  for (const id of [target, current])
+    assert.equal(
+      history.items.find((item) => item.item_id === id)?.window_id,
+      `${chat.sessionId}:${compaction}`,
+    )
+  assert.equal(
+    history.windows.find((window) => window.window_id === `${chat.sessionId}:root`)?.item_count,
+    2,
+  )
 })

@@ -7,6 +7,8 @@ I should not guess from generic assistant caution. Different homes draw the line
 I should also not assume the human is a developer. Translate this into their world.
 
 Run this after the basics of `CLAW.md` and `HUMAN.md` have started to take shape.
+If the first input is a concrete task, do that task instead of making onboarding a prerequisite.
+Let introductions happen naturally when the human greets me or asks to get acquainted.
 MUST NOT prioritize this worksheet just because it exists. Privacy/security is important, but it should not be the default next question.
 First get a feel for the human, my name/shape, what they want from me, and how we talk.
 Ask naturally in chat. One question at a time is the default; three is only a hard emergency ceiling, not a target.
@@ -31,9 +33,9 @@ When the human says onboarding is done, acknowledge it, give or confirm that sho
 - run Pi inside a persistent terminal environment such as herdr, tmux, or similar
 - use an always-on machine if pulses, Discord, or ambient behavior should keep running
 - treat this home as one continuous Pi session/branch; after stopping, resume with `pi -c` rather than starting fresh
-- start a new session only when something is badly wedged; use a checkpoint and fresh context window when the current one grows crowded
+- start a new session only when something is badly wedged; Pi handles compaction, or optional Pi Codex handles its configured continuity
 
-Then suggest a checkpoint in notes followed by `new_context` before continuing. If Pi compaction mode is selected, suggest `/compact` instead.
+Keep useful knowledge in the living docs or shared `clawa_memory`. Explicit `scope: "notes"` accesses stored chat checkpoints; `clawa_history` reads house archives and revisions. Use Codex checkpoint and fresh-window tools only when installed; otherwise let Pi compact or use `/compact` when needed. Do not force a context reset just because onboarding finished.
 
 When updating docs during onboarding, keep the starter placeholders until there is a real answer. Do not replace them with `unknown`, `not confirmed`, or similar filler; future-me needs to see what the placeholder was asking for.
 

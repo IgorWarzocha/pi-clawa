@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { publishClawasOutboundMessage } from './comms/outbound.js'
 import type { ClawasRuntime } from './runtime.js'
 import type { WorkerState } from './types.js'
@@ -63,11 +63,16 @@ function resolveJumpTarget(runtime: ClawasRuntime, args: string): WorkerState | 
   return runtime.findMonitorWorker(target) ?? `Unknown claw: ${target}`
 }
 
-export function registerSteerCommand(pi: ExtensionAPI, runtime: ClawasRuntime): void {
+export function registerSteerCommand(
+  pi: ExtensionAPI,
+  runtime: ClawasRuntime,
+  prepare: (ctx: ExtensionContext) => Promise<void>,
+): void {
   pi.registerCommand('steer', {
     description:
       'Send an internal steer note to the active Clawas claw, or to /steer <slot> <message>',
     handler: async (args, ctx) => {
+      await prepare(ctx)
       const target = resolveSteerTarget(runtime, args ?? '')
       if (typeof target === 'string') {
         ctx.ui.notify(target, 'warning')
@@ -96,10 +101,15 @@ export function registerSteerCommand(pi: ExtensionAPI, runtime: ClawasRuntime): 
   })
 }
 
-export function registerJumpCommand(pi: ExtensionAPI, runtime: ClawasRuntime): void {
+export function registerJumpCommand(
+  pi: ExtensionAPI,
+  runtime: ClawasRuntime,
+  prepare: (ctx: ExtensionContext) => Promise<void>,
+): void {
   pi.registerCommand('jump', {
     description: 'Open or focus a Clawa tab, or /jump <slot|worker>',
     handler: async (args, ctx) => {
+      await prepare(ctx)
       const target = resolveJumpTarget(runtime, args ?? '')
       if (typeof target === 'string') {
         ctx.ui.notify(target, 'warning')

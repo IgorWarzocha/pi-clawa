@@ -25,8 +25,8 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | Path | Purpose |
 | --- | --- |
 | `.pi/settings.json` | Pi package and project settings. |
-| `.pi/claw.jsonc` | Bootstrap flag, worker definitions, naming, sockets, and memory-pass settings. |
-| `.pi/context/notes/` | Private chat and agent checkpoints. |
+| `.pi/claw.jsonc` | Home activation, bootstrap flag, worker definitions, naming, and sockets. |
+| `.pi/context/notes/` | Retained chat and agent notes, accessed with `clawa_memory` and `scope: "notes"`. |
 | `.pi/context/chats/` | House catalog pointing to canonical Pi JSONL sessions. |
 | `.pi/context/consolidation.sqlite` | Background memory job queue. |
 | `.pi/clawa-memory.sqlite` | Retired legacy database, retained read-only if it existed. |
@@ -37,7 +37,8 @@ These are user data. Do not recreate them from templates during normal upgrades.
 | `<home>/.pi/clawa-discord/gateway.db`, `archive-pending.json`, `assets/`, `channels.json` | Local searchable Discord history, pending archive writes, cached media, and channel snapshot. |
 
 The main Clawa's ordinary sessions use Pi's normal session store. Do not assume they live beside
-worker sessions.
+worker sessions. Old notes and window archives are retained when upgrading; continuity does not
+depend on a Clawa-owned rollover engine.
 
 ## Ephemeral control state
 

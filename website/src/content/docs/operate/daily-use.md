@@ -14,8 +14,9 @@ pi -c
 ```
 
 Use `pi -r` when you need to choose an older main session. Start a new session when the current
-branch is genuinely wedged or its history has stopped being useful, not as a daily reset. In local
-context mode, checkpoint useful state into notes and use `new_context` when a window grows crowded.
+branch is genuinely wedged or its history has stopped being useful, not as a daily reset. Pi handles
+compaction when the context grows crowded. If Pi Codex is installed, follow its configured continuity
+instead. Keep reusable knowledge in `clawa_memory` and the living docs, regardless of the runtime.
 
 ## Keep the main room alive
 

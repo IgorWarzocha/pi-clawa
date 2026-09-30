@@ -37,12 +37,13 @@ Clawa edits.
 
 ## Home isolation
 
-Clawa excludes global and outside-parent instruction files from its prompt while preserving
-instructions physically inside the home. This isolates persona and operating posture; it does not
+Clawa filters Pi's structured context files to exclude global and outside-parent instructions while
+preserving instructions physically inside the home. This scopes persona and operating posture; it does not
 block file tools from reading outside the home when normal Pi permissions and instructions allow it.
 
-`.pi/SYSTEM.md` is ignored to avoid conflicting identity prompts. `.pi/APPEND_SYSTEM.md` remains the
-supported Pi-level addition point.
+Clawa preserves custom prompts and other extensions' prompt ownership. An opaque full override can
+hide home sections and bypass context-file scoping. Prefer `.pi/APPEND_SYSTEM.md` or structured
+prompt sections for additions that keep the home's context present.
 
 ## External action
 

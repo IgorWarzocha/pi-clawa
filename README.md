@@ -11,34 +11,32 @@ The point is not persistence alone. Clawa's living home and bundled `warmth-pass
 identity-bearing docs precise without letting them slide into compliance bark, corporate filler, or
 generic assistant voice. The runtime keeps putting that shaped voice back into context.
 
-It keeps raw Pi underneath—your models, tools, extensions, sessions, and terminal—then adds the home
-layer:
+Clawa adds the home layer:
 
 - living identity and relationship documents;
 - shared Markdown memory, chat-local notes, and searchable Pi history;
 - long-lived specialist Clawas with internal coordination;
 - folder-based scheduled and manual Pulses;
-- local context checkpoints and fresh windows, or opt-in Pi compaction;
+- living-home context that stays current through Pi compaction or optional Pi Codex continuity;
 - an optional Discord adapter.
 
 The result stays open-ended. Add normal Pi packages and extensions when the home needs more.
 
 ## How it fits into Pi
 
-Clawa replaces Pi's generic assistant introduction with the resident Clawa's identity while keeping
-Pi's tool and runtime context. Instructions are contained to the active Clawa home: global and
-outside-parent context files are excluded, while nested `AGENTS.md` files inside the home load as
-work reaches them.
+Clawa adds the resident Clawa's identity through Pi's native structured prompt while preserving
+Pi's tool context and other extensions' prompt ownership. Context files are scoped to the active home:
+global and outside-parent context files are excluded, while nested `AGENTS.md` files inside the
+home load as work reaches them.
 
-Five living documents are rehydrated without accumulating duplicate context: `CLAW.md`, `HUMAN.md`,
+Five living documents join Pi's structured prompt before each agent turn: `CLAW.md`, `HUMAN.md`,
 `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`. `AGENTS.md` remains the behavior spine. The main Clawa uses
 ordinary Pi sessions; specialists keep independent homes and sessions.
 
-Near 90% of the active model window by default, Clawa prompts a checkpoint in chat-local notes before
-starting a fresh window. No summary appears automatically. Choose `clawa.contextManagement: "pi"`
-to use Pi's usual compaction instead. Pi's `/compact` and overflow recovery remain available in
-local mode. Shared files live in `memory/`. The optional
-`/memory remember` command queues a separate memory pass when the session is idle.
+Pi owns compaction. If you add Pi Codex, it owns its configured continuity instead. Clawa does not
+run a second rollover engine or set context thresholds. Shared files live in `memory/`; old chat
+notes and window archives remain accessible. `/memory remember` freezes the conversation, starts a
+fresh one, and queues optional consolidation when idle. Codex is not required.
 
 The [runtime reference](https://igorwarzocha.github.io/pi-clawa/docs/reference/runtime/) traces the
 full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/docs/reference/privacy/)
@@ -48,7 +46,8 @@ states the actual trust boundaries without pretending the extension is a sandbox
 
 Use Pi 0.87.1 or newer on Linux with `flock` available. The local memory toolkit uses Linux's
 no-follow file checks and process locks. Keep the package checkout separate from the clean folder
-that will become the Clawa home. Tagged releases are the stable update channel.
+that will become the Clawa home. Install Clawa per home, not globally. Tagged git checkouts are the
+stable update channel.
 
 ```sh
 git clone --branch v0.3.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
@@ -64,11 +63,17 @@ To remember the checkout for this home, run the helper from the home directory:
 pi
 ```
 
-First run creates the home and starts a short conversational onboarding. Existing core home files
-stop automatic bootstrap rather than being overwritten. See the
+First run creates the home, then waits for your first message or task. A greeting opens introductions;
+a concrete task comes first. There is no autonomous startup turn. Existing core home files stop
+automatic bootstrap rather than being overwritten. See the
 [installation](https://igorwarzocha.github.io/pi-clawa/docs/getting-started/installation/) and
 [first-run](https://igorwarzocha.github.io/pi-clawa/docs/getting-started/first-run/) guides before
 adapting an existing OpenClaw or Hermes home.
+
+A global Clawa install stays dormant as a safety net, not a recommended setup. In ordinary directories
+without `.pi/claw.jsonc`, it adds no Clawa tools, skills, prompt, or runtime. Existing configured
+homes activate globally. A project install
+or explicit `pi -e` deliberately creates a new home as above.
 
 ## The useful entrances
 
@@ -77,8 +82,13 @@ adapting an existing OpenClaw or Hermes home.
 - `/jump` — open or focus a specialist's named Herdr tab (or tmux window). The same session stays
   messageable and reporting while you type there.
 - `/pulse` — inspect Pulses or run one manually.
-- `notes` / `history` — write chat checkpoints or shared memory and search earlier Pi windows.
-- `new_context` — start a fresh window after checkpointing; `/memory` shows status and queues consolidation.
+- `clawa_memory` — read and write shared home Markdown by default; use `scope: "notes"` for stored chat notes.
+- `clawa_history` — search house conversation archives and committed memory revisions.
+- `/memory` — show memory status and queue optional consolidation.
+
+Generic `notes`, `history`, `new_context`, and `get_context_remaining` are not Clawa tools. They
+depend on an optional continuity extension such as Pi Codex. An optional CodeMode adapter exposes
+Clawa's house and message tools through namespaces when CodeMode is present.
 
 The wiki owns the detail:
 

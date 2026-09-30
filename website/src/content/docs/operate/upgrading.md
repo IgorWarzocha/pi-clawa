@@ -32,6 +32,16 @@ When moving from 0.3 to the native-tab version, stop the old main Pi session bef
 new version. That shuts down the old managed RPC workers. Session history stays in place; the new
 runtime opens Herdr tabs or tmux windows without a home-state migration.
 
+Remove obsolete `contextManagement`, `memoryPass`, and `memoryPassThreshold` entries from older
+Clawa configs. Pi now owns compaction, or optional Pi Codex owns its configured continuity. Old
+chat notes and window archives are retained. Update custom home instructions to use `clawa_memory`
+for shared Markdown by default, explicit `scope: "notes"` for stored chat notes, and `clawa_history`
+for house archives and revisions. Generic continuity tools are not supplied by Clawa.
+
+Globally installed Clawa activates existing configured homes but stays dormant in ordinary projects
+without `.pi/claw.jsonc`. New homes still bootstrap through a project install or explicit `pi -e`,
+then wait for the first human message or task before starting a conversation.
+
 If you used the old Discord gateway, **before updating** use the old `/discord` to stop it. After
 updating, open each home that should connect and set its own distinct bot token through the new
 `/discord`. Old `config.env` and `routes.jsonc` are not read or migrated; old worker homes, Pi

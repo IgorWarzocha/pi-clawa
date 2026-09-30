@@ -1,5 +1,9 @@
 import { StringEnum } from '@earendil-works/pi-ai'
-import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  ToolDefinition,
+} from '@earendil-works/pi-coding-agent'
 import { Type } from 'typebox'
 import { Value } from 'typebox/value'
 import {
@@ -259,60 +263,45 @@ export function parseHistoryInput(input: unknown): HistoryInput {
 export function registerContextTools(
   pi: ExtensionAPI,
   getAccess: (ctx: ExtensionContext) => ContextAccess,
-): void {
-  pi.registerTool({
-    name: 'notes',
-    label: 'Notes',
+): ToolDefinition[] {
+  const memory: ToolDefinition<typeof notesParameters> = {
+    name: 'clawa_memory',
+    label: 'Clawa memory',
     description:
-      'Read and write chat checkpoints or shared house Markdown. Relative paths use the current agent.',
+      'Read and write shared house Markdown. Scope defaults to memory; notes reads legacy chat checkpoints.',
     parameters: notesParameters,
     async execute(_id, input, signal, _update, ctx) {
-      try {
-        const { value, contextPaths } = await runNotes(
-          getAccess(ctx),
-          ctx,
-          parseNotesInput(input),
-          signal ?? new AbortController().signal,
-        )
-        return toolResult(value, { contextPaths })
-      } catch (error) {
-        return {
-          content: [
-            { type: 'text' as const, text: error instanceof Error ? error.message : String(error) },
-          ],
-          details: {},
-          isError: true,
-        }
-      }
+      const access = getAccess(ctx)
+      const parsed = parseNotesInput(input)
+      const { value, contextPaths } = await runNotes(
+        access,
+        ctx,
+        { ...parsed, scope: parsed.scope ?? 'memory' },
+        signal ?? new AbortController().signal,
+      )
+      return toolResult(value, { contextPaths })
     },
-  })
-  pi.registerTool({
-    name: 'history',
-    label: 'History',
+  }
+  const history: ToolDefinition<typeof historyParameters> = {
+    name: 'clawa_history',
+    label: 'Clawa history',
     description:
       'Browse local Pi chats, context windows and committed memory revisions. Pass IDs unchanged.',
     parameters: historyParameters,
     async execute(_id, input, signal, _update, ctx) {
-      try {
-        return toolResult(
-          await runHistory(
-            getAccess(ctx),
-            ctx,
-            parseHistoryInput(input),
-            signal ?? new AbortController().signal,
-          ),
-        )
-      } catch (error) {
-        return {
-          content: [
-            { type: 'text' as const, text: error instanceof Error ? error.message : String(error) },
-          ],
-          details: {},
-          isError: true,
-        }
-      }
+      return toolResult(
+        await runHistory(
+          getAccess(ctx),
+          ctx,
+          parseHistoryInput(input),
+          signal ?? new AbortController().signal,
+        ),
+      )
     },
-  })
+  }
+  const tools: ToolDefinition[] = [memory, history]
+  for (const tool of tools) pi.registerTool(tool)
+  return tools
 }
 
 export type { ContextAccess }

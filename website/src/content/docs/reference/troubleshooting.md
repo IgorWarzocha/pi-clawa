@@ -10,6 +10,9 @@ auth problem, and Discord connection problem can look similar from the final con
 
 ## Clawa did not appear
 
+With a global install, this is expected in an ordinary directory without `.pi/claw.jsonc`. Clawa
+stays dormant there. Use a project install or explicit `-e` from a clean folder to make a home.
+
 1. Run `pi -e /absolute/path/to/pi-clawa` from the intended home.
 2. Check that Node satisfies `>=24.15.0 <27`.
 3. Check `.pi/settings.json` if plain `pi` fails but `-e` works.
@@ -40,11 +43,11 @@ surfaces look right.
 
 ## Identity feels stale after compaction
 
-The `session_compact` boundary should preserve an already-active hydration payload or persist a fresh
-one from the five living files. Check that the files are under the resolved home, within the
-documented bounds, and not replaced by an outside instruction file you expected Clawa to load. If
-the files changed after the last lifecycle boundary, `/reload` starts a fresh hydration cycle.
-Custom `.pi/SYSTEM.md` is ignored; use `.pi/APPEND_SYSTEM.md`.
+The next `before_agent_start` should refresh the five living files in Pi's structured prompt after
+Pi or Codex continuity. Check that the files are under the resolved home, within the documented
+bounds, and not replaced by an outside instruction file you expected Clawa to load.
+Check for an opaque full-prompt override that hides home sections. Clawa preserves other extensions'
+prompt ownership; use `.pi/APPEND_SYSTEM.md` or structured sections for compatible additions.
 
 For structural checks:
 

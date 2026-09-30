@@ -1,4 +1,8 @@
-import type { ExtensionAPI, ExtensionCommandContext } from '@earendil-works/pi-coding-agent'
+import type {
+  ExtensionAPI,
+  ExtensionCommandContext,
+  ExtensionContext,
+} from '@earendil-works/pi-coding-agent'
 import type { ClawasRuntime } from '../clawas/runtime.js'
 import { type ClawaDefaults, resolveClawaDefaults } from '../config.js'
 import { executeBootstrap } from '../extension/bootstrap-actions.js'
@@ -67,11 +71,17 @@ export function registerPulseCommand(
     clawasRuntime: ClawasRuntime
     pulseRuntime: PulseRuntime
     setDefaults: (defaults: ClawaDefaults) => void
+    prepare: (ctx: ExtensionContext) => Promise<void>
   },
 ): void {
   pi.registerCommand('pulse', {
     description: 'Open Clawa pulses or run one pulse directly',
     handler: async (args, ctx) => {
+      if (!options.runtime.active) {
+        ctx.ui.notify('Clawa is dormant outside a Clawa home.', 'info')
+        return
+      }
+      await options.prepare(ctx)
       const [command, ...rest] = (args ?? '').trim().split(SPACE_PATTERN).filter(Boolean)
       if (!command) {
         await openPulsesGui(pi, ctx, options)

@@ -1,14 +1,11 @@
 import { existsSync, realpathSync } from 'node:fs'
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import {
   type BuildSystemPromptOptions,
   type ExtensionAPI,
   getAgentDir,
 } from '@earendil-works/pi-coding-agent'
 import { findRepoRoot, loadClawEnvironmentConfig } from './config.js'
-
-const PI_DEFAULT_ASSISTANT_INTRO =
-  'You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.'
 
 const WHITESPACE_PATTERN = /\s+/g
 
@@ -75,7 +72,7 @@ export function filterClawaHomeContextFiles(
 }
 
 function resolveClawaPromptName(cwd: string): string {
-  const repoRoot = findRepoRoot(cwd)
+  const repoRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || findRepoRoot(cwd)
   const loaded = loadClawEnvironmentConfig(repoRoot)
   const mainName = sanitizeClawaName(loaded.config.clawa.mainClawName) || 'Clawa'
   const candidates: ClawaNameCandidate[] = [
@@ -94,65 +91,22 @@ function resolveClawaPromptName(cwd: string): string {
   return matching[0]?.name ?? mainName
 }
 
-function replacePiDefaultAssistantIntro(systemPrompt: string, clawaName = 'Clawa'): string {
-  if (!systemPrompt.startsWith(PI_DEFAULT_ASSISTANT_INTRO)) {
-    return systemPrompt
-  }
-
-  return `${buildClawaPersonalAssistantIntro(clawaName)}${systemPrompt.slice(PI_DEFAULT_ASSISTANT_INTRO.length)}`
-}
-
-function findCustomSystemPromptFiles(cwd: string, projectTrusted: boolean): string[] {
-  const paths: string[] = []
-  const projectPath = join(cwd, '.pi', 'SYSTEM.md')
-  if (projectTrusted && existsSync(projectPath)) {
-    paths.push(projectPath)
-  }
-
-  const globalPath = join(getAgentDir(), 'SYSTEM.md')
-  if (existsSync(globalPath)) {
-    paths.push(globalPath)
-  }
-
-  return paths
-}
-
-export function registerClawaSystemPrompt(pi: ExtensionAPI): void {
+export function registerClawaSystemPrompt(pi: ExtensionAPI, isActive: () => boolean): void {
   let warnedCustomSystemPrompt = false
-
-  function warn(paths?: string[]): void {
-    if (warnedCustomSystemPrompt) return
-    warnedCustomSystemPrompt = true
-    const suffix = paths && paths.length > 0 ? ` Ignored: ${paths.join(', ')}` : ''
-    pi.sendMessage({
-      customType: 'claw-dim',
-      content: `Clawa is ignoring a full system-prompt replacement and keeping Pi's prompt with the Clawa identity. Put extra instructions in this home's .pi/APPEND_SYSTEM.md or contribute structured prompt sections from an extension.${suffix}`,
-      display: true,
-    })
-  }
-
-  pi.on('session_start', (_event, ctx) => {
-    const customSystemPromptFiles = findCustomSystemPromptFiles(ctx.cwd, ctx.isProjectTrusted())
-    if (customSystemPromptFiles.length > 0) {
-      warn(customSystemPromptFiles)
-    }
-  })
-
-  pi.on('before_agent_start', (event) => {
+  pi.on('before_agent_start', (event, ctx) => {
+    if (!isActive()) return
     const options = event.systemPromptOptions
-    if (options.customPrompt || options.forceSystemPrompt !== undefined) warn()
-    delete options.customPrompt
-    // An opaque earlier override bypasses contextFiles and cannot be home-filtered.
-    delete options.forceSystemPrompt
     options.contextFiles = filterClawaHomeContextFiles(options.contextFiles, options.cwd)
-
-    // Pi re-renders this getter from the edited options. Keep its tools, guidelines,
-    // docs and extension sections rather than maintaining a second prompt builder.
-    const systemPrompt = event.systemPrompt
-    const clawaPrompt = replacePiDefaultAssistantIntro(
-      systemPrompt,
+    options.sections['clawa_identity'] = buildClawaPersonalAssistantIntro(
       resolveClawaPromptName(options.cwd),
     )
-    return clawaPrompt === systemPrompt ? undefined : { systemPrompt: clawaPrompt }
+    // Do not fight another extension's prompt owner. Opaque overrides cannot compose sections.
+    if (options.forceSystemPrompt !== undefined && !warnedCustomSystemPrompt && ctx.hasUI) {
+      warnedCustomSystemPrompt = true
+      ctx.ui.notify(
+        'A full prompt override hides Clawa home instructions. Use structured prompt sections or .pi/APPEND_SYSTEM.md to keep home context.',
+        'warning',
+      )
+    }
   })
 }

@@ -18,35 +18,34 @@ order: 100
 | `/steer <slot\|worker> <message>` | Target a worker by monitor slot, ID, or title. |
 | `/jump [slot\|worker]` | Open or focus a worker's named Herdr tab or tmux window. |
 | `/discord` | Optional adapter: configure and connect this home's bot in its Pi tab. |
-| `/memory` | Show memory and context status. |
-| `/memory remember` | Queue a separate, idle memory consolidation. |
+| `/memory` | Show house memory and consolidation status. |
+| `/memory remember` | Freeze this conversation, start a fresh one, and queue optional consolidation. |
 | `/memory retry <jobId>` | Retry a failed consolidation job. |
 
-Pi's `/compact` remains available in both context modes, along with `/model`, `/resume`, and
-`/reload`. Pi's overflow recovery remains a fallback in local mode.
+Pi owns `/compact` and overflow recovery. `/model`, `/resume`, and `/reload` remain Pi commands.
+Optional Pi Codex owns its configured continuity; Clawa has no separate context mode.
 
 ## Model-facing tools
 
-### `notes`
+### `clawa_memory`
 
-List, read, search, append, or write Markdown notes. The default `scope: "notes"` belongs to this
-chat and agent; other Clawas can address it by ID. Set `scope: "memory"` for the house's shared
-`memory/` tree. Search before writing and preserve links and local instructions.
+List, read, search, append, or write Markdown. The default `scope: "memory"` accesses the house's
+shared `memory/` tree. Explicit `scope: "notes"` accesses stored notes for this chat and agent;
+other Clawas can address them by ID. Search before writing and preserve links and local instructions.
 
 Reads return `file.version`. Pass it as `expected_version` when replacing content, or pass `null`
 to create only if absent. A conflict leaves the newer file intact for rereading and merging.
 Omitting the version deliberately performs an unconditional write; background consolidation never
 uses that shortcut. Appends are serialized across Clawas.
 
-### `history`
+### `clawa_history`
 
 List windows, items, chats, or revisions; read an item or revision; search past content. Session
 history comes from Pi's JSONL rather than a copied transcript database. Revisions read committed
 shared memory and depend on Git availability.
 
-### `new_context`
-
-Start a fresh context window after checkpointing useful state. It does not automatically summarize.
+Generic `notes`, `history`, `new_context`, and `get_context_remaining` are not registered by Clawa.
+They are available only when another extension, such as Pi Codex, provides them.
 
 ### `message_clawa`
 
@@ -66,7 +65,12 @@ Unmarked text stays in Pi.
 
 ### `discord_history`
 
-Searches the current home's local Discord history. It does not replace house `history`.
+Searches the current home's local Discord history. It does not replace `clawa_history`.
+
+### Optional CodeMode access
+
+When CodeMode is present, Clawa's optional adapter exposes its house and message tools through
+namespaces. This does not make Codex a requirement or add a second continuity runtime.
 
 ## Keyboard shortcuts
 

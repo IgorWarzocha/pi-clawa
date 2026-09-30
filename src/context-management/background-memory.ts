@@ -1,10 +1,11 @@
-import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import type { ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { drain, listJobs } from './consolidation/index.js'
 import { runConsolidationJob } from './consolidation/runner.js'
 
 interface Attachment {
   rootHouse: string
   registry: ExtensionContext['modelRegistry']
+  ui: ExtensionContext['ui']
   controller: AbortController
   timer: ReturnType<typeof setInterval>
   running: Promise<void> | undefined
@@ -14,15 +15,11 @@ interface Attachment {
 /** One lifecycle owner per extension; the durable queue's OS lock arbitrates across Clawas. */
 export class BackgroundMemory {
   private attachment: Attachment | undefined
-  private readonly pi: ExtensionAPI
-
-  constructor(pi: ExtensionAPI) {
-    this.pi = pi
-  }
 
   async attach(rootHouse: string, ctx: ExtensionContext): Promise<void> {
     if (this.attachment?.rootHouse === rootHouse) {
       this.attachment.registry = ctx.modelRegistry
+      this.attachment.ui = ctx.ui
       this.kick()
       return
     }
@@ -32,6 +29,7 @@ export class BackgroundMemory {
     this.attachment = {
       rootHouse,
       registry: ctx.modelRegistry,
+      ui: ctx.ui,
       controller: new AbortController(),
       timer,
       running: undefined,
@@ -65,22 +63,16 @@ export class BackgroundMemory {
         (job) => job.status === 'failed' && !failedBefore.has(job.id),
       )
       if (failed.length > 0)
-        this.report(
+        attachment.ui.notify(
           `Memory consolidation failed for ${failed.map((job) => job.id).join(', ')}. /memory shows the error; /memory retry <id> retries it.`,
+          'warning',
         )
     } catch (error) {
       if (attachment.controller.signal.aborted) return
       const message = error instanceof Error ? error.message : String(error)
-      if (attachment.error !== message) this.report(`Memory queue: ${message}`)
+      if (attachment.error !== message) attachment.ui.notify(`Memory queue: ${message}`, 'warning')
       attachment.error = message
     }
-  }
-
-  private report(content: string): void {
-    this.pi.sendMessage(
-      { customType: 'clawa-memory-status', content, display: true },
-      { triggerTurn: false },
-    )
   }
 
   async stop(): Promise<void> {

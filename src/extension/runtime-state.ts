@@ -1,5 +1,4 @@
 import { ensureClawEnvironmentConfig, findRepoRoot, loadClawEnvironmentConfig } from '../config.js'
-import type { HydratedClawaImage } from '../hydration-image.js'
 import { IS_CLAWAS_WORKER } from './constants.js'
 
 export type ExtensionConfigStatus = {
@@ -9,31 +8,22 @@ export type ExtensionConfigStatus = {
 }
 
 export class ClawaRuntimeState {
+  active = false
+  homeRoot: string | undefined = undefined
+  onboardingPending = false
   cwd?: string
-  extensionBootstrapped = true
   bootstrappedKnown = false
   bootstrapped = false
-  hydrationStale = false
-  hydrationText: string | undefined = undefined
-  hydrationImage: HydratedClawaImage | undefined = undefined
-
-  async armHydration(cwd: string): Promise<boolean> {
-    await this.ensureBootstrapped(cwd)
-    this.hydrationStale = true
-    return this.bootstrapped
-  }
 
   ensureBootstrapped(cwd: string): boolean {
     if (this.cwd !== cwd) {
       this.cwd = cwd
       this.bootstrappedKnown = false
       this.bootstrapped = false
-      this.hydrationStale = false
-      this.hydrationText = undefined
-      this.hydrationImage = undefined
     }
     if (!this.bootstrappedKnown) {
-      const homeRoot = process.env['PI_CLAW_PROJECT_ROOT']?.trim() || findRepoRoot(cwd)
+      const homeRoot =
+        this.homeRoot || process.env['PI_CLAW_PROJECT_ROOT']?.trim() || findRepoRoot(cwd)
       this.bootstrapped = loadClawEnvironmentConfig(homeRoot).config.bootstrapped === true
       this.bootstrappedKnown = true
     }
@@ -42,15 +32,13 @@ export class ClawaRuntimeState {
 
   ensureExtensionConfig(cwd: string): ExtensionConfigStatus {
     if (IS_CLAWAS_WORKER) {
-      this.extensionBootstrapped = true
       return { bootstrapped: true, created: false, path: '' }
     }
 
-    const repoRoot = findRepoRoot(cwd)
+    const repoRoot = this.homeRoot || findRepoRoot(cwd)
     const loaded = ensureClawEnvironmentConfig(repoRoot)
-    this.extensionBootstrapped = loaded.config.bootstrapped === true
     return {
-      bootstrapped: this.extensionBootstrapped,
+      bootstrapped: loaded.config.bootstrapped === true,
       created: loaded.created,
       path: loaded.path,
     }
@@ -60,7 +48,5 @@ export class ClawaRuntimeState {
     this.cwd = cwd
     this.bootstrappedKnown = true
     this.bootstrapped = true
-    this.hydrationStale = true
-    this.extensionBootstrapped = true
   }
 }

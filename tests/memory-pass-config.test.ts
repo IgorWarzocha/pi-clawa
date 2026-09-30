@@ -1,13 +1,9 @@
 import assert from 'node:assert/strict'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { loadClawEnvironmentConfig } from '../src/config.js'
-
-const INVALID_THRESHOLD_PATTERN =
-  /clawa\.memoryPass\.triggerPercent must be an integer from 1 to 99/
-const INVALID_MODE_PATTERN = /clawa\.contextManagement must be local or pi/
 
 async function writeConfig(root: string, clawa: Record<string, unknown>): Promise<void> {
   await mkdir(join(root, '.pi'), { recursive: true })
@@ -18,25 +14,23 @@ async function writeConfig(root: string, clawa: Record<string, unknown>): Promis
   )
 }
 
-test('memory pass rejects thresholds outside one to ninety-nine', async () => {
+test('retired context settings are inert even when malformed, without rewriting stored config', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-memory-pass-config-'))
   try {
-    await writeConfig(root, { memoryPass: { enabled: true, triggerPercent: 100 } })
-    assert.throws(() => loadClawEnvironmentConfig(root), INVALID_THRESHOLD_PATTERN)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('local context is automatic unless the home explicitly selects Pi compaction', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-context-mode-'))
-  try {
-    await writeConfig(root, {})
-    assert.equal(loadClawEnvironmentConfig(root).config.clawa.contextManagement, 'local')
-    await writeConfig(root, { contextManagement: 'pi' })
-    assert.equal(loadClawEnvironmentConfig(root).config.clawa.contextManagement, 'pi')
-    await writeConfig(root, { contextManagement: 'remote' })
-    assert.throws(() => loadClawEnvironmentConfig(root), INVALID_MODE_PATTERN)
+    await writeConfig(root, { humanName: 'Igor', controlPlaneDir: 'house-control' })
+    const expected = loadClawEnvironmentConfig(root).config
+    for (const legacy of [
+      { contextManagement: 'local', memoryPass: { enabled: true, triggerPercent: 90 } },
+      { contextManagement: 'pi', memoryPass: { enabled: false, triggerPercent: 100 } },
+      { contextManagement: 'remote', memoryPass: { enabled: 'yes', triggerPercent: -1 } },
+      { contextManagement: null, memoryPass: 'retired' },
+    ]) {
+      await writeConfig(root, { humanName: 'Igor', controlPlaneDir: 'house-control', ...legacy })
+      const path = join(root, '.pi', 'claw.jsonc')
+      const before = await readFile(path, 'utf8')
+      assert.deepEqual(loadClawEnvironmentConfig(root).config, expected)
+      assert.equal(await readFile(path, 'utf8'), before)
+    }
   } finally {
     await rm(root, { recursive: true, force: true })
   }

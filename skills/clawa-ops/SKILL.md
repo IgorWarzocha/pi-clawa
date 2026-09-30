@@ -1,9 +1,7 @@
 ---
 name: clawa-ops
-description: "Operates and repairs a Clawa home. Use for creating or onboarding subclawas, editing .pi/claw.jsonc, managing pulses, maintaining CLAWAS.md routing and living docs, importing OpenClaw or Hermes context, or diagnosing home structure. Not for ordinary project code or work that belongs inside an established specialist lane."
+description: "Use for Clawa home setup and repair, specialist onboarding, Pulses, config, routing, and OpenClaw or Hermes imports. Not for ordinary project code."
 ---
-
-# Clawa Ops
 
 Operate a Clawa home through readable files, native runtime paths, and real conversation. Keep the home easy to understand. Do not guess config shapes, invent a second control plane, or turn human slash commands into agent workflows.
 
@@ -14,7 +12,19 @@ Operate a Clawa home through readable files, native runtime paths, and real conv
 - `references/pulses.md` — create, edit, disable, run, or review pulses.
 - `references/import-openclaw-hermes.md` — adapt an existing OpenClaw or Hermes home without copying its runtime wholesale.
 
-Shared house knowledge lives in `memory/`. Per-chat checkpoints belong to `notes` with default scope; `history` reads earlier Pi windows. Use `new_context` only after a checkpoint. Existing `vault/` and `.pi/clawa-memory.sqlite` migrate automatically on startup; a collision is a blocker to resolve, not a reason to overwrite a home file.
+Use `clawa_memory` for shared house Markdown under `memory/`, its default scope. Explicit
+`scope: "notes"` accesses retained per-chat notes; `clawa_history` reads house archives and committed
+memory revisions. Pi owns compaction, or optional Pi Codex owns its configured continuity. Do not
+assume generic `notes`, `history`, `new_context`, or `get_context_remaining` exist without a
+continuity extension. Existing `vault/` and `.pi/clawa-memory.sqlite` migrate automatically on
+active-home startup; a collision is a blocker to resolve, not a reason to overwrite a home file.
+
+Prefer a tagged git checkout loaded per home through project settings or explicit `pi -e`.
+Discourage global Clawa installation. Global dormancy is only a safety net: without `.pi/claw.jsonc`,
+it adds no Clawa tools, skills, prompt, or runtime. Project installs and explicit `pi -e` bootstrap
+deliberately. First run creates files but waits for the first human message or task. A concrete task
+comes before introductions. Shepherdr
+owns its spawn flow, with optional Codex sharing for family context, not a Clawa adoption API.
 
 Read only the references needed for the requested operation. For a mixed migration or structural repair, read every reference that owns a file you will touch.
 

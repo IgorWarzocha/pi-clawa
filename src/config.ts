@@ -30,11 +30,6 @@ export interface ClawaWorkerConfig {
   reportMode?: ClawaWorkerReportMode | undefined
 }
 
-export interface ClawaMemoryPassConfig {
-  enabled: boolean
-  triggerPercent: number
-}
-
 export interface ClawaDefaults {
   humanName: string
   mainClawName: string
@@ -42,13 +37,6 @@ export interface ClawaDefaults {
   workerSessionPrefix: string
   controlPlaneDir: string
   controlSocketDir: string
-  contextManagement: 'local' | 'pi'
-  memoryPass: ClawaMemoryPassConfig
-}
-
-const DEFAULT_CLAWA_MEMORY_PASS_CONFIG: ClawaMemoryPassConfig = {
-  enabled: true,
-  triggerPercent: 90,
 }
 
 export interface ClawEnvironmentConfig {
@@ -67,8 +55,6 @@ export const DEFAULT_CLAWA_DEFAULTS: ClawaDefaults = {
   workerSessionPrefix: 'Clawas',
   controlPlaneDir: 'clawas',
   controlSocketDir: 'clawas-control',
-  contextManagement: 'local',
-  memoryPass: DEFAULT_CLAWA_MEMORY_PASS_CONFIG,
 }
 
 export function resolveClawasControlSocketRoot(projectRoot: string): string {
@@ -170,41 +156,6 @@ function normalizeWorkers(input: unknown): ClawaWorkerConfig[] {
   return workers
 }
 
-function normalizeMemoryPassConfig(input: unknown): ClawaMemoryPassConfig {
-  if (input === undefined) return { ...DEFAULT_CLAWA_MEMORY_PASS_CONFIG }
-
-  const rec = asRecord(input, '.pi/claw.jsonc clawa.memoryPass')
-  const enabled = rec['enabled'] ?? DEFAULT_CLAWA_MEMORY_PASS_CONFIG.enabled
-  const triggerPercent = rec['triggerPercent'] ?? DEFAULT_CLAWA_MEMORY_PASS_CONFIG.triggerPercent
-
-  if (typeof enabled !== 'boolean') {
-    throw new Error('.pi/claw.jsonc clawa.memoryPass.enabled must be a boolean')
-  }
-  if (
-    typeof triggerPercent !== 'number' ||
-    !Number.isSafeInteger(triggerPercent) ||
-    triggerPercent <= 0 ||
-    triggerPercent >= 100
-  ) {
-    throw new Error(
-      '.pi/claw.jsonc clawa.memoryPass.triggerPercent must be an integer from 1 to 99',
-    )
-  }
-
-  return {
-    enabled,
-    triggerPercent,
-  }
-}
-
-function normalizeContextManagement(input: unknown): ClawaDefaults['contextManagement'] {
-  const mode = input ?? DEFAULT_CLAWA_DEFAULTS.contextManagement
-  if (mode !== 'local' && mode !== 'pi') {
-    throw new Error('.pi/claw.jsonc clawa.contextManagement must be local or pi')
-  }
-  return mode
-}
-
 function clampClawaDefaults(input: unknown): ClawaDefaults {
   if (!input || typeof input !== 'object') {
     return DEFAULT_CLAWA_DEFAULTS
@@ -237,8 +188,6 @@ function clampClawaDefaults(input: unknown): ClawaDefaults {
       typeof rec['controlSocketDir'] === 'string' && rec['controlSocketDir'].trim()
         ? rec['controlSocketDir'].trim()
         : DEFAULT_CLAWA_DEFAULTS.controlSocketDir,
-    contextManagement: normalizeContextManagement(rec['contextManagement']),
-    memoryPass: normalizeMemoryPassConfig(rec['memoryPass']),
   }
 }
 

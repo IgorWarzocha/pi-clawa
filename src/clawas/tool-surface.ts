@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import { defineTool, type ExtensionAPI, type ToolDefinition } from '@earendil-works/pi-coding-agent'
 import { Type } from 'typebox'
 import { sendClawasSessionMessage } from './comms/client.js'
 import { getLastDeliveryMessage, getLastMailMessageTimestamp } from './comms/message-extract.js'
@@ -27,9 +27,13 @@ function formatClawaDeliveryReceipt(title: string): string {
   return `${title} received the note.`
 }
 
-export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): void {
+export function registerClawasTools(
+  pi: ExtensionAPI,
+  runtime: ClawasRuntime,
+  isActive: () => boolean,
+): ToolDefinition[] {
   if (process.env['PI_CLAWAS_ROLE'] === 'worker') {
-    pi.registerTool({
+    const tool = defineTool({
       name: 'message_main_claw',
       label: 'Message main Clawa',
       description:
@@ -41,6 +45,7 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
         }),
       }),
       async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+        if (!isActive()) throw new Error('Clawa is not active in this session')
         const workerId = process.env['PI_CLAWAS_WORKER_ID']?.trim()
         const workerTitle = process.env['PI_CLAWAS_WORKER_TITLE']?.trim() || workerId || 'worker'
 
@@ -88,24 +93,15 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
             details: { workerId },
           }
         } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: error instanceof Error ? error.message : String(error),
-              },
-            ],
-            details: { workerId },
-            isError: true,
-          }
+          throw new Error('Could not deliver the note to the main Clawa', { cause: error })
         }
       },
     })
-
-    return
+    pi.registerTool(tool)
+    return [tool]
   }
 
-  pi.registerTool({
+  const tool = defineTool({
     name: 'message_clawa',
     label: 'Message Clawa',
     description:
@@ -120,20 +116,12 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
       }),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
+      if (!isActive()) throw new Error('Clawa is not active in this session')
       try {
         await runtime.refreshFromConfig()
         const definition = await resolveClawDefinition(ctx.cwd, params.claw)
         if (!definition) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Unknown ${runtime.getClawaDefaults().clawasName} claw: ${params.claw}. Use a configured Clawa name or title.`,
-              },
-            ],
-            details: { workerId: params.claw },
-            isError: true,
-          }
+          throw new Error(`Unknown Clawa: ${params.claw}. Use a configured Clawa name or title.`)
         }
 
         await runtime.ensureWorkerRunning(definition.id)
@@ -159,17 +147,13 @@ export function registerClawasTools(pi: ExtensionAPI, runtime: ClawasRuntime): v
           details: { workerId: definition.id },
         }
       } catch (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: error instanceof Error ? error.message : String(error),
-            },
-          ],
-          details: { workerId: params.claw },
-          isError: true,
-        }
+        throw new Error(
+          `Could not deliver the note to ${params.claw}: ${error instanceof Error ? error.message : String(error)}`,
+          { cause: error },
+        )
       }
     },
   })
+  pi.registerTool(tool)
+  return [tool]
 }

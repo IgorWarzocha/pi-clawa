@@ -13,4 +13,4 @@
 - Release gate: `bun run ai:check:strict`. Do not add broad ignores to make it pass.
 - Follow `website/src/content/docs/project/release-policy.md` when shipping a batch. A merge is not
   a release: update lockstep versions and dispatch the manual Release workflow for the tagged update.
-- Package install is git-first for now; npm publishing remains later.
+- Keep installation per-home and git-first. Discourage global installs; npm publishing remains later.
