@@ -9,18 +9,6 @@ import { readPulseState } from '../src/pulses/state.js'
 const JSON_ERROR_PATTERN = /JSON/
 const BETA_DELIVERY_ERROR_PATTERN = /beta delivery failed/u
 
-function stubClawasRuntime() {
-  return {
-    refreshFromConfig: async () => {},
-    getState: () => ({ workers: [] }),
-    getWorkerDefinition: () => {
-      throw new Error('unexpected worker pulse')
-    },
-    ensureWorkerRunning: async () => {},
-    getClawaDefaults: () => ({ mainClawName: 'Clawa' }),
-  }
-}
-
 test('successful pulse deliveries stay checkpointed when a later pulse fails', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-checkpoint-'))
   try {
@@ -42,7 +30,7 @@ test('successful pulse deliveries stay checkpointed when a later pulse fails', a
         throw new Error('beta delivery failed')
       }
       delivered.push(content)
-    }, stubClawasRuntime() as never)
+    }, {} as never)
     pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
 
     await pulseRuntime.scanAndRunDue(1_000)
