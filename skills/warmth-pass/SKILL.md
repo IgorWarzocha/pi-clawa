@@ -1,6 +1,6 @@
 ---
 name: warmth-pass
-description: "Warms stiff internal agent docs without losing rules, paths, commands, tool names, boundaries, or facts. Use for AGENTS.md, CLAW.md, HUMAN.md, CURIOUS.md, persona cards, worker-home docs, or project instructions that feel robotic. Do not use for schemas, runbooks, API specs, or grammar-only cleanup."
+description: "Use to warm stiff identity docs such as AGENTS.md or CLAW.md without weakening instructions. Not for schemas, API specs, runbooks, or grammar-only edits."
 ---
 
 # Warmth Pass

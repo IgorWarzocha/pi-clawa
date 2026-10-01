@@ -28,6 +28,9 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Changed
 
+- Bundled `clawa-ops` now routes installs and modern upgrades to the packaged guides instead of
+  assuming every tagged checkout has modern behavior. Skill-authoring guidance favors concise
+  triggers and task-specific instructions over mandatory document scaffolding.
 - `clawa_memory` and `clawa_history` replace `remember` and `recall`. Existing `vault/` files move automatically
   into `memory/` without overwriting conflicts. Legacy SQLite rows are imported exactly; the old
   database stays unchanged as a retired source. The local toolkit requires Linux with `flock`.

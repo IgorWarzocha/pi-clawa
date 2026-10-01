@@ -80,7 +80,8 @@ Use the `provider/model-id` style that Pi prints or accepts for `--model`. Pick 
 
 ## Editing rules
 
-- Edit `.pi/claw.jsonc` only.
+- Worker definitions and Clawa home defaults belong in `.pi/claw.jsonc`. Pi package loading
+  belongs in `.pi/settings.json`, as described below. Do not create another worker config file.
 - Append or update the one worker entry you mean to touch.
 - Preserve existing workers and home defaults.
 - Keep disabled workers if their history or naming lesson may matter later.
@@ -118,8 +119,9 @@ Project Pi settings live at:
 
 Use them for project-local Pi package loading. Keep main Clawa on Pi's normal session store unless the human explicitly wants a custom session directory; do not edit the human's global `~/.pi/agent/settings.json` when tuning this Clawa home.
 
-Use a tagged git checkout through per-home project settings or explicit `pi -e`; discourage global
-Clawa installation. Global dormancy is a safety net: configured homes activate, other directories
+Load the selected checkout through per-home project settings or explicit `pi -e`; discourage global
+Clawa installation. Choose the branch using this skill's installation or upgrade guide, not the
+package version alone. Global dormancy is a safety net: configured homes activate, other directories
 stay untouched. A project install or explicit `pi -e` requests bootstrap in a clean folder.
 Files appear immediately, but no agent
 turn starts until the first human message or task. Codex is optional; Clawa's CodeMode adapter exposes

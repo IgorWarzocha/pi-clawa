@@ -31,6 +31,8 @@
   },
   "files": [
     "README.md",
+    "CHANGELOG.md",
+    "website/src/content/docs/**/*.md",
     "src/**/*.ts",
     "!src/**/*.test.ts",
     "templates/**",

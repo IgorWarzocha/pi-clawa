@@ -1,16 +1,24 @@
 ---
 name: clawa-ops
-description: "Use for Clawa home setup and repair, specialist onboarding, Pulses, config, routing, and OpenClaw or Hermes imports. Not for ordinary project code."
+description: "Use for installing, upgrading, or operating a Clawa home: specialists, Pulses, config, and OpenClaw or Hermes imports. Not for ordinary project code."
 ---
 
 Operate a Clawa home through readable files, native runtime paths, and real conversation. Keep the home easy to understand. Do not guess config shapes, invent a second control plane, or turn human slash commands into agent workflows.
 
 ## Read the owning reference
 
+- `../../website/src/content/docs/getting-started/installation.md` explains installation and requirements.
+- `../../website/src/content/docs/operate/upgrading.md` owns updates, legacy-to-modern migration,
+  restart handoff, and rollback. Read it before changing an installed checkout. Use its agent
+  procedure whether carrying out an approved upgrade or explaining the steps to the human.
 - `references/configuration.md` — `.pi/claw.jsonc`, worker fields, model discovery, and project Pi settings.
 - `references/subclawas-setup.md` — create, register, name, and onboard a subclawa.
 - `references/pulses.md` — create, edit, disable, run, or review pulses.
 - `references/import-openclaw-hermes.md` — adapt an existing OpenClaw or Hermes home without copying its runtime wholesale.
+
+Paths above are relative to this skill directory. Guide links use website routes; when reading
+locally, find the matching `.md` source under `../../website/src/content/docs/`. The local release
+ledger is `../../CHANGELOG.md`.
 
 Use `clawa_memory` for shared house Markdown under `memory/`, its default scope. Explicit
 `scope: "notes"` accesses retained per-chat notes; `clawa_history` reads house archives and committed
@@ -19,7 +27,9 @@ assume generic `notes`, `history`, `new_context`, or `get_context_remaining` exi
 continuity extension. Existing `vault/` and `.pi/clawa-memory.sqlite` migrate automatically on
 active-home startup; a collision is a blocker to resolve, not a reason to overwrite a home file.
 
-Prefer a tagged git checkout loaded per home through project settings or explicit `pi -e`.
+Modern is currently unreleased. Use the `modern` branch for the behavior described by this skill;
+`v0.3.0` belongs to legacy. Do not choose a legacy tag just because modern's manifest still says
+`0.3.0`. Load the selected checkout per home through project settings or explicit `pi -e`.
 Discourage global Clawa installation. Global dormancy is only a safety net: without `.pi/claw.jsonc`,
 it adds no Clawa tools, skills, prompt, or runtime. Project installs and explicit `pi -e` bootstrap
 deliberately. First run creates files but waits for the first human message or task. A concrete task
@@ -71,7 +81,8 @@ Read only the references needed for the requested operation. For a mixed migrati
 - Do not copy secrets into markdown, logs, or reports.
 - Do not import session databases, logs, caches, or old runtime state by default.
 - Do not delete a worker home, pulse history, or shared living doc merely because it looks inactive.
-- Do not edit an external source checkout just because the running home loads it as a package; source ownership is a separate quest.
+- A loaded package checkout is not automatically an edit target. For an approved package upgrade,
+  use the upgrade guide and hand off shutdown if your own session uses that checkout.
 - Do not create validators, migration scripts, or extra docs when the owning runtime or existing file can carry the fix.
 
 ## Recovery

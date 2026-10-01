@@ -44,8 +44,9 @@ YAML_SIMPLE_ESCAPES = {
     "P": "\u2029",
 }
 YAML_HEX_ESCAPES = {"x": 2, "u": 4, "U": 8}
-DESCRIPTION_HIGH_END = 812
-DESCRIPTION_LIMIT = 1024
+DESCRIPTION_PREFERRED_LIMIT = 175
+DESCRIPTION_QUALITY_LIMIT = 200
+PI_DESCRIPTION_LIMIT = 1024
 NAME_LIMIT = 64
 
 
@@ -161,10 +162,6 @@ def parse_frontmatter(lines: list[tuple[int, str]]) -> dict[str, str]:
     return fields
 
 
-def has_files(directory: Path) -> bool:
-    return directory.is_dir() and any(path.is_file() for path in directory.rglob("*"))
-
-
 def referenced_support_paths(body: str) -> list[str]:
     paths = set(BACKTICK_PATH_RE.findall(body))
     for angle_target, plain_target in MARKDOWN_LINK_RE.findall(body):
@@ -200,10 +197,10 @@ def main() -> int:
 
     issues: list[str] = []
     warnings: list[str] = []
-    suggestions: list[str] = []
     fields: dict[str, str] = {}
     body = ""
     parsed = False
+    description_quoted = False
 
     if target.name != "SKILL.md" or not target.is_file():
         issues.append(f"missing SKILL.md: {target}")
@@ -213,6 +210,10 @@ def main() -> int:
             frontmatter, body = split_frontmatter(text)
             fields = parse_frontmatter(frontmatter)
             parsed = True
+            for _, line in frontmatter:
+                match = FIELD_RE.fullmatch(line)
+                if match and match.group(1) == "description":
+                    description_quoted = (match.group(2) or "").startswith(("\"", "'"))
         except (OSError, UnicodeError, ValueError) as exc:
             issues.append(str(exc))
 
@@ -228,19 +229,25 @@ def main() -> int:
             if not NAME_RE.fullmatch(name):
                 issues.append(f"name does not follow lowercase kebab-case: {name}")
 
-        if not description:
+        if not description.strip():
             issues.append("frontmatter missing description")
         else:
-            if not re.search(r"\buse (?:when|for)\b", description, re.I):
-                warnings.append("description may not clearly say when to use the skill")
-            if len(description) > DESCRIPTION_LIMIT:
+            if not description_quoted:
+                issues.append("description must be quoted for portable YAML")
+            if len(description) > DESCRIPTION_QUALITY_LIMIT:
                 issues.append(
-                    f"description too long: {len(description)} chars > Pi limit of {DESCRIPTION_LIMIT}"
+                    f"description exceeds authoring quality limit: {len(description)} chars > "
+                    f"{DESCRIPTION_QUALITY_LIMIT}; shorten the call trigger"
                 )
-            elif len(description) > DESCRIPTION_HIGH_END:
+            elif len(description) > DESCRIPTION_PREFERRED_LIMIT:
                 warnings.append(
-                    f"description is on the higher end of Pi's allowed range: {len(description)} chars; "
-                    "consider trimming without losing trigger coverage"
+                    f"description exceeds preferred length: {len(description)} chars > "
+                    f"{DESCRIPTION_PREFERRED_LIMIT}; justify the extra trigger boundary or shorten it"
+                )
+            if len(description) > PI_DESCRIPTION_LIMIT:
+                issues.append(
+                    f"description exceeds Pi compatibility limit: {len(description)} chars > "
+                    f"{PI_DESCRIPTION_LIMIT}"
                 )
 
     if FORBIDDEN_HEADINGS.search(body):
@@ -249,15 +256,6 @@ def main() -> int:
     for relative_path in referenced_support_paths(body):
         if path_issue := support_path_issue(root, relative_path):
             issues.append(path_issue)
-
-    if not has_files(root / "references"):
-        suggestions.append(
-            "no references found; consider whether detailed guidance, examples, or edge cases would help"
-        )
-    if not has_files(root / "scripts"):
-        suggestions.append(
-            "no scripts found; consider whether deterministic validation or transformation would help"
-        )
 
     print("# Skill Efficiency Check\n")
     print(f"skill: {target}")
@@ -271,9 +269,6 @@ def main() -> int:
     print("- none" if not issues else "\n".join(f"- {item}" for item in issues))
     print("\n## Warnings")
     print("- none" if not warnings else "\n".join(f"- {item}" for item in warnings))
-    print("\n## Suggestions")
-    print("- none" if not suggestions else "\n".join(f"- {item}" for item in suggestions))
-
     return 1 if issues else 0
 
 
