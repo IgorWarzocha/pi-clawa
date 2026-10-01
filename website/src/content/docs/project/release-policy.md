@@ -44,8 +44,8 @@ calendar for its own sake. A batch should have:
 6. current edition notices and installation targets on the shared site, including plain Markdown
    and `llms.txt`.
 
-Discord remains lockstep with the repository release while it is local-workspace and WIP. npm
-publishing is not part of the current release workflow.
+The Discord package stays lockstep with the repository release. npm publishing is not part of the
+current release workflow.
 
 ## Automation boundary
 

@@ -87,7 +87,7 @@ Blocks: clean-room runtime test.
 
 ## D. Optional adapters
 
-Status: Discord exists and is a core first surface, but adapter seam and product polish are still rough.
+Status: Discord's shared gateway connects routed Clawa workers to DMs and server channels.
 
 - [x] Discord package exists at `packages/pi-clawa-discord/`
 - [x] copied gateway source into adapter package
@@ -99,16 +99,14 @@ Status: Discord exists and is a core first surface, but adapter seam and product
 - [x] GUI helper action sends setup-guidance prompt with doc/source paths
 - [ ] review Discord adapter boundary: only use exported root APIs, write config through intended helpers, and avoid private runtime/path coupling
 - [ ] polish `/discord` states and copy
-- [ ] validate gateway process lifecycle under Pi shutdown/restart
-- [ ] decide Discord DM support shape for first release
-- [ ] decide multi-channel support now vs later; one Discord Clawa should own Discord as a surface unless we choose otherwise
+- [ ] recheck gateway process behavior under Pi shutdown/restart after lifecycle changes
+- [ ] refine DM and multi-channel routing policy from live use
 - [ ] calibrate Discord autonomy: free safe/on-brand posting, ask only for doxxing/secrets/money/commitments/impersonation/high-stakes
 - [ ] decide whether to generate invite URL or keep manual instructions
 - [x] add adapter smoke test that does not require a real Discord token
 - [x] queue exact Discord member joins/leaves without fabricating reply targets
 
 Depends on: C runtime surfaces.
-Blocks: full clean-room test if Discord is included in first release.
 
 ## E. Release docs/checks
 

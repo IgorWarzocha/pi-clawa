@@ -98,9 +98,9 @@ The wiki owns the detail:
 
 ## Discord adapter
 
-The optional adapter lives at `packages/pi-clawa-discord/` and is still WIP. Add that package from
+The optional adapter lives at `packages/pi-clawa-discord/`. Add that package from
 the same checkout, start Pi, and run `/discord`. Its [adapter README](packages/pi-clawa-discord/README.md)
-and [setup guide](packages/pi-clawa-discord/DISCORD-BOT-SETUP.md) own the changing details.
+and [setup guide](packages/pi-clawa-discord/DISCORD-BOT-SETUP.md) cover setup and routing.
 
 ## Development
 

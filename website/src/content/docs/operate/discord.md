@@ -5,8 +5,8 @@ section: Operate
 order: 70
 ---
 
-The Discord adapter is an optional package under `packages/pi-clawa-discord`. It is substantial but
-still **work in progress**. Its own README and setup guide own details that are still moving.
+The optional package at `packages/pi-clawa-discord` connects a dedicated Clawa to Discord through
+a shared gateway.
 
 ## Shape
 
