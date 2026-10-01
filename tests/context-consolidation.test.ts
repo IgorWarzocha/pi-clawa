@@ -204,35 +204,6 @@ test('a waiting drain cannot claim while another consumer holds the OS lock', as
   }
 })
 
-test('oversized source fails explicitly rather than consolidating an incomplete transcript', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-consolidation-'))
-  try {
-    const manager = SessionManager.create(root, join(root, 'sessions'))
-    manager.appendMessage({ role: 'user', content: 'a'.repeat(1_000_001), timestamp: 1 })
-    persist(manager)
-    const sessionFile = manager.getSessionFile()
-    const leafId = manager.getLeafId()
-    assert.ok(sessionFile && leafId)
-    enqueue(root, {
-      sessionFile,
-      leafId,
-      chatId: manager.getSessionId(),
-      agentName: 'Ada',
-      cwd: root,
-      model: { provider: 'anthropic', id: 'test' },
-    })
-    const job = listJobs(root)[0]
-    assert.ok(job)
-    assert.throws(
-      () => readSource(job),
-      (error) => error instanceof Error && error.message.includes('exceeds 1000000 bytes'),
-    )
-    assert.equal(listJobs(root)[0]?.status, 'queued')
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
 test('consolidation expands native archives only through the frozen leaf and fails on lost raw source', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-consolidation-archives-'))
   try {

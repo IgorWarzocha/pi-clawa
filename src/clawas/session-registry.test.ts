@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict'
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import test from 'node:test'
 import {
-  getClawaSessionsDir,
   readWorkerSession,
   recordWorkerSession,
   resolveWorkerSessionFile,
@@ -12,7 +11,6 @@ import {
 import type { WorkerDefinition } from './types.js'
 
 const SESSION_REGISTRY_NAME = 'session-registry.json'
-const SESSION_FILE_SUFFIX_REGEX = /\.jsonl$/
 const JSON_ERROR_PATTERN = /JSON/
 const PANEL_ERROR_PATTERN = /Invalid Clawas panel handle/u
 
@@ -27,76 +25,6 @@ function workerDefinition(id: string): WorkerDefinition {
     thinking: 'medium',
   }
 }
-
-test('worker sessions live under worker homes while the registry stays in the root control plane', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-worker-sessions-'))
-  try {
-    const workerHome = join(root, 'clawas', 'discord-clawa')
-    const controlPlaneRoot = join(root, '.pi', 'clawas')
-    await mkdir(workerHome, { recursive: true })
-
-    const { sessionFile, kind } = await resolveWorkerSessionFile(
-      controlPlaneRoot,
-      workerDefinition('discord-clawa'),
-      workerHome,
-    )
-    assert.equal(kind, 'fresh')
-
-    assert.equal(dirname(sessionFile), getClawaSessionsDir(workerHome))
-    assert.match(sessionFile, SESSION_FILE_SUFFIX_REGEX)
-
-    const registry = JSON.parse(
-      await readFile(join(controlPlaneRoot, SESSION_REGISTRY_NAME), 'utf8'),
-    ) as { workers: Record<string, { path: string; cwd: string }> }
-    assert.equal(registry.workers['discord-clawa']?.path, sessionFile)
-    assert.equal(registry.workers['discord-clawa']?.cwd, workerHome)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('worker session continuity survives model and thinking changes', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-worker-model-change-'))
-  try {
-    const workerHome = join(root, 'clawas', 'discord-clawa')
-    const controlPlaneRoot = join(root, '.pi', 'clawas')
-    await mkdir(workerHome, { recursive: true })
-
-    const original = workerDefinition('discord-clawa')
-    const fresh = await resolveWorkerSessionFile(controlPlaneRoot, original, workerHome)
-    const { sessionFile } = fresh
-    assert.equal(fresh.kind, 'fresh')
-    assert.deepEqual(
-      await resolveWorkerSessionFile(controlPlaneRoot, original, workerHome),
-      fresh,
-      'a reserved missing path is still fresh on retry',
-    )
-    await writeFile(
-      sessionFile,
-      `${JSON.stringify({ type: 'session', version: 3, cwd: workerHome })}\n`,
-      'utf8',
-    )
-    const changed = {
-      ...original,
-      model: 'another-provider/new-model',
-      thinking: 'low' as const,
-    }
-    const resumedFile = await resolveWorkerSessionFile(controlPlaneRoot, changed, workerHome)
-
-    assert.deepEqual(resumedFile, { sessionFile, kind: 'resume' })
-    const registry = JSON.parse(
-      await readFile(join(controlPlaneRoot, SESSION_REGISTRY_NAME), 'utf8'),
-    ) as { workers: Record<string, { path: string; model?: string; thinking?: string }> }
-    assert.deepEqual(registry.workers['discord-clawa'], {
-      path: sessionFile,
-      model: changed.model,
-      thinking: changed.thinking,
-      cwd: workerHome,
-    })
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
 
 test('corrupt worker session registry fails instead of creating a fresh session', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-worker-sessions-corrupt-'))

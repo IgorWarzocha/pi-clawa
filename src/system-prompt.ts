@@ -54,7 +54,7 @@ function resolveClawaHomeRoot(cwd: string): string {
 
 type ContextFile = NonNullable<BuildSystemPromptOptions['contextFiles']>[number]
 
-export function filterClawaHomeContextFiles(
+function filterClawaHomeContextFiles(
   contextFiles: ContextFile[] | undefined,
   cwd: string,
   globalAgentDir = getAgentDir(),

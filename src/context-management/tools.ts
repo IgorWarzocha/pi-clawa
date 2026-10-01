@@ -204,7 +204,7 @@ function toolResult(value: unknown, details?: { contextPaths: string[] }) {
   }
 }
 
-export function parseNotesInput(input: unknown) {
+function parseNotesInput(input: unknown) {
   Value.Parse(notesParameters, input)
   if (
     typeof input !== 'object' ||
@@ -230,7 +230,7 @@ export function parseNotesInput(input: unknown) {
   }
 }
 
-export function parseHistoryInput(input: unknown): HistoryInput {
+function parseHistoryInput(input: unknown): HistoryInput {
   Value.Parse(historyParameters, input)
   if (
     typeof input !== 'object' ||

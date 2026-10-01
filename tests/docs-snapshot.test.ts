@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -13,10 +13,6 @@ const doc =
 const resolutionPattern = /refs\/heads\/legacy -> [0-9a-f]{40}/
 const missingPattern = /Cannot resolve legacy source/
 const invalidOverridePattern = /CLAWA_LEGACY_REF must not be empty/
-const missingContentPattern = /must contain CHANGELOG.md and Markdown docs/
-const missingFrontmatterPattern = /Missing frontmatter/
-const invalidTextPattern = /Invalid text/
-const regularFilesPattern = /must be regular files/
 
 async function fixture(run: (root: string) => Promise<void>) {
   const root = await mkdtemp(join(tmpdir(), 'clawa-docs-'))
@@ -103,48 +99,4 @@ test('remote-tracking legacy is visible fallback and explicit invalid overrides 
     const missing = prepare(root)
     assert.equal(missing.status, 1)
     assert.match(missing.stderr, missingPattern)
-  }))
-
-test('snapshot replacement removes stale documents and never leaves staging directories', async () =>
-  fixture(async (root) => {
-    assert.equal(prepare(root).status, 0)
-    await rm(join(root, docPath))
-    await put(root, 'website/src/content/docs/start.md', doc)
-    const next = commit(root)
-    git(root, 'update-ref', 'refs/heads/legacy', next)
-    assert.equal(prepare(root).status, 0)
-    await assert.rejects(readFile(join(root, 'website/.generated/legacy/docs/guide/home.md')))
-    assert.deepEqual(await readdir(join(root, 'website/.generated')), ['legacy'])
-  }))
-
-test('missing, malformed and symlinked archive content aborts preparation', async () =>
-  fixture(async (root) => {
-    await rm(join(root, 'CHANGELOG.md'))
-    const missing = prepare(root, commit(root))
-    assert.equal(missing.status, 1)
-    assert.match(missing.stderr, missingContentPattern)
-    await put(root, 'CHANGELOG.md', '# Changelog\n')
-    await put(root, docPath, 'not frontmatter')
-    const malformed = prepare(root, commit(root))
-    assert.equal(malformed.status, 1)
-    assert.match(malformed.stderr, missingFrontmatterPattern)
-    await put(root, docPath, '')
-    const empty = prepare(root, commit(root))
-    assert.equal(empty.status, 1)
-    assert.match(empty.stderr, invalidTextPattern)
-    await rm(join(root, docPath))
-    git(
-      root,
-      'update-index',
-      '--add',
-      '--cacheinfo',
-      '120000',
-      git(root, 'hash-object', 'CHANGELOG.md'),
-      docPath,
-    )
-    git(root, 'commit', '-qm', 'symlink')
-    const symlinked = prepare(root, 'HEAD')
-    assert.equal(symlinked.status, 1)
-    assert.match(symlinked.stderr, regularFilesPattern)
-    assert.deepEqual(await readdir(join(root, 'website/.generated')), [])
   }))

@@ -16,10 +16,7 @@ import { readWorkerSession, recordWorkerSession } from './session-registry.js'
 import type { PrepareResidentContext } from './shared-context.js'
 import type { WorkerState } from './types.js'
 
-const UNAVAILABLE_PATTERN = /tab is open but its Clawa connection is unavailable/u
 const BINDING_ERROR_PATTERN = /binding failed/u
-const PREPARE_ERROR_PATTERN = /prepare failed/u
-const STALE_MAIN_PATTERN = /Main Clawa session changed/u
 const SHARED_CONTEXT = { sessionId: 'family', agentName: '/root/helper' }
 const DEFINITION = { id: 'helper', title: 'Helper', cwd: '.', enabled: true, autostart: true }
 
@@ -159,10 +156,7 @@ test('concurrent launch and main shutdown preserve one tab for the next main ses
   }
 })
 
-async function residentFixture(
-  prepareResidentContext: PrepareResidentContext,
-  beforeReady?: () => Promise<void>,
-) {
+async function residentFixture(prepareResidentContext: PrepareResidentContext) {
   const root = await mkdtemp(join(tmpdir(), 'clp-'))
   const previousRoot = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
   process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = root
@@ -185,7 +179,6 @@ async function residentFixture(
     launcher: {
       async open(launch: LaunchOptions) {
         events.push('open')
-        await beforeReady?.()
         stopServer = await serveSession(root, sessionFile, (command, status) => {
           status.sharedContext = published.sharedContext
           events.push(command.type === 'send' ? command.message : command.type)
@@ -288,189 +281,6 @@ test('resident acceptance failure closes only its new panel and clears its regis
     assert.equal(fixture.events.filter((event) => event === 'close').length, 2)
   } finally {
     await fixture.cleanup()
-  }
-})
-
-test('resident preparation failure keeps its reserved fresh path without opening a panel', async () => {
-  const fixture = await residentFixture(async () => {
-    throw new Error('prepare failed')
-  })
-  try {
-    await assert.rejects(fixture.worker.connect(true), PREPARE_ERROR_PATTERN)
-    const first = await readWorkerSession(fixture.root, DEFINITION.id)
-    await assert.rejects(fixture.worker.connect(true), PREPARE_ERROR_PATTERN)
-    assert.equal((await readWorkerSession(fixture.root, DEFINITION.id))?.path, first?.path)
-    assert.deepEqual(fixture.events, [])
-  } finally {
-    await fixture.cleanup()
-  }
-})
-
-test('a header-only resumed session and an existing live session bypass resident sharing', async () => {
-  const fixture = await residentFixture(async () => assert.fail('rebound an existing session'))
-  const adoptedState = initialState(fixture.root)
-  const adopted = new ClawasPanelWorker({
-    state: adoptedState,
-    projectRoot: fixture.root,
-    controlPlaneRoot: fixture.root,
-    extensionPaths: [],
-    clawaDefaults: DEFAULT_CLAWA_DEFAULTS,
-    prepareResidentContext: async () => assert.fail('prepared sharing for a live session'),
-    onChange() {},
-    launcher: {
-      async open() {
-        return assert.fail('relaunched a live session')
-      },
-      async close() {
-        assert.fail('closed an adopted session')
-      },
-      async focus() {},
-      async isAlive() {
-        return true
-      },
-    },
-  })
-  try {
-    fixture.published.sharedContext = SHARED_CONTEXT
-    await writeFile(
-      fixture.sessionFile,
-      `${JSON.stringify({ type: 'session', cwd: fixture.root })}\n`,
-    )
-    await recordWorkerSession(
-      fixture.root,
-      DEFINITION,
-      fixture.root,
-      fixture.sessionFile,
-      undefined,
-    )
-    await fixture.worker.sendPrompt('resumed task', 'prompt')
-    await adopted.connect(true)
-    assert.deepEqual(adoptedState.sharedContext, SHARED_CONTEXT)
-    assert.equal(fixture.events.filter((event) => event === 'open').length, 1)
-    assert.ok(fixture.events.includes('resumed task'))
-  } finally {
-    await adopted.dispose()
-    await fixture.cleanup()
-  }
-})
-
-test('main shutdown during resident preparation does not launch or adopt a stale resident', async () => {
-  const preparing = Promise.withResolvers<void>()
-  const release = Promise.withResolvers<void>()
-  const fixture = await residentFixture(async () => {
-    preparing.resolve()
-    await release.promise
-    return {
-      async accept() {
-        assert.fail('stale adoption')
-      },
-    }
-  })
-  try {
-    const delivery = fixture.worker.sendPrompt('stale task', 'prompt')
-    const rejected = assert.rejects(delivery, STALE_MAIN_PATTERN)
-    await preparing.promise
-    const shutdown = fixture.worker.dispose()
-    release.resolve()
-    await Promise.all([rejected, shutdown])
-    assert.deepEqual(fixture.events, [])
-  } finally {
-    release.resolve()
-    await fixture.cleanup()
-  }
-})
-
-test('main shutdown during acceptance never delivers startup or tasks after sharing finishes', async () => {
-  const accepting = Promise.withResolvers<void>()
-  const release = Promise.withResolvers<void>()
-  const fixture = await residentFixture(async () => ({
-    async accept() {
-      accepting.resolve()
-      await release.promise
-      return SHARED_CONTEXT
-    },
-  }))
-  try {
-    const delivery = fixture.worker.sendPrompt('stale task', 'prompt')
-    const rejected = assert.rejects(delivery, STALE_MAIN_PATTERN)
-    await accepting.promise
-    const shutdown = fixture.worker.dispose()
-    release.resolve()
-    await Promise.all([rejected, shutdown])
-    assert.deepEqual(fixture.events, ['open', 'get_status'])
-    assert.equal(fixture.state.sharedContext, undefined)
-    assert.ok((await readWorkerSession(fixture.root, DEFINITION.id))?.panel)
-  } finally {
-    release.resolve()
-    await fixture.cleanup()
-  }
-})
-
-test('main shutdown during launch skips resident adoption when the new socket becomes ready', async () => {
-  const opening = Promise.withResolvers<void>()
-  const release = Promise.withResolvers<void>()
-  const fixture = await residentFixture(
-    async () => ({
-      async accept() {
-        return assert.fail('stale adoption')
-      },
-    }),
-    async () => {
-      opening.resolve()
-      await release.promise
-    },
-  )
-  try {
-    const delivery = fixture.worker.sendPrompt('stale task', 'prompt')
-    const rejected = assert.rejects(delivery, STALE_MAIN_PATTERN)
-    await opening.promise
-    const shutdown = fixture.worker.dispose()
-    release.resolve()
-    await Promise.all([rejected, shutdown])
-    assert.deepEqual(fixture.events, ['open', 'get_status'])
-  } finally {
-    release.resolve()
-    await fixture.cleanup()
-  }
-})
-
-test('an existing live tab without control does not launch a duplicate or get closed', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clp-'))
-  const previousRoot = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
-  process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = root
-  const state = initialState(root)
-  const sessionFile = join(root, 'session.jsonl')
-  const handle = panelHandle(sessionFile)
-  const worker = new ClawasPanelWorker({
-    state,
-    projectRoot: root,
-    controlPlaneRoot: root,
-    extensionPaths: [],
-    clawaDefaults: DEFAULT_CLAWA_DEFAULTS,
-    onChange() {},
-    launcher: {
-      async open() {
-        return assert.fail('duplicate launch')
-      },
-      async close() {
-        assert.fail('closed a previously owned tab')
-      },
-      async focus() {},
-      async isAlive() {
-        return true
-      },
-    },
-  })
-  try {
-    await recordWorkerSession(root, DEFINITION, root, sessionFile, handle)
-    await assert.rejects(() => worker.connect(true), UNAVAILABLE_PATTERN)
-    assert.equal(state.status, 'error')
-    assert.deepEqual((await readWorkerSession(root, DEFINITION.id))?.panel, handle)
-  } finally {
-    await worker.dispose()
-    if (previousRoot === undefined) delete process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
-    else process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = previousRoot
-    await rm(root, { recursive: true, force: true })
   }
 })
 

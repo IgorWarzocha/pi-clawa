@@ -16,7 +16,7 @@ export interface DiscordAttachmentCandidate {
   size: number
 }
 
-export interface AttachmentRejection {
+interface AttachmentRejection {
   name: string
   reason: string
 }
@@ -26,7 +26,7 @@ export interface AttachmentCacheResult {
   rejected: AttachmentRejection[]
 }
 
-export function selectAttachmentsWithinLimits(
+function selectAttachmentsWithinLimits(
   attachments: DiscordAttachmentCandidate[],
   limits: { maxFileBytes: number; maxTotalBytes: number },
 ): { accepted: DiscordAttachmentCandidate[]; rejected: AttachmentRejection[] } {

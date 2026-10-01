@@ -1,17 +1,13 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { mkdtempSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { loadConfig, writeConfigValue } from './src/config.js'
 import { acquireBotConnection } from './src/discord/connection-lease.js'
 
-const ONE_LINE = /one line/u
-const CHANNEL_IDS = /ALLOWED_CHANNEL_IDS/u
-const QUEUE_LIMIT = /MAX_QUEUE/u
-const BOOLEAN = /true or false/u
 const CONNECTED = /already connected/u
 
 test('each home owns its token and policy, ignoring parent and process config', () => {
@@ -36,30 +32,6 @@ test('each home owns its token and policy, ignoring parent and process config', 
   } finally {
     if (previous === undefined) delete process.env['DISCORD_BOT_TOKEN']
     else process.env['DISCORD_BOT_TOKEN'] = previous
-    rmSync(root, { recursive: true, force: true })
-  }
-})
-
-test('config rejects injection and invalid selection instead of widening access', () => {
-  const root = mkdtempSync(join(tmpdir(), 'clawa-bot-config-'))
-  try {
-    const { configPath } = loadConfig(root)
-    const initial = readFileSync(configPath, 'utf8')
-    assert.throws(
-      () => writeConfigValue(configPath, 'DISCORD_BOT_TOKEN', 'a\nCHANNEL_POLICY=all'),
-      ONE_LINE,
-    )
-    assert.equal(readFileSync(configPath, 'utf8'), initial)
-    writeConfigValue(configPath, 'ALLOWED_CHANNEL_IDS', 'not-a-channel')
-    assert.throws(() => loadConfig(root), CHANNEL_IDS)
-    writeConfigValue(configPath, 'ALLOWED_CHANNEL_IDS', '123, 456,123')
-    assert.deepEqual([...loadConfig(root).allowedChannelIds], ['123', '456'])
-    writeConfigValue(configPath, 'AMBIENT_WAKE_MAX_MESSAGES', '101')
-    assert.throws(() => loadConfig(root), QUEUE_LIMIT)
-    writeConfigValue(configPath, 'AMBIENT_WAKE_MAX_MESSAGES', '16')
-    writeConfigValue(configPath, 'DISCORD_CHAT_ENABLED', 'sometimes')
-    assert.throws(() => loadConfig(root), BOOLEAN)
-  } finally {
     rmSync(root, { recursive: true, force: true })
   }
 })

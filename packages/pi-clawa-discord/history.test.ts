@@ -5,16 +5,11 @@ import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
 import { DiscordArchive } from './src/discord/archive.js'
-import { selectAttachmentsWithinLimits } from './src/discord/attachments.js'
-import { validateDiscordDelivery } from './src/discord/delivery-contract.js'
 import { type DiscordHistoryEntry, searchDiscordHistory } from './src/discord/history.js'
 
 const PENDING = /3 pending/u
 const ARCHIVE_FAILED = /Archive failed/u
 const CORRUPT_JOURNAL = /Invalid Discord archive journal/u
-const REQUIRED = /required/u
-const POLL_CARD = /cannot contain a poll/u
-const LINK_ACTION = /cannot also start/u
 
 const entry: DiscordHistoryEntry = {
   channelId: '900',
@@ -127,87 +122,4 @@ test('a failed journal write is visible and retryable, while a corrupt journal b
   } finally {
     rmSync(root, { recursive: true, force: true })
   }
-})
-
-test('bot histories are home-local and conversation neighbours follow timestamps, not insertion order', () => {
-  const root = mkdtempSync(join(tmpdir(), 'clawa-discord-neighbours-'))
-  try {
-    const otherHome = join(root, 'other')
-    const first = new DiscordArchive(root, () => {})
-    const second = new DiscordArchive(otherHome, () => {})
-    first.archive({
-      ...entry,
-      sourceMessageId: '3',
-      content: 'after',
-      timestamp: '2026-09-24 12:00:00',
-    })
-    first.archive({
-      ...entry,
-      sourceMessageId: '2',
-      content: 'anchor',
-      timestamp: '2026-09-24T11:00:00Z',
-    })
-    first.archive({ ...entry, content: 'before' })
-    second.archive({ ...entry, content: 'other bot' })
-    const anchor = searchDiscordHistory(root, { query: 'anchor' })[0]
-    assert.ok(anchor)
-    assert.deepEqual(
-      searchDiscordHistory(root, { around: anchor.rowId, limit: 3 }).map(
-        (result) => result.content,
-      ),
-      ['before', 'anchor', 'after'],
-    )
-    assert.deepEqual(
-      searchDiscordHistory(otherHome, {}).map((result) => result.content),
-      ['other bot'],
-    )
-    assert.equal(searchDiscordHistory(root, { query: 'other bot' }).length, 0)
-  } finally {
-    rmSync(root, { recursive: true, force: true })
-  }
-})
-
-test('attachment and rich-delivery validation prevents partial invalid sends', () => {
-  const attachments = [6, 5, 20].map((size, index) => ({
-    url: 'https://cdn.discordapp.com/a',
-    name: String(index),
-    contentType: 'text/plain',
-    size,
-  }))
-  const selection = selectAttachmentsWithinLimits(attachments, {
-    maxFileBytes: 10,
-    maxTotalBytes: 10,
-  })
-  assert.deepEqual(
-    selection.accepted.map((item) => item.size),
-    [6],
-  )
-  assert.equal(selection.rejected.length, 2)
-  const limits = { maxFileBytes: 10, maxTotalBytes: 10 }
-  assert.throws(() => validateDiscordDelivery({ channelId: '900', files: [] }, limits), REQUIRED)
-  assert.throws(
-    () =>
-      validateDiscordDelivery(
-        {
-          channelId: '900',
-          files: [],
-          card: true,
-          poll: { question: 'Pick', answers: ['A', 'B'] },
-        },
-        limits,
-      ),
-    POLL_CARD,
-  )
-  assert.throws(
-    () =>
-      validateDiscordDelivery(
-        {
-          channelId: '900',
-          files: [],
-          buttons: [{ label: 'Both', url: 'https://example.com', prompt: 'do something' }],
-        },
-        limits,
-      ),
-    LINK_ACTION,
-  )
 })

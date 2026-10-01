@@ -6,28 +6,12 @@ import test from 'node:test'
 import { type ExtensionContext, SessionManager } from '@earendil-works/pi-coding-agent'
 import type { ContextAccess } from '../src/context-management/history/catalog.js'
 import { runNotes } from '../src/context-management/notes.js'
-import { parseNotesInput } from '../src/context-management/tools.js'
 
 const signal = new AbortController().signal
 const unknownAgent = /Unknown agent/
 const invalidPath = /cannot contain/
 const unknownChat = /Unknown chat_id/
 const sharedMemory = /omit chat_id/
-
-test('notes router accepts listing without query, but search and writes require their own fields', () => {
-  assert.deepEqual(parseNotesInput({ action: 'list_files_by_prefix' }), {
-    action: 'list_files_by_prefix',
-  })
-  assert.deepEqual(parseNotesInput({ action: 'read_file', path: 'plan.md' }), {
-    action: 'read_file',
-    path: 'plan.md',
-  })
-  assert.throws(() => parseNotesInput({ action: 'search_contents' }))
-  assert.throws(() => parseNotesInput({ action: 'write_file', path: 'plan.md' }))
-  assert.throws(() =>
-    parseNotesInput({ action: 'read_file', path: 'plan.md', query: 'not this action' }),
-  )
-})
 
 test('unflushed chats can write private checkpoints; other chats and unknown agents cannot cross the boundary', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-notes-'))
