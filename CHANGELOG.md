@@ -8,6 +8,10 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Added
 
+- Separate modern and legacy documentation, a branch comparison, and a redesigned site. Legacy
+  keeps the 0.3.0 guides; modern documents unreleased work. Existing guide links still reach legacy.
+- Plain-Markdown guides and changelogs, an `llms.txt` index, and an agent-readable modern upgrade
+  procedure covering installation discovery, restart handoff, migration checks, and rollback limits.
 - Fresh resident sessions can join the main session's optional Codex context family before their
   first task, using Clawa's own sockets without Shepherdr. Resumed sessions keep their identity.
   Requires Pi Codex 3.0.42 or newer with sharing enabled and compatible notes continuity in both
@@ -168,7 +172,7 @@ The first public release of pi-clawa.
 - Bootstrap protects existing homes rather than merging them. Any existing core home document
   blocks automatic setup.
 
-[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.3.0...modern
 [0.3.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.3.0
 [0.2.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.2.0
 [0.1.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.1.0

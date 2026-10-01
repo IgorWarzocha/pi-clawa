@@ -5,8 +5,8 @@ section: Core concepts
 order: 60
 ---
 
-A Pulse is a runnable Markdown definition in a home. It is a gentle wake with local instructions and
-memory, not a cron expression hidden in configuration.
+A Pulse is scheduled or manual work defined in a home's Markdown files. It runs through the owning
+Clawa session with that home's instructions and memory.
 
 ## Anatomy
 
@@ -23,13 +23,12 @@ quietHours: 22:00-08:00
 Review whether the home's active pulses are still useful...
 ```
 
-The body owns the actual job, boundaries, targets, and expected finish. A local `AGENTS.md` can hold
-the pulse's tiny recurring habits. Notes and results stay in the pulse folder rather than leaking into
-a generic scratch pile.
+The body defines the job, boundaries, targets, and expected result. A local `AGENTS.md` can hold
+recurring instructions. Keep notes and results in the Pulse folder.
 
 ## Schedules
 
-Supported shapes are:
+Schedules can be:
 
 - `manual`
 - an interval;
@@ -58,18 +57,17 @@ Each successful scheduled delivery is checkpointed immediately. If a later due P
 same scan, work that already landed is not replayed on the next scan.
 
 If another Pulse for an owner is due at the same time as the default `hey-clawa`, Hey Clawa waits
-about 15 minutes to give the specific job the room.
+about 15 minutes so the specific job runs first.
 
 ## Operational limits
 
 Pulses run inside the main Pi process, not an external scheduler. A `10:00` schedule therefore means
-“around 10:00” while that process is alive, not second-perfect execution.
+"around 10:00" while that process is alive, not second-perfect execution.
 
 An unsuccessful dispatch remains eligible on the next scan. This is useful recovery, but a broken
 Pulse can retry repeatedly until fixed or disabled. Keep the main TUI observable.
 
-## Good pulse shape
+## Keep Pulses useful
 
-A Pulse should be useful or asleep. Give it one room, explicit external-action boundaries, and a
-short result. If it repeatedly produces nothing, edit or disable it. The starter weekly review exists
-to catch exactly that kind of automation theatre.
+Give each Pulse one job, explicit external-action boundaries, and a short result. If it repeatedly
+produces nothing useful, edit or disable it. The starter weekly review helps identify unused work.

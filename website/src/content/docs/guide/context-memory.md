@@ -7,15 +7,15 @@ order: 40
 
 Clawa keeps its living documents in the home. Before each agent turn, a bounded snapshot of
 `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md` joins Pi's native structured prompt.
-The snapshot stays current after Pi compaction or optional Pi Codex continuity. It is the home's
-current shape, not a dump of everything the house knows.
+The snapshot refreshes after Pi compaction or optional Pi Codex continuity. Shared memory and
+chat notes are read separately when needed.
 
 ## Notes, memory, and history
 
 `clawa_memory` defaults to `scope: "memory"`: Markdown shared by all Clawas under `memory/`.
 Use explicit `scope: "notes"` for stored chat and agent checkpoints under `.pi/context/notes/`. List,
-read, search, append, or write files. Keep shaped knowledge in those files and update the nearest
-existing owner rather than creating duplicate pages. `memory/index.md` is the front door.
+read, search, append, or write files. Update an existing page when it already owns the subject.
+Start at `memory/index.md`.
 
 `clawa_history` reads Pi's canonical JSONL sessions through the house catalog at `.pi/context/chats/`.
 Search prior windows, chats, and tools only when needed. It can also inspect committed revisions of
@@ -23,9 +23,9 @@ shared memory. The catalog is not a second transcript database and a write does 
 create a Git commit.
 
 `memory/legacy/` holds Markdown files containing exact JSON objects with `id`, `ts`, `text`, and original
-`tags` from the old SQLite memory database. Clawa imports existing rows on startup. It leaves the database intact as a
-retired source and never creates one when none existed. Promote useful legacy material into shaped
-pages instead of editing the imports. A row larger than the shared file limit stops import visibly
+`tags` from the old SQLite memory database. Clawa imports existing rows on startup and leaves the
+database intact as a retired source. It never creates one when none existed. Move useful legacy
+material into maintained pages instead of editing the imports. A row larger than the shared file limit stops import visibly
 without truncating or changing the source database.
 
 ## Continuity belongs to Pi
@@ -40,16 +40,16 @@ Clawa launches and connects its residents itself. Neither resident coordination 
 memory requires Shepherdr or Codex. When optional Codex subagent sharing is enabled, Clawa uses
 Codex's public identity API and its own resident sockets to connect fresh sessions before their
 first task. Codex still owns the notes, history, and continuity. Existing sessions are never rebound
-to a different family. See [specialist Clawas](./clawas/) for the compatibility boundaries.
+to a different family. See [specialist Clawas](../clawas/) for the compatibility boundaries.
 
 ## Optional consolidation
 
 `/memory` shows status. `/memory remember` freezes this conversation, starts a fresh one, and queues
 optional idle consolidation. `/memory retry <jobId>` retries a failed job. The memory bot uses a
-fresh private Pi session.
-It can edit only shared memory and the living-document owners, and leaves changes uncommitted.
-“Remembered” means that run finished successfully, not that a model's judgment was independently verified.
+fresh private Pi session. It can edit only shared memory and the living-document owners, and leaves
+changes uncommitted. "Remembered" means that run finished successfully, not that a model's judgment
+was independently verified.
 
-The practical rule is simple: current work stays in the window, checkpoints in private notes,
+Keep current work in the window, checkpoints in chat-local notes,
 reusable knowledge in shared memory or living documents, and older conversations in history. Do not
 turn transcripts into shared memory wholesale.

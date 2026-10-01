@@ -1,0 +1,81 @@
+---
+import { render } from 'astro:content'
+import DocsNav from '@/components/docs-nav.astro'
+import EditionSwitch from '@/components/edition-switch.astro'
+import BaseLayout from '@/layouts/base-layout.astro'
+import { type DocEntry, docHref, type Edition, editions, getDocs, withBase } from '@/lib/site'
+
+export async function getStaticPaths() {
+  const docsByEdition = { modern: await getDocs('modern'), legacy: await getDocs('legacy') }
+  return editions.flatMap((track) => {
+    const entries = docsByEdition[track]
+    const other = track === 'modern' ? 'legacy' : 'modern'
+    return entries.map((entry) => ({
+      params: { edition: track, slug: entry.id },
+      props: {
+        doc: entry,
+        docs: entries,
+        edition: track,
+        otherHref: docsByEdition[other].some((candidate) => candidate.id === entry.id)
+          ? docHref(entry, other)
+          : withBase(`/${other}/docs/getting-started/installation/`),
+      },
+    }))
+  })
+}
+
+type Props = { doc: DocEntry; docs: DocEntry[]; edition: Edition; otherHref: string }
+const { doc, docs, edition, otherHref } = Astro.props
+const { Content, headings } = await render(doc)
+const toc = headings.filter((heading) => heading.depth === 2)
+const modernHref = edition === 'modern' ? docHref(doc, edition) : otherHref
+const legacyHref = edition === 'legacy' ? docHref(doc, edition) : otherHref
+const editionName = edition === 'modern' ? 'Modern' : 'Legacy'
+const markdownHref = `${docHref(doc, edition)}index.md`
+const source = `https://github.com/IgorWarzocha/pi-clawa/blob/${edition}/website/src/content/docs/${doc.id}.md`
+---
+
+<BaseLayout title={`${doc.data.title} (${editionName})`} description={doc.data.description} current="docs" edition={edition} markdownHref={markdownHref} type="article">
+  <main id="main-content" class="site-shell docs-layout" tabindex="-1">
+    <div class="mobile-docs">
+      <EditionSwitch edition={edition} modernHref={modernHref} legacyHref={legacyHref} />
+      <details>
+        <summary>Browse {editionName.toLowerCase()} docs</summary>
+        <DocsNav docs={docs} edition={edition} currentId={doc.id} />
+      </details>
+    </div>
+    <aside class="docs-sidebar">
+      <EditionSwitch edition={edition} modernHref={modernHref} legacyHref={legacyHref} />
+      <DocsNav docs={docs} edition={edition} currentId={doc.id} />
+    </aside>
+    <article class="docs-article">
+      <p class="edition-note">
+        {edition === 'modern' ? (
+          <>Modern is in development. For the released 0.3.0 line, use <a href={legacyHref}>Legacy docs</a>.</>
+        ) : (
+          <>Legacy preserves the 0.3.0 documentation. References to <code>master</code> describe the old branch layout. <a href={withBase('/versions/')}>What changed?</a></>
+        )}
+      </p>
+      <header class="doc-header"><h1>{doc.data.title}</h1></header>
+      <div class="prose"><Content /></div>
+      <footer class="doc-footer">
+        <nav class="footer-links" aria-label="Page formats">
+          <a href={markdownHref}>Read as Markdown</a>
+          <a href={source}>View on GitHub</a>
+        </nav>
+      </footer>
+    </article>
+    {toc.length > 1 && (
+      <aside class="page-toc">
+        <nav aria-label="On this page">
+          <h2>On this page</h2>
+          <ol>
+            {toc.map((heading) => (
+              <li><a href={`#${heading.slug}`}>{heading.text}</a></li>
+            ))}
+          </ol>
+        </nav>
+      </aside>
+    )}
+  </main>
+</BaseLayout>

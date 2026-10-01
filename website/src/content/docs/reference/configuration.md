@@ -9,7 +9,7 @@ Core runtime configuration lives at `.pi/claw.jsonc`. Pi package loading lives s
 `.pi/settings.json`. Do not put Clawa worker definitions into Pi settings or package paths into the
 Clawa config.
 
-## Complete core shape
+## Core configuration example
 
 ```jsonc
 {
@@ -82,7 +82,7 @@ a rollover policy.
 
 ## Pi project settings
 
-The stable git-checkout install is:
+Load the package checkout through project settings:
 
 ```json
 {
@@ -97,7 +97,7 @@ pi --no-extensions -e /absolute/path/to/pi-clawa
 ```
 
 Workers run from their own cwd, so Pi project settings discovered there can differ from the main
-home. This is useful isolation, but it is also a common source of “works in main, missing in worker.”
+home. If an extension works in main but is missing in a worker, check that worker's settings.
 When the Discord adapter is loaded with Clawa, it propagates to worker tabs automatically. Each
 home's optional Discord settings belong in its own `.pi/clawa-discord/bot.env`, not a worker flag
 or the main home's `.pi/claw.jsonc`.

@@ -5,37 +5,35 @@ section: Core concepts
 order: 30
 ---
 
-The filesystem is Clawa's durable home. Markdown is not a settings UI bolted onto the runtime; it is
-the readable layer where identity and relationship can keep changing without a database inspector.
+Clawa's home is a directory of Markdown documents, memory, and runtime state. You can read and
+edit the files directly. The home survives session restarts and package upgrades.
 
-## The root spine
+## Living documents
 
 | File | Owns |
 | --- | --- |
-| `AGENTS.md` | The posture and boundaries that should touch every future reply. |
-| `CLAW.md` | The Clawa's identity, voice, instincts, and evolving shape. |
-| `HUMAN.md` | Relationship texture and useful facts about the human. |
+| `AGENTS.md` | Instructions and boundaries that apply across the home. |
+| `CLAW.md` | The Clawa's identity and voice. |
+| `HUMAN.md` | Useful facts and preferences about you and the relationship. |
 | `CLAWAS.md` | The crew map: main Clawa and specialist Clawas. |
-| `CURIOUS.md` | Live questions, sparks, and things worth returning to. |
+| `CURIOUS.md` | Open questions and things worth returning to. |
 | `TOOLS.md` | Machine-local handles and operational notes. |
 
-These files have different jobs so one giant memory document does not become a mystery drawer.
-When a raw remembered note becomes settled truth, shape it into the owning file rather than keeping
-both copies forever.
+Put each fact in the file that owns it. When a temporary note becomes a durable instruction or
+fact, update that file instead of keeping duplicate versions.
 
 ## Shared memory
 
-`memory/` is the house's second brain: compiled, reusable knowledge that would be costly or ambiguous
-to rebuild. Its `index.md` is the front door. `memory/AGENTS.md` keeps the rules local to memory.
+`memory/` holds reusable knowledge shared by the home's Clawas. Start at `memory/index.md`.
+`memory/AGENTS.md` contains instructions for maintaining it.
 
-Shared memory is not a dump for transcripts, search results, or generic facts. One concept should own the
-truth; related pages link to it. The bundled `clawa-vault` skill gives the Clawa the operating pattern
-for finding, integrating, and reorganizing this knowledge.
+Keep useful conclusions here, not entire transcripts or unprocessed search results. Give each
+concept one page and link related pages to it. The bundled `clawa-vault` skill guides this work.
 
-## Tiny local instructions
+## Local instructions
 
-Nested `AGENTS.md` files carry durable context for one directory: a pulse's habits, a worker's lane,
-or a memory area's sharp edges. Clawa does not eagerly inject the whole tree. After successful shell or
+Nested `AGENTS.md` files carry instructions for one directory, such as a Pulse or worker home.
+Clawa does not inject the whole tree at startup. After successful shell or
 file activity touches a path, it discovers relevant nested instructions and appends them to that tool
 result. This keeps the opening context bounded while still loading local rules before deeper work.
 
@@ -54,7 +52,6 @@ the prompt keeps a path reminder for explicit viewing when useful.
 
 ## Editing the home
 
-Edit these files directly or ask Clawa to do it. Prefer small, accurate updates over biographies and
-grand declarations. The useful test is whether the next session behaves better because the sentence
-is there. The [privacy page](../../reference/privacy/) owns what these files and the optional image
+Edit these files directly or ask Clawa to do it. Keep instructions specific enough to affect future
+work. The [privacy page](../../reference/privacy/) explains what these files and the optional image
 can expose.

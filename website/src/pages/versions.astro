@@ -1,0 +1,102 @@
+---
+import BaseLayout from '@/layouts/base-layout.astro'
+import { withBase } from '@/lib/site'
+
+const differences = [
+  [
+    'Release status',
+    'Active development, not yet tagged as a modern release.',
+    'Preserved from the 0.3.0 master branch.',
+  ],
+  [
+    'Specialists',
+    'Ordinary Pi sessions in named Herdr tabs or tmux windows. Private messaging stays connected while you type.',
+    'Managed Pi RPC subprocesses. Manual takeover disconnects managed private delivery.',
+  ],
+  [
+    'Memory',
+    'Shared Markdown in memory/, chat-local notes, and house history through clawa_memory and clawa_history.',
+    'Shared SQLite notes through remember, bounded recent-session search through recall, and a vault/ for shaped knowledge.',
+  ],
+  [
+    'Continuity',
+    'Pi owns compaction. Optional Pi Codex owns its configured continuity. Explicit /memory remember queues private consolidation.',
+    'Pi owns compaction. Clawa can run an in-session memory pass near the context boundary.',
+  ],
+  [
+    'Living documents',
+    'Text refreshes in native structured prompt sections before each turn.',
+    'A hidden hydration message persists a snapshot at session and compaction boundaries.',
+  ],
+  [
+    'First run',
+    'Creates the home, then waits for your first message or task. Global installs stay dormant outside configured homes.',
+    'Bootstraps the home and starts the opening conversation automatically.',
+  ],
+  [
+    'Discord',
+    'An optional bot connection in each main or specialist Pi tab. Still WIP.',
+    'A shared gateway with routed workers. Still WIP.',
+  ],
+]
+---
+
+<BaseLayout title="Modern and legacy" description="Choose the right Clawa branch and understand what changes when moving from 0.3.0." current="versions">
+  <main id="main-content" class="site-shell standalone-page comparison-page" tabindex="-1">
+    <header class="doc-header">
+      <h1>Modern and legacy</h1>
+      <p class="lede">Same idea. Different foundations.</p>
+    </header>
+    <div class="prose">
+      <p>
+        Clawa has two branches, not two settings you can toggle. <strong>Modern</strong> is where
+        new work lands. <strong>Legacy</strong> preserves the 0.3.0 code and its documentation.
+        Both give a Pi agent a living home, specialist Clawas, and Pulses.
+      </p>
+      <p>
+        The modern branch is unreleased. A package version still reading <code>0.3.0</code> does
+        not make a modern checkout the 0.3.0 release. The <code>v0.3.0</code> tag belongs to legacy.
+      </p>
+    </div>
+    <div class="comparison-scroll" tabindex="0" role="region" aria-label="Branch comparison">
+      <table class="comparison-table">
+        <thead><tr><th scope="col">What changes</th><th scope="col">Modern</th><th scope="col">Legacy</th></tr></thead>
+        <tbody>
+          {differences.map(([subject, modern, legacy]) => (
+            <tr><th scope="row">{subject}</th><td>{modern}</td><td>{legacy}</td></tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div class="branch-links">
+      <a class="primary-link" href={withBase('/modern/docs/getting-started/installation/')}>Install modern</a>
+      <a href={withBase('/legacy/docs/getting-started/installation/')}>Install legacy 0.3.0</a>
+    </div>
+    <section class="prose migration-summary">
+      <h2>Moving an existing home</h2>
+      <p>
+        This is a migration, not just a branch rename. Stop the old main session and its workers
+        before launching modern. Existing <code>vault/</code> files move into <code>memory/</code>;
+        SQLite notes are imported without deleting the old database. Conflicts stop the migration
+        rather than overwrite files.
+      </p>
+      <p>
+        Herdr or tmux is needed to launch modern specialists. Discord setup also changes:
+        stop the old gateway before updating, then reconnect each home's bot through
+        <code>/discord</code>. Tokens and routes are not migrated automatically.
+      </p>
+      <p>
+        Read <a href={withBase('/modern/docs/operate/upgrading/')}>the upgrade guide</a>
+        before changing a live home. Switching back to legacy code does not undo a home migration.
+      </p>
+      <h2>Which docs am I reading?</h2>
+      <p>
+        Every guide has a Modern or Legacy selector. It takes you to the same topic in the other
+        edition when that topic exists. Legacy pages keep their original text, including historical
+        references to <code>master</code>. Use modern's
+        <a href={withBase('/modern/docs/project/release-policy/')}>release policy</a>
+        for the current branch and publishing process.
+      </p>
+    </section>
+  </main>
+</BaseLayout>

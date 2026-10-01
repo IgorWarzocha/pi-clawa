@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev --host 0.0.0.0",
-    "build": "astro check && astro build",
+    "dev": "node scripts/prepare-legacy.mjs && astro dev --host 0.0.0.0",
+    "build": "node scripts/prepare-legacy.mjs && astro check && astro build",
     "preview": "astro preview --host 0.0.0.0"
   },
   "dependencies": {

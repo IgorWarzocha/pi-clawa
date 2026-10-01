@@ -1,0 +1,16 @@
+---
+import type { Edition } from '@/lib/site'
+
+type Props = {
+  edition: Edition
+  modernHref: string
+  legacyHref: string
+}
+
+const { edition, modernHref, legacyHref } = Astro.props
+---
+
+<nav class="edition-switch" aria-label="Documentation edition">
+  <a href={modernHref} aria-current={edition === 'modern' ? 'page' : undefined}>Modern</a>
+  <a href={legacyHref} aria-current={edition === 'legacy' ? 'page' : undefined}>Legacy</a>
+</nav>

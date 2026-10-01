@@ -5,8 +5,8 @@ section: Reference
 order: 140
 ---
 
-Clawa's privacy posture is a behavioral contract carried in the home, not an operating-system
-sandbox. The extension runs with the same user permissions as Pi. Installed extensions can execute
+Home instructions guide Clawa's privacy decisions. They are not an operating-system sandbox.
+The extension runs with the same user permissions as Pi. Installed extensions can execute
 code and read files available to that user.
 
 ## Provider boundary
@@ -19,7 +19,7 @@ Every model call can include:
 - nested instructions reached during work;
 - private notes, shared memory, or past history when the model explicitly reads them.
 
-Therefore “stored locally” does not mean “never sent to a provider.” Choose a provider appropriate
+"Stored locally" does not mean "never sent to a provider." Choose a provider appropriate
 for the home's material. Never put credentials, tokens, recovery codes, or private account IDs in
 living documents or visual identity assets.
 
@@ -38,7 +38,7 @@ Clawa edits.
 ## Home isolation
 
 Clawa filters Pi's structured context files to exclude global and outside-parent instructions while
-preserving instructions physically inside the home. This scopes persona and operating posture; it does not
+preserving instructions physically inside the home. This scopes the home's instructions; it does not
 block file tools from reading outside the home when normal Pi permissions and instructions allow it.
 
 Clawa preserves custom prompts and other extensions' prompt ownership. An opaque full override can

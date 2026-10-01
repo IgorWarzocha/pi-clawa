@@ -6,8 +6,8 @@ order: 50
 ---
 
 Clawas are specialists with their own homes and Pi sessions. They are not disposable one-shot
-subagents. Each owns a lane, keeps local memory, can have Pulses, and shares only the relationship and
-crew map that should remain common.
+subagents. Each keeps local memory and can have Pulses. By default, the human and crew documents
+are shared with the main home.
 
 ## Create one
 
@@ -17,10 +17,10 @@ Open `/claw` and use the creation flow, or give `/claw` a purpose in text. Creat
 2. applies the worker template and purpose seed;
 3. symlinks the root `HUMAN.md` and `CLAWAS.md` into the worker home;
 4. adds the worker to `.pi/claw.jsonc` and the crew map;
-5. best-effort starts or refreshes the worker.
+5. attempts to start or refresh the worker.
 
-The worker's local `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, nested instructions, shared memory work, and session
-history can diverge around its lane. Shared human and crew files keep handoffs grounded.
+The worker has its own `CLAW.md`, `CURIOUS.md`, `TOOLS.md`, nested instructions, and session
+history. It can also work with shared house memory.
 
 ## Worker tabs
 
@@ -79,9 +79,9 @@ agent path for accessing that resident's working notes and history.
 
 Each worker can set `reportMode`:
 
-- `auto` — useful final results can report privately to the main Clawa;
-- `explicit` — report only through an explicit private message;
-- `off` — no automatic report-back.
+- `auto` allows useful final results to report privately to the main Clawa;
+- `explicit` reports only through an explicit private message;
+- `off` disables automatic report-back.
 
 Report-back is fingerprinted to avoid duplicates. Recent explicit mail also affects whether an
 automatic status is useful.

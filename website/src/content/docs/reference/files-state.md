@@ -11,10 +11,10 @@ Paths below are relative to the main home unless noted.
 
 | Path | Purpose |
 | --- | --- |
-| `AGENTS.md` | Main behavior spine. |
-| `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, `TOOLS.md` | Hydrated living documents. |
+| `AGENTS.md` | Home-wide instructions. |
+| `CLAW.md`, `HUMAN.md`, `CLAWAS.md`, `CURIOUS.md`, `TOOLS.md` | Living documents loaded before each turn. |
 | `CLAWA.<image>` | Optional visual identity card. |
-| `memory/` | Shared shaped knowledge and imported legacy memories. |
+| `memory/` | Shared knowledge and imported legacy memories. |
 | `pulses/<id>/PULSE.md` | Main Pulse definitions. |
 | `clawas/<id>/` | Default specialist homes, including their own Pulses and local files. |
 

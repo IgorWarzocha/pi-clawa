@@ -1,129 +1,118 @@
 # Clawa for Pi
 
-**[Documentation](https://igorwarzocha.github.io/pi-clawa/)** ·
-**[Changelog](CHANGELOG.md)** ·
+**[Modern docs](https://igorwarzocha.github.io/pi-clawa/modern/docs/getting-started/installation/)** ·
+**[Changelog](https://igorwarzocha.github.io/pi-clawa/modern/changelog/)** ·
+**[Modern and legacy](https://igorwarzocha.github.io/pi-clawa/versions/)** ·
 **[Releases](https://github.com/IgorWarzocha/pi-clawa/releases)**
 
-Clawa brings an OpenClaw-style personal agent into Pi in an attempt to make the Clankers speak
-hooman. Pi stays Pi: your models, tools, extensions, sessions, and terminal remain underneath.
+Clawa gives your Pi agent a home: a name, a relationship, memory, and room to grow. The living
+Markdown documents and bundled `warmth-pass` skill help it speak hooman without losing precise
+instructions. Pi still owns your models, tools, extensions, sessions, and terminal.
 
-The point is not persistence alone. Clawa's living home and bundled `warmth-pass` skill keep
-identity-bearing docs precise without letting them slide into compliance bark, corporate filler, or
-generic assistant voice. The runtime keeps putting that shaped voice back into context.
+The home includes shared Markdown memory, long-lived specialist Clawas with their own sessions,
+and scheduled or manual Pulses. Add ordinary Pi extensions when you need more capabilities.
+The optional Discord adapter is still WIP.
 
-Clawa adds the home layer:
+## Install modern
 
-- living identity and relationship documents;
-- shared Markdown memory, chat-local notes, and searchable Pi history;
-- long-lived specialist Clawas with internal coordination;
-- folder-based scheduled and manual Pulses;
-- living-home context that stays current through Pi compaction or optional Pi Codex continuity;
-- an optional Discord adapter.
+`modern` is the active development line and is **unreleased**. No modern release version has been
+chosen. **v0.3.0 belongs to legacy**, the preserved earlier line. Do not install that tag expecting
+the behavior described here. The [edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/)
+and [legacy docs](https://igorwarzocha.github.io/pi-clawa/legacy/docs/getting-started/installation/)
+cover the released version.
 
-The result stays open-ended. Add normal Pi packages and extensions when the home needs more.
-
-## How it fits into Pi
-
-Clawa adds the resident Clawa's identity through Pi's native structured prompt while preserving
-Pi's tool context and other extensions' prompt ownership. Context files are scoped to the active home:
-global and outside-parent context files are excluded, while nested `AGENTS.md` files inside the
-home load as work reaches them.
-
-Five living documents join Pi's structured prompt before each agent turn: `CLAW.md`, `HUMAN.md`,
-`CLAWAS.md`, `CURIOUS.md`, and `TOOLS.md`. `AGENTS.md` remains the behavior spine. The main Clawa uses
-ordinary Pi sessions; specialists keep independent homes and sessions.
-
-Pi owns compaction. If you add Pi Codex, it owns its configured continuity instead. Clawa does not
-run a second rollover engine or set context thresholds. Shared files live in `memory/`; old chat
-notes and window archives remain accessible. `/memory remember` freezes the conversation, starts a
-fresh one, and queues optional consolidation when idle. Codex is not required.
-
-Clawa launches and connects its own specialists without Shepherdr. With Pi Codex 3.0.42 or newer,
-enabling subagent context sharing lets fresh resident sessions join the main session's context
-family before their first task. Existing sessions keep their identity. See
-[specialist Clawas](https://igorwarzocha.github.io/pi-clawa/docs/guide/clawas/) for compatibility.
-
-The [runtime reference](https://igorwarzocha.github.io/pi-clawa/docs/reference/runtime/) traces the
-full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/docs/reference/privacy/)
-states the actual trust boundaries without pretending the extension is a sandbox.
-
-## Install
-
-Use Pi 0.87.1 or newer on Linux with `flock` available. The local memory toolkit uses Linux's
-no-follow file checks and process locks. Keep the package checkout separate from the clean folder
-that will become the Clawa home. Install Clawa per home, not globally. Tagged git checkouts are the
-stable update channel.
+Use Linux with `flock`, Node.js `>=24.15.0 <27`, and Pi **0.87.1 or newer** with a configured
+provider. Pi 0.87.1 is the tested dependency baseline, not the latest Pi release.
+Install Clawa per home, not globally. Keep the package checkout separate from a clean
+home directory:
 
 ```sh
-git clone --branch v0.3.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
+mkdir -p ~/src
+git clone --branch modern https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
 mkdir -p ~/clawa-home
 cd ~/clawa-home
-pi -e /absolute/path/to/pi-clawa
+pi -e ~/src/pi-clawa
 ```
 
-To remember the checkout for this home, run the helper from the home directory:
+To load it whenever you start Pi in this home, run the helper **from the home directory**:
 
 ```sh
-/absolute/path/to/pi-clawa/scripts/install-project.sh
+~/src/pi-clawa/scripts/install-project.sh
 pi
 ```
 
-First run creates the home, then waits for your first message or task. A greeting opens introductions;
-a concrete task comes first. There is no autonomous startup turn. Existing core home files stop
-automatic bootstrap rather than being overwritten. See the
-[installation](https://igorwarzocha.github.io/pi-clawa/docs/getting-started/installation/) and
-[first-run](https://igorwarzocha.github.io/pi-clawa/docs/getting-started/first-run/) guides before
-adapting an existing OpenClaw or Hermes home.
+The helper refuses to replace existing Pi settings. If you already have `.pi/settings.json`, add the
+checkout path to its `packages` array instead. See the
+[installation guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/getting-started/installation/).
 
-A global Clawa install stays dormant as a safety net, not a recommended setup. In ordinary directories
-without `.pi/claw.jsonc`, it adds no Clawa tools, skills, prompt, or runtime. Existing configured
-homes activate globally. A project install
-or explicit `pi -e` deliberately creates a new home as above.
+First run creates the home and waits for your message. Say hello to get acquainted, or give it a
+task. There is no autonomous startup turn or setup wizard. Existing core home files block bootstrap
+rather than being overwritten. Read
+[First run](https://igorwarzocha.github.io/pi-clawa/modern/docs/getting-started/first-run/)
+before adapting an existing home. Later, resume from the home with `pi -c`.
 
-## The useful entrances
+Clawa runs with Pi's user permissions, not in a sandbox. Home context can reach your model provider.
+The [privacy guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/reference/privacy/)
+explains what is loaded, shared, and sent.
 
-- `/claw` — inspect the crew, open a Clawa's tab, or create a specialist.
-- `/steer` — send an internal nudge to a specialist.
-- `/jump` — open or focus a specialist's named Herdr tab (or tmux window). The same session stays
-  messageable and reporting while you type there.
-- `/pulse` — inspect Pulses or run one manually.
-- `clawa_memory` — read and write shared home Markdown by default; use `scope: "notes"` for stored chat notes.
-- `clawa_history` — search house conversation archives and committed memory revisions.
-- `/memory` — show memory status and queue optional consolidation.
+## Around the home
 
-Generic `notes`, `history`, `new_context`, and `get_context_remaining` are not Clawa tools. They
-depend on an optional continuity extension such as Pi Codex. An optional CodeMode adapter exposes
-Clawa's house and message tools through namespaces when CodeMode is present.
+- `/claw` opens the crew view and creates specialists.
+- `/steer` sends a specialist an internal message.
+- `/jump` opens or focuses its named Herdr tab or tmux window. Messages and reports still work
+  while you type there.
+- `/pulse` shows scheduled work or runs a Pulse manually.
+- `clawa_memory` reads and writes shared Markdown. Use `scope: "notes"` for stored chat checkpoints.
+- `clawa_history` searches house conversation archives and committed memory revisions.
+- `/memory` shows consolidation status. `/memory remember` freezes the conversation, starts a
+  fresh one, and queues optional consolidation when idle.
 
-The wiki owns the detail:
+Specialists have independent homes and ordinary Pi sessions. Clawa launches and connects them
+itself, without Shepherdr. Worker tabs need Herdr or tmux and stay open when main exits. Pulses need
+a running main session.
 
-- [The Clawa home](https://igorwarzocha.github.io/pi-clawa/docs/guide/home/)
-- [Context, memory, and continuity](https://igorwarzocha.github.io/pi-clawa/docs/guide/context-memory/)
-- [Specialist Clawas](https://igorwarzocha.github.io/pi-clawa/docs/guide/clawas/)
-- [Pulses](https://igorwarzocha.github.io/pi-clawa/docs/guide/pulses/)
-- [Configuration](https://igorwarzocha.github.io/pi-clawa/docs/reference/configuration/)
-- [Troubleshooting](https://igorwarzocha.github.io/pi-clawa/docs/reference/troubleshooting/)
+Pi owns compaction. Optional Pi Codex owns its configured continuity instead. Clawa does not run a
+second rollover engine or set context thresholds. Generic `notes`, `history`, `new_context`, and
+`get_context_remaining` are not Clawa tools.
 
-## Bundled skills
+With Pi Codex **3.0.42 or newer**, optional subagent context sharing can connect fresh residents to
+the main session's context family before their first task. Existing sessions keep their identity.
+See [Specialist Clawas](https://igorwarzocha.github.io/pi-clawa/modern/docs/guide/clawas/)
+for storage and routing limits. Codex is not required for shared home memory or coordination.
 
-- `clawa-ops` — home operations, specialists, Pulses, config, and imports.
-- `warmth-pass` — stops home prose from flattening back into assistant voice.
-- `skill-creator` — creates or tunes skills when a lane needs one.
-- `clawa-vault` — keeps the shared second brain shaped and navigable.
+## Read more
 
-## Discord adapter
+- [The Clawa home](https://igorwarzocha.github.io/pi-clawa/modern/docs/guide/home/)
+- [Context, memory, and continuity](https://igorwarzocha.github.io/pi-clawa/modern/docs/guide/context-memory/)
+- [Pulses](https://igorwarzocha.github.io/pi-clawa/modern/docs/guide/pulses/)
+- [Configuration](https://igorwarzocha.github.io/pi-clawa/modern/docs/reference/configuration/)
+- [Upgrading](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/upgrading/)
+- [Troubleshooting](https://igorwarzocha.github.io/pi-clawa/modern/docs/reference/troubleshooting/)
 
-The optional adapter lives at `packages/pi-clawa-discord/` and is still WIP. Add it from the same
-checkout, open the Pi tab for the home you want to connect, and run `/discord`. That home can have
-its own bot; a specialist can connect a different bot from its own tab. For a first message and
-migration from the old gateway, see the [Discord guide](website/src/content/docs/operate/discord.md).
+Agents can use the [plain-Markdown upgrade procedure](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/upgrading/index.md)
+to explain or carry out an authorized migration.
+
+The bundled skills are `clawa-ops` for home operations, `warmth-pass` for identity-bearing prose,
+`skill-creator` for skills, and `clawa-vault` for organizing shared knowledge.
+
+## Discord
+
+Load `packages/pi-clawa-discord/` from the same checkout alongside Clawa. In the Pi tab for the
+home you want to connect, run `/discord`. Each home can have its own bot, including specialists.
+Live Discord compatibility has not yet been verified. Follow the
+[Discord guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/discord/)
+for setup and migration from the legacy gateway.
 
 ## Development
 
+Use a full-history clone. The strict gate builds both editions and needs the legacy Git source:
+
 ```sh
 bun install
-bun run ai:check:strict
+CLAWA_LEGACY_REF=origin/legacy bun run ai:check:strict
 ```
 
-Normal pushes test the extension and docs. Tagged releases are deliberate batches; documentation
-changes can deploy without pretending the extension itself has shipped again.
+The build looks for local `legacy`, then `origin/legacy`, unless you set the override. A shallow,
+modern-only checkout is not enough. Modern's Pages workflow publishes both editions; legacy does
+not deploy independently. Tags remain the release channel. A docs deployment is not an extension
+release. See the [release policy](https://igorwarzocha.github.io/pi-clawa/modern/docs/project/release-policy/).

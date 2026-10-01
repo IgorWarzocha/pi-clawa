@@ -1,13 +1,14 @@
 ---
-import type { DocEntry } from '@/lib/site'
+import type { DocEntry, Edition } from '@/lib/site'
 import { docHref, groupDocs } from '@/lib/site'
 
 type Props = {
   docs: DocEntry[]
+  edition: Edition
   currentId?: string
 }
 
-const { docs, currentId } = Astro.props
+const { docs, edition, currentId } = Astro.props
 const groups = groupDocs(docs)
 ---
 
@@ -18,7 +19,7 @@ const groups = groupDocs(docs)
       <ul>
         {entries.map((entry) => (
           <li>
-            <a href={docHref(entry)} aria-current={entry.id === currentId ? 'page' : undefined}>
+            <a href={docHref(entry, edition)} aria-current={entry.id === currentId ? 'page' : undefined}>
               {entry.data.title}
             </a>
           </li>

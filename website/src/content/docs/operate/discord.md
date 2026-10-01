@@ -10,7 +10,7 @@ home. It is **work in progress**. Live Discord compatibility has not yet been ve
 
 ## Connect a home
 
-Follow the [bot setup guide](https://github.com/IgorWarzocha/pi-clawa/blob/master/packages/pi-clawa-discord/DISCORD-BOT-SETUP.md) to
+Follow the [bot setup guide](https://github.com/IgorWarzocha/pi-clawa/blob/modern/packages/pi-clawa-discord/DISCORD-BOT-SETUP.md) to
 create an application and invite its bot. Load the adapter beside Clawa in that home's Pi settings,
 open Pi there, run `/discord`, enter its token, and connect. DM the bot or mention it in an allowed
 channel. The message and Clawa's ensuing turn appear in the **same tab**, not in a dedicated

@@ -6,6 +6,7 @@ node_modules/
 .pi/clawas-control/
 dist/
 website/.astro/
+website/.generated/
 website/dist/
 .pi/clawa-memory.jsonl
 .pi/clawa-memory.sqlite

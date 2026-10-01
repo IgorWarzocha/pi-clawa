@@ -1,49 +1,87 @@
 ---
 import BaseLayout from '@/layouts/base-layout.astro'
-import { docHref, getDocs, groupDocs, withBase } from '@/lib/site'
+import { withBase } from '@/lib/site'
 
-const docs = await getDocs()
-const groups = groupDocs(docs)
 const description =
-  'An OpenClaw-style personal agent built directly into Pi, with a living home and warmth pass that keep its voice intact.'
+  'A personal agent with a home, shared memory, and resident specialists. Built as a Pi extension.'
+const guides = [
+  {
+    slug: 'guide/home',
+    title: 'Make it your home',
+    detail: 'The files that hold identity, preferences, and what matters to you.',
+  },
+  {
+    slug: 'guide/context-memory',
+    title: 'Keep what matters',
+    detail: 'Shared memory, working notes, and the conversations behind them.',
+  },
+  {
+    slug: 'guide/clawas',
+    title: 'Meet the other Clawas',
+    detail: 'Specialists with their own homes and sessions, not disposable tasks.',
+  },
+  {
+    slug: 'guide/pulses',
+    title: 'Give it a rhythm',
+    detail: 'Scheduled and manual work, kept in ordinary folders.',
+  },
+]
 ---
 
 <BaseLayout description={description}>
   <main id="main-content" class="site-shell home-page" tabindex="-1">
     <header class="hero">
       <div class="hero-copy">
-        <p class="kicker">OpenClaw-ish. Still Pi.</p>
-        <h1>Make the Clankers speak hooman.</h1>
+        <h1>A home<br />for your Pi.</h1>
         <p class="lede">
-          Clawa brings the personal-agent experience I wanted from OpenClaw into normal Pi. Its
-          living home and bundled warmth pass keep capable models from waking up as the same
-          laminated assistant every session.
+          An agent you can get to know. A home full of living notes.
+          Other Clawas to share the work with.
         </p>
+        <p>Clawa is a Pi extension. Your models, tools, and terminal stay yours.</p>
         <div class="hero-links">
-          <a class="primary-link" href={withBase('/docs/getting-started/installation/')}>Install pi-clawa</a>
-          <a href={withBase('/docs/reference/runtime/')}>Trace the runtime</a>
+          <a class="primary-link" href={withBase('/modern/docs/getting-started/installation/')}>Explore modern <span aria-hidden="true">↗</span></a>
+          <a href={withBase('/legacy/docs/getting-started/installation/')}>Using 0.3.0?</a>
         </div>
       </div>
       <figure class="hero-media">
-        <img src={withBase('/images/clawa-keyboard.webp')} width="1024" height="1024" alt="Howaclawa mashing at a keyboard in a neon workshop" />
+        <img src={withBase('/images/clawa-keyboard.webp')} width="1024" height="1024" alt="An orange Clawa at a well-used keyboard, surrounded by glowing workshop screens" fetchpriority="high" />
       </figure>
     </header>
 
-    <section class="docs-index" aria-label="Documentation index">
-      {Array.from(groups).map(([section, entries]) => (
-        <section class="docs-group">
-          <h2>{section}</h2>
-          <div class="docs-rows">
-            {entries.map((entry) => (
-              <a class="doc-row" href={docHref(entry)}>
-                <strong>{entry.data.title}</strong>
-                <span>{entry.data.description}</span>
-              </a>
-            ))}
-          </div>
+    <section class="branch-section" aria-labelledby="branches-title">
+      <div class="section-heading">
+        <h2 id="branches-title">Choose your branch</h2>
+        <a href={withBase('/versions/')}>Compare what changed <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="branch-grid">
+        <section class="branch-option">
+          <h3>Modern</h3>
+          <p class="branch-status">Active development. Not yet released.</p>
+          <p>Visible resident sessions, shared Markdown memory, and context owned by Pi or optional Pi Codex.</p>
+          <a href={withBase('/modern/docs/getting-started/installation/')}>Read the modern docs <span aria-hidden="true">→</span></a>
         </section>
-      ))}
+        <section class="branch-option">
+          <h3>Legacy</h3>
+          <p class="branch-status">The preserved 0.3.0 line.</p>
+          <p>The original managed workers, SQLite memory, and in-session memory pass. Keep these docs beside an existing home.</p>
+          <a href={withBase('/legacy/docs/getting-started/installation/')}>Read the legacy docs <span aria-hidden="true">→</span></a>
+        </section>
+      </div>
     </section>
 
+    <section class="guide-section" aria-labelledby="guides-title">
+      <div>
+        <h2 id="guides-title">Get to know the home</h2>
+        <p>Readable files. Ordinary Pi sessions.<br />Room to grow into something familiar.</p>
+      </div>
+      <div class="guide-list">
+        {guides.map((guide) => (
+          <a class="guide-row" href={withBase('/modern/docs/' + guide.slug + '/')}>
+            <h3>{guide.title} <span aria-hidden="true">↗</span></h3>
+            <p>{guide.detail}</p>
+          </a>
+        ))}
+      </div>
+    </section>
   </main>
 </BaseLayout>

@@ -1,21 +1,31 @@
 ---
 import '@/styles/global.css'
-import { withBase } from '@/lib/site'
+import { type Edition, withBase } from '@/lib/site'
 
 type Props = {
   title?: string
   description: string
-  current?: 'docs' | 'changelog'
+  current?: 'docs' | 'changelog' | 'versions'
+  edition?: Edition
+  markdownHref?: string
   type?: 'website' | 'article'
 }
 
-const { title, description, current, type = 'website' } = Astro.props
-const pageTitle = title ? `${title} — pi-clawa` : 'pi-clawa — OpenClaw-ish, still Pi'
+const {
+  title,
+  description,
+  current,
+  edition = 'modern',
+  markdownHref,
+  type = 'website',
+} = Astro.props
+const pageTitle = title ? `${title} | Clawa for Pi` : 'Clawa for Pi | A home for your Pi'
 const canonical = new URL(Astro.url.pathname, Astro.site)
 const hero = new URL(withBase('/images/clawa-keyboard.webp'), Astro.site)
 const nav = [
-  { href: withBase('/docs/getting-started/installation/'), label: 'Docs', key: 'docs' },
-  { href: withBase('/changelog/'), label: 'Changelog', key: 'changelog' },
+  { href: withBase(`/${edition}/docs/getting-started/installation/`), label: 'Docs', key: 'docs' },
+  { href: withBase('/versions/'), label: 'Modern & legacy', key: 'versions' },
+  { href: withBase(`/${edition}/changelog/`), label: 'Changelog', key: 'changelog' },
 ]
 ---
 
@@ -27,7 +37,9 @@ const nav = [
     <meta name="description" content={description} />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href={canonical} />
-    <meta property="og:site_name" content="pi-clawa" />
+    {markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} />}
+    <link rel="help" href={withBase('/llms.txt')} />
+    <meta property="og:site_name" content="Clawa for Pi" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content={type} />
@@ -37,7 +49,7 @@ const nav = [
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={hero} />
-    <meta name="theme-color" content="#1b2119" />
+    <meta name="theme-color" content="#171c19" />
     <link rel="icon" href={withBase('/favicon.svg')} />
     <title>{pageTitle}</title>
   </head>
@@ -45,8 +57,9 @@ const nav = [
     <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header">
       <nav class="site-shell nav" aria-label="Main navigation">
-        <a class="site-brand" href={withBase('/')} aria-label="pi-clawa home">
-          <span>pi-clawa</span><small>/ docs from the living thing</small>
+        <a class="site-brand" href={withBase('/')} aria-label="Clawa home">
+          <img src={withBase('/favicon.svg')} width="28" height="28" alt="" />
+          <span>clawa<span class="brand-for"> for Pi</span></span>
         </a>
         <div class="nav-links">
           {nav.map((item) => (
@@ -61,11 +74,12 @@ const nav = [
     <slot />
     <footer class="site-footer">
       <div class="site-shell footer-grid">
-        <p>Clawa lives inside Pi. This site documents what the code actually does.</p>
+        <p>A home inside Pi. Made by <a href="https://howaboua.dev">Howaboua</a>.</p>
         <nav class="footer-links" aria-label="Footer">
-          <a href={withBase('/docs/project/release-policy/')}>Release policy</a>
+          <a href={withBase('/modern/docs/project/release-policy/')}>Release policy</a>
+          <a href={withBase('/llms.txt')}>For agents</a>
           <a href="https://github.com/IgorWarzocha/pi-clawa/issues">Issues</a>
-          <a href="https://howaboua.dev">Howaboua</a>
+          <a href="https://github.com/IgorWarzocha/pi-clawa">Source</a>
         </nav>
       </div>
     </footer>
@@ -76,12 +90,23 @@ const nav = [
           const button = document.createElement('button')
           button.type = 'button'
           button.className = 'copy-code'
-          button.textContent = 'copy'
+          button.textContent = 'Copy'
+          button.setAttribute('aria-label', 'Copy code')
+          button.setAttribute('aria-live', 'polite')
           button.addEventListener('click', async () => {
             const code = block.querySelector('code')?.textContent ?? ''
-            await navigator.clipboard.writeText(code)
-            button.textContent = 'copied'
-            window.setTimeout(() => { button.textContent = 'copy' }, 1200)
+            try {
+              await navigator.clipboard.writeText(code)
+              button.textContent = 'Copied'
+              button.setAttribute('aria-label', 'Code copied')
+            } catch {
+              button.textContent = 'Select code to copy'
+              button.setAttribute('aria-label', 'Copy failed. Select the code and copy it manually.')
+            }
+            window.setTimeout(() => {
+              button.textContent = 'Copy'
+              button.setAttribute('aria-label', 'Copy code')
+            }, 2500)
           })
           block.append(button)
         })

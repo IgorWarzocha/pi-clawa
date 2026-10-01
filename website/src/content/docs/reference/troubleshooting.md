@@ -5,8 +5,8 @@ section: Reference
 order: 150
 ---
 
-Start with the owning layer. A package-load problem, home-shape problem, worker tab problem, model
-auth problem, and Discord connection problem can look similar from the final conversation.
+Check the relevant layer before changing config. A package-load failure, blocked bootstrap,
+closed worker tab, missing model credentials, or disconnected bot can all look like a silent Clawa.
 
 ## Clawa did not appear
 

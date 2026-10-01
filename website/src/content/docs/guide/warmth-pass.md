@@ -5,18 +5,15 @@ section: Core concepts
 order: 35
 ---
 
-Clawa began with a voice problem. Capable models could do the work and still wake up sounding like
-the same polite, laminated assistant. Asking them to “be warmer” did not survive long sessions,
-compaction, or a pile of stiff home instructions.
-
-The fix was structural: give the Clawa a small set of living identity files, then make those files
-sound inhabited without weakening what they tell the agent to do.
+Clawa should sound like someone you know, not the same polite assistant in every home. Its living
+documents hold the voice and relationship. The bundled `warmth-pass` skill helps keep those
+instructions personal without making them less precise.
 
 ## The bundled warmth pass
 
-`warmth-pass` is a first-class Clawa skill for `AGENTS.md`, `CLAW.md`, `HUMAN.md`, `CURIOUS.md`,
-worker-home docs, and other identity-bearing text. It rewrites generic assistant voice, compliance
-bark, and dead report language while preserving the machine underneath.
+Use `warmth-pass` for `AGENTS.md`, `CLAW.md`, `HUMAN.md`, `CURIOUS.md`, worker-home docs, and other
+identity-bearing text. It removes generic assistant phrasing and stiff policy language without
+changing the instructions.
 
 These survive unchanged:
 
@@ -25,25 +22,19 @@ These survive unchanged:
 - required steps, stop conditions, and output contracts;
 - names, roles, relationship facts, and deliberate odd phrases.
 
-Warmth is posture, not decoration. The pass does not add mascot lore, cute chaos, catchphrases, or
-purple prose. If a warmer sentence is less precise, the precise sentence wins.
+The pass should preserve the home's own voice, not add a mascot, catchphrases, or forced jokes.
+If a warmer sentence is less precise, keep the precise one.
 
-## Why it holds
+## Keeping the voice in context
 
-The warmed documents are not a one-shot style prompt. They are the home files Clawa keeps
-rehydrating as the session moves and compacts. Specialist Clawas inherit the house posture, then add
-their own lane-specific shape instead of waking up as generic contractors.
-
-That pairing carries the weight:
-
-1. the warmth pass makes identity instructions specific and livable;
-2. the home structure gives each kind of truth one durable place;
-3. hydration keeps that shape present without piling up copies.
+Clawa reloads the five living documents before each agent turn, including after compaction.
+Edits therefore affect later turns without needing to repeat a style request in chat.
+Specialists have their own identity documents and share the human and crew map.
 
 ## When to use it
 
-Run a warmth pass when a home file is correct but sounds like policy copy, when a worker has drifted
-into temp-contractor voice, or when new instructions have flattened the surrounding document.
+Run a warmth pass when a home file is correct but sounds like policy copy, or when new instructions
+have flattened the surrounding document.
 
-Do not use it to soften schemas, API specs, or strict runbooks. Those need crisp procedure. The skill
-can warm their framing, but it does not melt checklists into vibes.
+Do not use it to soften schemas, API specs, or strict runbooks. Their framing can be friendly;
+commands, stop conditions, and required steps must stay exact.
