@@ -7,7 +7,13 @@ order: 90
 
 Code and home state live in separate folders. Update the package checkout, not the home template.
 **Modern is unreleased. v0.3.0 belongs to legacy.** Checking out that tag switches to the earlier
-runtime, not a stable release of modern.
+runtime, not a stable release of modern. The legacy branch remains supported for Pi compatibility;
+its maintenance updates are not included in that unchanged tag.
+
+This guide updates modern or migrates to it. Moving to modern is optional, not a prerequisite for
+Pi **0.99.2** compatibility. To keep the legacy architecture, use the
+[legacy guides](../../../../legacy/docs/getting-started/installation/) and
+[legacy changelog](../../../../legacy/changelog/), not the migration below.
 
 Read the [modern changelog](../../../changelog/) before updating. Back up the home using
 [Files and runtime state](../../reference/files-state/), including the actual main and worker
@@ -21,6 +27,8 @@ to read and give machine-specific steps. Do not change code, config, sessions, o
 If asked to execute, establish which checkout and homes are in scope, whether remote access is
 allowed, and who will stop and restart their sessions. Upgrade approval is not permission to
 discard local edits, replace fork remotes, or change global Pi settings or provider credentials.
+Confirm that modern is the chosen target before using this procedure. A request to update legacy
+does not authorize migrating its architecture.
 
 1. **Identify the installation.** Read the loaded package path from Pi project settings, explicit
    launch arguments, or global settings if used. Resolve symlinks to the actual checkout. Find the

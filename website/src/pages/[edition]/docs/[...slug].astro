@@ -51,9 +51,9 @@ const source = `https://github.com/IgorWarzocha/pi-clawa/blob/${edition}/website
     <article class="docs-article">
       <p class="edition-note">
         {edition === 'modern' ? (
-          <>Modern is in development. For the released 0.3.0 line, use <a href={legacyHref}>Legacy docs</a>.</>
+          <>Modern is unreleased development. For the supported architecture descended from 0.3.0, use <a href={legacyHref}>Legacy docs</a>.</>
         ) : (
-          <>Legacy preserves the 0.3.0 documentation. References to <code>master</code> describe the old branch layout. <a href={withBase('/versions/')}>What changed?</a></>
+          <>Legacy is maintained for Pi compatibility. These docs follow the legacy branch, not the unchanged <code>v0.3.0</code> tag. References to <code>master</code> describe the former branch name. <a href={withBase('/versions/')}>What changed?</a></>
         )}
       </p>
       <header class="doc-header"><h1>{doc.data.title}</h1></header>

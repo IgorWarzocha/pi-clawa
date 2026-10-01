@@ -10,7 +10,7 @@ export const GET = async ({ props }: APIContext<{ edition: Edition }>): Promise<
   const notice =
     props.edition === 'modern'
       ? 'Modern changes are unreleased. The 0.3.0 release belongs to legacy.'
-      : 'This is the release history preserved with the legacy branch.'
+      : 'This is the release and compatibility maintenance history of the supported legacy branch. The v0.3.0 tag stays unchanged.'
   return new Response(`> ${notice}\n\n${await readChangelog(props.edition)}`, {
     headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
   })

@@ -30,14 +30,14 @@
     "dotenv": "^17.4.2"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": ">=0.87.1",
-    "@earendil-works/pi-ai": "*",
-    "@earendil-works/pi-tui": "*",
+    "@earendil-works/pi-coding-agent": ">=0.99.2",
+    "@earendil-works/pi-ai": ">=0.99.2",
+    "@earendil-works/pi-tui": ">=0.99.2",
     "typebox": "*",
-    "@howaboua/pi-codex-conversion": ">=3.0.39"
+    "@howaboua/pi-codex-conversion": ">=3.0.42"
   },
   "devDependencies": {
-    "@howaboua/pi-codex-conversion": "3.0.39"
+    "@howaboua/pi-codex-conversion": "3.0.42"
   },
   "publishConfig": {
     "access": "public"

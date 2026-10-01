@@ -117,7 +117,7 @@ async function resident(
         params,
         undefined,
         undefined,
-        runtime.session.extensionRunner.createContext(),
+        runtime.session.extensionRunner.createToolContext('context-proof', undefined),
       )
     },
   }

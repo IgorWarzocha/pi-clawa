@@ -18,11 +18,12 @@ Use the [edition comparison](../../../../versions/) to choose between modern and
 - Git.
 - Linux with `flock` available. Local memory uses Linux no-follow file checks and process locks.
 - Node.js **24.15 or newer, but lower than 27**.
-- [Pi](https://github.com/earendil-works/pi) **0.87.1 or newer**, with a configured model provider.
+- [Pi](https://github.com/earendil-works/pi) **0.99.2 or newer**, with a configured model provider.
 - A clean folder for the home. [First run](../first-run/) explains the exact bootstrap boundary.
 
-Pi 0.87.1 is the repository's tested dependency baseline, not the latest Pi release. The current
-dependency check does not validate newer Pi versions.
+Both modern and legacy require Pi **0.99.2**. Neither branch supports older Pi installations.
+Legacy receives compatibility maintenance without adopting modern's runtime architecture.
+The unchanged `v0.3.0` tag does not include later legacy branch updates.
 
 Pi extensions execute with your user permissions. Read the [trust boundaries](../../reference/privacy/)
 before putting personal context into a home.
@@ -82,7 +83,7 @@ requirement.
 
 ## Developing Clawa
 
-Keep the full Git history. The strict gate builds modern docs from the working tree and archived
+Keep the full Git history. The strict gate builds modern docs from the working tree and maintained
 legacy docs from Git. The build looks for local `legacy`, then `origin/legacy`. You can select an
 available ref explicitly:
 

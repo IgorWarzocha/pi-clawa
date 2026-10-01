@@ -21,7 +21,7 @@ export const GET = ({ props, site }: APIContext<Props>): Response => {
   const notice =
     edition === 'modern'
       ? 'Modern is active development, not a tagged release. v0.3.0 belongs to legacy.'
-      : 'Legacy preserves the 0.3.0 documentation. References to master describe the old branch layout.'
+      : 'Legacy is the supported architecture descended from 0.3.0, maintained for Pi compatibility. These docs follow the legacy branch, not the unchanged v0.3.0 tag. References to master describe the former branch name.'
   const page = new URL(docHref(doc, edition), site)
   return new Response(`# ${doc.data.title}\n\n> ${notice}\n\nWeb page: ${page}\n\n${doc.body}\n`, {
     headers: { 'Content-Type': 'text/markdown; charset=utf-8' },

@@ -32,7 +32,7 @@ function resolveSource(root) {
     }
   }
   throw new Error(
-    `Cannot resolve legacy source (${refs.join(', ')}). Fetch origin/legacy or set CLAWA_LEGACY_REF to a preserved legacy commit.`,
+    `Cannot resolve legacy source (${refs.join(', ')}). Fetch origin/legacy or set CLAWA_LEGACY_REF to a legacy commit.`,
   )
 }
 

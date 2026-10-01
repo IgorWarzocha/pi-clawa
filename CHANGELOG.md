@@ -28,6 +28,8 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Changed
 
+- Both `modern` and `legacy` now require Pi 0.99.2 or newer. Legacy keeps its managed-worker and
+  SQLite-memory architecture, not an older Pi dependency. Development checks use Pi 0.99.2.
 - Bundled `clawa-ops` now routes installs and modern upgrades to the packaged guides instead of
   assuming every tagged checkout has modern behavior. Skill-authoring guidance favors concise
   triggers and task-specific instructions over mandatory document scaffolding.

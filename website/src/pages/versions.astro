@@ -6,7 +6,7 @@ const differences = [
   [
     'Release status',
     'Active development, not yet tagged as a modern release.',
-    'Preserved from the 0.3.0 master branch.',
+    'Supported architecture descended from 0.3.0. Receives compatibility maintenance.',
   ],
   [
     'Specialists',
@@ -50,12 +50,14 @@ const differences = [
     <div class="prose">
       <p>
         Clawa has two branches, not two settings you can toggle. <strong>Modern</strong> is where
-        new work lands. <strong>Legacy</strong> preserves the 0.3.0 code and its documentation.
+        new architecture lands. <strong>Legacy</strong> maintains the architecture descended from 0.3.0.
         Both give a Pi agent a living home, specialist Clawas, and Pulses.
       </p>
       <p>
         The modern branch is unreleased. A package version still reading <code>0.3.0</code> does
-        not make a modern checkout the 0.3.0 release. The <code>v0.3.0</code> tag belongs to legacy.
+        not make a modern checkout the 0.3.0 release. The unchanged <code>v0.3.0</code> tag belongs
+        to legacy and does not include later maintenance. Both branches require Pi <code>0.99.2</code>
+        or newer. Legacy does not mean an older Pi installation.
       </p>
     </div>
     <div class="comparison-scroll" tabindex="0" role="region" aria-label="Branch comparison">
@@ -70,7 +72,7 @@ const differences = [
     </div>
     <div class="branch-links">
       <a class="primary-link" href={withBase('/modern/docs/getting-started/installation/')}>Install modern</a>
-      <a href={withBase('/legacy/docs/getting-started/installation/')}>Install legacy 0.3.0</a>
+      <a href={withBase('/legacy/docs/getting-started/installation/')}>Install legacy</a>
     </div>
     <section class="prose migration-summary">
       <h2>Moving an existing home</h2>
@@ -92,8 +94,9 @@ const differences = [
       <h2>Which docs am I reading?</h2>
       <p>
         Every guide has a Modern or Legacy selector. It takes you to the same topic in the other
-        edition when that topic exists. Legacy pages keep their original text, including historical
-        references to <code>master</code>. Use modern's
+        edition when that topic exists. Legacy pages come from one commit of the maintained legacy
+        branch, not a fixed copy of the old tag. Any historical references to <code>master</code>
+        describe the former branch name. Use modern's
         <a href={withBase('/modern/docs/project/release-policy/')}>release policy</a>
         for the current branch and publishing process.
       </p>

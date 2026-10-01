@@ -1,6 +1,6 @@
 ---
 title: Release policy
-description: How modern development, legacy preservation, docs, and releases fit together.
+description: How modern development, legacy maintenance, docs, and releases fit together.
 section: Project
 order: 160
 ---
@@ -9,14 +9,18 @@ order: 160
 No modern release version has been chosen. Package manifests still reading `0.3.0` do not make
 modern a 0.3.0 release.
 
-`legacy` preserves the released 0.3.0 line. Modern changes are not automatically copied back to it.
+`legacy` is the supported architecture descended from 0.3.0, not a frozen archive. Both branches
+require Pi **0.99.2** and move to the current Pi baseline together, without older-Pi compatibility
+paths. Legacy maintenance does not merge modern's runtime architecture back into it.
+
+The old `v0.3.0` tag stays unchanged and does not include later legacy branch updates.
 Tags identify releases; a branch update or merge is not a release. The
 [edition comparison](../../../../versions/) describes the runtime differences.
 
 ## Changelog
 
 Each line's root `CHANGELOG.md` is its changelog authority. The site renders modern's working-tree
-changelog and legacy's archived Git source separately. Do not copy historical entries between them
+changelog and legacy's selected Git snapshot separately. Do not copy historical entries between them
 to imply that both lines shipped the same behavior.
 
 Every user-visible behavior change updates **Unreleased** in the same commit or pull request:
@@ -50,31 +54,31 @@ is local-workspace and WIP. npm publishing is not part of this workflow.
 The maintainer manually dispatches **Release** with a semantic version and explicit confirmation.
 The workflow verifies that:
 
-- it runs from `modern`;
+- it runs from `modern` or `legacy`;
 - package versions match the input;
 - `CHANGELOG.md` contains that dated version;
 - the strict gate passes.
 
 It then creates the `vX.Y.Z` tag and GitHub release from the changelog section. The tag makes the
-batch installable as a release. This workflow does not release legacy.
+batch installable as a release. Tags are unique across the repository, not per branch. Choose an
+unused version for either line. An existing tag must point to the workflow commit; never move
+`v0.3.0` or another published tag to include maintenance changes.
 
 ## Docs deployment
 
-Modern's Pages workflow builds both editions with one shared frontend:
+The same Pages workflow on both maintained branches builds both editions with one shared frontend:
 
-- modern docs come from the working tree;
-- legacy docs and changelog come unchanged from the selected legacy Git source;
+- every run checks out `modern` with full history, even when triggered by a legacy update;
+- modern docs and changelog come from that checkout;
+- legacy docs and changelog come from one `origin/legacy` commit, with no hand-maintained copy;
 - each edition has its own docs and changelog routes;
 - the comparison lives at `/versions/`.
 
-Before the first dual-edition publication, restrict the GitHub `github-pages` environment's
-deployment branches to `modern`. Legacy's historical Pages workflow remains preserved, including
-manual dispatch. Modern's workflow guards do not disable that old workflow; the environment's
-branch policy enforces modern-only deployment.
-
-Modern docs, changelog, and relevant workflow changes trigger deployment. With that environment
-policy in place, frozen legacy cannot deploy independently. Publishing corrected docs does not
-release the extension.
+Docs, changelog, workflow, and build-input pushes on either branch trigger the shared deployment.
+Workflow guards allow only `modern` and `legacy`, including manual dispatch. Before publication,
+configure the GitHub `github-pages` environment to permit both maintained branches. Legacy updates
+refresh the legacy edition through modern's frontend, not a separate site. Publishing corrected
+docs does not release the extension.
 
 ## Local validation
 

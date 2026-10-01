@@ -16,13 +16,14 @@ The optional Discord adapter is still WIP.
 ## Install modern
 
 `modern` is the active development line and is **unreleased**. No modern release version has been
-chosen. **v0.3.0 belongs to legacy**, the preserved earlier line. Do not install that tag expecting
+chosen. **v0.3.0 belongs to legacy**, the supported earlier architecture. Do not install that tag expecting
 the behavior described here. The [edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/)
 and [legacy docs](https://igorwarzocha.github.io/pi-clawa/legacy/docs/getting-started/installation/)
-cover the released version.
+cover that architecture. Legacy receives compatibility maintenance. Its branch updates do not
+change the old `v0.3.0` tag.
 
-Use Linux with `flock`, Node.js `>=24.15.0 <27`, and Pi **0.87.1 or newer** with a configured
-provider. Pi 0.87.1 is the tested dependency baseline, not the latest Pi release.
+Use Linux with `flock`, Node.js `>=24.15.0 <27`, and Pi **0.99.2 or newer** with a configured
+provider. Both Clawa branches require this Pi baseline.
 Install Clawa per home, not globally. Keep the package checkout separate from a clean
 home directory:
 
@@ -113,6 +114,7 @@ CLAWA_LEGACY_REF=origin/legacy bun run ai:check:strict
 ```
 
 The build looks for local `legacy`, then `origin/legacy`, unless you set the override. A shallow,
-modern-only checkout is not enough. Modern's Pages workflow publishes both editions; legacy does
-not deploy independently. Tags remain the release channel. A docs deployment is not an extension
-release. See the [release policy](https://igorwarzocha.github.io/pi-clawa/modern/docs/project/release-policy/).
+modern-only checkout is not enough. Updates on either maintained branch trigger one Pages
+deployment built from modern's frontend and both branches' docs. Tags remain the release channel.
+A docs deployment is not an extension release. See the
+[release policy](https://igorwarzocha.github.io/pi-clawa/modern/docs/project/release-policy/).
