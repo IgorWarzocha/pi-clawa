@@ -1,7 +1,6 @@
 import type {
   ClawasCommsCommand,
   ClawasDiscordContext,
-  ClawasExtractedMessage,
   ClawasMessageIntent,
   ClawasMessageKind,
   ClawasMessageVisibility,
@@ -134,28 +133,6 @@ export function parseClawasCommsCommand(value: unknown): ParseResult<ClawasComms
     }
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) }
-  }
-}
-
-export function parseLastMessageData(value: unknown): ClawasExtractedMessage | null {
-  if (!isRecord(value)) throw new Error('get_message response data must be an object')
-  const message = value['message']
-  if (message === null) return null
-  if (!isRecord(message)) throw new Error('get_message response requires message or null')
-  if (
-    message['role'] !== 'assistant' ||
-    typeof message['content'] !== 'string' ||
-    typeof message['timestamp'] !== 'number' ||
-    !Number.isFinite(message['timestamp']) ||
-    (message['error'] !== undefined && typeof message['error'] !== 'string')
-  ) {
-    throw new Error('get_message response contains an invalid message')
-  }
-  return {
-    role: 'assistant',
-    content: message['content'],
-    timestamp: message['timestamp'],
-    error: message['error'],
   }
 }
 

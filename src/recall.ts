@@ -13,9 +13,7 @@ import { dedupeFiles, discoverSessionFiles } from './recall/session-files.js'
 import { searchSessionFile } from './recall/session-source.js'
 import type { RecallResult, RecallSearchInput } from './recall/types.js'
 
-export type { RecallResult, RecallSearchInput } from './recall/types.js'
-
-export async function searchRecall(input: RecallSearchInput): Promise<RecallResult[]> {
+async function searchRecall(input: RecallSearchInput): Promise<RecallResult[]> {
   const tokens = tokenize(input.query)
   const limit = normalizeLimit(input.limit)
   const memoryResults = searchMemory(input, tokens, limit)

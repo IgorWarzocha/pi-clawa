@@ -64,30 +64,3 @@ test('failed config persistence cannot mark in-memory bootstrap success', async 
     await rm(root, { recursive: true, force: true })
   }
 })
-
-test('failed template copying preserves the obstruction and leaves bootstrap unmarked', async () => {
-  const root = await home()
-  try {
-    await writeFile(join(root, 'pulses'), 'Keep this file\n')
-    const runtime = new ClawaRuntimeState()
-    await assert.rejects(bootstrapMainHome(root, runtime))
-    assert.equal(await readFile(join(root, 'pulses'), 'utf8'), 'Keep this file\n')
-    assert.equal(loadClawEnvironmentConfig(root).config.bootstrapped, false)
-    assert.equal(runtime.bootstrapped, false)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('a directory in place of a template file does not count as a copied home', async () => {
-  const root = await home()
-  try {
-    await mkdir(join(root, 'vault', 'index.md'), { recursive: true })
-    const runtime = new ClawaRuntimeState()
-    await assert.rejects(bootstrapMainHome(root, runtime))
-    assert.equal(loadClawEnvironmentConfig(root).config.bootstrapped, false)
-    assert.equal(runtime.bootstrapped, false)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})

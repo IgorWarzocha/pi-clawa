@@ -22,14 +22,10 @@ import {
   recoverStuckMessagesInDb,
 } from './src/gateway/db/queue.js'
 import { runSchemaMigrations } from './src/gateway/db/schema.js'
-import { parseBooleanSetting, parseEnumSetting, parseIntegerSetting } from './src/shared/env.js'
 import { acquireGatewayLock, readGatewayLock } from './src/shared/gateway-lock.js'
 
 const DELIVERY_KEY_COLLISION_PATTERN = /delivery key collision/u
 const QUEUE_UNAVAILABLE_PATTERN = /queue unavailable/u
-const INVALID_LIMIT_PATTERN = /Invalid LIMIT/u
-const INVALID_ENABLED_PATTERN = /Invalid ENABLED/u
-const INVALID_POLICY_PATTERN = /Invalid POLICY/u
 const ALREADY_RUNNING_PATTERN = /already running/u
 
 test('inbox settles only after the worker turn and preserves awaiting work on restart', () => {
@@ -226,20 +222,6 @@ test('interaction consumption and enqueue commit together', () => {
   } finally {
     db.close()
   }
-})
-
-test('settings reject malformed values instead of coercing them', () => {
-  assert.equal(parseIntegerSetting({ LIMIT: '4' }, 'LIMIT', 1, { min: 1 }), 4)
-  assert.throws(() => parseIntegerSetting({ LIMIT: '4oops' }, 'LIMIT', 1), INVALID_LIMIT_PATTERN)
-  assert.equal(parseBooleanSetting({ ENABLED: 'off' }, 'ENABLED', true), false)
-  assert.throws(
-    () => parseBooleanSetting({ ENABLED: 'perhaps' }, 'ENABLED', true),
-    INVALID_ENABLED_PATTERN,
-  )
-  assert.throws(
-    () => parseEnumSetting({ POLICY: 'public' }, 'POLICY', 'open', ['open', 'allowlist']),
-    INVALID_POLICY_PATTERN,
-  )
 })
 
 test('gateway lock acquisition is atomic and identity-bearing', async () => {

@@ -16,7 +16,7 @@ Prefer updating an existing memory by its id when the truth has grown or changed
 
 Once they're tucked away, carry on normally. Pi will handle the actual compaction.`
 
-export function shouldRequestMemoryPass(
+function shouldRequestMemoryPass(
   config: ClawaMemoryPassConfig,
   usage: ContextUsage | undefined,
   armed: boolean,

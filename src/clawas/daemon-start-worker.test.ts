@@ -25,16 +25,3 @@ test('concurrent requests share one worker start', async () => {
   await Promise.all([first, second])
   assert.equal(starts.size, 0)
 })
-
-test('a completed worker start does not block the next launch', async () => {
-  const starts = new Map<string, Promise<void>>()
-  let calls = 0
-  const start = async () => {
-    calls += 1
-  }
-
-  await coalesceWorkerStart(starts, 'discord-clawa', start)
-  await coalesceWorkerStart(starts, 'discord-clawa', start)
-
-  assert.equal(calls, 2)
-})

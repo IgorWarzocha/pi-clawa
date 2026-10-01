@@ -89,7 +89,7 @@ function getClawaSessionRoot(cwd: string): string {
   return path.join(cwd, '.pi')
 }
 
-export function getClawaSessionsDir(cwd: string): string {
+function getClawaSessionsDir(cwd: string): string {
   return path.join(getClawaSessionRoot(cwd), 'sessions')
 }
 

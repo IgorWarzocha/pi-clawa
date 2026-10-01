@@ -4,11 +4,6 @@ const QUIET_DIRECTIVE_REGEX = /^\[quiet\]:?$/i
 const REACTION_DIRECTIVE_REGEX = /^\[react\s+m\d+:\s*.+?\]$/i
 const LINE_SPLIT_REGEX = /\r?\n/u
 
-export interface DiscordRelayCandidate {
-  content: string
-  timestamp?: number | undefined
-}
-
 export interface LastDiscordDelivery {
   route: 'discord' | 'main-claw'
   content: string
@@ -54,19 +49,6 @@ function hasStandaloneQuietDiscordDirective(content: string): boolean {
     .filter(Boolean)
     .filter((line) => !REACTION_DIRECTIVE_REGEX.test(line))
   return meaningfulLines.some((line) => QUIET_DIRECTIVE_REGEX.test(line))
-}
-
-export function shouldSkipAutoDiscordRelay(options: {
-  message: DiscordRelayCandidate
-  lastDelivery?: LastDiscordDelivery | undefined
-}): boolean {
-  const { message, lastDelivery } = options
-  if (lastDelivery?.route !== 'discord') {
-    return false
-  }
-
-  const messageTimestamp = message.timestamp ?? 0
-  return lastDelivery.timestamp >= messageTimestamp
 }
 
 export function shouldSkipAutoMainClawStatusRelay(options: {

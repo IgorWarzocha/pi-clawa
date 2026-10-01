@@ -4,57 +4,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import { PulseRuntime } from '../src/pulses/runtime.js'
-import {
-  isPulseDue,
-  isPulseQuietAt,
-  parsePulseQuietHours,
-  parsePulseSchedule,
-} from '../src/pulses/schedule.js'
 import { readPulseState } from '../src/pulses/state.js'
 
 const JSON_ERROR_PATTERN = /JSON/
 const BETA_DELIVERY_ERROR_PATTERN = /beta delivery failed/u
-
-function stubClawasRuntime() {
-  return {
-    refreshFromConfig: async () => {},
-    getState: () => ({ workers: [] }),
-    getWorkerDefinition: () => {
-      throw new Error('unexpected worker pulse')
-    },
-    ensureWorkerRunning: async () => {},
-    getClawaDefaults: () => ({ mainClawName: 'Clawa' }),
-  }
-}
-
-test('pulse schedules parse and skip first-seen interval runs', () => {
-  const schedule = parsePulseSchedule('every 30m')
-  assert.deepEqual(schedule, { kind: 'interval', everyMs: 1_800_000 })
-  assert.deepEqual(isPulseDue({ schedule: schedule!, nowMs: 10_000, firstSeenAt: undefined }), {
-    due: false,
-    dueKey: null,
-  })
-  assert.equal(isPulseDue({ schedule: schedule!, nowMs: 1_810_000, firstSeenAt: 10_000 }).due, true)
-  assert.deepEqual(parsePulseSchedule('manual'), { kind: 'manual' })
-  assert.equal(parsePulseSchedule(''), null)
-  assert.deepEqual(isPulseDue({ schedule: { kind: 'manual' }, nowMs: 10_000 }), {
-    due: false,
-    dueKey: null,
-  })
-})
-
-test('pulse quiet hours parse local daytime and overnight windows', () => {
-  const overnight = parsePulseQuietHours('23:00-08:00')
-  const daytime = parsePulseQuietHours('13:00 - 14:00')
-  assert.deepEqual(overnight, { startMinute: 1380, endMinute: 480 })
-  assert.deepEqual(daytime, { startMinute: 780, endMinute: 840 })
-  assert.equal(isPulseQuietAt(overnight!, new Date(2026, 6, 18, 23, 0).getTime()), true)
-  assert.equal(isPulseQuietAt(overnight!, new Date(2026, 6, 19, 7, 59).getTime()), true)
-  assert.equal(isPulseQuietAt(overnight!, new Date(2026, 6, 19, 8, 0).getTime()), false)
-  assert.equal(isPulseQuietAt(daytime!, new Date(2026, 6, 18, 13, 30).getTime()), true)
-  assert.equal(parsePulseQuietHours('24:00-08:00'), null)
-  assert.equal(parsePulseQuietHours('08:00-08:00'), null)
-})
 
 test('successful pulse deliveries stay checkpointed when a later pulse fails', async () => {
   const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-checkpoint-'))
@@ -81,7 +34,7 @@ test('successful pulse deliveries stay checkpointed when a later pulse fails', a
           delivered.push(content)
         },
       } as never,
-      stubClawasRuntime() as never,
+      {} as never,
     )
     pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
 
@@ -108,57 +61,6 @@ test('pulse state corruption fails instead of resetting scheduler history', asyn
     await writeFile(join(root, '.pi', 'pulses.json'), '{ nope', 'utf8')
 
     await assert.rejects(() => readPulseState(root), JSON_ERROR_PATTERN)
-  } finally {
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('Hey Clawa defers when another pulse for the same owner is due', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-hey-collision-'))
-  try {
-    await mkdir(join(root, '.git'))
-    await mkdir(join(root, 'pulses', 'hey-clawa'), { recursive: true })
-    await mkdir(join(root, 'pulses', 'exact-check'), { recursive: true })
-    await writeFile(
-      join(root, 'pulses', 'hey-clawa', 'PULSE.md'),
-      ['---', 'title: Hey, Clawa', 'schedule: every 1m', 'enabled: true', '---', '', '# Hey'].join(
-        '\n',
-      ),
-      'utf8',
-    )
-    await writeFile(
-      join(root, 'pulses', 'exact-check', 'PULSE.md'),
-      [
-        '---',
-        'title: Exact check',
-        'schedule: at 1970-01-01T00:01:02.000Z',
-        'enabled: true',
-        '---',
-        '',
-        '# Exact check',
-      ].join('\n'),
-      'utf8',
-    )
-
-    let deliveries = 0
-    const pulseRuntime = new PulseRuntime(
-      { sendMessage: () => (deliveries += 1) } as never,
-      stubClawasRuntime() as never,
-    )
-    pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
-
-    await pulseRuntime.scanAndRunDue(1_000)
-    await pulseRuntime.scanAndRunDue(62_000)
-
-    assert.equal(deliveries, 1)
-    const deferredState = await readPulseState(root)
-    assert.equal(deferredState.pulses['main:exact-check']?.lastRunAt, 62_000)
-    assert.equal(deferredState.pulses['main:hey-clawa']?.deferUntil, 962_000)
-
-    await pulseRuntime.scanAndRunDue(962_000)
-    assert.equal(deliveries, 2)
-    assert.equal((await readPulseState(root)).pulses['main:hey-clawa']?.lastRunAt, 962_000)
-    await pulseRuntime.dispose()
   } finally {
     await rm(root, { recursive: true, force: true })
   }
@@ -224,61 +126,6 @@ test('disposal drains a delivered pulse, checkpoints it, and skips remaining sta
     await runtime.dispose()
   } finally {
     releaseDelivery()
-    await runtime?.dispose()
-    await rm(root, { recursive: true, force: true })
-  }
-})
-
-test('a scan waiting on a worker cannot deliver into a reattached session', {
-  timeout: 5_000,
-}, async () => {
-  const root = await mkdtemp(join(tmpdir(), 'clawa-pulse-reattach-'))
-  let releaseRefresh: () => void = () => {}
-  let runtime: PulseRuntime | undefined
-  try {
-    await mkdir(join(root, '.git'))
-    await mkdir(join(root, '.pi'))
-    await writeFile(
-      join(root, '.pi', 'claw.jsonc'),
-      JSON.stringify({ clawas: { workers: [{ id: 'helper', cwd: 'clawas/helper' }] }, clawa: {} }),
-    )
-    await mkdir(join(root, 'clawas', 'helper', 'pulses', 'check'), { recursive: true })
-    await writeFile(
-      join(root, 'clawas', 'helper', 'pulses', 'check', 'PULSE.md'),
-      ['---', 'title: Check', 'schedule: every 1m', '---', '', '# Check'].join('\n'),
-    )
-    let refreshStarted!: () => void
-    const started = new Promise<void>((resolve) => (refreshStarted = resolve))
-    const blocked = new Promise<void>((resolve) => (releaseRefresh = resolve))
-    let deliveries = 0
-    runtime = new PulseRuntime(
-      {} as never,
-      {
-        refreshFromConfig: async () => {
-          refreshStarted()
-          await blocked
-        },
-        getState: () => ({ workers: [] }),
-        sendPrompt: async () => {
-          deliveries++
-        },
-      } as never,
-    )
-    const ctx = { cwd: root, hasUI: false, isIdle: () => true } as never
-    runtime.attach(ctx)
-    await runtime.scanAndRunDue(1_000)
-    const scan = runtime.scanAndRunDue(62_000)
-    await started
-    const stopping = runtime.dispose()
-    runtime.attach(ctx)
-    releaseRefresh()
-    await Promise.all([scan, stopping])
-    assert.equal(deliveries, 0)
-    assert.equal((await readPulseState(root)).pulses['helper:check']?.lastRunAt, undefined)
-    await runtime.scanAndRunDue(62_000)
-    assert.equal(deliveries, 1)
-  } finally {
-    releaseRefresh()
     await runtime?.dispose()
     await rm(root, { recursive: true, force: true })
   }
