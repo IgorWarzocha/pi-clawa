@@ -1,7 +1,6 @@
 # @howaboua/pi-clawa-discord
 
-An optional Discord connection for a Clawa home. It is still work in progress; live Discord
-compatibility has not yet been verified. [Create a bot](DISCORD-BOT-SETUP.md), load this package
+Connect a Clawa home to its own Discord bot. [Create a bot](DISCORD-BOT-SETUP.md), load this package
 alongside Clawa in Pi, and run `/discord` in the home you want to connect.
 
 For a git checkout, add both package paths to that home's `.pi/settings.json`:
@@ -30,8 +29,8 @@ messages are ignored, so its own posts cannot wake it again.
 Discord messages and agent work appear in that same Pi tab. A final block such as `[m1] Hello`
 replies to that exact displayed message; `[c] Hello` posts to the current channel. Unmarked final
 text stays in Pi. Use `discord_send` for files, reactions, cards, buttons, selects, polls, and other
-rich delivery. `discord_history` searches local Discord history. Core `notes` and `history` keep
-their usual meaning.
+rich delivery. `discord_history` searches local Discord history. Core `clawa_memory` and
+`clawa_history` serve shared memory, retained chat notes, and house Pi archives.
 
 Each home keeps `.pi/clawa-discord/bot.env` for its token and policy. The file is created with mode
 `0600`; an empty token leaves Discord off. It does not inherit a token or config from the process or
@@ -40,7 +39,7 @@ hold local history and attachment or channel state. Keep this directory private.
 rich action tokens are in memory and are lost on disconnect or reload; archived history stays.
 Closing a worker tab disconnects its bot. Quitting the main tab does not stop other worker tabs.
 
-If you used the old shared gateway, [stop it and migrate deliberately](https://igorwarzocha.github.io/pi-clawa/docs/operate/discord/#migrating-from-the-old-gateway).
+If you used the old shared gateway, [stop it and migrate deliberately](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/discord/#migrating-from-the-old-gateway).
 
 ## Attribution
 

@@ -6,7 +6,7 @@ order: 70
 ---
 
 The optional package at `packages/pi-clawa-discord` connects a bot inside the Pi tab for a Clawa
-home. It is **work in progress**. Live Discord compatibility has not yet been verified.
+home. Each main or specialist home can connect its own bot and talk in the channels you choose.
 
 ## Connect a home
 

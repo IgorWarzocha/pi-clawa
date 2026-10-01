@@ -87,20 +87,19 @@ Blocks: clean-room runtime test.
 
 ## D. Optional adapters
 
-Status: In-process per-home Pi adapter replacing the shared gateway. Live Discord compatibility is
-not verified yet.
+Status: Each home connects its own Discord bot inside Pi. Follow-ups cover UX, ambient policy,
+and regression checks when adapter behavior changes.
 
 - [x] Optional adapter package and `/discord` home setup
 - [x] Per-home token, in-tab turns, explicit `[mN]` and `[c]` delivery, and local history
 - [x] No forced Discord worker, router, subprocess, or `discordEnabled` flag
-- [ ] Verify first connection, DM and mention replies, attachments, rich interactions, and search with real Discord bots
-- [ ] Verify distinct bot tokens across main and worker tabs, duplicate-token lease rejection, tab close, reload, resume, and config restart at settlement
+- [ ] Recheck first connection, DM and mention replies, attachments, rich interactions, and search with real bots after Discord I/O changes
+- [ ] Recheck distinct bot tokens, duplicate-token lease rejection, tab close, reload, resume, and config restart at settlement after lifecycle changes
 - [ ] Polish `/discord` states and copy after live use
 - [ ] Calibrate ambient posting in real rooms; default remains opt-in and never requires a reply
 - [ ] Decide whether to generate invite URL or keep manual instructions
 
 Depends on: C runtime surfaces.
-Blocks: full clean-room test if Discord is included in first release.
 
 ## E. Release docs/checks
 

@@ -156,7 +156,7 @@ Generic `notes`, `history`, `new_context`, and `get_context_remaining` are not s
 Open each home that should connect and configure its own distinct bot token through the new
 `/discord`. The old gateway's `config.env` and `routes.jsonc` are not read or migrated. Old worker
 homes, Pi sessions, and `gateway.db` are not deleted. See [Discord](../discord/) for setup and
-lifecycle details. The adapter remains WIP.
+lifecycle details.
 
 ## First restart checks
 
@@ -177,7 +177,7 @@ report the result. Before considering the upgrade complete:
   or separate panel still running alongside its new tab. Do not delete registry entries or launch
   extra copies to hide an uncertain worker state.
 - Reconnect Discord only for the approved homes using the migration steps above. Check connection
-  status in each owning tab. Live Discord compatibility remains unverified.
+  status in each owning tab.
 
 Report the observed commit, resumed session, memory and history checks, and worker state. If a
 check fails, stop further work and report the error and affected path without exposing secrets.

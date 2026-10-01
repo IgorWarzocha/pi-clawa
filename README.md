@@ -11,7 +11,7 @@ instructions. Pi still owns your models, tools, extensions, sessions, and termin
 
 The home includes shared Markdown memory, long-lived specialist Clawas with their own sessions,
 and scheduled or manual Pulses. Add ordinary Pi extensions when you need more capabilities.
-The optional Discord adapter is still WIP.
+The optional Discord adapter lets each home connect its own bot.
 
 ## Install modern
 
@@ -99,7 +99,7 @@ The bundled skills are `clawa-ops` for home operations, `warmth-pass` for identi
 
 Load `packages/pi-clawa-discord/` from the same checkout alongside Clawa. In the Pi tab for the
 home you want to connect, run `/discord`. Each home can have its own bot, including specialists.
-Live Discord compatibility has not yet been verified. Follow the
+Follow the
 [Discord guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/discord/)
 for setup and migration from the legacy gateway.
 

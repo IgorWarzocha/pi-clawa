@@ -50,8 +50,8 @@ Release a coherent batch, not every merge. Before dispatching the release workfl
    Markdown, and `llms.txt`.
 
 Move accumulated Unreleased entries under `## [X.Y.Z] - YYYY-MM-DD`, update comparison links,
-and leave a fresh Unreleased section. Discord stays lockstep with the repository release while it
-is local-workspace and WIP. npm publishing is not part of this workflow.
+and leave a fresh Unreleased section. The Discord package stays lockstep with the repository
+release. npm publishing is not part of this workflow.
 
 ## Release automation
 

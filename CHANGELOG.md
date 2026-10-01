@@ -68,8 +68,8 @@ before switching from legacy. Legacy's Pi compatibility update is released separ
 - Discord bot tokens now live in each home's `.pi/clawa-discord/bot.env`. Existing `config.env`
   and `routes.jsonc` are not read or migrated. Stop the old gateway with the old `/discord` before
   updating, then reconnect each desired home through the new `/discord`. Existing worker homes,
-  session history, and Discord archive data remain untouched. Live Discord compatibility is not
-  yet verified; pending turns and rich action tokens do not survive disconnect or reload.
+  session history, and Discord archive data remain untouched. Pending turns and rich action tokens
+  do not survive disconnect or reload.
 - Specialist Clawas now run in named Herdr tabs or tmux windows instead of managed RPC
   subprocesses. `/jump` and `/claw` open or focus the same worker tab; split-pane launches are gone.
   Typing directly never disconnects private messaging or reporting. Main reloads and exits leave
