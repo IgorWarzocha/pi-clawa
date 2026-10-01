@@ -6,6 +6,11 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-01
+
+Legacy's Pi compatibility release. No home-state migration is required. Modern **0.4.0** ships
+separately with a different architecture; moving to it is optional.
+
 ### Changed
 
 - Legacy now requires Pi **0.99.2 or newer**, matching modern's Pi baseline without older-Pi
@@ -106,7 +111,8 @@ The first public release of pi-clawa.
 - Bootstrap protects existing homes rather than merging them. Any existing core home document
   blocks automatic setup.
 
-[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.3.0...legacy
+[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.3.1...legacy
+[0.3.1]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.3.1
 [0.3.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.3.0
 [0.2.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.2.0
 [0.1.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.1.0

@@ -1,6 +1,6 @@
 ---
 title: Upgrading and removing
-description: Update package code without replacing home state.
+description: Upgrade to legacy 0.3.1 without replacing home state.
 section: Operate
 order: 90
 ---
@@ -10,25 +10,31 @@ with a new template.
 
 ## Update legacy
 
-Read the [changelog](../../../changelog/) first. Current legacy maintenance requires Pi **0.99.2
-or newer** and does not require a home-state migration. Upgrade Pi and stop the main session and
-any manual worker panels cleanly, then update the checkout:
+Read the [changelog](../../../changelog/) first. **Legacy v0.3.1**, released on **2026-10-01**,
+requires Pi **0.99.2 or newer** and does not require a home-state migration. Record the starting
+commit and check for local edits before updating; do not reset or overwrite them. Upgrade Pi and
+stop the main session and any manual worker panels cleanly, then update the checkout:
 
 ```bash
 cd ~/src/pi-clawa
-git fetch origin legacy
-git switch --detach FETCH_HEAD
+git fetch origin tag v0.3.1
+git switch --detach v0.3.1
 ```
+
+Stop on a fetch error or tag conflict; never force-update a published tag. These commands select
+the stable legacy release, including from an older tagged or single-branch checkout. A detached
+checkout is expected; do not make local product edits unless you intentionally maintain a fork.
 
 Start the home again with `pi -c`. Clawa reads existing `.pi/claw.jsonc` and living documents. It
 does not recopy the template over a bootstrapped home.
 
-These commands select the fetched legacy snapshot, including from an older tagged checkout.
-Repeat them for later updates. A detached checkout is expected here; do not make local product
-edits unless you intentionally maintain a fork.
+To follow maintenance between releases instead, use `git fetch origin legacy` followed by
+`git switch --detach FETCH_HEAD` in the stopped checkout. This selects that fetched snapshot;
+repeat the two commands for a later maintenance update.
 
-The unchanged `v0.3.0` tag does not include this maintenance. Future tags remain deliberate release
-batches, not automatic branch updates. Moving to modern is a separate architecture change; follow
+The historical `v0.3.0` tag does not include this maintenance. Future tags remain deliberate release
+batches, not automatic branch updates. Moving to **modern v0.4.0** is a separate, optional architecture
+change; follow
 [modern's migration guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/upgrading/)
 rather than changing branches in a running legacy home.
 

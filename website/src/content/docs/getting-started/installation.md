@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install the maintained legacy line into a separate Clawa home.
+description: Install legacy 0.3.1 into a separate Clawa home.
 section: Start
 order: 10
 ---
@@ -21,14 +21,17 @@ before putting personal context into a home.
 
 ## Install legacy
 
-Legacy keeps the earlier Clawa architecture on the current Pi baseline. Choose where package
-checkouts live, then clone its maintained branch:
+Legacy **0.3.1**, released on **2026-10-01**, keeps the earlier Clawa architecture on the current
+Pi baseline. Choose where package checkouts live, then clone the release tag:
 
 ```bash
 mkdir -p ~/src
-git clone --branch legacy \
+git clone --branch v0.3.1 \
   https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
 ```
+
+This leaves the checkout detached at the release commit. To follow maintenance between releases,
+replace `v0.3.1` with `legacy` in the clone command.
 
 Create a separate home:
 
@@ -64,11 +67,11 @@ the package list.
 
 ## Branches and releases
 
-Current legacy maintenance is unreleased. The unchanged `v0.3.0` tag is the earlier release, not
-this branch's current code. Modern develops a different Clawa architecture; it is not required to
-keep legacy working with current Pi. The [release policy](../../project/release-policy/) explains
-both lines, and the [edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/) helps
-you choose between them.
+Install **v0.3.1** to retain legacy. **Modern v0.4.0** is the default for new homes and has a
+different architecture; it is not required to keep legacy working with current Pi. Both releases
+require Pi **0.99.2 or newer**. The historical `v0.3.0` tag stays unchanged. The
+[release policy](../../project/release-policy/) explains both lines, and the
+[edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/) helps you choose between them.
 
 The [files and runtime state](../../reference/files-state/) page separates home data from disposable
 runtime artifacts and lists what belongs in a backup or ignore policy.

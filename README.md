@@ -23,9 +23,9 @@ layer:
 
 The result stays open-ended. Add normal Pi packages and extensions when the home needs more.
 
-This is the maintained **legacy** line: RPC workers, shared SQLite memory, and the same-branch
-memory pass. [Modern](https://github.com/IgorWarzocha/pi-clawa/tree/modern) develops the newer Clawa
-architecture; both lines use the current Pi baseline.
+This is the maintained **legacy 0.3.1** line: RPC workers, shared SQLite memory, and the same-branch
+memory pass. [Modern 0.4.0](https://igorwarzocha.github.io/pi-clawa/modern/docs/getting-started/installation/)
+is the default for new homes, with a different architecture. Both lines use the current Pi baseline.
 
 ## How it fits into Pi
 
@@ -49,11 +49,11 @@ states the actual trust boundaries without pretending the extension is a sandbox
 ## Install
 
 Use Pi **0.99.2 or newer**. Keep the package checkout separate from the clean folder that will become
-the Clawa home. Current maintenance lives on `legacy`; the unchanged `v0.3.0` tag does not include
-these unreleased updates.
+the Clawa home. Install **v0.3.1** for this release. The `legacy` branch carries subsequent maintenance;
+the historical `v0.3.0` tag stays unchanged.
 
 ```sh
-git clone --branch legacy https://github.com/IgorWarzocha/pi-clawa.git
+git clone --branch v0.3.1 https://github.com/IgorWarzocha/pi-clawa.git
 mkdir -p ~/clawa-home
 cd ~/clawa-home
 pi -e /absolute/path/to/pi-clawa

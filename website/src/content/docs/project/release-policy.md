@@ -1,18 +1,18 @@
 ---
 title: Release policy
-description: How legacy maintenance, modern development, and releases fit together.
+description: How the legacy and modern release channels, maintenance, and docs fit together.
 section: Project
 order: 160
 ---
 
-`legacy` maintains the earlier Clawa architecture: RPC workers, shared SQLite memory, and the
-same-branch memory pass. `modern` is the intended default and develops the newer architecture.
-Both branches require Pi **0.99.2 or newer** and move to the current Pi baseline together,
-without older-Pi compatibility paths. Legacy is supported, not a frozen archive.
+**Legacy 0.3.1** maintains the earlier Clawa architecture: RPC workers, shared SQLite memory, and
+the same-branch memory pass. **Modern 0.4.0** is the stable default for new homes. Both releases are
+dated **2026-10-01** and require Pi **0.99.2 or newer**. Install `v0.3.1` to retain legacy, or
+`v0.4.0` for modern. The `legacy` branch follows maintenance; `modern` follows development.
 
-Current maintenance is **unreleased**. The unchanged `v0.3.0` tag does not include later legacy
-updates; package versions still reading `0.3.0` do not make those updates a release. Modern is
-also unreleased, with no new version chosen. The
+Both maintained lines move to the current Pi baseline together, without older-Pi compatibility
+paths. Legacy is supported, not a frozen archive, and does not adopt modern's runtime architecture.
+The historical `v0.3.0` tag stays unchanged and excludes later maintenance. The
 [edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/) describes the differences.
 
 ## Changelog discipline
@@ -37,10 +37,12 @@ Release when a coherent batch is worth asking users to absorb—not after every 
 calendar for its own sake. A batch should have:
 
 1. a curated versioned changelog section with a date;
-2. matching root, docs, and Discord package versions;
+2. matching root, docs, and Discord package versions within that line, including the lockfile;
 3. a clean-room install/runtime pass for behavior that changed;
 4. `bun run ai:check:strict` green;
-5. no known state migration left implicit.
+5. no known state migration left implicit;
+6. current edition notices and installation targets on the shared site, including plain Markdown
+   and `llms.txt`.
 
 Discord remains lockstep with the repository release while it is local-workspace and WIP. npm
 publishing is not part of the current release workflow.
