@@ -24,7 +24,7 @@ export const GET = async ({ site }: APIContext): Promise<Response> => {
     `${[
       '# Clawa for Pi',
       '> A Pi extension with a living home, shared memory, resident specialists, and Pulses.',
-      'Modern is unreleased development. Legacy receives compatibility maintenance without adopting modern architecture. Both branches target Pi 0.99.2; the minimum is 0.87.1. The unchanged v0.3.0 tag belongs to legacy and excludes later maintenance. Keep instructions matched to the installed branch.',
+      'Modern is unreleased development. Legacy receives compatibility maintenance without adopting modern architecture. Both branches require Pi 0.99.2 or newer. The unchanged v0.3.0 tag belongs to legacy and excludes later maintenance. Keep instructions matched to the installed branch.',
       `For an existing home, start with [Upgrading and removing](${upgrade}). It covers checkout discovery, the same-session restart handoff, migration checks, and rollback limits.`,
       `[Compare modern and legacy](${comparison}). Guides below are plain Markdown generated from the same source as the website, not separate instructions.`,
       ...sections,
