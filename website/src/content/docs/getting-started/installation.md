@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install a tagged checkout into a separate Clawa home.
+description: Install the maintained legacy line into a separate Clawa home.
 section: Start
 order: 10
 ---
@@ -13,19 +13,20 @@ Clawa's home.
 
 - Git.
 - Node.js **24.15 or newer, but lower than 27**.
-- [Pi](https://github.com/earendil-works/pi) **0.87.1 or newer**, with a configured model provider.
+- [Pi](https://github.com/earendil-works/pi) **0.99.2 or newer**, with a configured model provider.
 - A clean folder for the home. [First run](../first-run/) explains the exact bootstrap boundary.
 
 Pi extensions execute with your user permissions. Read the [trust boundaries](../../reference/privacy/)
 before putting personal context into a home.
 
-## Install a tagged release
+## Install legacy
 
-Choose where package checkouts live, then clone the release:
+Legacy keeps the earlier Clawa architecture on the current Pi baseline. Choose where package
+checkouts live, then clone its maintained branch:
 
 ```bash
 mkdir -p ~/src
-git clone --branch v0.3.0 --depth 1 \
+git clone --branch legacy \
   https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
 ```
 
@@ -61,11 +62,13 @@ an existing settings file. If the home already has Pi settings, merge this entry
 Do not use `CLAWA_INSTALL_OVERWRITE=1` casually. It replaces the complete settings file, not only
 the package list.
 
-## Follow development instead
+## Branches and releases
 
-If you explicitly want unreleased work, clone `master` without `--branch`. Treat that checkout as a
-development channel. The [release policy](../../project/release-policy/) explains what does and does
-not ship from it.
+Current legacy maintenance is unreleased. The unchanged `v0.3.0` tag is the earlier release, not
+this branch's current code. Modern develops a different Clawa architecture; it is not required to
+keep legacy working with current Pi. The [release policy](../../project/release-policy/) explains
+both lines, and the [edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/) helps
+you choose between them.
 
 The [files and runtime state](../../reference/files-state/) page separates home data from disposable
 runtime artifacts and lists what belongs in a backup or ignore policy.

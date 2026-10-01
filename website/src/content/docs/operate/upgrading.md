@@ -8,23 +8,29 @@ order: 90
 Code and home state live in different folders. Upgrade the package checkout; do not replace the home
 with a new template.
 
-## Upgrade to a tagged release
+## Update legacy
 
-Read the [changelog](../../../changelog/) first. Clawa 0.3.0 requires Pi 0.87.1 or newer and does not
-require a home-state migration. Stop the main Pi session cleanly, then update the checkout:
+Read the [changelog](../../../changelog/) first. Current legacy maintenance requires Pi **0.99.2
+or newer** and does not require a home-state migration. Upgrade Pi and stop the main session and
+any manual worker panels cleanly, then update the checkout:
 
 ```bash
 cd ~/src/pi-clawa
-git fetch --tags origin
-git checkout v0.3.0
+git fetch origin legacy
+git switch --detach FETCH_HEAD
 ```
 
 Start the home again with `pi -c`. Clawa reads existing `.pi/claw.jsonc` and living documents. It
 does not recopy the template over a bootstrapped home.
 
-For a full checkout rather than a shallow tagged clone, move between releases with
-`git switch --detach vX.Y.Z`. A detached tag is expected for an installed package. Do not make local
-product edits there unless you intentionally maintain a fork.
+These commands select the fetched legacy snapshot, including from an older tagged checkout.
+Repeat them for later updates. A detached checkout is expected here; do not make local product
+edits unless you intentionally maintain a fork.
+
+The unchanged `v0.3.0` tag does not include this maintenance. Future tags remain deliberate release
+batches, not automatic branch updates. Moving to modern is a separate architecture change; follow
+[modern's migration guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/upgrading/)
+rather than changing branches in a running legacy home.
 
 ## Back up what matters
 

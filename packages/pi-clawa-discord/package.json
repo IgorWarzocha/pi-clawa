@@ -38,7 +38,7 @@
     "tsx": "^4.23.1"
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-coding-agent": ">=0.99.2",
     "typebox": "*",
     "@howaboua/pi-clawa": "*"
   },

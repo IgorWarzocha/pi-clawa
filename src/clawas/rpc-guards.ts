@@ -39,7 +39,7 @@ export function readRpcAssistantText(data: unknown): ClawasRpcAssistantText {
     throw new Error('Invalid get_last_assistant_text RPC data: expected an object')
   }
   const text = data['text']
-  // Pi 0.87.1 serializes an empty session as {} despite declaring text: string | null.
+  // Pi serializes an empty session as {} because its text value is undefined.
   if (text === undefined || text === null) return null
   if (typeof text !== 'string') {
     throw new Error(

@@ -1,6 +1,6 @@
 # Clawa for Pi
 
-**[Documentation](https://igorwarzocha.github.io/pi-clawa/)** ·
+**[Documentation](https://igorwarzocha.github.io/pi-clawa/legacy/docs/getting-started/installation/)** ·
 **[Changelog](CHANGELOG.md)** ·
 **[Releases](https://github.com/IgorWarzocha/pi-clawa/releases)**
 
@@ -23,6 +23,10 @@ layer:
 
 The result stays open-ended. Add normal Pi packages and extensions when the home needs more.
 
+This is the maintained **legacy** line: RPC workers, shared SQLite memory, and the same-branch
+memory pass. [Modern](https://github.com/IgorWarzocha/pi-clawa/tree/modern) develops the newer Clawa
+architecture; both lines use the current Pi baseline.
+
 ## How it fits into Pi
 
 Clawa replaces Pi's generic assistant introduction with the resident Clawa's identity while keeping
@@ -38,17 +42,18 @@ Pi alone owns compaction. Near the boundary—90% of the active model window by 
 ordinary follow-up in the same branch to revisit recent shared memories and save only genuinely new
 or updated continuity. There is no detached compaction sidecar or competing history summary.
 
-The [runtime reference](https://igorwarzocha.github.io/pi-clawa/docs/reference/runtime/) traces the
-full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/docs/reference/privacy/)
+The [runtime reference](https://igorwarzocha.github.io/pi-clawa/legacy/docs/reference/runtime/) traces the
+full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/legacy/docs/reference/privacy/)
 states the actual trust boundaries without pretending the extension is a sandbox.
 
 ## Install
 
-Use Pi 0.87.1 or newer. Keep the package checkout separate from the clean folder that will become
-the Clawa home. Tagged releases are the stable update channel.
+Use Pi **0.99.2 or newer**. Keep the package checkout separate from the clean folder that will become
+the Clawa home. Current maintenance lives on `legacy`; the unchanged `v0.3.0` tag does not include
+these unreleased updates.
 
 ```sh
-git clone --branch v0.3.0 --depth 1 https://github.com/IgorWarzocha/pi-clawa.git
+git clone --branch legacy https://github.com/IgorWarzocha/pi-clawa.git
 mkdir -p ~/clawa-home
 cd ~/clawa-home
 pi -e /absolute/path/to/pi-clawa
@@ -63,8 +68,8 @@ pi
 
 First run creates the home and starts a short conversational onboarding. Existing core home files
 stop automatic bootstrap rather than being overwritten. See the
-[installation](https://igorwarzocha.github.io/pi-clawa/docs/getting-started/installation/) and
-[first-run](https://igorwarzocha.github.io/pi-clawa/docs/getting-started/first-run/) guides before
+[installation](https://igorwarzocha.github.io/pi-clawa/legacy/docs/getting-started/installation/) and
+[first-run](https://igorwarzocha.github.io/pi-clawa/legacy/docs/getting-started/first-run/) guides before
 adapting an existing OpenClaw or Hermes home.
 
 ## The useful entrances
@@ -77,12 +82,12 @@ adapting an existing OpenClaw or Hermes home.
 
 The wiki owns the detail:
 
-- [The Clawa home](https://igorwarzocha.github.io/pi-clawa/docs/guide/home/)
-- [Context, memory, and continuity](https://igorwarzocha.github.io/pi-clawa/docs/guide/context-memory/)
-- [Specialist Clawas](https://igorwarzocha.github.io/pi-clawa/docs/guide/clawas/)
-- [Pulses](https://igorwarzocha.github.io/pi-clawa/docs/guide/pulses/)
-- [Configuration](https://igorwarzocha.github.io/pi-clawa/docs/reference/configuration/)
-- [Troubleshooting](https://igorwarzocha.github.io/pi-clawa/docs/reference/troubleshooting/)
+- [The Clawa home](https://igorwarzocha.github.io/pi-clawa/legacy/docs/guide/home/)
+- [Context, memory, and continuity](https://igorwarzocha.github.io/pi-clawa/legacy/docs/guide/context-memory/)
+- [Specialist Clawas](https://igorwarzocha.github.io/pi-clawa/legacy/docs/guide/clawas/)
+- [Pulses](https://igorwarzocha.github.io/pi-clawa/legacy/docs/guide/pulses/)
+- [Configuration](https://igorwarzocha.github.io/pi-clawa/legacy/docs/reference/configuration/)
+- [Troubleshooting](https://igorwarzocha.github.io/pi-clawa/legacy/docs/reference/troubleshooting/)
 
 ## Bundled skills
 
