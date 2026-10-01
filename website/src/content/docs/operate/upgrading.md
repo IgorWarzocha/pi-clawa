@@ -1,14 +1,14 @@
 ---
 title: Upgrading and removing
-description: Update modern code or migrate from legacy without replacing your home.
+description: Upgrade to modern 0.4.0 or migrate from legacy without replacing your home.
 section: Operate
 order: 90
 ---
 
 Code and home state live in separate folders. Update the package checkout, not the home template.
-**Modern is unreleased. v0.3.0 belongs to legacy.** Checking out that tag switches to the earlier
-runtime, not a stable release of modern. The legacy branch remains supported for Pi compatibility;
-its maintenance updates are not included in that unchanged tag.
+**Modern v0.4.0 is the stable default. Legacy v0.3.1 remains supported.** Both releases are dated
+**2026-10-01** and require Pi **0.99.2 or newer**. The `modern` branch is optional development,
+not the stable install target. The historical `v0.3.0` tag stays unchanged.
 
 This guide updates modern or migrates to it. Moving to modern is optional, not a prerequisite for
 Pi **0.99.2** compatibility. To keep the legacy architecture, use the
@@ -40,10 +40,13 @@ does not authorize migrating its architecture.
    starting commit for rollback. Stop on local changes or an unexpected remote and ask how to
    proceed. Do not reset, clean, stash, or rewrite remotes silently. Redact credentials in reported
    remote URLs.
-3. **Verify the target.** With remote access authorized, use
-   `git ls-remote --exit-code --heads origin refs/heads/modern` from that checkout. Record the target
-   commit. If `modern` is unavailable, or `origin` is a fork without that branch, stop and explain
-   the missing source. Do not substitute `v0.3.0` or add a different remote without approval.
+3. **Verify the target.** Default to the stable `v0.4.0` tag. With remote access authorized, use
+   `git ls-remote --exit-code --tags origin refs/tags/v0.4.0 'refs/tags/v0.4.0^{}'` from that
+   checkout. Record the target commit, using the peeled `^{}` entry for an annotated tag.
+   Only if development was explicitly chosen, use
+   `git ls-remote --exit-code --heads origin refs/heads/modern` instead. If the chosen ref is
+   unavailable, or `origin` is an unexpected fork, stop and explain the missing source.
+   Do not substitute another tag or branch or add a different remote without approval.
    Check the [installation requirements](../../getting-started/installation/#what-you-need) too.
 4. **Plan the backup and restart.** Use the existing
    [backup map](../../reference/files-state/#what-to-back-up). Identify the actual main session
@@ -69,21 +72,43 @@ or unverified steps. Reading this guide or switching branches does not validate 
 
 ## Update modern
 
-For a checkout following the modern branch:
+For the stable release, after stopping sessions and completing the backup:
 
 ```bash
 cd ~/src/pi-clawa
-git fetch origin modern
+git fetch origin tag v0.4.0
+git rev-parse 'v0.4.0^{commit}'
+```
+
+Confirm that the resolved commit matches the target recorded during verification. Stop on a
+fetch error or mismatch. Do not force-update an existing local tag. Then switch to the release:
+
+```bash
+git switch --detach v0.4.0
+```
+
+This also works for a checkout cloned from a single branch or tag. A detached checkout at the
+release commit is expected.
+
+### Follow development instead
+
+Only use the `modern` branch if development is the approved target:
+
+```bash
+cd ~/src/pi-clawa
+git remote set-branches --add origin modern
+git fetch origin
 git switch modern
 git merge --ff-only origin/modern
 ```
 
-If Git reports local changes or a divergent branch, inspect them rather than resetting or forcing
-the update. Start Pi from the home with `pi -c` after the update. Clawa reads the existing config
-and living documents without copying the template over them.
+If no local `modern` branch exists, use `git switch --track origin/modern` for the switch step.
+Adding the fetch branch does not replace the remote URL. Confirm the resulting commit matches
+the recorded target. If the remote moved, stop and verify the new target before proceeding.
 
-Tags remain the release channel, but no modern release tag or version has been chosen yet.
-Do not substitute `v0.3.0` for the branch in these steps.
+For either channel, stop on local changes, tag conflicts, or a divergent branch instead of
+resetting or forcing the update. Start Pi from the home with `pi -c` after the update. Clawa reads
+the existing config and living documents without copying the template over them.
 
 ## Move a legacy home to modern
 
@@ -93,16 +118,17 @@ modern start**. A package-code rollback alone does not undo the migration.
 1. If the old Discord gateway is running, stop it through the old `/discord` before updating.
 2. Stop the old main Pi session so its managed RPC workers shut down. Close any separate worker
    panels too.
-3. Fetch and switch the package checkout to `modern`. If the local branch does not exist yet, run:
+3. Fetch the stable release in the package checkout:
 
    ```bash
-   git remote set-branches --add origin modern
-   git fetch origin modern
-   git switch --track origin/modern
+   git fetch origin tag v0.4.0
+   git rev-parse 'v0.4.0^{commit}'
    ```
 
-   Adding the branch to the remote's fetch configuration enables tracking and future updates,
-   including for a legacy checkout cloned from a single branch or tag.
+   Confirm the commit matches the verified target, then run `git switch --detach v0.4.0`.
+   Stop on a fetch error or mismatch. Never force-update an existing tag. These steps also work
+   for a legacy checkout cloned from a single branch or tag. If development was explicitly
+   approved instead, use [Follow development instead](#follow-development-instead).
 4. Remove obsolete `contextManagement`, `memoryPass`, and `memoryPassThreshold` config entries.
 5. Resume the home with `pi -c` and check startup notices before sending more work.
 
@@ -139,8 +165,9 @@ it resumes the intended main session, or `pi -r` to select the recorded session.
 are entered in Pi, not a shell. If you cannot operate those controls, ask the user to run them and
 report the result. Before considering the upgrade complete:
 
-- Confirm the checkout is on `modern` at the fetched target commit and the intended Clawa home
-  activated. Do not mark a blocked bootstrap as complete by changing its config flag.
+- Confirm the checkout is detached at `v0.4.0` and the verified target commit, or on `modern`
+  at the approved development commit. Confirm the intended Clawa home activated. Do not mark
+  a blocked bootstrap as complete by changing its config flag.
 - Inspect startup notices and migration errors. A memory collision or failed legacy import is a
   stop condition. Do not overwrite a target, delete the source, or truncate a row to make it pass.
 - Confirm `clawa_memory` and `clawa_history` are available. Read a known memory page or retained

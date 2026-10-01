@@ -1,6 +1,6 @@
 {
   "name": "@howaboua/pi-clawa-discord",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "Give each Clawa its own Discord bot in its visible Pi session.",
   "keywords": [

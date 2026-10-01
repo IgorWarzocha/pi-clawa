@@ -29,7 +29,7 @@
     },
     "packages/pi-clawa-discord": {
       "name": "@howaboua/pi-clawa-discord",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dependencies": {
         "discord.js": "^14.26.5",
         "dotenv": "^17.4.2",
@@ -50,7 +50,7 @@
     },
     "website": {
       "name": "pi-clawa-docs",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "dependencies": {
         "@astrojs/check": "0.9.9",
         "@astrojs/sitemap": "3.7.3",

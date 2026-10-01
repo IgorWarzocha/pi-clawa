@@ -1,16 +1,13 @@
 import type { APIContext } from 'astro'
 import { readChangelog } from '@/lib/changelog'
-import { type Edition, editions } from '@/lib/site'
+import { type Edition, editionInfo, editions } from '@/lib/site'
 
 export function getStaticPaths() {
   return editions.map((edition) => ({ params: { edition }, props: { edition } }))
 }
 
 export const GET = async ({ props }: APIContext<{ edition: Edition }>): Promise<Response> => {
-  const notice =
-    props.edition === 'modern'
-      ? 'Modern changes are unreleased. The 0.3.0 release belongs to legacy.'
-      : 'This is the release and compatibility maintenance history of the supported legacy branch. The v0.3.0 tag stays unchanged.'
+  const notice = editionInfo[props.edition].changelogNotice
   return new Response(`> ${notice}\n\n${await readChangelog(props.edition)}`, {
     headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
   })

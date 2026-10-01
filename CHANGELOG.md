@@ -6,10 +6,16 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-01
+
+The first modern release. Requires Pi **0.99.2 or newer** and Linux with `flock`. Existing homes
+must follow the [upgrade guide](https://igorwarzocha.github.io/pi-clawa/modern/docs/operate/upgrading/)
+before switching from legacy. Legacy's Pi compatibility update is released separately as **0.3.1**.
+
 ### Added
 
 - Separate modern and legacy documentation, a branch comparison, and a redesigned site. Legacy
-  keeps the 0.3.0 guides; modern documents unreleased work. Existing guide links still reach legacy.
+  and modern each own their guides and changelog. Existing guide links still reach legacy.
 - Plain-Markdown guides and changelogs, an `llms.txt` index, and an agent-readable modern upgrade
   procedure covering installation discovery, restart handoff, migration checks, and rollback limits.
 - Fresh resident sessions can join the main session's optional Codex context family before their
@@ -177,7 +183,8 @@ The first public release of pi-clawa.
 - Bootstrap protects existing homes rather than merging them. Any existing core home document
   blocks automatic setup.
 
-[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.3.0...modern
+[Unreleased]: https://github.com/IgorWarzocha/pi-clawa/compare/v0.4.0...modern
+[0.4.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.4.0
 [0.3.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.3.0
 [0.2.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.2.0
 [0.1.0]: https://github.com/IgorWarzocha/pi-clawa/releases/tag/v0.1.0

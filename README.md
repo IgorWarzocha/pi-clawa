@@ -15,12 +15,11 @@ The optional Discord adapter is still WIP.
 
 ## Install modern
 
-`modern` is the active development line and is **unreleased**. No modern release version has been
-chosen. **v0.3.0 belongs to legacy**, the supported earlier architecture. Do not install that tag expecting
-the behavior described here. The [edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/)
+Install **v0.4.0** for the modern architecture described here. The `modern` branch carries its next
+updates. **v0.3.1 belongs to legacy**, the supported earlier architecture. The
+[edition comparison](https://igorwarzocha.github.io/pi-clawa/versions/)
 and [legacy docs](https://igorwarzocha.github.io/pi-clawa/legacy/docs/getting-started/installation/)
-cover that architecture. Legacy receives compatibility maintenance. Its branch updates do not
-change the old `v0.3.0` tag.
+cover that architecture. Both lines receive maintenance; release tags stay unchanged.
 
 Use Linux with `flock`, Node.js `>=24.15.0 <27`, and Pi **0.99.2 or newer** with a configured
 provider. Both Clawa branches require this Pi baseline.
@@ -29,7 +28,7 @@ home directory:
 
 ```sh
 mkdir -p ~/src
-git clone --branch modern https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
+git clone --branch v0.4.0 https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
 mkdir -p ~/clawa-home
 cd ~/clawa-home
 pi -e ~/src/pi-clawa

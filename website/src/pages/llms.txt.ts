@@ -1,15 +1,12 @@
 import type { APIContext } from 'astro'
-import { docHref, editions, getDocs, withBase } from '@/lib/site'
+import { docHref, editionInfo, editions, getDocs, withBase } from '@/lib/site'
 
 export const GET = async ({ site }: APIContext): Promise<Response> => {
   const url = (path: string): string => new URL(path, site).href
   const sections = await Promise.all(
     editions.map(async (edition) => {
       const docs = await getDocs(edition)
-      const title =
-        edition === 'modern'
-          ? 'Modern: unreleased development'
-          : 'Legacy: supported architecture descended from 0.3.0'
+      const title = `${editionInfo[edition].name} ${editionInfo[edition].version}`
       const links = docs.map(
         (doc) =>
           `- [${doc.data.title}](${url(`${docHref(doc, edition)}index.md`)}): ${doc.data.description}`,
@@ -24,7 +21,7 @@ export const GET = async ({ site }: APIContext): Promise<Response> => {
     `${[
       '# Clawa for Pi',
       '> A Pi extension with a living home, shared memory, resident specialists, and Pulses.',
-      'Modern is unreleased development. Legacy receives compatibility maintenance without adopting modern architecture. Both branches require Pi 0.99.2 or newer. The unchanged v0.3.0 tag belongs to legacy and excludes later maintenance. Keep instructions matched to the installed branch.',
+      'Modern v0.4.0 is the stable default. Legacy v0.3.1 remains supported with its RPC and SQLite architecture. Both were released on 2026-10-01 and require Pi 0.99.2 or newer. Install a release tag by default. The modern branch is optional development, and legacy follows maintenance. The historical v0.3.0 tag stays unchanged. Keep instructions matched to the installed edition and commit.',
       `For an existing home, start with [Upgrading and removing](${upgrade}). It covers checkout discovery, the same-session restart handoff, migration checks, and rollback limits.`,
       `[Compare modern and legacy](${comparison}). Guides below are plain Markdown generated from the same source as the website, not separate instructions.`,
       ...sections,

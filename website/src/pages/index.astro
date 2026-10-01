@@ -1,6 +1,6 @@
 ---
 import BaseLayout from '@/layouts/base-layout.astro'
-import { withBase } from '@/lib/site'
+import { editionInfo, withBase } from '@/lib/site'
 
 const description =
   'A personal agent with a home, shared memory, and resident specialists. Built as a Pi extension.'
@@ -39,7 +39,7 @@ const guides = [
         </p>
         <p>Clawa is a Pi extension. Your models, tools, and terminal stay yours.</p>
         <div class="hero-links">
-          <a class="primary-link" href={withBase('/modern/docs/getting-started/installation/')}>Explore modern <span aria-hidden="true">↗</span></a>
+          <a class="primary-link" href={withBase('/modern/docs/getting-started/installation/')}>Install Clawa <span aria-hidden="true">↗</span></a>
           <a href={withBase('/legacy/docs/getting-started/installation/')}>Using legacy?</a>
         </div>
       </div>
@@ -50,19 +50,19 @@ const guides = [
 
     <section class="branch-section" aria-labelledby="branches-title">
       <div class="section-heading">
-        <h2 id="branches-title">Choose your branch</h2>
+        <h2 id="branches-title">Choose your edition</h2>
         <a href={withBase('/versions/')}>Compare what changed <span aria-hidden="true">→</span></a>
       </div>
       <div class="branch-grid">
         <section class="branch-option">
           <h3>Modern</h3>
-          <p class="branch-status">Active development. Not yet released.</p>
+          <p class="branch-status">{editionInfo.modern.version}. Stable default. Pi 0.99.2 or newer.</p>
           <p>Visible resident sessions, shared Markdown memory, and context owned by Pi or optional Pi Codex.</p>
           <a href={withBase('/modern/docs/getting-started/installation/')}>Read the modern docs <span aria-hidden="true">→</span></a>
         </section>
         <section class="branch-option">
           <h3>Legacy</h3>
-          <p class="branch-status">Supported architecture descended from 0.3.0.</p>
+          <p class="branch-status">{editionInfo.legacy.version}. Still supported. Pi 0.99.2 or newer.</p>
           <p>The original managed workers, SQLite memory, and in-session memory pass. Maintained for Pi compatibility.</p>
           <a href={withBase('/legacy/docs/getting-started/installation/')}>Read the legacy docs <span aria-hidden="true">→</span></a>
         </section>

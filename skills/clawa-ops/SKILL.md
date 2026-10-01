@@ -27,9 +27,9 @@ assume generic `notes`, `history`, `new_context`, or `get_context_remaining` exi
 continuity extension. Existing `vault/` and `.pi/clawa-memory.sqlite` migrate automatically on
 active-home startup; a collision is a blocker to resolve, not a reason to overwrite a home file.
 
-Modern is currently unreleased. Use the `modern` branch for the behavior described by this skill;
-`v0.3.0` belongs to legacy. Do not choose a legacy tag just because modern's manifest still says
-`0.3.0`. Load the selected checkout per home through project settings or explicit `pi -e`.
+Modern **v0.4.0** is the tagged release for the behavior described by this skill; `modern` carries
+its next updates. Legacy **v0.3.1** retains the earlier architecture. Match the chosen tag and guide
+to the intended edition. Load the checkout per home through project settings or explicit `pi -e`.
 Discourage global Clawa installation. Global dormancy is only a safety net: without `.pi/claw.jsonc`,
 it adds no Clawa tools, skills, prompt, or runtime. Project installs and explicit `pi -e` bootstrap
 deliberately. First run creates files but waits for the first human message or task. A concrete task

@@ -3,7 +3,7 @@ import { marked } from 'marked'
 import EditionSwitch from '@/components/edition-switch.astro'
 import BaseLayout from '@/layouts/base-layout.astro'
 import { readChangelog } from '@/lib/changelog'
-import { type Edition, editions, withBase } from '@/lib/site'
+import { type Edition, editionInfo, editions, withBase } from '@/lib/site'
 
 export function getStaticPaths() {
   return editions.map((track) => ({ params: { edition: track }, props: { edition: track } }))
@@ -11,7 +11,7 @@ export function getStaticPaths() {
 
 type Props = { edition: Edition }
 const { edition } = Astro.props
-const editionName = edition === 'modern' ? 'Modern' : 'Legacy'
+const editionName = editionInfo[edition].name
 const html = await marked.parse(await readChangelog(edition))
 const markdownHref = withBase(`/${edition}/changelog.md`)
 ---
@@ -21,9 +21,7 @@ const markdownHref = withBase(`/${edition}/changelog.md`)
     <EditionSwitch edition={edition} modernHref={withBase('/modern/changelog/')} legacyHref={withBase('/legacy/changelog/')} />
     <header class="doc-header">
       <h1>{editionName} changelog</h1>
-      <p class="lede">{edition === 'modern'
-        ? 'Modern changes are unreleased. The 0.3.0 release below belongs to legacy.'
-        : 'Releases and compatibility maintenance on the supported legacy branch. The v0.3.0 tag stays unchanged. Modern development has its own changelog.'}</p>
+      <p class="lede">{editionInfo[edition].changelogNotice}</p>
     </header>
     <article class="prose changelog" set:html={html} />
     <footer class="doc-footer"><a href={markdownHref}>Read as Markdown</a></footer>

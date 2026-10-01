@@ -3,7 +3,7 @@ import { render } from 'astro:content'
 import DocsNav from '@/components/docs-nav.astro'
 import EditionSwitch from '@/components/edition-switch.astro'
 import BaseLayout from '@/layouts/base-layout.astro'
-import { type DocEntry, docHref, type Edition, editions, getDocs, withBase } from '@/lib/site'
+import { type DocEntry, docHref, type Edition, editionInfo, editions, getDocs, withBase } from '@/lib/site'
 
 export async function getStaticPaths() {
   const docsByEdition = { modern: await getDocs('modern'), legacy: await getDocs('legacy') }
@@ -30,7 +30,7 @@ const { Content, headings } = await render(doc)
 const toc = headings.filter((heading) => heading.depth === 2)
 const modernHref = edition === 'modern' ? docHref(doc, edition) : otherHref
 const legacyHref = edition === 'legacy' ? docHref(doc, edition) : otherHref
-const editionName = edition === 'modern' ? 'Modern' : 'Legacy'
+const editionName = editionInfo[edition].name
 const markdownHref = `${docHref(doc, edition)}index.md`
 const source = `https://github.com/IgorWarzocha/pi-clawa/blob/${edition}/website/src/content/docs/${doc.id}.md`
 ---
@@ -50,11 +50,7 @@ const source = `https://github.com/IgorWarzocha/pi-clawa/blob/${edition}/website
     </aside>
     <article class="docs-article">
       <p class="edition-note">
-        {edition === 'modern' ? (
-          <>Modern is unreleased development. For the supported architecture descended from 0.3.0, use <a href={legacyHref}>Legacy docs</a>.</>
-        ) : (
-          <>Legacy is maintained for Pi compatibility. These docs follow the legacy branch, not the unchanged <code>v0.3.0</code> tag. References to <code>master</code> describe the former branch name. <a href={withBase('/versions/')}>What changed?</a></>
-        )}
+        {editionInfo[edition].docsNotice} <a href={withBase('/versions/')}>Compare editions</a>.
       </p>
       <header class="doc-header"><h1>{doc.data.title}</h1></header>
       <div class="prose"><Content /></div>

@@ -1,12 +1,12 @@
 ---
 import BaseLayout from '@/layouts/base-layout.astro'
-import { withBase } from '@/lib/site'
+import { editionInfo, withBase } from '@/lib/site'
 
 const differences = [
   [
     'Release status',
-    'Active development, not yet tagged as a modern release.',
-    'Supported architecture descended from 0.3.0. Receives compatibility maintenance.',
+    `${editionInfo.modern.version}. Stable default. Install v0.4.0 or follow modern for development.`,
+    `${editionInfo.legacy.version}. Supported RPC and SQLite architecture. Install v0.3.1 or follow legacy for maintenance.`,
   ],
   [
     'Specialists',
@@ -41,7 +41,7 @@ const differences = [
 ]
 ---
 
-<BaseLayout title="Modern and legacy" description="Choose the right Clawa branch and understand what changes when moving from 0.3.0." current="versions">
+<BaseLayout title="Modern and legacy" description="Choose between modern 0.4.0 and supported legacy 0.3.1, and understand the home migration." current="versions">
   <main id="main-content" class="site-shell standalone-page comparison-page" tabindex="-1">
     <header class="doc-header">
       <h1>Modern and legacy</h1>
@@ -49,18 +49,19 @@ const differences = [
     </header>
     <div class="prose">
       <p>
-        Clawa has two branches, not two settings you can toggle. <strong>Modern</strong> is where
-        new architecture lands. <strong>Legacy</strong> maintains the architecture descended from 0.3.0.
+        Clawa has two maintained lines, not two settings you can toggle. <strong>Modern</strong> is
+        the stable default. <strong>Legacy</strong> keeps the earlier RPC and SQLite architecture.
         Both give a Pi agent a living home, specialist Clawas, and Pulses.
       </p>
       <p>
-        The modern branch is unreleased. A package version still reading <code>0.3.0</code> does
-        not make a modern checkout the 0.3.0 release. The unchanged <code>v0.3.0</code> tag belongs
-        to legacy and does not include later maintenance. Both branches require Pi <code>0.99.2</code>
-        or newer. Legacy does not mean an older Pi installation.
+        Modern <code>v0.4.0</code> and legacy <code>v0.3.1</code> were released on 2026-10-01.
+        Install a tag for a stable release. The <code>modern</code> branch follows development,
+        and <code>legacy</code> follows maintenance. The unchanged historical <code>v0.3.0</code>
+        tag excludes later updates. Both current releases require Pi <code>0.99.2</code> or newer.
+        Legacy does not mean an older Pi installation.
       </p>
     </div>
-    <div class="comparison-scroll" tabindex="0" role="region" aria-label="Branch comparison">
+    <div class="comparison-scroll" tabindex="0" role="region" aria-label="Edition comparison">
       <table class="comparison-table">
         <thead><tr><th scope="col">What changes</th><th scope="col">Modern</th><th scope="col">Legacy</th></tr></thead>
         <tbody>

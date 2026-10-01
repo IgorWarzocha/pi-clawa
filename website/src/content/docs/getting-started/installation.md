@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install the unreleased modern branch into a separate Clawa home.
+description: Install modern 0.4.0 into a separate Clawa home.
 section: Start
 order: 10
 ---
@@ -9,8 +9,8 @@ Clawa is a Pi package loaded from a git checkout, not a standalone agent runtime
 home through project settings or an explicit `-e` path, not globally. Keep the package checkout
 separate from the folder that will become the Clawa's home.
 
-These docs describe **modern**, the active but unreleased development line. No modern release
-version has been chosen. **v0.3.0 is a legacy release**, not a release of the runtime described here.
+These docs describe **modern 0.4.0**, the stable default released on **2026-10-01**.
+Install **v0.4.0** for the release. The `modern` branch is an optional development checkout.
 Use the [edition comparison](../../../../versions/) to choose between modern and legacy.
 
 ## What you need
@@ -21,22 +21,28 @@ Use the [edition comparison](../../../../versions/) to choose between modern and
 - [Pi](https://github.com/earendil-works/pi) **0.99.2 or newer**, with a configured model provider.
 - A clean folder for the home. [First run](../first-run/) explains the exact bootstrap boundary.
 
-Both modern and legacy require Pi **0.99.2**. Neither branch supports older Pi installations.
-Legacy receives compatibility maintenance without adopting modern's runtime architecture.
-The unchanged `v0.3.0` tag does not include later legacy branch updates.
+Both modern **0.4.0** and supported legacy **0.3.1** require Pi **0.99.2 or newer**.
+Neither maintained line supports older Pi installations. Legacy retains its RPC workers and
+SQLite memory without adopting modern's runtime architecture. The historical `v0.3.0` tag stays
+unchanged and does not include current maintenance.
 
 Pi extensions execute with your user permissions. Read the [trust boundaries](../../reference/privacy/)
 before putting personal context into a home.
 
 ## Install modern
 
-Clone the branch explicitly. This is a development checkout, not a tagged release:
+Clone the stable release tag:
 
 ```bash
 mkdir -p ~/src
-git clone --branch modern \
+git clone --branch v0.4.0 \
   https://github.com/IgorWarzocha/pi-clawa.git ~/src/pi-clawa
 ```
+
+This leaves the checkout detached at the release commit. To follow development instead, replace
+`v0.4.0` with `modern` in the clone command. Use `v0.3.1` and the
+[legacy installation guide](../../../../legacy/docs/getting-started/installation/) if you want
+the earlier architecture.
 
 Create a separate home:
 
@@ -83,6 +89,7 @@ requirement.
 
 ## Developing Clawa
 
+Use a checkout of the `modern` branch for development, not the detached release tag.
 Keep the full Git history. The strict gate builds modern docs from the working tree and maintained
 legacy docs from Git. The build looks for local `legacy`, then `origin/legacy`. You can select an
 available ref explicitly:

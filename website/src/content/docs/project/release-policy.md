@@ -1,17 +1,18 @@
 ---
 title: Release policy
-description: How modern development, legacy maintenance, docs, and releases fit together.
+description: How the modern and legacy release channels, development, and docs fit together.
 section: Project
 order: 160
 ---
 
-`modern` is the intended default and active development line. It is currently **unreleased**.
-No modern release version has been chosen. Package manifests still reading `0.3.0` do not make
-modern a 0.3.0 release.
+**Modern 0.4.0** is the stable default. **Legacy 0.3.1** is the supported earlier architecture.
+Both releases are dated **2026-10-01**. Install `v0.4.0` by default or `v0.3.1` to retain legacy.
+The `modern` branch follows optional development, and `legacy` follows maintenance.
 
-`legacy` is the supported architecture descended from 0.3.0, not a frozen archive. Both branches
-require Pi **0.99.2** and move to the current Pi baseline together, without older-Pi compatibility
-paths. Legacy maintenance does not merge modern's runtime architecture back into it.
+Legacy keeps RPC workers, SQLite memory, and its in-session memory pass. It is not a frozen
+archive. Both maintained lines require Pi **0.99.2 or newer** and move to the current Pi baseline
+together, without older-Pi compatibility paths. Legacy maintenance does not merge modern's runtime
+architecture back into it.
 
 The old `v0.3.0` tag stays unchanged and does not include later legacy branch updates.
 Tags identify releases; a branch update or merge is not a release. The
@@ -40,10 +41,13 @@ person updating a live home: say what changed and what they may need to do.
 Release a coherent batch, not every merge. Before dispatching the release workflow:
 
 1. choose the version and curate a dated changelog section;
-2. update the root, website, and Discord package versions together;
+2. update the root, website, and Discord package versions together within that line, including
+   the lockfile;
 3. complete a clean-room install and runtime pass for changed behavior;
 4. pass `bun run ai:check:strict`;
-5. document every state migration and rollback limit.
+5. document every state migration and rollback limit;
+6. update edition notices and installation targets for the new release across HTML, plain
+   Markdown, and `llms.txt`.
 
 Move accumulated Unreleased entries under `## [X.Y.Z] - YYYY-MM-DD`, update comparison links,
 and leave a fresh Unreleased section. Discord stays lockstep with the repository release while it
