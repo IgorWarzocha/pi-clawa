@@ -37,6 +37,27 @@ Main reloads, exits, and config refreshes leave worker tabs running. Closing a w
 that worker. The next message or `/jump` can reopen its existing session; a crash does not trigger
 automatic respawn.
 
+## Optional shared working context
+
+Clawa works on Pi alone and does not require Shepherdr. Shared house Markdown and private messages
+work without Codex.
+
+With Pi Codex 3.0.42 or newer, turn on subagent context sharing in the main session's `/codex`
+settings to connect newly launched resident sessions to its context family. Both sessions need
+active notes-based continuity. Local and Tree storage work together through Clawa's existing
+sockets in either Herdr or tmux. Remote storage requires Remote on both sides and the same Codex
+account.
+
+Clawa binds a fresh session before sending its startup prompt or first task. A sharing failure
+stops that launch and closes only its newly created tab, rather than sending work into an
+unshared session. Existing resident sessions keep their original identity when reopened. Starting
+a new main session does not move existing residents into its new family.
+
+Local and Tree access requires the owning sessions and any intermediate parent to remain open.
+Codex currently permits one peer router per session. Clawa reports a conflict rather than replacing
+another extension's router. Disable that competing router or turn off subagent sharing for new
+Clawa launches. House memory and normal coordination remain separate from this optional feature.
+
 ## Talk to a Clawa
 
 - `/steer <message>` sends to the selected monitor worker.
@@ -50,6 +71,9 @@ follow-up; a steer or follow-up to an inactive worker becomes a new prompt. Deli
 an error rather than pretending the handoff landed. A successful
 `message_clawa` call acknowledges the named recipient without echoing the outgoing note back into the
 tool result.
+
+When the recipient shares the main session's Codex family, the receipt also includes its context
+agent path for accessing that resident's working notes and history.
 
 ## Reporting modes
 

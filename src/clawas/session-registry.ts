@@ -48,15 +48,18 @@ function normalizeWorkerRecord(entry: unknown, workerId: string): WorkerSessionR
   }
 }
 
-async function readSessionCwd(sessionFile: string): Promise<string | undefined> {
+async function readSession(sessionFile: string): Promise<{ cwd: string | undefined } | undefined> {
   try {
     const content = await fs.readFile(sessionFile, 'utf8')
     const firstLine = content.split('\n', 1)[0]
-    if (!firstLine) return undefined
+    if (!firstLine) return { cwd: undefined }
     const entry: unknown = JSON.parse(firstLine)
-    return isRecord(entry) && entry['type'] === 'session' && typeof entry['cwd'] === 'string'
-      ? entry['cwd']
-      : undefined
+    return {
+      cwd:
+        isRecord(entry) && entry['type'] === 'session' && typeof entry['cwd'] === 'string'
+          ? entry['cwd']
+          : undefined,
+    }
   } catch (error) {
     if (isMissing(error)) return undefined
     throw error
@@ -148,21 +151,21 @@ export async function resolveWorkerSessionFile(
   rootDir: string,
   definition: WorkerDefinition,
   cwd: string,
-): Promise<string> {
+): Promise<{ sessionFile: string; kind: 'fresh' | 'resume' }> {
   return await updateRegistry(rootDir, async (registry) => {
     const known = registry.workers[definition.id]
     if (known && (!known.cwd || known.cwd === cwd)) {
-      const sessionCwd = await readSessionCwd(known.path)
+      const session = await readSession(known.path)
       // SessionManager may not have flushed a new empty session yet. Keep its reserved
       // path rather than allocating a second session during a concurrent panel start.
-      if (!sessionCwd || sessionCwd === cwd) {
+      if (!session?.cwd || session.cwd === cwd) {
         registry.workers[definition.id] = {
           ...known,
           model: definition.model,
           thinking: definition.thinking,
           cwd,
         }
-        return known.path
+        return { sessionFile: known.path, kind: session ? 'resume' : 'fresh' }
       }
     }
 
@@ -176,6 +179,6 @@ export async function resolveWorkerSessionFile(
       model: definition.model,
       thinking: definition.thinking,
     }
-    return sessionFile
+    return { sessionFile, kind: 'fresh' }
   })
 }

@@ -38,6 +38,11 @@ run a second rollover engine or set context thresholds. Shared files live in `me
 notes and window archives remain accessible. `/memory remember` freezes the conversation, starts a
 fresh one, and queues optional consolidation when idle. Codex is not required.
 
+Clawa launches and connects its own specialists without Shepherdr. With Pi Codex 3.0.42 or newer,
+enabling subagent context sharing lets fresh resident sessions join the main session's context
+family before their first task. Existing sessions keep their identity. See
+[specialist Clawas](https://igorwarzocha.github.io/pi-clawa/docs/guide/clawas/) for compatibility.
+
 The [runtime reference](https://igorwarzocha.github.io/pi-clawa/docs/reference/runtime/) traces the
 full lifecycle. The [privacy page](https://igorwarzocha.github.io/pi-clawa/docs/reference/privacy/)
 states the actual trust boundaries without pretending the extension is a sandbox.

@@ -28,7 +28,7 @@ In an active session, startup, reload, new session, resume, or fork:
 
 First run creates files without starting an autonomous agent turn. Onboarding joins the first human
 message or task through `before_agent_start`. A concrete task takes priority over introductions,
-so Shepherdr can bind a fresh child before any work begins. Clawas control and the Pulse timer
+so optional context binding can finish before any work begins. Clawas control and the Pulse timer
 attach when the first task starts, or when a home command needs them.
 
 `session_shutdown` drains the current comms alias maintenance and Pulse work. Worker tabs remain
@@ -83,6 +83,8 @@ adopts these tabs; `.pi/clawas/session-registry.json` keeps both session history
 Closing a tab stops its worker until a message or `/jump` reopens it. Local newline-delimited socket messaging
 carries private coordination without using Pi subprocess RPC or placing messages on a public adapter.
 
-Shepherdr owns its own spawn flow, and Codex sharing handles family context when installed. Clawa
-does not expose a child-adoption API. Its optional CodeMode adapter makes house and message tools
-available through namespaces without requiring Codex for ordinary Pi use.
+Clawa owns resident launch and communication without Shepherdr. With optional Codex sharing enabled,
+fresh resident sessions bind through Codex's public API over the existing Clawa sockets before any
+startup prompt or task. Existing sessions are never rebound. Session shutdown fences pending
+bindings before waiting for worker connections to drain. Its optional CodeMode adapter exposes
+house and message tools without requiring Codex for ordinary Pi use.

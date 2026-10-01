@@ -1,3 +1,4 @@
+import { parseContextCommand, parseSharedResidentContext } from './context-protocol.js'
 import type {
   ClawasCommsCommand,
   ClawasCommsResponse,
@@ -48,6 +49,7 @@ export function parseClawasCommsCommand(value: unknown): ParseResult<ClawasComms
   try {
     if (!isRecord(value)) throw new Error('command must be an object')
     const id = optionalString(value, 'id')
+    if (value['type'] === 'context') return { value: parseContextCommand(value) }
     if (value['type'] === 'get_status') return { value: { type: 'get_status', id } }
     if (value['type'] === 'subscribe_status') return { value: { type: 'subscribe_status', id } }
     if (value['type'] === 'get_message') {
@@ -164,6 +166,10 @@ export function parseSessionStatusData(value: unknown): ClawasSessionStatus {
     cwd: value['cwd'],
     isIdle: value['isIdle'],
     hasPendingMessages: value['hasPendingMessages'],
+    sharedContext:
+      value['sharedContext'] === undefined
+        ? undefined
+        : parseSharedResidentContext(value['sharedContext']),
     currentToolName: value['currentToolName'],
     lastSummary: value['lastSummary'],
     lastError: value['lastError'],

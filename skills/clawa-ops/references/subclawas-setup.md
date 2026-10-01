@@ -89,6 +89,21 @@ Let it adjust its local docs as the conversation settles. Keep going until it ha
 
 After onboarding, run doctor and verify the worker tab is live on its configured model/thinking identity. A successful private reply proves the route; inspect live session identity when the exact model matters. Config edits take effect at the next tab launch.
 
+## Optional Codex sharing
+
+Clawa launches and connects residents itself; do not install Shepherdr to make this work. Pi alone
+provides normal coordination and shared house Markdown. Optional Pi Codex 3.0.42 or newer can share
+working context when its main-session subagent sharing setting is enabled.
+
+Both homes need active notes-based continuity. Local and Tree can share through resident sockets;
+Remote requires matching storage and Codex account. A failed binding prevents the first task and
+rolls back only the new tab. Fix the resident's Codex configuration or disable sharing in the main
+session before retrying. Another extension's peer router is a visible conflict, never overwritten.
+
+Existing conversations are not rebound. Do not delete or restart a resident's history merely to
+join a new main-session family. A receipt containing a context agent path means that resident
+shares the current main session's family. Durable knowledge still belongs in house `memory/`.
+
 ## Talk to it later
 
 Use `message_clawa` with the id/title from `CLAWAS.md` or `.pi/claw.jsonc`.

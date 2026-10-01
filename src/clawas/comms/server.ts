@@ -1,5 +1,7 @@
 import { createServer, type Server, type Socket } from 'node:net'
 import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
+import type { ClawaContextSharing } from '../shared-context.js'
+import type { ClawasContextCommand } from './context-protocol.js'
 import { ClawasMailDelivery } from './mail-delivery.js'
 import { getLastAssistantMessage } from './message-extract.js'
 import {
@@ -57,11 +59,16 @@ export class ClawasCommsServer {
   private context: ExtensionContext | null = null
   private readonly mail: ClawasMailDelivery
   private readonly getAlias: () => string | undefined
+  private readonly sharedContext: ClawaContextSharing | undefined
   private readonly sockets = new Set<Socket>()
   private readonly subscribers = new Set<Socket>()
   private readonly status = new ClawasStatusState()
 
-  constructor(pi: ExtensionAPI, getAlias: () => string | undefined) {
+  constructor(
+    pi: ExtensionAPI,
+    getAlias: () => string | undefined,
+    sharedContext?: ClawaContextSharing,
+  ) {
     this.mail = new ClawasMailDelivery(pi, (error) => {
       const message = `Clawas mail kickoff failed: ${error.message}`
       this.status.deliveryFailure(message)
@@ -75,6 +82,7 @@ export class ClawasCommsServer {
       }
     })
     this.getAlias = getAlias
+    this.sharedContext = sharedContext
   }
 
   start(ctx: ExtensionContext): Promise<void> {
@@ -266,7 +274,7 @@ export class ClawasCommsServer {
 
     if (command.type === 'subscribe_status') {
       // Write the initial snapshot before admitting this socket to event broadcasts.
-      respond(true, 'subscribe_status', this.status.snapshot(ctx, this.mail.hasPendingKickoff))
+      respond(true, 'subscribe_status', this.snapshot(ctx))
       this.subscribers.add(socket)
       return
     }
@@ -276,7 +284,33 @@ export class ClawasCommsServer {
       return
     }
 
+    if (command.type === 'context') {
+      await this.handleContextCommand(ctx, command, socket, respond)
+      return
+    }
+
     respond(false, 'unknown', undefined, 'Unsupported command')
+  }
+
+  private async handleContextCommand(
+    ctx: ExtensionContext,
+    command: ClawasContextCommand,
+    socket: Socket,
+    respond: CommandResponder,
+  ): Promise<void> {
+    if (!this.sharedContext) throw new Error('Clawa context sharing is unavailable')
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    socket.once('close', abort)
+    if (socket.destroyed) controller.abort()
+    try {
+      const result = await this.sharedContext.handle(ctx, command, controller.signal)
+      if (this.context !== ctx) throw new Error('Clawa session changed during context request')
+      respond(true, 'context', result)
+      if (command.operation === 'bind') this.publishStatus()
+    } finally {
+      socket.off('close', abort)
+    }
   }
 
   private handleGetMessageCommand(ctx: ExtensionContext, respond: CommandResponder): void {
@@ -286,7 +320,14 @@ export class ClawasCommsServer {
   }
 
   private handleGetStatusCommand(ctx: ExtensionContext, respond: CommandResponder): void {
-    respond(true, 'get_status', this.status.snapshot(ctx, this.mail.hasPendingKickoff))
+    respond(true, 'get_status', this.snapshot(ctx))
+  }
+
+  private snapshot(ctx: ExtensionContext) {
+    return {
+      ...this.status.snapshot(ctx, this.mail.hasPendingKickoff),
+      sharedContext: this.sharedContext?.describe(ctx),
+    }
   }
 
   publishStatus(): void {
@@ -295,7 +336,7 @@ export class ClawasCommsServer {
     this.status.changed()
     const event: ClawasStatusEvent = {
       type: 'status',
-      status: this.status.snapshot(ctx, this.mail.hasPendingKickoff),
+      status: this.snapshot(ctx),
     }
     const line = `${JSON.stringify(event)}\n`
     for (const socket of this.subscribers) {

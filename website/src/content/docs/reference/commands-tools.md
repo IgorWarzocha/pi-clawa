@@ -51,7 +51,8 @@ They are available only when another extension, such as Pi Codex, provides them.
 
 Main-only coordination route to a worker by ID or title. It refreshes config, opens a stopped worker
 tab if needed, and sends a reply-requested steer. Success returns a named receipt rather than
-repeating the outgoing note.
+repeating the outgoing note. When the recipient shares the current main session's Codex family,
+the receipt includes its context agent path for working notes and history.
 
 ### `message_main_claw`
 

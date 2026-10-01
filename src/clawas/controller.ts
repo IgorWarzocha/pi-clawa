@@ -5,6 +5,7 @@ import { ensureControlDir, getSocketPath } from './comms/paths.js'
 import { discoverProjectExtensionPaths, resolveWorkerExtensionPaths } from './extension-paths.js'
 import type { ClawasPanelLauncher } from './panel-launcher.js'
 import { ClawasPanelWorker } from './panel-worker.js'
+import type { PrepareResidentContext } from './shared-context.js'
 import { createInitialState, getWorkerState, pushEvent } from './state.js'
 import type { ClawasConfig, ClawasState, WorkerDefinition } from './types.js'
 
@@ -21,6 +22,7 @@ export class ClawasController {
     launcher: ClawasPanelLauncher,
     clawaDefaults: ClawaDefaults,
     onChange: () => void,
+    prepareResidentContext?: PrepareResidentContext,
   ) {
     this.onChange = onChange
     this.state = createInitialState(config.workers, projectRoot, Date.now())
@@ -33,6 +35,7 @@ export class ClawasController {
           projectRoot,
           clawaDefaults,
           launcher,
+          prepareResidentContext,
           controlPlaneRoot: join(projectRoot, '.pi', clawaDefaults.controlPlaneDir),
           extensionPaths: resolveWorkerExtensionPaths(
             projectRoot,

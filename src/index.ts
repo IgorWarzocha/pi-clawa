@@ -1,6 +1,7 @@
 import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
 import { ClawasCommsServer } from './clawas/comms/server.js'
 import { ClawasRuntime } from './clawas/runtime.js'
+import { ClawaContextSharing } from './clawas/shared-context.js'
 import {
   registerClawasMonitorShortcuts,
   registerJumpCommand,
@@ -27,26 +28,31 @@ import { registerClawaSystemPrompt } from './system-prompt.js'
 
 /** @public Pi loads the package extension through this default export. */
 export default async function howabouaClaw(pi: ExtensionAPI): Promise<void> {
-  const clawasRuntime = new ClawasRuntime()
-  const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
   const runtime = new ClawaRuntimeState()
-  const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias())
+  const isActive = () => runtime.active
+  const sharedContext = new ClawaContextSharing(pi, isActive)
+  const clawasRuntime = new ClawasRuntime((ctx, workerId) => sharedContext.prepare(ctx, workerId))
+  const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
+  const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias(), sharedContext)
   let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
 
   const setDefaults = (defaults: typeof DEFAULT_CLAWA_DEFAULTS) => {
     currentClawaDefaults = defaults
   }
 
-  const isActive = () => runtime.active
   // Activation is resolved before any home-specific startup hooks.
   const prepare = registerClawaSessionEvents(pi, {
     runtime,
     clawasRuntime,
     pulseRuntime,
     commsServer,
+    sharedContext,
     setDefaults,
   })
-  const messageTools = registerClawasTools(pi, clawasRuntime, isActive)
+  await sharedContext.register()
+  const messageTools = registerClawasTools(pi, clawasRuntime, isActive, (ctx) =>
+    sharedContext.describe(ctx),
+  )
   registerClawaSystemPrompt(pi, isActive)
   registerNestedAgentsAutoload(pi, isActive)
   registerClawaRenderers(pi, () => currentClawaDefaults)

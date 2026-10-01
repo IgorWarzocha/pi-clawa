@@ -218,8 +218,10 @@ Do not block first clean-room test unless we decide work tracking is part of fir
 ## Memory tools
 
 Shared knowledge lives in `memory/`; chat checkpoints live in `.pi/context/notes/`.
-`notes` writes and searches both scopes. `history` reads canonical Pi JSONL through the house catalog
-and committed memory revisions. `new_context` starts a fresh window after a checkpoint.
+`clawa_memory` writes and searches both scopes. `clawa_history` reads canonical Pi JSONL through the
+house catalog and committed memory revisions. Pi or optional Codex owns context continuity.
+Clawa launches residents independently; optional Codex sharing binds fresh sessions through Clawa's
+own sockets without Shepherdr. Existing sessions keep their family.
 `/memory remember` queues a separate consolidation, and `/memory retry <jobId>` handles failed jobs.
 Existing `vault/` files migrate automatically without overwriting collisions. The old SQLite
 database is retained as a read-only source after exact row export into `memory/legacy/`.

@@ -14,6 +14,7 @@ import {
   recordWorkerSession,
   resolveWorkerSessionFile,
 } from './session-registry.js'
+import type { PrepareResidentContext } from './shared-context.js'
 import { summarizeError, summarizePrompt } from './summaries.js'
 import type { WorkerState } from './types.js'
 import { getWorkerSocketAlias } from './worker-identity.js'
@@ -26,6 +27,7 @@ interface PanelWorkerOptions {
   clawaDefaults: ClawaDefaults
   launcher: Pick<ClawasPanelLauncher, 'open' | 'focus' | 'close' | 'isAlive'>
   onChange: (event?: string) => void
+  prepareResidentContext?: PrepareResidentContext | undefined
 }
 
 /** Owns a connection to one terminal session, never the session's process lifetime. */
@@ -49,12 +51,12 @@ export class ClawasPanelWorker {
 
   async connect(launch: boolean): Promise<void> {
     if (!this.active) throw new Error(`Clawa ${this.alias} is disconnected from the main session`)
-    if (this.subscription) return
     if (this.pending) {
       await this.pending
       if (launch && !this.subscription && this.active) await this.connect(true)
       return
     }
+    if (this.subscription) return
     // Reserve before the first lookup. Autostart, a pulse, and /jump can arrive together.
     const operation = Promise.resolve().then(() => this.connectSession(launch))
     this.pending = operation
@@ -94,11 +96,14 @@ export class ClawasPanelWorker {
 
   private async launch(): Promise<void> {
     const { state, controlPlaneRoot, launcher } = this.options
-    const sessionFile = await resolveWorkerSessionFile(
+    const { sessionFile, kind } = await resolveWorkerSessionFile(
       controlPlaneRoot,
       state.definition,
       state.cwd,
     )
+    if (!this.active) return
+    const binding =
+      kind === 'fresh' ? await this.options.prepareResidentContext?.(this.alias) : undefined
     if (!this.active) return
     this.update(
       { status: 'starting', sessionFile, lastError: undefined },
@@ -115,9 +120,17 @@ export class ClawasPanelWorker {
     this.state.panel = panel
     try {
       await this.persistSession(sessionFile, panel)
-      await this.waitUntilReady()
+      const status = await this.waitUntilReady()
+      if (this.active && binding) {
+        const sharedContext = await binding.accept(status)
+        if (this.active) this.update({ sharedContext })
+      }
+      if (this.active) await this.subscribe()
     } catch (error) {
       // Only this launch's location is disposable. Adoption and main shutdown never close it.
+      this.subscription?.close()
+      this.subscription = undefined
+      this.state.sharedContext = undefined
       try {
         await launcher.close(panel)
         this.state.panel = undefined
@@ -141,14 +154,13 @@ export class ClawasPanelWorker {
     }
   }
 
-  private async waitUntilReady(): Promise<void> {
+  private async waitUntilReady(): Promise<ClawasSessionStatus> {
     const deadline = Date.now() + 15_000
     while (Date.now() < deadline) {
       const status = await getClawasSessionStatus(this.alias)
       if (status) {
         this.validateSession(status)
-        await this.subscribe()
-        return
+        return status
       }
       await delay(100)
     }
@@ -165,8 +177,11 @@ export class ClawasPanelWorker {
 
   private async subscribe(): Promise<void> {
     const subscription = await watchClawasSession(this.alias, {
-      onStatus: (status) => this.applyStatus(status),
+      onStatus: (status) => {
+        if (this.active) this.applyStatus(status)
+      },
       onClose: (error) => {
+        if (!this.active) return
         this.subscription = undefined
         this.update(
           {
@@ -204,6 +219,7 @@ export class ClawasPanelWorker {
       {
         status: nextStatus,
         sessionFile: status.sessionFile,
+        sharedContext: status.sharedContext,
         currentToolName: status.currentToolName,
         currentTask: ended ? undefined : this.state.currentTask,
         lastSummary:

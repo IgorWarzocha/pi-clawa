@@ -1,4 +1,5 @@
 import * as net from 'node:net'
+import type { ClawasContextCommand } from './context-protocol.js'
 import { resolveSocketPath } from './paths.js'
 import { parseCommsResponse, parseLastMessageData, parseSessionStatusData } from './protocol.js'
 import type {
@@ -24,6 +25,7 @@ interface SendCommandOptions {
 }
 
 const MAX_FRAME_BYTES = 1_048_576
+const CONTEXT_SESSION_ID = /^[a-zA-Z0-9_-]+$/u
 
 function takeJsonLines(buffer: string): { lines: string[]; rest: string } {
   const parts = buffer.split('\n')
@@ -46,7 +48,9 @@ async function sendRpcCommand(
   target: string,
   command: ClawasCommsCommand,
   timeout = 5_000,
+  signal?: AbortSignal,
 ): Promise<ClawasCommsResponse> {
+  signal?.throwIfAborted()
   const socketPath = await resolveSocketPath(target)
   if (!socketPath) {
     throw new Error(`Unknown Clawas session target: ${target}`)
@@ -64,6 +68,7 @@ async function sendRpcCommand(
     let settled = false
     const cleanup = () => {
       clearTimeout(timeoutHandle)
+      signal?.removeEventListener('abort', aborted)
       socket.removeAllListeners()
     }
     const fail = (error: Error) => {
@@ -72,6 +77,12 @@ async function sendRpcCommand(
       cleanup()
       socket.destroy()
       reject(error)
+    }
+    const aborted = () => fail(new Error('Clawas request cancelled', { cause: signal?.reason }))
+    signal?.addEventListener('abort', aborted, { once: true })
+    if (signal?.aborted) {
+      aborted()
+      return
     }
 
     socket.on('connect', () => {
@@ -108,6 +119,25 @@ async function sendRpcCommand(
     })
     socket.on('end', () => fail(new Error(`Clawas session ${target} closed without a response`)))
   })
+}
+
+export async function requestClawasContext(
+  target: string,
+  command: ClawasContextCommand,
+  signal?: AbortSignal,
+): Promise<unknown> {
+  if (!CONTEXT_SESSION_ID.test(target)) throw new Error('Invalid Clawa context session ID')
+  let response: ClawasCommsResponse
+  try {
+    response = await sendRpcCommand(target, command, 30_000, signal)
+  } catch (error) {
+    throw new Error(
+      `Clawa context owner ${target} is unavailable or its response was lost. A write may have completed; reread before retrying.`,
+      { cause: error },
+    )
+  }
+  if (!response.success) throw new Error(response.error ?? 'Clawa context request failed')
+  return response.data
 }
 
 export async function sendClawasSessionMessage(

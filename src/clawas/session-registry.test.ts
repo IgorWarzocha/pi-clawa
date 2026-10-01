@@ -35,11 +35,12 @@ test('worker sessions live under worker homes while the registry stays in the ro
     const controlPlaneRoot = join(root, '.pi', 'clawas')
     await mkdir(workerHome, { recursive: true })
 
-    const sessionFile = await resolveWorkerSessionFile(
+    const { sessionFile, kind } = await resolveWorkerSessionFile(
       controlPlaneRoot,
       workerDefinition('discord-clawa'),
       workerHome,
     )
+    assert.equal(kind, 'fresh')
 
     assert.equal(dirname(sessionFile), getClawaSessionsDir(workerHome))
     assert.match(sessionFile, SESSION_FILE_SUFFIX_REGEX)
@@ -62,7 +63,14 @@ test('worker session continuity survives model and thinking changes', async () =
     await mkdir(workerHome, { recursive: true })
 
     const original = workerDefinition('discord-clawa')
-    const sessionFile = await resolveWorkerSessionFile(controlPlaneRoot, original, workerHome)
+    const fresh = await resolveWorkerSessionFile(controlPlaneRoot, original, workerHome)
+    const { sessionFile } = fresh
+    assert.equal(fresh.kind, 'fresh')
+    assert.deepEqual(
+      await resolveWorkerSessionFile(controlPlaneRoot, original, workerHome),
+      fresh,
+      'a reserved missing path is still fresh on retry',
+    )
     await writeFile(
       sessionFile,
       `${JSON.stringify({ type: 'session', version: 3, cwd: workerHome })}\n`,
@@ -75,7 +83,7 @@ test('worker session continuity survives model and thinking changes', async () =
     }
     const resumedFile = await resolveWorkerSessionFile(controlPlaneRoot, changed, workerHome)
 
-    assert.equal(resumedFile, sessionFile)
+    assert.deepEqual(resumedFile, { sessionFile, kind: 'resume' })
     const registry = JSON.parse(
       await readFile(join(controlPlaneRoot, SESSION_REGISTRY_NAME), 'utf8'),
     ) as { workers: Record<string, { path: string; model?: string; thinking?: string }> }
@@ -128,10 +136,10 @@ test('concurrent registry updates preserve every worker and its panel location',
     assert.equal(alpha?.path, '/resumed.jsonl')
     assert.deepEqual(alpha?.panel, panel)
     assert.equal((await readWorkerSession(root, 'beta'))?.cwd, join(root, 'beta'))
-    assert.equal(
-      await resolveWorkerSessionFile(root, workerDefinition('alpha'), '/alpha'),
-      '/resumed.jsonl',
-    )
+    assert.deepEqual(await resolveWorkerSessionFile(root, workerDefinition('alpha'), '/alpha'), {
+      sessionFile: '/resumed.jsonl',
+      kind: 'fresh',
+    })
     assert.deepEqual((await readWorkerSession(root, 'alpha'))?.panel, panel)
   } finally {
     await rm(root, { recursive: true, force: true })

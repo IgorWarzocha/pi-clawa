@@ -8,6 +8,10 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 
 ### Added
 
+- Fresh resident sessions can join the main session's optional Codex context family before their
+  first task, using Clawa's own sockets without Shepherdr. Resumed sessions keep their identity.
+  Requires Pi Codex 3.0.42 or newer with sharing enabled and compatible notes continuity in both
+  homes. Binding failures stop the launch; another extension's peer router is never replaced.
 - Afreet-derived local notes, shared Markdown memory, searchable house Pi history, and committed-memory
   revisions through `clawa_memory` and `clawa_history`. Memory defaults to shared home Markdown;
   explicit `scope: "notes"` accesses retained per-chat notes.
@@ -33,9 +37,8 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
   tagged git checkout per home through project settings or explicit `pi -e`; global installation
   is discouraged. Existing configured homes still activate globally.
 - First run creates home files but waits for the first human message or task. There is no autonomous
-  startup turn, and a concrete first task takes priority over introductions. Shepherdr can bind a
-  fresh child through its own spawn flow; Codex sharing handles family context without a Clawa
-  adoption API.
+  startup turn, and a concrete first task takes priority over introductions. Fresh sessions remain
+  idle until their launching controller has completed any optional context binding.
 - Living-document text refreshes in Pi's native structured prompt before each agent turn, including
   after Pi or Codex continuity. The optional self-card image is deduplicated in native session
   history rather than repeated every turn.

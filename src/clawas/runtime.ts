@@ -13,6 +13,7 @@ import {
 } from './monitor-state.js'
 import { ClawasPanelLauncher } from './panel-launcher.js'
 import { ClawasUiBridge } from './runtime-ui.js'
+import type { PrepareResidentContext } from './shared-context.js'
 import type { ClawasState, WorkerDefinition, WorkerState } from './types.js'
 
 /** Main-session configuration and UI lifecycle. Reloading reconnects, never closes worker tabs. */
@@ -26,6 +27,19 @@ export class ClawasRuntime {
   private monitorState = createClawasMonitorState()
   private readonly ui = new ClawasUiBridge()
   private readonly launcher = new ClawasPanelLauncher()
+  private readonly prepareResidentContext: (
+    context: ExtensionContext,
+    workerId: string,
+  ) => ReturnType<PrepareResidentContext>
+
+  constructor(
+    prepareResidentContext: (
+      context: ExtensionContext,
+      workerId: string,
+    ) => ReturnType<PrepareResidentContext> = async () => undefined,
+  ) {
+    this.prepareResidentContext = prepareResidentContext
+  }
 
   attach(context: ExtensionContext): void {
     this.context = context
@@ -121,12 +135,15 @@ export class ClawasRuntime {
   }
 
   async dispose(): Promise<void> {
+    const context = this.context
+    this.context = null
+    // Invalidate workers immediately, even when autostart is awaiting resident sharing.
+    const disconnect = this.disconnectController()
     await this.queueLifecycle(async () => {
       if (this.interval) clearInterval(this.interval)
       this.interval = null
-      await this.disconnectController()
-      if (this.context?.hasUI) this.ui.clear(this.context)
-      this.context = null
+      await disconnect
+      if (context?.hasUI) this.ui.clear(context)
     })
   }
 
@@ -137,6 +154,9 @@ export class ClawasRuntime {
   }
 
   private async loadController(context: ExtensionContext, reconnect: boolean): Promise<void> {
+    if (this.context !== context) return
+    const prepareResidentContext: PrepareResidentContext = (workerId) =>
+      this.prepareResidentContext(context, workerId)
     try {
       this.clawaDefaults = resolveClawaDefaults(context.cwd)
       const config = await loadClawasConfig(context.cwd)
@@ -148,12 +168,14 @@ export class ClawasRuntime {
         return
       }
       await this.launcher.captureCurrentHost()
+      if (this.context !== context) return
       const controller = new ClawasController(
         context.cwd,
         config,
         this.launcher,
         this.clawaDefaults,
         () => this.render(),
+        prepareResidentContext,
       )
       this.controller = controller
       try {
@@ -162,6 +184,7 @@ export class ClawasRuntime {
         await this.disconnectController()
         throw error
       }
+      if (this.context !== context) return
       this.configFingerprint = fingerprint
       this.startRepaint()
       this.render()

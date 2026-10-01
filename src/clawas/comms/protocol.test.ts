@@ -18,6 +18,17 @@ test('Clawas comms rejects malformed commands before delivery', () => {
   assert.deepEqual(parseClawasCommsCommand({ type: 'unknown' }), {
     error: 'unsupported command type',
   })
+  for (const input of [
+    { type: 'context', operation: 'bind', sessionId: '../elsewhere', binding: {} },
+    {
+      type: 'context',
+      operation: 'execute',
+      request: { sessionId: 'family', agentName: '/root', namespace: 'shell', params: {} },
+      visited: [],
+    },
+  ]) {
+    assert.ok('error' in parseClawasCommsCommand(input))
+  }
 })
 
 test('Clawas comms normalizes valid commands and validates response payloads', () => {
@@ -43,6 +54,7 @@ test('Clawas comms normalizes valid commands and validates response payloads', (
     ...status,
     workerId: undefined,
     sessionFile: undefined,
+    sharedContext: undefined,
     currentToolName: undefined,
     lastError: undefined,
   })

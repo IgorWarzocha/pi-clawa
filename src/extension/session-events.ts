@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-a
 import { reportFinalAssistantMessageToMain } from '../clawas/comms/report-back.js'
 import type { ClawasCommsServer } from '../clawas/comms/server.js'
 import type { ClawasRuntime } from '../clawas/runtime.js'
+import type { ClawaContextSharing } from '../clawas/shared-context.js'
 import { type ClawaDefaults, resolveClawaDefaults } from '../config.js'
 import type { PulseRuntime } from '../pulses/runtime.js'
 import { clawaInstallScope, resolveActiveHome } from './activation.js'
@@ -19,12 +20,15 @@ export function registerClawaSessionEvents(
     clawasRuntime: ClawasRuntime
     pulseRuntime: PulseRuntime
     commsServer: ClawasCommsServer
+    sharedContext: ClawaContextSharing
     setDefaults: (defaults: ClawaDefaults) => void
   },
 ): (ctx: ExtensionContext) => Promise<void> {
   let attached = false
   const detach = async (): Promise<void> => {
     attached = false
+    // Fence/abort sharing before waiting for launches that may themselves be binding a child.
+    options.sharedContext.detach()
     await options.commsServer.stop()
     await options.pulseRuntime.dispose()
     await options.clawasRuntime.dispose()
@@ -78,7 +82,7 @@ export function registerClawaSessionEvents(
     await handleSessionStart(ctx)
   })
 
-  // A fresh Shepherdr child must remain idle and transcript-empty until its first task.
+  // A fresh resident must remain idle and transcript-empty until any optional binding finishes.
   pi.on('before_agent_start', async (event, ctx) => {
     if (!options.runtime.active) return
     await prepare(ctx)

@@ -36,9 +36,11 @@ configure context thresholds. Generic `notes`, `history`, `new_context`, and
 `get_context_remaining` are not Clawa tools. Use them only when your continuity extension provides
 them. Old Clawa notes and window archives are retained and remain accessible through the house tools.
 
-Shepherdr's own spawn flow and Codex sharing handle family context. Clawa does not add an adoption
-API or another context-routing layer. A fresh home creates its files without starting an autonomous
-turn, so Shepherdr can bind a child before its first task.
+Clawa launches and connects its residents itself. Neither resident coordination nor shared house
+memory requires Shepherdr or Codex. When optional Codex subagent sharing is enabled, Clawa uses
+Codex's public identity API and its own resident sockets to connect fresh sessions before their
+first task. Codex still owns the notes, history, and continuity. Existing sessions are never rebound
+to a different family. See [specialist Clawas](./clawas/) for the compatibility boundaries.
 
 ## Optional consolidation
 

@@ -23,8 +23,9 @@ Prefer a tagged git checkout loaded per home through project settings or explici
 Discourage global Clawa installation. Global dormancy is only a safety net: without `.pi/claw.jsonc`,
 it adds no Clawa tools, skills, prompt, or runtime. Project installs and explicit `pi -e` bootstrap
 deliberately. First run creates files but waits for the first human message or task. A concrete task
-comes before introductions. Shepherdr
-owns its spawn flow, with optional Codex sharing for family context, not a Clawa adoption API.
+comes before introductions. Clawa owns resident launch and communication without Shepherdr.
+Optional Codex sharing binds fresh resident sessions before their first task; resumed sessions keep
+their existing family. Read the subclawa reference before changing sharing or resident continuity.
 
 Read only the references needed for the requested operation. For a mixed migration or structural repair, read every reference that owns a file you will touch.
 

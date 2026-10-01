@@ -1,3 +1,5 @@
+import type { ClawasContextCommand, SharedResidentContext } from './context-protocol.js'
+
 export interface ClawasExtractedMessage {
   role: 'assistant'
   content: string
@@ -56,6 +58,7 @@ export interface ClawasSessionStatus {
   cwd: string
   isIdle: boolean
   hasPendingMessages: boolean
+  sharedContext?: SharedResidentContext | undefined
   currentToolName?: string | undefined
   lastSummary: string
   lastError?: string | undefined
@@ -78,6 +81,7 @@ export interface ClawasStatusEvent {
 
 export type ClawasCommsCommand =
   | ClawasSendCommand
+  | ClawasContextCommand
   | ClawasGetMessageCommand
   | ClawasGetStatusCommand
   | ClawasSubscribeStatusCommand

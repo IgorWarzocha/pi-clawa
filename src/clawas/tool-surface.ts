@@ -1,6 +1,12 @@
-import { defineTool, type ExtensionAPI, type ToolDefinition } from '@earendil-works/pi-coding-agent'
+import {
+  defineTool,
+  type ExtensionAPI,
+  type ExtensionContext,
+  type ToolDefinition,
+} from '@earendil-works/pi-coding-agent'
 import { Type } from 'typebox'
 import { sendClawasSessionMessage } from './comms/client.js'
+import type { SharedResidentContext } from './comms/context-protocol.js'
 import { getLastDeliveryMessage, getLastMailMessageTimestamp } from './comms/message-extract.js'
 import { publishClawasDeliveryMessage } from './comms/outbound.js'
 import { shouldSkipAutoMainClawStatusRelay } from './comms/report-back-helpers.js'
@@ -31,6 +37,7 @@ export function registerClawasTools(
   pi: ExtensionAPI,
   runtime: ClawasRuntime,
   isActive: () => boolean,
+  getSharedContext: (ctx: ExtensionContext) => SharedResidentContext | undefined,
 ): ToolDefinition[] {
   if (process.env['PI_CLAWAS_ROLE'] === 'worker') {
     const tool = defineTool({
@@ -125,6 +132,13 @@ export function registerClawasTools(
         }
 
         await runtime.ensureWorkerRunning(definition.id)
+        const shared = runtime
+          .getState()
+          ?.workers.find((worker) => worker.definition.id === definition.id)?.sharedContext
+        const contextAgent =
+          shared && shared.sessionId === getSharedContext(ctx)?.sessionId
+            ? shared.agentName
+            : undefined
         await sendClawasSessionMessage(getWorkerSocketAlias(definition), {
           message: params.message,
           messageType: 'session',
@@ -141,10 +155,12 @@ export function registerClawasTools(
           content: [
             {
               type: 'text',
-              text: formatClawaDeliveryReceipt(definition.title),
+              text:
+                formatClawaDeliveryReceipt(definition.title) +
+                (contextAgent ? ` Context agent: ${contextAgent}` : ''),
             },
           ],
-          details: { workerId: definition.id },
+          details: { workerId: definition.id, contextAgent },
         }
       } catch (error) {
         throw new Error(

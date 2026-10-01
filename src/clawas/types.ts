@@ -1,4 +1,5 @@
 import type { ClawaWorkerConfig, ClawaWorkerThinkingLevel } from '../config.js'
+import type { SharedResidentContext } from './comms/context-protocol.js'
 import type { PanelHandle } from './panel-host.js'
 
 export type WorkerThinkingLevel = ClawaWorkerThinkingLevel
@@ -16,6 +17,7 @@ export interface WorkerState {
   status: WorkerStatus
   panel?: PanelHandle | undefined
   sessionFile?: string | undefined
+  sharedContext?: SharedResidentContext | undefined
   currentTask?: string | undefined
   currentToolName?: string | undefined
   lastSummary: string

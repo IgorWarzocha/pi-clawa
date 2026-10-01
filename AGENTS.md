@@ -1,6 +1,7 @@
 # AGENTS.md
 
 - This repo packages Clawa as a Pi extension: a warm, long-lived home layer over Pi, not a standalone agent runtime.
+- Clawa must work on Pi alone. It owns resident launch and communication, with no Shepherdr dependency. Optional Codex sharing uses its public API over Clawa's own sockets.
 - Root `AGENTS.md` is maintainer guidance; `templates/main/AGENTS.md` is product template. Do not blur them.
 - Keep setup automatic. If first run is rough, fix the boot/runtime path instead of adding `init`, `doctor`, or setup ceremony.
 - Prefer living runtime behavior over markdownware/scriptware. Add docs/scripts only when they have a clear future reader/runner.
