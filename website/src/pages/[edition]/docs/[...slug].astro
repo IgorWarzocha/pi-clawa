@@ -3,7 +3,15 @@ import { render } from 'astro:content'
 import DocsNav from '@/components/docs-nav.astro'
 import EditionSwitch from '@/components/edition-switch.astro'
 import BaseLayout from '@/layouts/base-layout.astro'
-import { type DocEntry, docHref, type Edition, editionInfo, editions, getDocs, withBase } from '@/lib/site'
+import {
+  type DocEntry,
+  docHref,
+  type Edition,
+  editionInfo,
+  editions,
+  getDocs,
+  withBase,
+} from '@/lib/site'
 
 export async function getStaticPaths() {
   const docsByEdition = { modern: await getDocs('modern'), legacy: await getDocs('legacy') }
