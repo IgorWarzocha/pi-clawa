@@ -40,6 +40,12 @@ Before an agent starts, Clawa filters Pi context files to the resolved home and 
 main or worker identity as the native `clawa_identity` section. Living documents use `clawa_home`.
 Pi's tool context and other extensions' prompt ownership remain intact, including Codex.
 
+Idle mail, reports, and main Pulses share a coalesced native user kickoff so this preparation also
+runs before autonomous work. Reports and Pulses retain their custom-message metadata; during active
+work, reports steer and Pulses follow up as before. Readiness failures are reported before dispatch.
+Pi's extension send API does not return asynchronous startup errors, so a missing start acknowledgement
+is reported as uncertain rather than retried. A later native start clears that fence.
+
 Clawa does not delete custom prompts or opaque full-prompt overrides. An opaque override can hide
 home sections and bypass context-file scoping; Clawa warns in the UI when it sees one at its hook.
 Use `.pi/APPEND_SYSTEM.md` or structured prompt sections for additions that compose with the home.
@@ -82,6 +88,11 @@ Workers are ordinary Pi sessions, each in a named Herdr tab or tmux window. The 
 adopts these tabs; `.pi/clawas/session-registry.json` keeps both session history and terminal location.
 Closing a tab stops its worker until a message or `/jump` reopens it. Local newline-delimited socket messaging
 carries private coordination without using Pi subprocess RPC or placing messages on a public adapter.
+
+Launches forward standard Pi provider, proxy, certificate, and launch environment settings, plus
+environment references declared in `models.json` and registered provider configurations. The new host
+owns terminal/session identity. The launcher neither resolves credentials nor runs provider commands;
+it omits credential-bearing command output from launch errors.
 
 Clawa owns resident launch and communication without Shepherdr. With optional Codex sharing enabled,
 fresh resident sessions bind through Codex's public API over the existing Clawa sockets before any

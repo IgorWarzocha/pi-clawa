@@ -473,3 +473,76 @@ test('an existing live tab without control does not launch a duplicate or get cl
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('explicit reopen replaces a confirmed stale handle but preserves an uncertain handle', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'clp-'))
+  const previousRoot = process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
+  process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = root
+  const state = initialState(root)
+  const sessionFile = join(root, 'session.jsonl')
+  const oldHandle = panelHandle(sessionFile)
+  const newHandle: PanelHandle = {
+    host: 'tmux',
+    paneId: '%2',
+    panePid: '100',
+    sessionFile,
+    socket: '/new-tmux',
+    serverPid: '20',
+  }
+  const probeError = new Error('Old tmux server could not be probed')
+  let uncertain = true
+  let launches = 0
+  let probes = 0
+  let stopServer: (() => Promise<void>) | undefined
+  const worker = new ClawasPanelWorker({
+    state,
+    projectRoot: root,
+    controlPlaneRoot: root,
+    extensionPaths: [],
+    clawaDefaults: DEFAULT_CLAWA_DEFAULTS,
+    onChange() {},
+    launcher: {
+      async open(launch) {
+        launches += 1
+        assert.equal(launch.sessionFile, sessionFile)
+        stopServer = await serveSession(root, sessionFile)
+        return newHandle
+      },
+      async close() {
+        assert.fail('closed a previously owned tab')
+      },
+      async focus() {},
+      async isAlive(handle) {
+        probes += 1
+        assert.deepEqual(handle, oldHandle)
+        if (uncertain) throw probeError
+        return false
+      },
+    },
+  })
+  try {
+    // A real session header keeps explicit reopen on its existing persisted session.
+    await writeFile(sessionFile, `${JSON.stringify({ type: 'session', cwd: root })}\n`)
+    await recordWorkerSession(root, DEFINITION, root, sessionFile, oldHandle)
+    await worker.connect(false)
+    assert.equal(probes, 0)
+    assert.equal(launches, 0)
+    await assert.rejects(worker.connect(true), (error) => error === probeError)
+    assert.equal(launches, 0)
+    assert.deepEqual(state.panel, oldHandle)
+    assert.deepEqual((await readWorkerSession(root, DEFINITION.id))?.panel, oldHandle)
+
+    uncertain = false
+    await worker.connect(true)
+    assert.equal(launches, 1)
+    assert.equal(state.status, 'idle')
+    assert.deepEqual(state.panel, newHandle)
+    assert.deepEqual((await readWorkerSession(root, DEFINITION.id))?.panel, newHandle)
+  } finally {
+    await worker.dispose()
+    await stopServer?.()
+    if (previousRoot === undefined) delete process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT']
+    else process.env['PI_CLAWAS_CONTROL_SOCKET_ROOT'] = previousRoot
+    await rm(root, { recursive: true, force: true })
+  }
+})

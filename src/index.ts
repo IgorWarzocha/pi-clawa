@@ -32,8 +32,11 @@ export default async function howabouaClaw(pi: ExtensionAPI): Promise<void> {
   const isActive = () => runtime.active
   const sharedContext = new ClawaContextSharing(pi, isActive)
   const clawasRuntime = new ClawasRuntime((ctx, workerId) => sharedContext.prepare(ctx, workerId))
-  const pulseRuntime = new PulseRuntime(pi, clawasRuntime)
   const commsServer = new ClawasCommsServer(pi, () => getWorkerAlias(), sharedContext)
+  const pulseRuntime = new PulseRuntime(
+    (ctx, message, isCurrent) => commsServer.sendWake(ctx, message, isCurrent),
+    clawasRuntime,
+  )
   let currentClawaDefaults = DEFAULT_CLAWA_DEFAULTS
 
   const setDefaults = (defaults: typeof DEFAULT_CLAWA_DEFAULTS) => {

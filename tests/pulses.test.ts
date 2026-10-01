@@ -71,18 +71,13 @@ test('successful pulse deliveries stay checkpointed when a later pulse fails', a
 
     const delivered: string[] = []
     let failBeta = true
-    const pulseRuntime = new PulseRuntime(
-      {
-        sendMessage: (message: { content?: string }) => {
-          const content = message.content ?? ''
-          if (failBeta && content.includes('pulses/beta/PULSE.md')) {
-            throw new Error('beta delivery failed')
-          }
-          delivered.push(content)
-        },
-      } as never,
-      stubClawasRuntime() as never,
-    )
+    const pulseRuntime = new PulseRuntime(async (_ctx, message) => {
+      const content = String(message.content)
+      if (failBeta && content.includes('pulses/beta/PULSE.md')) {
+        throw new Error('beta delivery failed')
+      }
+      delivered.push(content)
+    }, stubClawasRuntime() as never)
     pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
 
     await pulseRuntime.scanAndRunDue(1_000)
@@ -130,31 +125,28 @@ test('worker pulses queue behind active work and use the same route while a pane
 
     let status = 'streaming'
     const modes: string[] = []
-    const runtime = new PulseRuntime(
-      {} as never,
-      {
-        refreshFromConfig: async () => {},
-        getState: () => ({
-          workers: [
-            {
-              definition: { id: 'helper' },
-              status,
-              panel: {
-                host: 'tmux',
-                paneId: '%1',
-                panePid: '123',
-                socket: '/tmp/tmux',
-                serverPid: '456',
-                sessionFile: '/tmp/session.jsonl',
-              },
+    const runtime = new PulseRuntime(async () => assert.fail('unexpected main delivery'), {
+      refreshFromConfig: async () => {},
+      getState: () => ({
+        workers: [
+          {
+            definition: { id: 'helper' },
+            status,
+            panel: {
+              host: 'tmux',
+              paneId: '%1',
+              panePid: '123',
+              socket: '/tmp/tmux',
+              serverPid: '456',
+              sessionFile: '/tmp/session.jsonl',
             },
-          ],
-        }),
-        sendPrompt: async (_id: string, _message: string, mode: string) => {
-          modes.push(mode)
-        },
-      } as never,
-    )
+          },
+        ],
+      }),
+      sendPrompt: async (_id: string, _message: string, mode: string) => {
+        modes.push(mode)
+      },
+    } as never)
     runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
     await runtime.runNow('helper:check')
     status = 'idle'
@@ -194,10 +186,9 @@ test('Hey Clawa defers when another pulse for the same owner is due', async () =
     )
 
     let deliveries = 0
-    const pulseRuntime = new PulseRuntime(
-      { sendMessage: () => (deliveries += 1) } as never,
-      stubClawasRuntime() as never,
-    )
+    const pulseRuntime = new PulseRuntime(async () => {
+      deliveries += 1
+    }, stubClawasRuntime() as never)
     pulseRuntime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
 
     await pulseRuntime.scanAndRunDue(1_000)
@@ -242,22 +233,15 @@ test('disposal drains a delivered pulse, checkpoints it, and skips remaining sta
     const started = new Promise<void>((resolve) => (deliveryStarted = resolve))
     const blocked = new Promise<void>((resolve) => (releaseDelivery = resolve))
     const delivered: string[] = []
-    runtime = new PulseRuntime(
-      {
-        sendMessage: () => {
-          throw new Error('unexpected main delivery')
-        },
-      } as never,
-      {
-        refreshFromConfig: async () => {},
-        getState: () => ({ workers: [] }),
-        sendPrompt: async (owner: string) => {
-          delivered.push(owner)
-          deliveryStarted()
-          if (delivered.length === 1) await blocked
-        },
-      } as never,
-    )
+    runtime = new PulseRuntime(async () => assert.fail('unexpected main delivery'), {
+      refreshFromConfig: async () => {},
+      getState: () => ({ workers: [] }),
+      sendPrompt: async (owner: string) => {
+        delivered.push(owner)
+        deliveryStarted()
+        if (delivered.length === 1) await blocked
+      },
+    } as never)
     runtime.attach({ cwd: root, hasUI: false, isIdle: () => true } as never)
     await runtime.scanAndRunDue(1_000)
     const scan = runtime.scanAndRunDue(62_000)
@@ -304,19 +288,16 @@ test('a scan waiting on a worker cannot deliver into a reattached session', {
     const started = new Promise<void>((resolve) => (refreshStarted = resolve))
     const blocked = new Promise<void>((resolve) => (releaseRefresh = resolve))
     let deliveries = 0
-    runtime = new PulseRuntime(
-      {} as never,
-      {
-        refreshFromConfig: async () => {
-          refreshStarted()
-          await blocked
-        },
-        getState: () => ({ workers: [] }),
-        sendPrompt: async () => {
-          deliveries++
-        },
-      } as never,
-    )
+    runtime = new PulseRuntime(async () => assert.fail('unexpected main delivery'), {
+      refreshFromConfig: async () => {
+        refreshStarted()
+        await blocked
+      },
+      getState: () => ({ workers: [] }),
+      sendPrompt: async () => {
+        deliveries++
+      },
+    } as never)
     const ctx = { cwd: root, hasUI: false, isIdle: () => true } as never
     runtime.attach(ctx)
     await runtime.scanAndRunDue(1_000)

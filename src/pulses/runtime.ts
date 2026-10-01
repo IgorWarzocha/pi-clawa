@@ -12,6 +12,11 @@ const HEY_CLAWA_COLLISION_DELAY_MS = 15 * 60 * 1000
 
 type PulseRunMode = 'scheduled' | 'forced'
 type DuePulse = { pulse: PulseDefinition; dueKey: string | null }
+type MainPulseDelivery = (
+  ctx: ExtensionContext,
+  message: Parameters<ExtensionAPI['sendMessage']>[0],
+  isCurrent: () => boolean,
+) => Promise<void>
 
 function isWorkerBusy(worker: WorkerState | undefined): boolean {
   return worker?.status === 'starting' || worker?.status === 'streaming'
@@ -27,10 +32,10 @@ export class PulseRuntime {
   private running = false
   private epoch = 0
   private readonly active = new Set<Promise<unknown>>()
-  private readonly pi: ExtensionAPI
+  private readonly deliverMain: MainPulseDelivery
   private readonly clawasRuntime: ClawasRuntime
-  constructor(pi: ExtensionAPI, clawasRuntime: ClawasRuntime) {
-    this.pi = pi
+  constructor(deliverMain: MainPulseDelivery, clawasRuntime: ClawasRuntime) {
+    this.deliverMain = deliverMain
     this.clawasRuntime = clawasRuntime
   }
 
@@ -142,7 +147,7 @@ export class PulseRuntime {
     if (this.epoch !== epoch) return false
     const forced = mode === 'forced'
     if (pulse.ownerId === 'main') {
-      await this.sendMainPulse(pulse, forced, nowMs)
+      await this.sendMainPulse(pulse, forced, nowMs, epoch)
       return true
     }
     return await this.sendWorkerPulse(pulse, forced, nowMs, epoch)
@@ -152,18 +157,20 @@ export class PulseRuntime {
     pulse: PulseDefinition,
     forced: boolean,
     nowMs: number,
+    epoch: number,
   ): Promise<void> {
     const ctx = this.requireContext()
     const queued = !ctx.isIdle()
     const instruction = buildPulseInstruction(pulse, { forced, queued, nowMs })
-    this.pi.sendMessage(
+    await this.deliverMain(
+      ctx,
       {
         customType: CLAWA_PULSE_MESSAGE_TYPE,
         content: instruction,
         display: true,
         details: pulseDetails(pulse, forced),
       },
-      queued ? { triggerTurn: true, deliverAs: 'followUp' } : { triggerTurn: true },
+      () => this.epoch === epoch,
     )
   }
 

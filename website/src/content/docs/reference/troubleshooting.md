@@ -35,6 +35,20 @@ to a clean home; setting `bootstrapped: true` only turns the blockage into a hal
 Use `/steer` and watch the reported error. Config edits take effect when the tab next launches, not
 in a running session. Private messages still work while someone types directly in the tab.
 
+After moving terminal hosts, an explicit reopen replaces a tmux location only when the old server
+is confirmed gone. If the old location cannot be checked, inspect it rather than deleting its
+registry entry and risking a duplicate session.
+
+## A task arrived but no turn started
+
+The target tab and worker monitor show wake errors. For a missing model or authentication, repair
+the intended model or existing credentials in that tab, then resend the task. Clawa does not switch
+providers, accounts, or billing to make a task run.
+
+If Pi has not acknowledged a wake after 15 seconds, Clawa reports that uncertainty without sending
+it again. Slow preparation may still finish. Inspect the target tab; if no turn is preparing and
+none starts, reload that tab before resending. Ask before making global Pi or account changes.
+
 ## Pulses are silent
 
 Try `/pulse run owner:id` first. Then check the visible definition, quiet hours, and owning session

@@ -70,7 +70,7 @@ export class ClawasCommsServer {
     sharedContext?: ClawaContextSharing,
   ) {
     this.mail = new ClawasMailDelivery(pi, (error) => {
-      const message = `Clawas mail kickoff failed: ${error.message}`
+      const message = `Clawa wake: ${error.message}`
       this.status.deliveryFailure(message)
       this.publishStatus()
       if (this.context?.hasUI) {
@@ -370,6 +370,20 @@ export class ClawasCommsServer {
     this.publishStatus()
   }
 
+  async sendWake(
+    ctx: ExtensionContext,
+    message: Parameters<ExtensionAPI['sendMessage']>[0],
+    isCurrent: () => boolean,
+  ): Promise<void> {
+    const delivery = this.mail.sendCustom(ctx, message, 'followUp', isCurrent)
+    this.publishStatus()
+    try {
+      await delivery
+    } finally {
+      this.publishStatus()
+    }
+  }
+
   private async handleSendRpcCommand(
     ctx: ExtensionContext,
     command: ClawasSendCommand,
@@ -381,7 +395,9 @@ export class ClawasCommsServer {
       respond(false, 'send', undefined, 'Session changed before delivery')
       return
     }
-    this.mail.send(ctx, command, () => this.context === ctx)
+    const delivery = this.mail.send(ctx, command, () => this.context === ctx)
+    this.publishStatus()
+    await delivery
     this.publishStatus()
     respond(true, 'send', {
       delivered: true,

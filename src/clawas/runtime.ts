@@ -167,7 +167,7 @@ export class ClawasRuntime {
         if (context.hasUI) this.ui.clear(context)
         return
       }
-      await this.launcher.captureCurrentHost()
+      await this.launcher.captureCurrentHost(context.modelRegistry)
       if (this.context !== context) return
       const controller = new ClawasController(
         context.cwd,

@@ -1,15 +1,19 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import type { ExtensionAPI } from '@earendil-works/pi-coding-agent'
+import type { ExtensionAPI, ExtensionContext } from '@earendil-works/pi-coding-agent'
 import { ClawasMailDelivery } from './mail-delivery.js'
+
+const UNCONFIRMED_ERROR = /not acknowledged/u
+const CHANGED_ERROR = /session changed/u
+const ctx = {
+  isIdle: () => true,
+  model: { provider: 'offline' },
+  modelRegistry: { hasConfiguredAuth: () => true },
+} as unknown as ExtensionContext
 
 test('idle mail coalesces into one prepared kickoff; arrivals during prep wait for agent start', async () => {
   const sent: string[] = []
   const metadata: unknown[] = []
-  let firstSend: () => void = () => assert.fail('missing kickoff')
-  const first = new Promise<void>((resolve) => {
-    firstSend = resolve
-  })
   const pi: Pick<ExtensionAPI, 'appendEntry' | 'sendMessage' | 'sendUserMessage'> = {
     appendEntry(_type, entry) {
       metadata.push(entry)
@@ -19,19 +23,17 @@ test('idle mail coalesces into one prepared kickoff; arrivals during prep wait f
     },
     sendUserMessage(content, options) {
       sent.push(`${String(content)}:${options?.deliverAs ?? 'idle'}`)
-      firstSend()
     },
   }
   const mail = new ClawasMailDelivery(pi, (error) => assert.fail(error.message))
-  const ctx = { isIdle: () => true }
-  mail.send(ctx, { type: 'send', message: 'first' }, () => true)
-  mail.send(ctx, { type: 'send', message: 'second' }, () => true)
+  const first = mail.send(ctx, { type: 'send', message: 'first' }, () => true)
+  const second = mail.send(ctx, { type: 'send', message: 'second' }, () => true)
   assert.equal(mail.hasPendingKickoff, true)
-  await first
+  await Promise.all([first, second])
   assert.equal(sent.length, 1)
   assert.ok((sent[0] ?? '').includes('first'))
   assert.ok((sent[0] ?? '').indexOf('first') < (sent[0] ?? '').indexOf('second'))
-  mail.send(ctx, { type: 'send', message: 'third' }, () => true)
+  await mail.send(ctx, { type: 'send', message: 'third' }, () => true)
   assert.equal(sent.length, 1)
   mail.agentStart()
   assert.equal(sent.length, 2)
@@ -40,26 +42,60 @@ test('idle mail coalesces into one prepared kickoff; arrivals during prep wait f
   assert.equal(mail.hasPendingKickoff, false)
 })
 
-test('failed idle kickoff clears pending state and reports failure after mail metadata persists', async () => {
-  const metadata: unknown[] = []
-  let failure: (error: Error) => void = () => assert.fail('missing failure')
-  const failed = new Promise<Error>((resolve) => {
-    failure = resolve
-  })
-  const pi: Pick<ExtensionAPI, 'appendEntry' | 'sendMessage' | 'sendUserMessage'> = {
-    appendEntry(_type, entry) {
-      metadata.push(entry)
+test('unacknowledged fire-and-forget starts surface uncertainty without retrying a possibly live turn', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  let sends = 0
+  const failures: Error[] = []
+  const mail = new ClawasMailDelivery(
+    {
+      appendEntry() {},
+      sendMessage() {},
+      sendUserMessage() {
+        sends += 1
+      },
     },
-    sendMessage() {
-      assert.fail('wrong delivery path')
-    },
-    sendUserMessage() {
-      throw new Error('preparation rejected')
-    },
-  }
-  const mail = new ClawasMailDelivery(pi, failure)
-  mail.send({ isIdle: () => true }, { type: 'send', message: 'important' }, () => true)
-  assert.ok((await failed).message.includes('preparation rejected'))
-  assert.equal(metadata.length, 1)
+    (error) => failures.push(error),
+  )
+  await mail.send(ctx, { type: 'send', message: 'first' }, () => true)
+  await mail.send(ctx, { type: 'send', message: 'waiting' }, () => true)
+  t.mock.timers.tick(15_000)
+  assert.equal(failures.length, 1)
+  assert.match(failures[0]!.message, UNCONFIRMED_ERROR)
+  assert.equal(sends, 1)
   assert.equal(mail.hasPendingKickoff, false)
+  await assert.rejects(
+    mail.send(ctx, { type: 'send', message: 'later' }, () => true),
+    UNCONFIRMED_ERROR,
+  )
+  // Slow preparation can still succeed. Only the not-yet-submitted mail is then steered.
+  mail.agentStart()
+  assert.equal(sends, 2)
+  t.mock.timers.tick(15_000)
+  assert.equal(failures.length, 1)
+  mail.reset()
+})
+
+test('reset fences a scheduled kickoff without consuming the replacement session queue', async () => {
+  const sent: string[] = []
+  const mail = new ClawasMailDelivery(
+    {
+      appendEntry() {},
+      sendMessage() {},
+      sendUserMessage(content) {
+        sent.push(String(content))
+      },
+    },
+    (error) => assert.fail(error.message),
+  )
+  const stale = assert.rejects(
+    mail.send(ctx, { type: 'send', message: 'stale' }, () => true),
+    CHANGED_ERROR,
+  )
+  mail.reset()
+  await mail.send(ctx, { type: 'send', message: 'current' }, () => true)
+  await stale
+  assert.equal(sent.length, 1)
+  assert.ok(sent[0]!.includes('current'))
+  assert.equal(sent[0]!.includes('stale'), false)
+  mail.agentStart()
 })

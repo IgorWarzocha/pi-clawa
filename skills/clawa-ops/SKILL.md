@@ -67,6 +67,7 @@ Read only the references needed for the requested operation. For a mixed migrati
 ## Boundaries
 
 - Do not edit global `~/.pi/agent/settings.json` to solve a project-local Clawa problem unless the human explicitly asks for a global change.
+- A wake/auth error permits ordinary local repair, not switching providers or accounts, changing billing, or overhauling the Pi environment. Ask the human before crossing those boundaries.
 - Do not copy secrets into markdown, logs, or reports.
 - Do not import session databases, logs, caches, or old runtime state by default.
 - Do not delete a worker home, pulse history, or shared living doc merely because it looks inactive.
@@ -81,6 +82,7 @@ Read only the references needed for the requested operation. For a mixed migrati
 - **Pulse keeps producing nothing:** change its hunting ground, cadence, or ownership; disable it with a reason if the lane is exhausted.
 - **Import source is huge:** start from config and living docs, then search history only for a named continuity question.
 - **Runtime still shows old state:** classify reload, stale process, socket/session, or auth drift before editing config again.
+- **Wake failed:** inspect the target tab and its reported model/auth error. Repair the intended configuration before resending. An unacknowledged start may still be preparing; do not blindly retry it. If it never starts, reload that tab before resending, not the whole Pi installation.
 
 ## Output
 

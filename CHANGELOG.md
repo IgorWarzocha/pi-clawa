@@ -63,6 +63,17 @@ releases. Work lands under **Unreleased** and ships in deliberate batches.
 - Upgrading from 0.3 requires stopping the old main session before starting this version so its
   legacy subprocess workers can stop. Worker session history is preserved.
 
+### Fixed
+
+- Missing model or authentication now produces an actionable wake error without blocking later
+  tasks after repair. Unacknowledged starts stay visible and are never automatically resent.
+- Idle reports and main Pulses prepare Clawa's identity, home context, and services before running.
+  Failed readiness checks do not append duplicate Pulse instructions on each scheduled retry.
+- Worker tabs inherit Pi provider and launch settings, including custom-provider environment
+  references, without copying the main tab's terminal identity or exposing credentials in launch errors.
+- Explicit reopen can replace a tmux location whose server process is confirmed dead. Uncertain
+  host checks still block duplicate tabs.
+
 ## [0.3.0] - 2026-09-24
 
 Requires Pi **0.87.1 or newer**. No home-state migration is required.

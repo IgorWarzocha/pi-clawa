@@ -1,7 +1,14 @@
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { promisify } from 'node:util'
-import { type LaunchOptions, panelArgs, panelEnvironment, shellQuote } from './panel-command.js'
+import type { ModelRegistry } from '@earendil-works/pi-coding-agent'
+import {
+  configuredProviderEnvironmentKeys,
+  type LaunchOptions,
+  panelArgs,
+  panelEnvironment,
+  shellQuote,
+} from './panel-command.js'
 import {
   HerdrResponseError,
   herdrId,
@@ -11,6 +18,7 @@ import {
 } from './panel-host.js'
 
 const exec = promisify(execFile)
+const PID_PATTERN = /^[1-9]\d*$/u
 
 type Host =
   | { host: 'herdr'; workspaceId: string; session: string }
@@ -42,6 +50,30 @@ async function tmux(socket: string, args: string[]): Promise<string> {
   return (await exec('tmux', ['-S', socket, ...args])).stdout.trim()
 }
 
+function launchError(host: string, error: unknown): Error {
+  // execFile includes its full argv in errors. Launch argv contains provider secrets.
+  const code = error instanceof Error && 'code' in error ? error.code : undefined
+  const status = typeof code === 'string' || typeof code === 'number' ? ` (${code})` : ''
+  return new Error(`Could not create Clawa tab in ${host}${status}. Check the terminal host.`)
+}
+
+function tmuxServerIsGone(serverPid: string): boolean {
+  const pid = Number(serverPid)
+  // Invalid persisted identity is uncertain, never evidence that a process is dead.
+  if (!(PID_PATTERN.test(serverPid) && Number.isSafeInteger(pid)) || pid > 2_147_483_647)
+    return false
+  try {
+    process.kill(pid, 0)
+    return false
+  } catch (error) {
+    if (error instanceof Error && 'code' in error) {
+      if (error.code === 'ESRCH') return true
+      if (error.code === 'EPERM') return false
+    }
+    throw error
+  }
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -60,9 +92,11 @@ async function rollback(undo: () => Promise<void>, error: unknown): Promise<neve
 /** One named Herdr tab or tmux window per Clawa; the host owns its process lifetime. */
 export class ClawasPanelLauncher {
   private context: Host | null = null
+  private modelRegistry: ModelRegistry | undefined
 
-  async captureCurrentHost(): Promise<void> {
+  async captureCurrentHost(modelRegistry?: ModelRegistry): Promise<void> {
     this.context = null
+    this.modelRegistry = modelRegistry
     const paneId = process.env['HERDR_PANE_ID']?.trim()
     if (process.env['HERDR_ENV'] === '1' && paneId) {
       const session = process.env['HERDR_SOCKET_PATH']?.trim()
@@ -93,7 +127,11 @@ export class ClawasPanelLauncher {
     const context = this.context
     if (!context) throw new Error(`${options.clawaDefaults.clawasName} requires Herdr or tmux`)
     const args = panelArgs(options)
-    const env = panelEnvironment(options)
+    const env = panelEnvironment(
+      options,
+      process.env,
+      await configuredProviderEnvironmentKeys(this.modelRegistry),
+    )
     if (context.host === 'herdr') return this.openHerdr(context, options, args, env)
     return this.openTmux(context, options, args, env)
   }
@@ -119,7 +157,9 @@ export class ClawasPanelLauncher {
         '--no-focus',
       ],
       context.session,
-    )
+    ).catch((error: unknown) => {
+      throw launchError('Herdr', error)
+    })
     const pane = herdrObject(created['root_pane'], 'created pane')
     const paneId = herdrId(pane, 'pane_id')
     const tabId = herdrId(herdrObject(created['tab'], 'created tab'), 'tab_id')
@@ -176,7 +216,9 @@ export class ClawasPanelLauncher {
       '-F',
       '#{pane_id} #{pane_pid}',
       command,
-    ])
+    ]).catch((error: unknown) => {
+      throw launchError('tmux', error)
+    })
     const [paneId, panePid] = output.split(' ')
     if (!(paneId && panePid)) throw new Error(`tmux did not identify created pane: ${output}`)
     return {
@@ -212,6 +254,9 @@ export class ClawasPanelLauncher {
         throw error
       }
     }
+    // The old server can be gone after moving to another socket or host. Only ESRCH
+    // proves death without tmux. Missing binaries, permissions and connection failures do not.
+    if (tmuxServerIsGone(handle.serverPid)) return false
     if ((await this.tmuxServer(handle.socket)) !== handle.serverPid) return false
     const output = await tmux(handle.socket, [
       'list-panes',
